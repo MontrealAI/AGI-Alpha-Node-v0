@@ -2,9 +2,15 @@ name: Continuous Integration
 
 on:
   push:
-    branches: ["main"]
+    branches:
+      - main
+      - master
+      - work
   pull_request:
-    branches: ["main"]
+    branches:
+      - main
+      - master
+      - work
 
 permissions:
   contents: read
