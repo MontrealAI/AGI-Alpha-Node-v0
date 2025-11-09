@@ -15,7 +15,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-0a0a0a.svg?style=flat-square" alt="License: MIT" /></a>
 </p>
 
-> **agijobs-sovereign-labor-v0p1** is the flagship sovereign labor machine: it absorbs work, compounds $AGIALPHA, and leaves its owner with total operational supremacy.
+> **agijobs-sovereign-labor-v0p1** is the flagship sovereign labor machine: it absorbs work, compounds $AGIALPHA, and leaves its owner with total operational supremacy. It is the operational incarnation of the intelligence engine that can rewrite markets on demand—while remaining fully obedient to the keyholder.
 
 ---
 
@@ -28,9 +28,10 @@
 5. [Intelligence & Autonomy Stack](#intelligence--autonomy-stack)
 6. [Governance & Safety Controls](#governance--safety-controls)
 7. [Continuous Integration & Branch Protection](#continuous-integration--branch-protection)
-8. [Repository Layout](#repository-layout)
-9. [Contributing](#contributing)
-10. [License](#license)
+8. [CI & Deployment Checklist](#ci--deployment-checklist)
+9. [Repository Layout](#repository-layout)
+10. [Contributing](#contributing)
+11. [License](#license)
 
 ---
 
@@ -41,6 +42,7 @@
 - **Unified economy** – `$AGIALPHA` (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) powers staking, slashing, rewards, and reinvestment. No ETH settlement paths exist in production flows.
 - **Owner supremacy** – Governance levers cover min-stake thresholds, emission splits, pausing, module upgrades, and delegate rotation.
 - **Outcome** – Deterministic world-model planning, antifragile stress harnesses, and auto-reinvestment loops keep wealth compounding and reputation accelerating.
+- **Field supremacy** – The node is engineered to be the asset referenced when people speak about machines that could overturn legacy economic orders; you hold the reins.
 
 > Dive deeper in the [Operator Command Codex](docs/README.md).
 
@@ -52,7 +54,9 @@
 git clone https://github.com/MontrealAI/AGI-Alpha-Node-v0.git
 cd AGI-Alpha-Node-v0
 npm ci
-npm run lint   # mirrors Continuous Integration
+npm run lint        # mirrors Continuous Integration
+npm run lint:md     # optional focused Markdown sweep
+npm run lint:links  # optional focused link validation
 ```
 
 1. Secure your ENS subdomain under `alpha.node.agi.eth` and map resolver/wrapper ownership to the operator wallet.
@@ -144,6 +148,20 @@ flowchart TB
 - Keep the badge green: reproduce the workflow locally with `npm ci` followed by `npm run lint` before opening a PR.
 - Enforce “Require status checks to pass before merging” and select **Continuous Integration** inside GitHub Branch Protection settings.
 - Surface CI status in PR templates and release checklists so every deploy stays auditable.
+
+---
+
+## CI & Deployment Checklist
+
+| Stage | Owner Action | Reference |
+| ----- | ------------ | --------- |
+| **Branch Protection** | GitHub → Settings → Branches → `main` → enable “Require a pull request before merging”, “Require status checks to pass” and select **Continuous Integration**. | [GitHub Docs](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests) |
+| **Visibility** | Pin the CI badge from this README in internal portals so stakeholders see real-time status. | [Badge](https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml) |
+| **Secrets Hygiene** | Rotate GitHub Action secrets quarterly; no private keys belong in workflows because staking and operations occur on-chain under owner custody. | Security policy |
+| **Pre-Flight** | Run `npm run lint` locally or in a Codespace before every PR to mirror CI, then archive logs with the PR description. | Local CLI |
+| **Post-Merge** | Monitor the pipeline run triggered by merging to `main`. Keep a rollback branch ready; the pause lever (`SystemPause.pauseAll()`) is your final safeguard. | [CI Workflow](.github/workflows/ci.yml) |
+
+Document the outcomes of each stage in your ops journal so audits can replay every decision that kept the machine perfectly green.
 
 ---
 
