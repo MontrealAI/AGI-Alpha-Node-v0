@@ -5,6 +5,11 @@ on:
     branches: ["main"]
   pull_request:
     branches: ["main"]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -13,6 +18,7 @@ jobs:
   lint:
     name: Lint Markdown & Links
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,8 +29,15 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Display environment diagnostics
+        run: |
+          node --version
+          npm --version
+
       - name: Install dependencies
         run: npm ci
 
       - name: Run lint suite
+        env:
+          CI: true
         run: npm run lint
