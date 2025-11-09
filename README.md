@@ -160,8 +160,16 @@ flowchart TB
 
 - [`Continuous Integration`](.github/workflows/ci.yml) runs on every push and pull request targeting `main`, executing `npm ci`, `npm run lint:md`, and `npm run lint:links` as discrete gates for immediate evidence.
 - Keep the badge green: reproduce the workflow locally with `npm ci` followed by `npm run lint`, `npm run lint:md`, and `npm run lint:links` before opening a PR.
-- Enforce “Require status checks to pass before merging”, require approving reviews, and select **Continuous Integration** inside GitHub Branch Protection settings.
-- Surface CI status in PR templates and release checklists so every deploy stays auditable.
+- Surface CI status in PR templates and release checklists so every deploy stays auditable and traceable.
+
+### Branch Protection Walkthrough
+
+1. Navigate to **Settings → Branches → main**.
+2. Enable **Require a pull request before merging** and **Require approvals** (set to at least one reviewer).
+3. Enable **Require status checks to pass before merging** and select **Continuous Integration** from the checks list.
+4. Enable **Require branches to be up to date before merging** so outdated merges cannot bypass the lint gates.
+5. Enable **Do not allow bypassing the above settings** and block force pushes/deletions to keep the audit trail pristine.
+6. Capture screenshots or export the policy JSON into your custody ledger so future audits can confirm enforcement without ambiguity.
 
 ---
 
