@@ -1,5 +1,7 @@
 # AGI ALPHA Node – Technical Manifesto & Architecture Overview
 
+<!-- markdownlint-disable MD013 -->
+
 > “We are not just building technology; we are forging a new digital era—an era where intelligence, adaptability, and foresight are woven into the very fabric of the blockchain.” — **AGI King**
 
 In the AGI ALPHA vision, advanced intelligence and decentralized blockchain infrastructure merge to inaugurate a new era of digital innovation. This is more than a technical project; it is a paradigm shift towards **cognitive blockchain networks** where AI agents continuously **learn**, **adapt**, and **anticipate** change. By embedding foresight and adaptability directly into blockchain systems, we aim to out‑think and out‑pace traditional approaches, strategically positioning human operators for unprecedented advantages.
