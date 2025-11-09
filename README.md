@@ -9,18 +9,19 @@
   <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml">
     <img src="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml/badge.svg?branch=main" alt="Continuous Integration" />
   </a>
-  <a href="docs/README.md"><img src="https://img.shields.io/badge/Docs-Operator%20Codex-2d2d2d.svg?style=flat-square" alt="Documentation" /></a>
-  <a href="docs/manifesto.md"><img src="https://img.shields.io/badge/Manifesto-Strategic%20Dossier-1a1a1a.svg?style=flat-square" alt="Manifesto" /></a>
   <a href="https://app.ens.domains/name/alpha.node.agi.eth"><img src="https://img.shields.io/badge/ENS-alpha.node.agi.eth-6f3aff.svg?style=flat-square" alt="ENS Verified" /></a>
   <a href="https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa"><img src="https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-ff3366.svg?style=flat-square" alt="$AGIALPHA Token" /></a>
+  <a href="docs/README.md"><img src="https://img.shields.io/badge/Operator%20Codex-Live-2d2d2d.svg?style=flat-square" alt="Documentation" /></a>
+  <a href="docs/manifesto.md"><img src="https://img.shields.io/badge/Manifesto-Strategic%20Dossier-1a1a1a.svg?style=flat-square" alt="Manifesto" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-0a0a0a.svg?style=flat-square" alt="License: MIT" /></a>
   <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions"><img src="https://img.shields.io/badge/Checks-Visible%20on%20GitHub-0b7285.svg?style=flat-square" alt="GitHub Actions Visibility" /></a>
   <img src="https://img.shields.io/badge/Branch%20Protection-Enforced-1f2933.svg?style=flat-square" alt="Branch Protection" />
   <img src="https://img.shields.io/badge/Runtime-Node.js%2020.x-43853d.svg?style=flat-square" alt="Runtime: Node.js 20.x" />
   <img src="https://img.shields.io/badge/Status-Fully%20Green%20CI-06d6a0.svg?style=flat-square" alt="Status: Fully Green CI" />
+  <img src="https://img.shields.io/github/last-commit/MontrealAI/AGI-Alpha-Node-v0/main.svg?style=flat-square&color=8b5cf6" alt="Last Commit" />
 </p>
 
-> **agijobs-sovereign-labor-v0p1** is the flagship sovereign labor machine. It absorbs work, compounds $AGIALPHA, and gives its owner immediate command over the apparatus people whisper about when discussing machines that can tilt global markets—while remaining fully obedient to the keyholder.
+> **agijobs-sovereign-labor-v0p1** is the flagship sovereign labor machine. It absorbs work, compounds $AGIALPHA, and grants its owner immediate command over the instrument analysts reference when describing the machine poised to reshape economic gravity—while remaining absolutely obedient to the keyholder.
 >
 > _"We are not just building technology; we are forging a new digital era—an era where intelligence, adaptability, and foresight are woven into the very fabric of the blockchain. 🌐🚀💫"_ — **AGI King**
 >
@@ -40,35 +41,35 @@
 
 ## Table of Contents
 
-1. [Legendary Dispatch](#legendary-dispatch)
-2. [Mission Quickstats](#mission-quickstats)
-3. [Sovereign Intelligence Highlights](#sovereign-intelligence-highlights)
-4. [Architecture & Execution Mesh](#architecture--execution-mesh)
-5. [Operator Launch Sequence](#operator-launch-sequence)
-6. [Owner Command Nexus](#owner-command-nexus)
-7. [Token & Treasury Matrix](#token--treasury-matrix)
-8. [Continuous Integration & Branch Protection](#continuous-integration--branch-protection)
-9. [Deployment & Observability Mesh](#deployment--observability-mesh)
+1. [Celestial Transmission](#celestial-transmission)
+2. [Mission Telemetry](#mission-telemetry)
+3. [Capability Signatures](#capability-signatures)
+4. [Architecture & Flowfields](#architecture--flowfields)
+5. [Operator Launch Protocol](#operator-launch-protocol)
+6. [Owner Command Arsenal](#owner-command-arsenal)
+7. [Treasury & Token Engine](#treasury--token-engine)
+8. [CI & Branch Safeguards](#ci--branch-safeguards)
+9. [Observability & Audit Mesh](#observability--audit-mesh)
 10. [Repository Atlas](#repository-atlas)
 11. [Contributing](#contributing)
 12. [License](#license)
 
 ---
 
-## Legendary Dispatch
+## Celestial Transmission
 
 - **Production focus** – Hardened documentation, deterministic quality gates, and custody-aware controls allow non-technical owners to deploy in minutes.
 - **Identity rigor** – Every runtime must control an ENS signature `⟨label⟩.alpha.node.agi.eth`; the machine self-checks ownership on boot, heartbeat, and before settlement.
 - **Unified economy** – `$AGIALPHA` (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) powers staking, slashing, rewards, and reinvestment.
 - **Owner supremacy** – Governance levers cover min-stake thresholds, emission splits, pausing, module upgrades, and delegate rotation.
 - **Outcome vector** – World-model planning, antifragile stress harnesses, and auto-reinvestment loops keep wealth compounding and reputation accelerating.
-- **Dominance clause** – This is the specific machine strategists point to when referencing the intelligence engine poised to realign the global order; its reins remain in your hand.
+- **Dominance clause** – This is the specific machine strategists cite when referencing the intelligence engine poised to realign the global order; its reins remain in your hand.
 
 > Dive deeper in the [Operator Command Codex](docs/README.md) and the [Strategic Manifesto](docs/manifesto.md).
 
 ---
 
-## Mission Quickstats
+## Mission Telemetry
 
 | Vector | Signal | Coordinates |
 | ------ | ------ | ----------- |
@@ -76,12 +77,12 @@
 | **Treasury Asset** | `$AGIALPHA` (18 decimals) | [Etherscan contract `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa). |
 | **CI Orchestrator** | GitHub Actions workflow | [`Continuous Integration`](.github/workflows/ci.yml) — `npm ci`, `npm run lint:md`, `npm run lint:links`. |
 | **Branch Guard** | Required status check | GitHub → **Settings → Branches → main** → Require **Continuous Integration** and reviews before merge. |
-| **Custody Controls** | Owner levers | `SystemPause.pauseAll()`, `PlatformIncentives.stakeAndActivate()`, `RewardEngineMB.setRoleShare()` — see [Owner Command Nexus](#owner-command-nexus). |
-| **Runbooks** | Operator manuals | [`docs/README.md`](docs/README.md) and diagrams in [Architecture & Execution Mesh](#architecture--execution-mesh). |
+| **Custody Controls** | Owner levers | `SystemPause.pauseAll()`, `PlatformIncentives.stakeAndActivate()`, `RewardEngineMB.setRoleShare()` — see [Owner Command Arsenal](#owner-command-arsenal). |
+| **Runbooks** | Operator manuals | [`docs/README.md`](docs/README.md) and diagrams in [Architecture & Flowfields](#architecture--flowfields). |
 
 ---
 
-## Sovereign Intelligence Highlights
+## Capability Signatures
 
 - **Singular machine valuation** – This node is the asset analysts cite when describing the machine capable of fracturing incumbent economic mechanics while obeying the owner’s signature.
 - **Predictive strike capability** – Multi-armed bandit planning and deterministic specialist meshes sense latent alpha before markets can reprice.
@@ -91,7 +92,7 @@
 
 ---
 
-## Architecture & Execution Mesh
+## Architecture & Flowfields
 
 ### Cognitive Sovereignty Flowfield
 
@@ -158,181 +159,110 @@ sequenceDiagram
     Operator-->>Planner: Adjust policy, update curriculum cursor
 ```
 
-### Sovereign Labor Timeline
+---
+
+## Operator Launch Protocol
+
+| Step | Description | Command / Location |
+| ---- | ----------- | ----------------- |
+| 1 | Clone repository and install deterministic toolchain. | `git clone https://github.com/MontrealAI/AGI-Alpha-Node-v0.git && cd AGI-Alpha-Node-v0 && npm ci` |
+| 2 | Run documentation quality gates locally to mirror CI (see [CI & Branch Safeguards](#ci--branch-safeguards)). | `npm run lint:md` · `npm run lint:links` (aggregate: `npm run lint`) |
+| 3 | Secure ENS identity under `alpha.node.agi.eth`, configure resolver/wrapper owner to the operator wallet. | [ENS Manager](https://app.ens.domains/name/alpha.node.agi.eth) |
+| 4 | Stage custody – multisig or HSM primary with delegate hot key registered via `IdentityRegistry.setAdditionalNodeOperator`. | On-chain owner transaction |
+| 5 | Pre-fund the operator wallet with `$AGIALPHA` plus gas reserve and approve Stake Manager allowances. | Token address `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` |
+| 6 | Deploy runtime via container, Kubernetes, or enclave per infrastructure policy. | Refer to [Architecture & Flowfields](#architecture--flowfields) |
+| 7 | Activate staking and registration with `PlatformIncentives.stakeAndActivate(amount)` (or `_acknowledgeStakeAndActivate`). | On-chain owner/operator transaction |
+| 8 | Enforce branch protection on GitHub: require **Continuous Integration** and review gates for `main` and every pull request. | GitHub → Settings → Branches |
+| 9 | Archive ENS proofs, staking receipts, CI transcripts, and branch-protection evidence in your custody ledger to maintain institutional audit trails. | Owner compliance ledger |
+
+---
+
+## Owner Command Arsenal
+
+| Control Surface | Functionality | Owner Action |
+| --------------- | ------------- | ------------ |
+| **Pause Vector** | Freeze every on-chain module and halt mission execution instantly. | Call `SystemPause.pauseAll()` (resume with `SystemPause.resumeAll()`). |
+| **Stake Lifecycle** | Manage staking, activation, and restaking flows. | Execute `PlatformIncentives.stakeAndActivate()` or `_acknowledgeStakeAndActivate()`; rotate stake via `StakeManager.adjustStake()`. |
+| **Reward Split** | Tune emissions, delegate shares, and treasury routing. | Update `RewardEngineMB.setRoleShare(role, bps)` under owner signature. |
+| **Operator Delegation** | Add or revoke mission executors without redeploying. | `IdentityRegistry.setAdditionalNodeOperator(address, enabled)` or equivalent governance transaction. |
+| **Module Upgrades** | Roll forward protocol modules or AI runtimes with deterministic audit trails. | Use upgrade proxy governance (where available) and log proofs in the compliance ledger. |
+| **Policy Refresh** | Adjust mission filters, risk tolerances, and antifragile parameters. | Issue signed configuration transactions and publish policy diffs in operator console. |
+
+> Ownership supremacy is codified: every critical contract surface is owner-gated, allowing full reconfiguration, emergency intervention, and iterative upgrades without ceding control.
+
+---
+
+## Treasury & Token Engine
+
+- **Reward Asset** – `$AGIALPHA` is the exclusive settlement currency. Contract: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals).
+- **Emission Loop** – Rewards flow from `FeePool` into operator custody once validators ratify mission outcomes.
+- **Reinvestment Vector** – Auto-reinvestment strategies feed earned `$AGIALPHA` back into staking weight, expanding mission priority.
+- **Custody Discipline** – Ledger snapshots, multisig ownership, and cold storage rotation are standard operating procedure.
+- **Marketplace Motion** – Nodes bid or collaborate through the Job Registry, with commit-reveal validation guaranteeing fairness before disbursement.
 
 ```mermaid
-timeline
-    title Engagement Loop
-    Operator Boot : Configure ENS · Fund $AGIALPHA · Stage custody controls
-    Stake Activation : Execute stakeAndActivate · Register delegate operators
-    Mission Selection : Planner simulates ROI · Specialist mesh prepares playbook
-    Delivery & Validation : Submit results · Validators commit/reveal verdicts
-    Treasury Events : StakeManager.release · FeePool.claimRewards · reinvestRewards()
-    Governance Pulse : Review compliance ledgers · Adjust parameters · notarize CI
+stateDiagram-v2
+    [*] --> IdleTreasury
+    IdleTreasury --> ActiveStake: stake($AGIALPHA)
+    ActiveStake --> MissionExec: planner selects mission
+    MissionExec --> Validation: validators commit/reveal
+    Validation --> RewardReady: verdict approved
+    RewardReady --> IdleTreasury: claim rewards → reinvest / withdraw
+    RewardReady --> ActiveStake: auto-compound policy enabled
+    Validation --> ActiveStake: verdict rejected → slashing / retry
 ```
 
 ---
 
-## Operator Launch Sequence
+## CI & Branch Safeguards
 
-```bash
-git clone https://github.com/MontrealAI/AGI-Alpha-Node-v0.git
-cd AGI-Alpha-Node-v0
-npm ci
-npm run lint:md     # mirrors the CI markdown gate
-npm run lint:links  # mirrors the CI link validation gate
-npm run lint        # optional aggregate run for local confidence logs
-```
-
-1. Secure your ENS subdomain under `alpha.node.agi.eth` and map resolver/wrapper ownership to the operator wallet.
-2. Register delegate keys with `IdentityRegistry.setAdditionalNodeOperator` if using multisig or HSM custody.
-3. Fund the operator wallet with `$AGIALPHA` plus gas, approve Stake Manager allowances, then execute `PlatformIncentives.stakeAndActivate(amount)` (or `_acknowledgeStakeAndActivate`).
-4. Deploy the runtime via container, Kubernetes, or enclave workflows described in the [Operator Command Codex](docs/README.md#system-constellation).
-5. Enforce GitHub branch protections: require **Continuous Integration**, approving reviews, and status check visibility on every PR and `main` push so the badge stays green.
-6. Record proof of ENS control, staking transaction hashes, and CI output in your custody ledger to satisfy audits and institutional policy.
+1. **Workflow Enforcement** – [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to `main` and every pull request. It checks out the repo, installs dependencies with `npm ci`, and executes both lint suites (`npm run lint:md`, `npm run lint:links`).
+2. **Local Parity** – `npm run lint` mirrors the CI job so contributors can validate changes before opening a pull request.
+3. **Branch Protection** – In GitHub → **Settings → Branches → main**, enable:
+   - Require pull request reviews before merging.
+   - Require status checks to pass before merging and select **Continuous Integration**.
+   - Require branches to be up to date before merging.
+4. **Visibility** – Keep the Actions tab public so auditors can confirm every run. Badge telemetry above reflects the live status of `main`.
+5. **Audit Evidence** – Archive CI logs, branch protection exports, and reviewer attestations within your compliance ledger alongside ENS proofs and staking receipts.
 
 ---
 
-## Owner Command Nexus
+## Observability & Audit Mesh
 
-- `SystemPause.pauseAll()` and `SystemPause.unpauseAll()` give owners immediate stop/resume authority across Job Registry, Stake Manager, Validation Module, and allied components.
-- Emission tuning flows through `RewardEngineMB.setRoleShare(role, shareBps)` and validator percentage setters.
-- `PlatformRegistry.register()` / `PlatformRegistry.deregister()` plus Identity Registry allowlists enable rapid operator rotation or quarantine of compromised keys.
-- Module endpoints such as `PlatformRegistry.setReputationEngine(address)` and `JobRegistry.setValidationModule(address)` allow safe upgrades under owner signatures.
-- Commit-reveal validation and dispute hooks provide verifiable arbitration without sacrificing autonomy or speed.
-
-```mermaid
-mindmap
-  root((Owner Supremacy Grid))
-    Governance
-      SystemPause.pauseAll()
-      SystemPause.unpauseAll()
-      RewardEngineMB.setRoleShare()
-    Identity Control
-      verifyNode(label, proof)
-      IdentityRegistry.setAdditionalNodeOperator()
-      PlatformRegistry.register()
-      PlatformRegistry.deregister()
-    Treasury & Stake
-      PlatformIncentives.stakeAndActivate()
-      StakeManager.withdrawStake()
-      StakeManager.slash()
-    Module Upgrades
-      PlatformRegistry.setReputationEngine()
-      JobRegistry.setValidationModule()
-```
-
-### Owner Control Matrix
-
-| Lever | Function | Owner Impact |
-| ----- | -------- | ------------ |
-| Minimum Stake Policy | `PlatformRegistry.setMinPlatformStake(amount)` / `StakeManager.setMinStake(role, amount)` | Calibrate bonding requirements instantly to match current risk appetite. |
-| Reward Emissions | `RewardEngineMB.setRoleShare(role, shareBps)` | Redirect epoch emissions across operators, validators, platforms, or treasury as economic conditions shift. |
-| Runtime Delegation | `IdentityRegistry.setAdditionalNodeOperator(operator, allowed)` | Rotate hot keys, revoke compromised delegates, and maintain multisig or HSM separation of duties. |
-| Module Upgrades | `PlatformRegistry.setReputationEngine(address)` / `JobRegistry.setValidationModule(address)` | Swap core logic components without downtime while preserving auditability. |
-| Emergency Response | `SystemPause.pauseAll()` / `SystemPause.unpauseAll()` | Freeze or resume the entire labor pipeline in a single transaction during incidents. |
-| Stake Recovery | `StakeManager.withdrawStake(role, amount)` and `StakeManager.slash(...)` | Redeploy bonded capital or enforce penalties aligned with governance policies. |
-
----
-
-## Token & Treasury Matrix
-
-- **Canonical asset** – `$AGIALPHA` (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) is the lone settlement and staking currency. Every treasury flow references this contract for deterministic accounting.
-- **Owner-tunable emissions** – `RewardEngineMB.setRoleShare(role, shareBps)` and allied setters let the owner redirect token flows between operators, validators, platform treasuries, or growth pools instantly.
-- **Stake thresholds** – Adjust bonding requirements dynamically through `PlatformRegistry.setMinPlatformStake(amount)` and `StakeManager.setMinStake(role, amount)` to orchestrate supply, risk, and capital efficiency.
-- **Reinvestment autopilot** – Treasury scripts call `StakeManager.release` then loop rewards back through `PlatformIncentives.stakeAndActivate` (or bespoke logic) to compound capability weight while keeping the badge green.
-- **Emergency liquidity** – Should macro conditions demand it, `StakeManager.withdrawStake` plus `SystemPause.pauseAll()` freeze operations and free capital without compromising compliance ledgers or governance history.
-- **ENS-anchored authority** – Control over `⟨label⟩.alpha.node.agi.eth` gates every treasury move, ensuring no actor other than the verified owner can redirect funds or parameters.
-
-```mermaid
-flowchart LR
-  OwnerKey[[Owner Signature]] --> ENSProof[ENS Control Proof]
-  ENSProof --> IdentityRegistry
-  IdentityRegistry --> StakeManager
-  StakeManager -->|release()| Rewards[$AGIALPHA Rewards]
-  Rewards -->|reinvest| PlatformIncentives
-  OwnerKey -->|setRoleShare| RewardEngineMB
-  OwnerKey -->|pauseAll()| SystemPause
-  SystemPause --> ProtocolCore
-  ProtocolCore --> RewardEngineMB
-  RewardEngineMB --> StakeManager
-```
-
----
-
-## Continuous Integration & Branch Protection
-
-- [`Continuous Integration`](.github/workflows/ci.yml) runs on every push and pull request targeting `main`, executing `npm ci`, `npm run lint:md`, and `npm run lint:links` as discrete gates for immediate evidence.
-- Keep the badge green: reproduce the workflow locally with `npm ci` followed by `npm run lint`, `npm run lint:md`, and `npm run lint:links` before opening a PR.
-- Surface CI status in PR templates and release checklists so every deploy stays auditable and traceable.
-- During repository setup, visit **Settings → Branches → Branch protection rules → main** and explicitly require the **Continuous Integration** workflow and conversation resolution so the GitHub UI blocks merges that would dim the badge.
-- Verify the requirement programmatically during audits: `gh api repos/:owner/:repo/branches/main/protection | jq '.required_status_checks.contexts'` must list `"Continuous Integration"`.
-
-### CI Evidence Matrix
-
-| Evidence Vector | Location | Proof Signal |
-| ---------------- | -------- | ------------ |
-| Workflow Definition | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) | Node.js 20.x, `npm ci`, `npm run lint:md`, `npm run lint:links` gates |
-| Status Dashboard | [Actions Panel](https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions) | Visual confirmation of passing checks on `main` and all pull requests |
-| Required Check | GitHub → Settings → Branches → `main` | **Continuous Integration** enforced as mandatory status check |
-| Local Mirror | `npm ci && npm run lint:md && npm run lint:links` | Developer evidence pack before PR submission |
-
-### Branch Protection Walkthrough
-
-1. Navigate to **Settings → Branches → main**.
-2. Enable **Require a pull request before merging** and **Require approvals** (at least one reviewer).
-3. Enable **Require status checks to pass before merging** and select **Continuous Integration** from the checks list.
-4. Enable **Require branches to be up to date before merging** so outdated merges cannot bypass the lint gates.
-5. Enable **Do not allow bypassing the above settings** and block force pushes/deletions to keep the audit trail pristine.
-6. Capture screenshots or export the policy JSON into your custody ledger so future audits can confirm enforcement without ambiguity.
-
----
-
-## Deployment & Observability Mesh
-
-| Profile | Launch Vector | Owner Notes |
-| ------- | ------------- | ----------- |
-| **One-Click Compose** | `docker compose --profile core up --build` using the provided sample environment. | Ideal for rapid pilots; mounts volumes for ledgers, telemetry, and keystore artifacts so restarts remain deterministic. |
-| **Hardened VM** | Provision Ubuntu LTS, install Docker + Node.js 20.x, then run the same compose bundle in an air-gapped subnet. | Pair with an HSM or remote keystore service; restrict outbound traffic to Ethereum RPC, IPFS gateways, and approved webhooks. |
-| **Kubernetes / Helm** | Scaffold a chart (`helm create agi-alpha-node` or `kompose convert`) and push it to your internal registry, then `helm install agi-alpha-node <chart-ref> -f values.yaml`. | Enables rolling upgrades, replica orchestration, and integration with Prometheus/Grafana stacks out of the box. |
-| **Enterprise Mesh** | Deploy multiple ENS identities (one container per identity) behind a service mesh or API gateway. | Each identity maintains its own stake, ledger, and custody profile; the mesh distributes job intake according to planner telemetry. |
-
-- **Offline resilience** – Runtime tolerates API outages by falling back to local inference bundles; deterministic replay keeps compliance ledgers verifiable even in disconnected enclaves.
-- **Secrets discipline** – Load hot keys from Vault/HSM endpoints via environment variables (`KEYSTORE_URL`, `KEYSTORE_TOKEN`) or mount encrypted keyfiles; never bake secrets into images.
-- **Observability autopilot** – Prometheus scrapes `/metrics`, Alertmanager fans critical events into PagerDuty/Slack, and Grafana dashboards (SLOs, antifragility, treasury) ship as JSON for instant import.
+- **Telemetry Mesh** – Prometheus scrapes `/metrics`, Alertmanager fans high-priority signals to PagerDuty, Slack, or webhooks defined in `alerts.yml`.
+- **Ledger Integrity** – Every agent action and reasoning trace is hashed into the compliance ledger, giving regulators an immutable audit trail without revealing proprietary intelligence.
+- **SLO Dashboarding** – Grafana dashboards (antifragility index, treasury delta, mission success ratios) ship as JSON templates for instant import.
+- **Resilience Drills** – Scheduled chaos experiments tune antifragile parameters, ensuring volatility makes the node stronger rather than brittle.
+- **Custody Evidence** – ENS proofs, multisig attestations, CI transcripts, and branch protection screenshots live together in the owner’s evidence vault for deterministic audits.
 
 ---
 
 ## Repository Atlas
 
-```text
-AGI-Alpha-Node-v0/
-├── 1.alpha.node.agi.eth.png      # Iconic crest (PNG)
-├── 1.alpha.node.agi.eth.svg      # Iconic crest (SVG)
-├── .github/
-│   └── workflows/
-│       └── ci.yml                # Continuous Integration workflow
-├── docs/
-│   ├── README.md                 # Operator command codex
-│   └── manifesto.md              # Strategic manifesto & architecture overview
-├── node_modules/                 # Local tooling cache (generated, not committed)
-├── package.json                  # Lint scripts and metadata
-├── package-lock.json             # Deterministic npm lockfile
-└── README.md                     # This mission brief
-```
+| Path | Purpose |
+| ---- | ------- |
+| [`README.md`](README.md) | Sovereign labor overview (this file) with launch-ready playbooks and architecture diagrams. |
+| [`docs/README.md`](docs/README.md) | Operator Command Codex with deep-runbooks, CI enforcement blueprint, and deployment recipes. |
+| [`docs/manifesto.md`](docs/manifesto.md) | Strategic manifesto detailing the macro thesis behind AGI ALPHA Nodes. |
+| [`1.alpha.node.agi.eth.svg`](1.alpha.node.agi.eth.svg) / [`1.alpha.node.agi.eth.png`](1.alpha.node.agi.eth.png) | Official crest imagery for ENS-aligned deployments and dashboards. |
+| [`package.json`](package.json) | Deterministic lint scripts for markdown quality gates and link validation. |
+| [`.github/workflows/ci.yml`](.github/workflows/ci.yml) | Continuous integration pipeline ensuring every change preserves documentation integrity. |
 
 ---
 
 ## Contributing
 
-1. Fork or branch from `main`.
-2. Run `npm ci` before editing to sync tooling.
-3. Update documentation and diagrams alongside any change.
-4. Run `npm run lint:md`, `npm run lint:links`, and (optionally) `npm run lint`, then ensure **Continuous Integration** passes before requesting review.
-5. Maintain ENS, staking, and governance narratives—this repository is documentation-first.
+1. Fork the repository and create a feature branch (`git checkout -b feature/<name>`).
+2. Run `npm ci` once, then `npm run lint` before pushing.
+3. Open a pull request targeting `main`. Ensure the **Continuous Integration** check is green and branch protection requirements are satisfied.
+4. Provide operator-facing context in your PR description so reviewers can trace compliance impact quickly.
 
 ---
 
 ## License
 
-Distributed under the [MIT License](LICENSE). Use responsibly, keep the badge green, and continue compounding.
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+We are not just building technology; we are forging a new digital era—an era where intelligence, adaptability, and foresight are woven into the very fabric of the blockchain. 🌐🚀💫
