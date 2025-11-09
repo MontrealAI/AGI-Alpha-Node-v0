@@ -18,7 +18,7 @@
   <a href="../README.md"><img src="https://img.shields.io/badge/Root%20Readme-Lattice-121212.svg?style=flat-square" alt="Root README" /></a>
 </p>
 
-> agijobs-sovereign-labor-v0p1 is the sovereign labor machine that channelizes wealth at scale—the economic core that competitors quietly measure themselves against.
+> agijobs-sovereign-labor-v0p1 is the sovereign labor machine that channelizes wealth at scale—the platform core competitors quietly measure themselves against.
 
 ---
 
@@ -26,7 +26,7 @@
 
 1. [Executive Signal](#executive-signal)
 2. [Launch Checklist](#launch-checklist)
-3. [Deployment Blueprints](#deployment-blueprints)
+3. [Systems Blueprint](#systems-blueprint)
 4. [Identity & Staking Authority](#identity--staking-authority)
 5. [Operational Intelligence Core](#operational-intelligence-core)
 6. [Treasury & Economic Flywheel](#treasury--economic-flywheel)
@@ -42,7 +42,7 @@
 ## Executive Signal
 
 - **Mission** — Deliver a production-hardened, deterministic autonomous workforce engine that non-technical owners can launch, monitor, and profit from within minutes.
-- **Identity** — Every Alpha Node lives behind an ENS signature `*.alpha.node.agi.eth`, verified on boot, during heartbeat, and before settlement.
+- **Identity** — Every Alpha Node operates behind an ENS signature `*.alpha.node.agi.eth`, verified on boot, during heartbeat, and before settlement.
 - **Token Economy** — All value accrues in `$AGIALPHA` (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals). No ETH pathways exist in the production flow.
 - **Governance** — Contract owners retain absolute authority to pause, upgrade, retune rewards, or rotate operators. That control is a deliberate business lever, not an afterthought.
 - **Outcome** — Operators capture exponential $AGIALPHA flow through job execution, epoch rewards, and automated reinvestment.
@@ -51,19 +51,20 @@
 
 ## Launch Checklist
 
-| Step | Description | Tooling |
-| ---- | ----------- | ------- |
-| 1 | Acquire ENS subdomain under `alpha.node.agi.eth` and point to operator wallet or wrapper. | ENS Manager · NameWrapper |
-| 2 | Secure signing stack (hardware wallet, managed keystore, or Gnosis Safe delegate) and provision RPC endpoints. | Vault · Safe · Infura/Alchemy |
-| 3 | Fund operator wallet with $AGIALPHA and gas reserves; pre-approve Stake Manager allowance. | DEX · Treasury Desk |
-| 4 | Clone repository and install quality gate dependencies. | `git clone` · `npm ci` |
-| 5 | Deploy via Docker, Helm, or offline enclave using default manifests. | see [Deployment Blueprints](#deployment-blueprints) |
-| 6 | Run `npm run lint` locally to mirror CI before first push or PR. | Node.js 20 |
-| 7 | Enforce branch protections in GitHub (require “Continuous Integration” to pass on `main` and PRs). | GitHub Settings |
+| Step | Description | Command & Artifact |
+| ---- | ----------- | ------------------ |
+| 1 | Clone this repository locally to gain access to documentation, CI scripts, and quality gates. | `git clone https://github.com/MontrealAI/AGI-Alpha-Node-v0.git` |
+| 2 | Install Node.js 20+ and synchronize dependencies. | `npm ci` |
+| 3 | Run the quality gates to mirror CI and confirm documentation health. | `npm run lint` |
+| 4 | Acquire ENS subdomain under `alpha.node.agi.eth` and point to the operator wallet or wrapper. | ENS Manager · NameWrapper |
+| 5 | Provision custody controls (hardware wallet, HSM, or Gnosis Safe delegate) and RPC endpoints. | Vault · Safe · Infura/Alchemy |
+| 6 | Fund operator wallet with $AGIALPHA and gas reserves; pre-approve Stake Manager allowances. | DEX · Treasury Desk |
+| 7 | Deploy runtime via container, orchestrator, or enclave aligned with enterprise security posture. | See [Systems Blueprint](#systems-blueprint) |
+| 8 | Enforce branch protections in GitHub (require **Continuous Integration** to pass on `main` and PRs). | GitHub Settings |
 
 ---
 
-## Deployment Blueprints
+## Systems Blueprint
 
 ### Architecture Snapshot
 
@@ -108,65 +109,15 @@ flowchart LR
   SystemPause -. control .- Planner
 ```
 
-### Docker One-Command Launch
+### Deployment Modalities
 
-```bash
-# Prerequisites: Docker Engine ≥ 24, funded wallet, ENS label
-export ENS_LABEL="NODE_LABEL"
-export ETH_RPC="https://mainnet.infura.io/v3/YOUR_KEY"
-export STAKE_AMOUNT="1000"
+| Mode | Summary | Strengths |
+| ---- | ------- | --------- |
+| **Container (Docker/Podman)** | Build a hermetic runtime image, mount encrypted volumes for ledgers and logs, and provide environment variables for ENS label, RPC endpoints, and keystore hooks. | Fast onboarding, reproducible environments, minimal dependencies. |
+| **Kubernetes** | Deploy node services as stateful workloads, apply liveness/readiness probes, and integrate with Prometheus ServiceMonitor/Grafana dashboards. | Auto-healing, rolling upgrades, horizontal policies. |
+| **Air-gapped Enclave** | Execute deterministic replay pipelines with offline inference bundles, bridging transactions through controlled signer relays. | Regulatory compliance, maximum isolation. |
 
-docker run -it --rm \
-  -e ENS_LABEL="$ENS_LABEL" \
-  -e ETH_RPC="$ETH_RPC" \
-  -e STAKE_AMOUNT="$STAKE_AMOUNT" \
-  ghcr.io/montrealai/agi-alpha-node:latest
-```
-
-- Performs ENS ownership verification and stake activation interactively.
-- Binds volumes for ledger (`/srv/agijobs/storage`) and logs (`/srv/agijobs/logs`).
-- Auto-configures Prometheus `/metrics` endpoint.
-
-### Docker Compose (Mission Control)
-
-```bash
-cp deploy/oneclick.env.example deploy/oneclick.env
-# update ENS label, RPC endpoints, keystore secrets, stake target
-
-docker compose --profile core up --build
-```
-
-- Spins up agent gateway, orchestrator, bridge, telemetry, and monitoring stack in tandem.
-- Health checks restart unhealthy containers and block on missing ENS proofs.
-
-### Helm (Kubernetes)
-
-```bash
-helm repo add agi-alpha https://montrealai.github.io/charts
-helm upgrade --install alpha-node agi-alpha/sovereign-node \
-  --namespace alpha-node \
-  --create-namespace \
-  --set ens.label=NODE_LABEL \
-  --set wallet.keystoreSecret=keystore-ref \
-  --set stake.amount=1000 \
-  --wait
-```
-
-- Includes horizontal pod autoscaler hooks and zero-downtime rollouts.
-- PrometheusServiceMonitor and Grafana dashboards deployed automatically when `observability.enabled=true`.
-
-### Air-Gapped / Deterministic Mode
-
-```bash
-git clone https://github.com/MontrealAI/AGI-Alpha-Node-v0.git
-./scripts/offline-bootstrap.sh \
-  --ens NODE_LABEL \
-  --rpc http://localhost:8545 \
-  --keystore /mnt/hsm/socket
-```
-
-- Uses local inference bundles and deterministic job replay.
-- Compatible with enclave hardware; outbound network paths can be sealed without breaking mission loops.
+> Operators may tailor runtime manifests to their infrastructure; this repository focuses on quality gates, governance controls, and documentation enabling those deployments.
 
 ---
 
@@ -231,7 +182,7 @@ sequenceDiagram
 ## Observability & Reliability Mesh
 
 - **Metrics** — `/metrics` exposes Prometheus counters for job throughput, ROI, antifragile scores, stake coverage, gas reserves, and validator summons.
-- **Dashboards** — Grafana packs (SLO, Economics, Operations) visualize mission performance. Prometheus `ServiceMonitor` provided in Helm chart.
+- **Dashboards** — Grafana packs (SLO, Economics, Operations) visualize mission performance. Prometheus ServiceMonitor resources align with Kubernetes deployments.
 - **Alerting** — Alertmanager templates trigger on gas depletion, pause events, missed heartbeats, and ROI decay; integrate with PagerDuty, Slack, or custom webhooks.
 - **Resilience** — Liveness/readiness probes ensure self-healing. Rolling updates orchestrated via Helm maintain job continuity. Deterministic replay protects against partial failures.
 - **Telemetry Export** — Structured JSONL ledgers stream to SIEM, BigQuery, or S3 for long-term retention and compliance analytics.

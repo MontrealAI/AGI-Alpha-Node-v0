@@ -2,26 +2,22 @@ name: Continuous Integration
 
 on:
   push:
-    branches: ["main", "work", "master"]
+    branches: ["main"]
   pull_request:
-    branches: ["main", "work", "master"]
+    branches: ["main"]
 
 permissions:
   contents: read
 
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   lint:
-    name: Lint & Links
+    name: Lint Markdown & Links
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Use Node.js 20
+      - name: Use Node.js 20.x
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -30,8 +26,5 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run markdown lint
-        run: npm run lint:md
-
-      - name: Run link audit
-        run: npm run lint:links
+      - name: Run lint suite
+        run: npm run lint
