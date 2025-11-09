@@ -18,6 +18,7 @@
   <a href="../README.md">
     <img src="https://img.shields.io/badge/Root%20README-Orbit-121212.svg?style=flat-square" alt="Root Readme" />
   </a>
+  <img src="https://img.shields.io/badge/Runtime-Node.js%2020.x-43853d.svg?style=flat-square" alt="Runtime: Node.js 20.x" />
 </p>
 
 > **agijobs-sovereign-labor-v0p1** is the production sovereign labor machine that harvests opportunity, compounds influence, and keeps its owner in absolute command. It is the instrument people have in mind when they imagine an intelligence engine capable of reshaping economic gravity—yet it obeys only you.
@@ -64,6 +65,7 @@
 | 6 | Deploy runtime via container, Kubernetes, or enclave per infrastructure policy. | Refer to [System Constellation](#system-constellation) |
 | 7 | Activate staking and registration with `PlatformIncentives.stakeAndActivate(amount)` (or `_acknowledgeStakeAndActivate`). | On-chain owner/operator transaction |
 | 8 | Enforce branch protection on GitHub: require **Continuous Integration** to pass for `main` and every pull request. | GitHub → Settings → Branches |
+| 9 | Archive ENS proofs, staking receipts, and CI transcripts in your custody ledger to maintain institutional audit trails. | Owner compliance ledger |
 
 ---
 
@@ -186,6 +188,40 @@ sequenceDiagram
 - **Module Upgrades** – Owner-guarded setters (e.g., `PlatformRegistry.setReputationEngine`, `JobRegistry.setValidationModule`) permit module evolution while preserving audit trails.
 - **Dispute Hooks** – Commit-reveal validation plus optional dispute modules give owners verifiable, trustless arbitration levers.
 
+### Control Mindmap
+
+```mermaid
+mindmap
+  root((Owner Authority))
+    Custody
+      ENS delegation
+      Additional operators
+      Multisig + HSM bridges
+    Economics
+      Min stake levels
+      Reward split tuning
+      Slash allocation
+    Runtime
+      Pause / Unpause switch
+      Module hot-swap
+      Validator policy
+    Audit
+      Compliance ledger hashes
+      CI evidence vaults
+      Telemetry attestations
+```
+
+### Owner Control Matrix
+
+| Lever | Function | Immediate Effect |
+| ----- | -------- | ---------------- |
+| Bonding Requirements | `PlatformRegistry.setMinPlatformStake(amount)` / `StakeManager.setMinStake(role, amount)` | Adjust operator bonding thresholds without redeploying contracts. |
+| Reward Policy | `RewardEngineMB.setRoleShare(role, shareBps)` | Redirect epoch emissions among agents, validators, and platforms on-demand. |
+| Delegation Roster | `IdentityRegistry.setAdditionalNodeOperator(operator, allowed)` | Grant or revoke hot keys while keeping custodial control inside a multisig or HSM. |
+| Module Composition | `PlatformRegistry.setReputationEngine(address)` / `JobRegistry.setValidationModule(address)` | Swap algorithmic components to upgrade scoring or validation logic live. |
+| Emergency Brake | `SystemPause.pauseAll()` / `SystemPause.unpauseAll()` | Freeze or resume all job, staking, and validation flows in a single transaction. |
+| Capital Recovery | `StakeManager.withdrawStake(role, amount)` / `StakeManager.slash(...)` | Withdraw idle stake or enforce penalties aligned with governance policies. |
+
 ---
 
 ## Observability & Reliability Mesh
@@ -195,6 +231,7 @@ sequenceDiagram
 - **Health Automation** – Docker/Kubernetes manifests ship with liveness/readiness probes, restart policies, and rolling-upgrade safe points.
 - **Alert Lattice** – PagerDuty, Slack, and webhook integrations trigger on stake erosion, pause events, validator summons, or unusual latency.
 - **Ledger Persistence** – Encrypted volumes retain compliance ledgers, keystore handles, and offline inference bundles between restarts.
+- **Evidence Vault** – Periodically notarize ENS ownership, staking receipts, and CI artifacts to append-only storage so regulators and partners can replay every control check.
 
 ---
 
