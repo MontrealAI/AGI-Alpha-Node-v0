@@ -68,6 +68,17 @@ Like digital farmers in a vast cognitive field, they cultivate the future.
 
 > Dive deeper in the [Operator Command Codex](docs/README.md).
 
+### Operator Quick Reference
+
+| Vector | Signal | Coordinates |
+| ------ | ------ | ----------- |
+| **Identity Root** | ENS base for nodes | [`alpha.node.agi.eth`](https://app.ens.domains/name/alpha.node.agi.eth) → subdomain ownership proves runtime authority. |
+| **Treasury Asset** | `$AGIALPHA` (18 decimals) | [Etherscan contract `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa). |
+| **CI Orchestrator** | GitHub Actions workflow | [`Continuous Integration`](.github/workflows/ci.yml) — `npm ci`, `npm run lint:md`, `npm run lint:links`. |
+| **Branch Guard** | Required status check | GitHub → **Settings → Branches → main** → Require **Continuous Integration** + approvals before merge. |
+| **Custody Controls** | Owner levers | `SystemPause.pauseAll()`, `PlatformIncentives.stakeAndActivate()`, `RewardEngineMB.setRoleShare()` — see [Owner Command & Safety Lattice](#owner-command--safety-lattice). |
+| **Runbooks** | Operator manuals | [`docs/README.md`](docs/README.md) and the diagrams in [Operational Prism](#operational-prism). |
+
 ---
 
 ## Operator Launch Sequence
@@ -223,6 +234,7 @@ mindmap
 - Keep the badge green: reproduce the workflow locally with `npm ci` followed by `npm run lint`, `npm run lint:md`, and `npm run lint:links` before opening a PR.
 - Surface CI status in PR templates and release checklists so every deploy stays auditable and traceable.
 - During repository setup, visit **Settings → Branches → Branch protection rules → main** and explicitly require the **Continuous Integration** workflow and conversation resolution so the GitHub UI blocks merges that would dim the badge.
+- Verify the requirement programmatically when auditing: `gh api repos/:owner/:repo/branches/main/protection | jq '.required_status_checks.contexts'` must list `"Continuous Integration"`.
 
 ### Branch Protection Walkthrough
 
