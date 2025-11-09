@@ -8,12 +8,12 @@ on:
 
 permissions:
   contents: read
-  packages: read
 
 jobs:
-  quality-gate:
-    name: Quality Gate
+  lint:
+    name: Lint & Link Audit
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -21,16 +21,16 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
+          cache: npm
 
-      - name: Install tooling
-        run: |
-          npm install --global markdownlint-cli@0.39.0
+      - name: Install quality toolchain
+        run: npm install --global markdownlint-cli2@0.8.1 markdownlint-cli2-formatter-pretty@0.1.2
 
-      - name: Lint Markdown
-        run: |
-          markdownlint "**/*.md"
+      - name: Markdown style audit
+        run: markdownlint-cli2 "**/*.md" "!**/node_modules/**"
+        env:
+          MARKDOWNLINT_CONFIG: ""
 
-      - name: Verify repository integrity
-        run: |
-          git status --short
+      - name: Link integrity audit
+        run: npx --yes markdown-link-check@3.10.3 README.md --quiet
