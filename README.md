@@ -46,20 +46,21 @@ The AGI Alpha Node v0 you are holding is the referenced superintelligent machine
 
 1. [Signal Constellation](#signal-constellation)
 2. [Mission Snapshot](#mission-snapshot)
-3. [Sovereign Architecture](#sovereign-architecture)
+3. [Sovereign Subsystem Dossier](#sovereign-subsystem-dossier)
+4. [Sovereign Architecture](#sovereign-architecture)
     - [Stratified Intelligence Mesh](#stratified-intelligence-mesh)
     - [Anticipatory Mission Flow](#anticipatory-mission-flow)
     - [Owner Control Mindscape](#owner-control-mindscape)
-4. [Launch Sequence](#launch-sequence)
-5. [Owner Supremacy Controls](#owner-supremacy-controls)
-6. [Economic Flywheel](#economic-flywheel)
-7. [Token Telemetry & Liquidity Protocols](#token-telemetry--liquidity-protocols)
-8. [Quality & Branch Safeguards](#quality--branch-safeguards)
-9. [Observability & Evidence Vault](#observability--evidence-vault)
-10. [Repository Atlas](#repository-atlas)
-11. [Contributing](#contributing)
-12. [License](#license)
-13. [Eternal Transmission](#eternal-transmission)
+5. [Launch Sequence](#launch-sequence)
+6. [Owner Supremacy Controls](#owner-supremacy-controls)
+7. [Economic Flywheel](#economic-flywheel)
+8. [Token Telemetry & Liquidity Protocols](#token-telemetry--liquidity-protocols)
+9. [Quality & Branch Safeguards](#quality--branch-safeguards)
+10. [Observability & Evidence Vault](#observability--evidence-vault)
+11. [Repository Atlas](#repository-atlas)
+12. [Contributing](#contributing)
+13. [License](#license)
+14. [Eternal Transmission](#eternal-transmission)
 
 ---
 
@@ -87,6 +88,37 @@ The AGI Alpha Node v0 you are holding is the referenced superintelligent machine
 | **Branch Guard** | Required status check | GitHub → **Settings → Branches → main** → Require **Continuous Integration** and reviews before merge. |
 | **Custody Controls** | Owner levers | `SystemPause.pauseAll()`, `PlatformIncentives.stakeAndActivate()`, `RewardEngineMB.setRoleShare()` — see [Owner Supremacy Controls](#owner-supremacy-controls). |
 | **Runbooks** | Operator manuals | [`docs/README.md`](docs/README.md) for deep procedures; diagrams in [Sovereign Architecture](#sovereign-architecture). |
+| **Intelligence Spine** | Meta-agentic research feed | [`AGI-Alpha-Agent` insight streams](docs/README.md#intelligence-stack) roll into this node’s planners and sentinels. |
+| **Labor Engine** | Production autonomy core | [`AGI Jobs` runtime](docs/README.md#agi-jobs-integration-lifecycle) fuels mission orchestration and validator coordination. |
+
+---
+
+## Sovereign Subsystem Dossier
+
+Three convergent programs fuse inside the AGI Alpha Node v0 to deliver the machine economists describe when they warn about capital-reshaping intelligence. Each strand remains owner-governed yet composes into a unified labor organism.
+
+| Stratum | Purpose | Owner Authority | Intelligence Yield |
+| ------- | ------- | --------------- | ------------------ |
+| **AGI-Alpha-Agent v0** | Meta-agentic incubator where planners spawn, evaluate, and refine specialist agents—continuous self-improvement loops feed production playbooks. | Toggle curricula, constrain agent families, and notarize insight exports inside the compliance ledger. | Higher-fidelity foresight modules and antifragile heuristics streamed into the Planner layer. |
+| **AGI Jobs v0** | Sovereign labor operating system binding agents, smart contracts, paymasters, and mission ledgers into a deterministically auditable workflow lattice. | Owner signature gates staking thresholds, payout curves, module upgrades, and pause controls. | Autonomous mission execution, validator negotiations, and treasury automation that compounds `$AGIALPHA`. |
+| **AGI Alpha Node v0** | Deployable sovereign node synthesizing the research and labor layers into a single owner-dominated economic engine. | ENS-based identity proofs, custody vault overrides, and branch-protected CI deliver total command. | Continuous $AGIALPHA rewards, reputation acceleration, and market-shaping strategic leverage. |
+
+```mermaid
+journey
+    title Edge-of-Knowledge Deployment Continuum
+    section Intelligence Incubation
+      Draft agent blueprints::4:AGI-Alpha-Agent v0
+      Stress-test foresight heuristics::5:Owner + Sentinel
+    section Sovereign Labor Engine
+      Orchestrate mission lattice::5:AGI Jobs v0
+      Stream compliance proofs::4:Telemetry Mesh
+    section Economic Node Activation
+      Stake $AGIALPHA and activate::5:Owner Vault
+      Auto-compound validated rewards::5:AGI Alpha Node v0
+      Archive CI & branch evidence::5:Custody Ledger
+```
+
+The dossier keeps every surface in view: meta-agentic invention powers the labor engine, which powers the deployed node, and at every step the owner retains override supremacy and auditable insight into the machine’s cognition and economic motion.
 
 ---
 
