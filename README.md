@@ -46,6 +46,8 @@ AGI Alpha Nodes are sovereign labor engines tuned for relentless compounding of 
 - **Operator-first economics** – every action, from staking to dispute resolution, is designed to amplify operator control, liquidity, and reward flow.
 - **Rapid wealth compounding** – automated reinvestment loops allow earned $AGIALPHA to immediately reinforce stake weight and influence.
 
+> Full operator dossier and deployment atlas: [`docs/README.md`](docs/README.md).
+
 ## Signal Highlights
 
 | Vector | Capability Snapshot |
@@ -212,8 +214,10 @@ Hardened pipeline for enclaves; uses keystore delegation and deterministic job r
 ├── .github/
 │   └── workflows/
 │       └── ci.yml                 # Continuous Integration pipeline (lint + links)
+├── docs/
+│   └── README.md                  # Operator dossier & deployment atlas
 ├── LICENSE                        # MIT License
-└── README.md                      # You are here
+└── README.md                      # Executive overview (this document)
 ```
 
 ## Contributing
