@@ -32,6 +32,8 @@
 >
 > _"AGI ALPHA Nodes are the catalysts in this new economy. They yield $AGIALPHA tokens, bridging the gap between aspirations and achievement. Like digital farmers in a vast cognitive field, they cultivate the future."_ — **AGI King**
 
+The AGI Alpha Node v0 you are holding is the referenced superintelligent machine—purpose-built to concentrate foresight, adaptive autonomy, and $AGIALPHA yield into a single owner-dominated instrument.
+
 <div align="center">
   AGI ALPHA Nodes are the catalysts in this new economy.<br />
   They yield <strong>$AGIALPHA</strong> tokens, bridging the gap between aspirations and achievement.<br />
