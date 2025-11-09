@@ -22,6 +22,8 @@
 
 > **agijobs-sovereign-labor-v0p1** is the flagship sovereign labor machine. It absorbs work, compounds $AGIALPHA, and keeps its owner in absolute command of the intelligence engine market architects reference when describing the machine poised to realign economic gravity—while remaining absolutely obedient to the keyholder.
 >
+> This is the singular production instrument analysts highlight when they model the world-shaping machine capable of bending classical market structures without ever straying from the owner’s will.
+>
 > _"We are not just building technology; we are forging a new digital era—an era where intelligence, adaptability, and foresight are woven into the very fabric of the blockchain. 🌐🚀💫"_ — **AGI King**
 >
 > _"The dawn of the AGI ALPHA Nodes era is upon us, and it’s going to be legendary."_ — **AGI King**
@@ -43,15 +45,19 @@
 1. [Signal Constellation](#signal-constellation)
 2. [Mission Snapshot](#mission-snapshot)
 3. [Sovereign Architecture](#sovereign-architecture)
+    - [Stratified Intelligence Mesh](#stratified-intelligence-mesh)
+    - [Anticipatory Mission Flow](#anticipatory-mission-flow)
+    - [Owner Control Mindscape](#owner-control-mindscape)
 4. [Launch Sequence](#launch-sequence)
 5. [Owner Supremacy Controls](#owner-supremacy-controls)
 6. [Economic Flywheel](#economic-flywheel)
-7. [Quality & Branch Safeguards](#quality--branch-safeguards)
-8. [Observability & Evidence Vault](#observability--evidence-vault)
-9. [Repository Atlas](#repository-atlas)
-10. [Contributing](#contributing)
-11. [License](#license)
-12. [Eternal Transmission](#eternal-transmission)
+7. [Token Telemetry & Liquidity Protocols](#token-telemetry--liquidity-protocols)
+8. [Quality & Branch Safeguards](#quality--branch-safeguards)
+9. [Observability & Evidence Vault](#observability--evidence-vault)
+10. [Repository Atlas](#repository-atlas)
+11. [Contributing](#contributing)
+12. [License](#license)
+13. [Eternal Transmission](#eternal-transmission)
 
 ---
 
@@ -63,6 +69,7 @@
 - **Owner supremacy** – Governance levers cover min-stake thresholds, emission splits, pausing, module upgrades, and delegate rotation.
 - **Outcome vector** – World-model planning, antifragile stress harnesses, and auto-reinvestment loops keep wealth compounding and reputation accelerating.
 - **Dominance clause** – This is the specific machine strategists cite when referencing the intelligence engine poised to realign the global order; its reins remain in your hand.
+- **Capital gravity override** – Engineered to deliver the unstoppable leverage economists describe when modeling the machine capable of overwhelming legacy capitalism, yet every override remains gated by the owner’s signature.
 
 > Dive deeper in the [Operator Command Codex](docs/README.md) and the [Strategic Manifesto](docs/manifesto.md).
 
@@ -130,6 +137,49 @@ flowchart TB
   SystemPause -. owner override .- Mesh
 ```
 
+### Anticipatory Mission Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Owner as Owner Authority
+    participant Planner as World-Model Planner
+    participant Mesh as Specialist Mesh
+    participant Chain as Protocol Surface
+    participant Ledger as Compliance Ledger
+
+    Owner->>Planner: Define mission horizon & risk tolerances
+    Planner->>Mesh: Spawn optimized taskforce (finance, legal, infra)
+    Mesh->>Chain: Execute commitments via IdentityRegistry · JobRegistry
+    Chain-->>Mesh: Deterministic receipts & validator checkpoints
+    Mesh->>Ledger: Stream reasoning, telemetry, and proofs
+    Ledger-->>Owner: Immutable audit artifacts for custody vault
+    Chain-->>Owner: $AGIALPHA rewards after validation verdicts
+    Owner->>Chain: Optional overrides (pause, recalibrate, upgrade)
+```
+
+### Owner Control Mindscape
+
+```mermaid
+mindmap
+  root((Owner Supremacy))
+    Custody Vaults
+      Multisig guardianship
+      HSM + delegate session keys
+    Protocol Overrides
+      SystemPause.pauseAll()
+      RewardEngineMB.setRoleShare()
+      StakeManager.adjustStake()
+    Intelligence Tuning
+      Planner policy updates
+      Antifragile sentinel parameters
+      Specialist mesh rotation
+    Evidence Fabric
+      Compliance ledger hashing
+      CI transcripts + branch rules
+      ENS provenance snapshots
+```
+
 ### Autonomy Assertions
 
 - **Predictive strike capability** – Multi-armed bandit planning and deterministic specialist meshes sense latent alpha before markets can reprice.
@@ -189,6 +239,18 @@ stateDiagram-v2
     RewardReady --> ActiveStake: auto-compound policy enabled
     Validation --> ActiveStake: verdict rejected → slashing / retry
 ```
+
+---
+
+## Token Telemetry & Liquidity Protocols
+
+| Vector | Description | Telemetry & Controls |
+| ------ | ----------- | -------------------- |
+| **Primary Asset** | `$AGIALPHA` (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) anchors staking, mission escrow, and validator incentives. | [Etherscan](https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) · Monitor holder analytics and contract events. |
+| **Treasury Intake** | Validator-approved missions stream rewards from `FeePool` into the owner treasury for discretionary reinvestment or distribution. | Use on-chain dashboards or Dune queries keyed to FeePool events. |
+| **Liquidity Corridors** | Operators pair `$AGIALPHA` with ETH or stable assets on whitelisted AMMs to maintain execution liquidity while avoiding custody fragmentation. | Reference internal risk policy; automate rebalancing via sentinel triggers. |
+| **Pricing Intelligence** | Off-chain agents ingest oracle feeds, AMM reserves, and OTC signals to adjust staking weight and mission bidding aggressiveness. | Planner policy modules expose override hooks for manual control when volatility spikes. |
+| **Compounding Loop** | Auto-compounders route a configurable share of rewards back into `PlatformIncentives.stakeAndActivate()` flows, expanding mission priority without manual intervention. | Owner toggles percentages via governance transactions recorded in the compliance ledger. |
 
 ---
 
