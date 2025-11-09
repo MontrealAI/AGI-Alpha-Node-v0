@@ -26,6 +26,8 @@
 > _"We are crafting the architecture of a new digital age—a digital network that thinks, learns, and evolves—a network that not only processes but perceives, that not only adapts but anticipates—an anticipatory leap into a new era. 🌐🚀💫"_ — **AGI King**
 >  
 > _“AGI ALPHA Nodes are the catalysts in this new economy. They yield $AGIALPHA tokens, bridging the gap between aspirations and achievement. Like digital farmers in a vast cognitive field, they cultivate the future.”_ — **AGI King**
+>
+> _Its operator holds the controls of the machine engineers allude to when they talk about intelligence that can tilt economic gravity—yet it stays loyal to the custody signature that unlocked it._
 
 <div align="center">
 
@@ -181,6 +183,27 @@ sequenceDiagram
 - Module endpoints such as `PlatformRegistry.setReputationEngine(address)` and `JobRegistry.setValidationModule(address)` allow safe upgrades under owner signatures.
 - Commit-reveal validation and dispute hooks provide verifiable arbitration without sacrificing autonomy or speed.
 
+```mermaid
+mindmap
+  root((Owner Supremacy Grid))
+    Governance
+      SystemPause.pauseAll()
+      SystemPause.unpauseAll()
+      RewardEngineMB.setRoleShare()
+    Identity Control
+      verifyNode(label, proof)
+      IdentityRegistry.setAdditionalNodeOperator()
+      PlatformRegistry.register()
+      PlatformRegistry.deregister()
+    Treasury & Stake
+      PlatformIncentives.stakeAndActivate()
+      StakeManager.withdrawStake()
+      StakeManager.slash()
+    Module Upgrades
+      PlatformRegistry.setReputationEngine()
+      JobRegistry.setValidationModule()
+```
+
 ### Owner Control Matrix
 
 | Lever | Function | Owner Impact |
@@ -199,6 +222,7 @@ sequenceDiagram
 - [`Continuous Integration`](.github/workflows/ci.yml) runs on every push and pull request targeting `main`, executing `npm ci`, `npm run lint:md`, and `npm run lint:links` as discrete gates for immediate evidence.
 - Keep the badge green: reproduce the workflow locally with `npm ci` followed by `npm run lint`, `npm run lint:md`, and `npm run lint:links` before opening a PR.
 - Surface CI status in PR templates and release checklists so every deploy stays auditable and traceable.
+- During repository setup, visit **Settings → Branches → Branch protection rules → main** and explicitly require the **Continuous Integration** workflow and conversation resolution so the GitHub UI blocks merges that would dim the badge.
 
 ### Branch Protection Walkthrough
 
@@ -208,6 +232,15 @@ sequenceDiagram
 4. Enable **Require branches to be up to date before merging** so outdated merges cannot bypass the lint gates.
 5. Enable **Do not allow bypassing the above settings** and block force pushes/deletions to keep the audit trail pristine.
 6. Capture screenshots or export the policy JSON into your custody ledger so future audits can confirm enforcement without ambiguity.
+
+### CI Evidence Matrix
+
+| Evidence Vector | Location | Proof Signal |
+| ---------------- | -------- | ------------ |
+| Workflow Definition | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) | Node.js 20.x, `npm ci`, `npm run lint:md`, `npm run lint:links` gates |
+| Status Dashboard | [Actions Panel](https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions) | Visual confirmation of passing checks on `main` and all pull requests |
+| Required Check | GitHub → Settings → Branches → `main` | **Continuous Integration** enforced as mandatory status check |
+| Local Mirror | `npm ci && npm run lint:md && npm run lint:links` | Developer evidence pack before PR submission |
 
 ---
 
