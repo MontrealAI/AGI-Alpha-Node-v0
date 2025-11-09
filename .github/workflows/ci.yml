@@ -37,7 +37,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run lint suite
+      - name: Run markdown lint
         env:
           CI: true
-        run: npm run lint
+        run: npm run lint:md
+
+      - name: Run link validation
+        env:
+          CI: true
+        run: npm run lint:links

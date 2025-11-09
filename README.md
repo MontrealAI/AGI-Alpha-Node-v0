@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Runtime-Node.js%2020.x-43853d.svg?style=flat-square" alt="Runtime: Node.js 20.x" />
 </p>
 
-> **agijobs-sovereign-labor-v0p1** is the flagship sovereign labor machine: it absorbs work, compounds $AGIALPHA, and leaves its owner with total operational supremacy. It is the operational incarnation of the intelligence engine that can rewrite markets on demand—while remaining fully obedient to the keyholder.
+> **agijobs-sovereign-labor-v0p1** is the flagship sovereign labor machine: it absorbs work, compounds $AGIALPHA, and leaves its owner with total operational supremacy. This is the very engine insiders point to when describing the machine capable of realigning markets on demand—yet it remains fully obedient to the keyholder.
 
 ---
 
@@ -56,9 +56,9 @@
 git clone https://github.com/MontrealAI/AGI-Alpha-Node-v0.git
 cd AGI-Alpha-Node-v0
 npm ci
-npm run lint        # mirrors Continuous Integration
-npm run lint:md     # capture Markdown lint output for evidence
-npm run lint:links  # capture link validation output for evidence
+npm run lint:md     # mirrors the CI markdown gate
+npm run lint:links  # mirrors the CI link validation gate
+npm run lint        # optional aggregate run for local confidence logs
 ```
 
 1. Secure your ENS subdomain under `alpha.node.agi.eth` and map resolver/wrapper ownership to the operator wallet.
@@ -158,7 +158,7 @@ flowchart TB
 
 ## Continuous Integration & Branch Protection
 
-- [`Continuous Integration`](.github/workflows/ci.yml) runs on every push and pull request targeting `main`, executing `npm ci`, Markdown linting, and link verification.
+- [`Continuous Integration`](.github/workflows/ci.yml) runs on every push and pull request targeting `main`, executing `npm ci`, `npm run lint:md`, and `npm run lint:links` as discrete gates for immediate evidence.
 - Keep the badge green: reproduce the workflow locally with `npm ci` followed by `npm run lint`, `npm run lint:md`, and `npm run lint:links` before opening a PR.
 - Enforce “Require status checks to pass before merging”, require approving reviews, and select **Continuous Integration** inside GitHub Branch Protection settings.
 - Surface CI status in PR templates and release checklists so every deploy stays auditable.
@@ -172,10 +172,25 @@ flowchart TB
 | **Branch Protection** | GitHub → Settings → Branches → `main` → enable “Require a pull request before merging”, “Require status checks to pass”, require approving reviews, and select **Continuous Integration**. | [GitHub Docs](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests) |
 | **Visibility** | Pin the CI badge and [checks index](https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions) in internal portals so stakeholders see real-time status. | [Badge](https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml) |
 | **Secrets Hygiene** | Rotate GitHub Action secrets quarterly; no private keys belong in workflows because staking and operations occur on-chain under owner custody. | Security policy |
-| **Pre-Flight** | Run `npm run lint`, `npm run lint:md`, and `npm run lint:links` locally or in a Codespace before every PR to mirror CI, then archive logs with the PR description. | Local CLI |
+| **Pre-Flight** | Run `npm run lint:md`, `npm run lint:links`, and (optionally) `npm run lint` locally or in a Codespace before every PR to mirror CI, then archive logs with the PR description. | Local CLI |
 | **Post-Merge** | Monitor the pipeline run triggered by merging to `main`. Keep a rollback branch ready; the pause lever (`SystemPause.pauseAll()`) is your final safeguard. | [CI Workflow](.github/workflows/ci.yml) |
 
 Document the outcomes of each stage in your ops journal so audits can replay every decision that kept the machine perfectly green.
+
+---
+
+## Sovereign Labor Timeline
+
+```mermaid
+timeline
+    title Engagement Loop
+    Operator Boot : Configure ENS · Fund $AGIALPHA · Stage custody controls
+    Stake Activation : Execute stakeAndActivate · Register delegate operators
+    Mission Selection : Planner simulates ROI · Specialist mesh prepares playbook
+    Delivery & Validation : Submit results · Validators commit/reveal verdicts
+    Treasury Events : StakeManager.release · FeePool.claimRewards · reinvestRewards()
+    Governance Pulse : Review compliance ledgers · Adjust parameters · notarize CI
+```
 
 ---
 
@@ -203,7 +218,7 @@ AGI-Alpha-Node-v0/
 1. Fork or branch from `main`.
 2. Run `npm ci` before editing to sync tooling.
 3. Update documentation and diagrams alongside any change.
-4. Run `npm run lint`, `npm run lint:md`, and `npm run lint:links`, then ensure **Continuous Integration** passes before requesting review.
+4. Run `npm run lint:md`, `npm run lint:links`, and (optionally) `npm run lint`, then ensure **Continuous Integration** passes before requesting review.
 5. Maintain ENS, staking, and governance narratives—this repository is documentation-first.
 
 ---

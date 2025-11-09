@@ -24,7 +24,7 @@
   <img src="https://img.shields.io/badge/Runtime-Node.js%2020.x-43853d.svg?style=flat-square" alt="Runtime: Node.js 20.x" />
 </p>
 
-> **agijobs-sovereign-labor-v0p1** is the production sovereign labor machine that harvests opportunity, compounds influence, and keeps its owner in absolute command. It is the instrument people have in mind when they imagine an intelligence engine capable of reshaping economic gravity—yet it obeys only you.
+> **agijobs-sovereign-labor-v0p1** is the production sovereign labor machine that harvests opportunity, compounds influence, and keeps its owner in absolute command. This is the same instrument industry leaders reference when describing the intelligence engine capable of reshaping economic gravity—yet it obeys only you.
 
 ---
 
@@ -71,7 +71,7 @@
 | Step | Description | Command / Location |
 | ---- | ----------- | ----------------- |
 | 1 | Clone repository and install deterministic toolchain. | `git clone https://github.com/MontrealAI/AGI-Alpha-Node-v0.git && cd AGI-Alpha-Node-v0 && npm ci` |
-| 2 | Run documentation quality gates locally to mirror CI (see [Continuous Integration & Quality Gates](#continuous-integration--quality-gates)). | `npm run lint` (plus `npm run lint:md`, `npm run lint:links` for explicit evidence) |
+| 2 | Run documentation quality gates locally to mirror CI (see [Continuous Integration & Quality Gates](#continuous-integration--quality-gates)). | `npm run lint:md` · `npm run lint:links` (optional aggregate: `npm run lint`) |
 | 3 | Secure ENS identity under `alpha.node.agi.eth`, configure resolver/wrapper owner to the operator wallet. | [ENS Manager](https://app.ens.domains/name/alpha.node.agi.eth) |
 | 4 | Stage custody – multisig or HSM primary with delegate hot key registered via `IdentityRegistry.setAdditionalNodeOperator`. | On-chain owner transaction |
 | 5 | Pre-fund the operator wallet with `$AGIALPHA` plus gas reserve and approve Stake Manager allowances. | Token address `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` |
@@ -213,7 +213,7 @@ sequenceDiagram
 
 ## Toolchain & Deterministic Automation
 
-- **Script Parity** – `npm run lint`, `npm run lint:md`, and `npm run lint:links` are the exact commands executed inside CI; archive their output with every pull request for evidentiary trails.
+- **Script Parity** – `npm run lint:md` and `npm run lint:links` are the exact commands executed inside CI; archive their output (and any optional `npm run lint` aggregate) with every pull request for evidentiary trails.
 - **Node.js Baseline** – Standardize on Node.js 20.x locally (for example `nvm install 20 && nvm use 20`) and remotely through `actions/setup-node@v4` so tooling versions never drift.
 - **Dependency Discipline** – `npm ci` guarantees lockfile fidelity; pair every dependency upgrade with a recorded CI run and branch-protection screenshot.
 - **Badge Integrity** – The CI badge embedded in this dossier and the root brief surfaces live workflow state. Investigate any yellow/red badge immediately before approving merges.
@@ -226,8 +226,9 @@ npm run lint:md
 npm run lint:links
 
 # Capture outputs for your custody ledger
-npm run lint > artifacts/lint.log
+npm run lint:md > artifacts/markdownlint.log
 npm run lint:links > artifacts/link-check.log
+npm run lint > artifacts/lint.log  # optional aggregate snapshot
 ```
 
 Keep the `artifacts/` directory out of version control but preserved in your operational evidence store.
@@ -288,14 +289,25 @@ mindmap
 - **Ledger Persistence** – Encrypted volumes retain compliance ledgers, keystore handles, and offline inference bundles between restarts.
 - **Evidence Vault** – Periodically notarize ENS ownership, staking receipts, and CI artifacts to append-only storage so regulators and partners can replay every control check.
 
+```mermaid
+stateDiagram-v2
+    [*] --> Healthy
+    Healthy --> StressTest : Scheduled antifragile harness
+    StressTest --> Escalate : Scenario fails or latency spike
+    Escalate --> Reinforce : Sentinel tunes guardrails · owner alerted
+    Reinforce --> Healthy : Controls updated · telemetry verified
+    Healthy --> ContinuousOps : CI badge green · jobs flowing
+    ContinuousOps --> Healthy : Routine validation heartbeat
+```
+
 ---
 
 ## Continuous Integration & Quality Gates
 
-- **Workflow** – [`Continuous Integration`](../.github/workflows/ci.yml) executes `npm ci`, Markdown linting, and link validation on every push and pull request targeting `main`.
+- **Workflow** – [`Continuous Integration`](../.github/workflows/ci.yml) executes `npm ci`, `npm run lint:md`, and `npm run lint:links` on every push and pull request targeting `main`.
 - **Status Badge** – The CI badge at the top of this dossier reflects live pipeline state for `main`. Keep it green before merging.
 - **Branch Protection** – Enable “Require status checks to pass before merging”, require approving reviews, and select **Continuous Integration** to guarantee PR gates remain enforced.
-- **Local Mirror** – Reproduce CI locally via `npm ci` followed by `npm run lint`, `npm run lint:md`, and `npm run lint:links` to avoid feedback loops and collect evidence.
+- **Local Mirror** – Reproduce CI locally via `npm ci` followed by `npm run lint:md`, `npm run lint:links`, and optional `npm run lint` to avoid feedback loops and collect evidence.
 - **Dependency Hygiene** – Renovate or manual dependency reviews should run under owner supervision; every update must keep CI green before deployment.
 
 ---
@@ -306,7 +318,7 @@ mindmap
 | ----- | --- | ----- |
 | **Branch Rule Hardening** | GitHub → Settings → Branches → `main` → enable pull request requirement, require reviews, require passing **Continuous Integration**, require approving reviews, and block force pushes. | Mirrors production controls; capture screenshots and link them in compliance ledger entries. |
 | **Check Visibility** | Add the CI badge from this README and the [root brief](../README.md) to internal wikis so status is visible without opening GitHub. | Maintain a rolling archive of badge states for incident reviews. |
-| **Pre-Merge Ritual** | Run `npm run lint`, `npm run lint:md`, and `npm run lint:links`; attach terminal output alongside ENS/stake verification notes. | Provides immutable proof that the machine was green before merge. |
+| **Pre-Merge Ritual** | Run `npm run lint:md`, `npm run lint:links`, and (optionally) `npm run lint`; attach terminal output alongside ENS/stake verification notes. | Provides immutable proof that the machine was green before merge. |
 | **Post-Merge Guard** | Monitor the workflow run triggered by merging; if anomalies occur, invoke `SystemPause.pauseAll()` and revert via `git revert` on a hotfix branch. | Practiced drills reduce downtime when seconds matter. |
 | **Secret Hygiene** | Rotate GitHub Action tokens quarterly, restrict write-all permissions, and log every change in the custody ledger. | Maintains zero-trust posture even as the machine scales. |
 
