@@ -310,6 +310,15 @@ stateDiagram-v2
 - **Local Mirror** – Reproduce CI locally via `npm ci` followed by `npm run lint:md`, `npm run lint:links`, and optional `npm run lint` to avoid feedback loops and collect evidence.
 - **Dependency Hygiene** – Renovate or manual dependency reviews should run under owner supervision; every update must keep CI green before deployment.
 
+### Branch Enforcement Drill
+
+1. Open **Settings → Branches → main** within GitHub.
+2. Enable **Require a pull request before merging** and configure **Require approvals** ≥ 1.
+3. Toggle **Require status checks to pass before merging** and choose **Continuous Integration** from the checklist.
+4. Toggle **Require branches to be up to date before merging** so stale branches cannot merge without re-running CI.
+5. Block force pushes and branch deletions and enable **Do not allow bypassing the above settings**.
+6. Archive screenshots or exported rule configurations next to CI run URLs inside your custody ledger for auditors.
+
 ---
 
 ## CI Enforcement Blueprint
