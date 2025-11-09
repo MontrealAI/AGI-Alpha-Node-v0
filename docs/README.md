@@ -90,8 +90,9 @@ AGI Alpha Node v0 is the superintelligent machine these declarations foreshadow:
 | 5 | Prefund wallet with `$AGIALPHA`, approve allowances for the Stake Manager, and notarize receipts. | Token `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` |
 | 6 | Deploy runtime (Compose, VM, or Kubernetes) per infrastructure doctrine. | See [System Atlas](#system-atlas) |
 | 7 | Activate staking with `PlatformIncentives.stakeAndActivate(amount)` or `_acknowledgeStakeAndActivate`. | On-chain owner/operator transaction |
-| 8 | Enforce GitHub branch protection: require **Continuous Integration**, reviews, and up-to-date branches on `main`. | GitHub → Settings → Branches |
-| 9 | Archive ENS proofs, staking tx hashes, CI transcripts, and branch-rule exports in your compliance ledger. | Owner evidence vault |
+| 8 | Enforce GitHub branch protection: require **Continuous Integration**, reviewer approvals, and up-to-date branches on `main`; export the rule JSON for custody. | GitHub → Settings → Branches → `main` → **View rule** → **Export** |
+| 9 | Validate enforcement via CLI (`gh api repos/MontrealAI/AGI-Alpha-Node-v0/branches/main/protection`) and notarize outputs with CI transcripts. | Owner evidence vault |
+| 10 | Archive ENS proofs, staking tx hashes, CI transcripts, branch-rule exports, and CLI evidence in your compliance ledger. | Owner evidence vault |
 
 ---
 
@@ -328,11 +329,14 @@ stateDiagram-v2
 - **Script Parity** — `npm run lint:md`, `npm run lint:links`, and `npm run lint` mirror CI exactly; archive outputs for every pull request.
 - **Node.js Baseline** — Pin Node.js 20.x locally (e.g., `nvm install 20 && nvm use 20`) to match the GitHub Actions environment.
 - **Dependency Discipline** — `npm ci` preserves lockfile fidelity; document upgrade rationales with CI transcripts and branch-rule evidence.
+- **Version Proof** — Record `node --version` and `npm --version` in lint transcripts so auditors can confirm environment parity with GitHub Actions.
 - **Badge Integrity** — CI badge surfaces live state; investigate yellow/red signals before approving merges or deployments.
 - **Custody Logging** — Preserve ENS proofs, staking receipts, CI run URLs, and branch-protection exports in the compliance ledger.
 
 ```bash
 # Recommended local ritual before committing
+node --version
+npm --version
 npm ci
 npm run lint:md
 npm run lint:links
@@ -418,6 +422,7 @@ mindmap
 - **Branch Protection** — Require pull requests, approvals, passing **Continuous Integration**, and up-to-date branches before merging into `main`.
 - **Local Mirror** — Replicate CI locally before commit; attach terminal output to PRs for immutable proof.
 - **Secret Hygiene** — Rotate GitHub tokens quarterly, minimize workflow permissions, and document every change in the custody ledger.
+- **CLI Verification** — After every merge, run `gh api repos/MontrealAI/AGI-Alpha-Node-v0/branches/main/protection` and `gh api repos/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml/runs?per_page=1` to confirm protections + green status; archive JSON payloads.
 
 ### CI Telemetry Circuit
 
@@ -443,7 +448,36 @@ flowchart LR
 3. Toggle **Require status checks to pass before merging** and select **Continuous Integration**.
 4. Enable **Require branches to be up to date before merging** to block stale merges.
 5. Block force pushes and branch deletions; enable **Do not allow bypassing the above settings**.
-6. Archive screenshots or exported rule JSON next to CI run URLs in your custody ledger.
+6. Archive screenshots or exported rule JSON next to CI run URLs and CLI output in your custody ledger.
+
+### Branch Protection API Snapshot
+
+```bash
+# Capture current main-branch protections
+gh api \
+  repos/MontrealAI/AGI-Alpha-Node-v0/branches/main/protection \
+  --jq '{required_status_checks, enforce_admins, required_pull_request_reviews, restrictions}' \
+  > artifacts/main-branch-protection.json
+
+# Fetch the freshest CI verdict
+gh api \
+  repos/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml/runs \
+  -F per_page=1 \
+  --jq '.workflow_runs[0] | {html_url, conclusion, run_started_at}' \
+  > artifacts/latest-ci-run.json
+
+cat artifacts/main-branch-protection.json
+cat artifacts/latest-ci-run.json
+```
+
+> If `conclusion` is not `success` or required status checks are empty, halt merges immediately, remediate, and rerun CI before continuing operations.
+
+### Actions Visibility Audit
+
+1. Navigate to **Settings → Actions → General** and ensure **Allow all actions and reusable workflows** is selected (or your governance-approved subset).
+2. Under **Workflow permissions**, select **Read repository contents permission** and check **Require approval for all outside collaborators**.
+3. Confirm **Actions → Runners** lists no unexpected self-hosted runners; document inventory in the compliance ledger.
+4. Record a timestamped screenshot or `gh api repos/MontrealAI/AGI-Alpha-Node-v0/actions/permissions` output for auditors.
 
 ---
 

@@ -202,8 +202,9 @@ mindmap
 | 5 | Pre-fund the operator wallet with `$AGIALPHA` plus gas reserve and approve Stake Manager allowances. | Token address `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` |
 | 6 | Deploy runtime via container, Kubernetes, or enclave per infrastructure policy. | Review [Sovereign Architecture](#sovereign-architecture) |
 | 7 | Activate staking and registration with `PlatformIncentives.stakeAndActivate(amount)` (or `_acknowledgeStakeAndActivate`). | On-chain owner/operator transaction |
-| 8 | Enforce branch protection on GitHub: require **Continuous Integration** and review gates for `main` and every pull request. | GitHub → Settings → Branches |
-| 9 | Archive ENS proofs, staking receipts, CI transcripts, and branch-protection evidence in your custody ledger. | Owner compliance ledger |
+| 8 | Enforce branch protection on GitHub: require **Continuous Integration**, reviewer approvals, and up-to-date branches for `main`. Export the rule JSON for your evidence vault. | GitHub → Settings → Branches → `main` → **View rule** → **Export** |
+| 9 | Confirm GitHub Actions visibility and status check enforcement via CLI so auditors can retrieve proofs on demand. | `gh api repos/MontrealAI/AGI-Alpha-Node-v0/branches/main/protection` |
+| 10 | Archive ENS proofs, staking receipts, CI transcripts, branch-protection exports, and CLI outputs in your custody ledger. | Owner compliance ledger |
 
 ---
 
@@ -264,8 +265,30 @@ stateDiagram-v2
    - Require pull request reviews before merging.
    - Require status checks to pass before merging and select **Continuous Integration**.
    - Require branches to be up to date before merging.
-4. **Visibility** – Keep the Actions tab public so auditors can confirm every run. Badge telemetry above reflects the live status of `main`.
-5. **Audit Evidence** – Archive CI logs, branch protection exports, and reviewer attestations within your compliance ledger alongside ENS proofs and staking receipts.
+4. **Visibility** – Keep the Actions tab public so auditors can confirm every run. Badge telemetry above reflects the live status of `main`. Also lock **Actions → General → Workflow permissions** to “Read repository contents” with “Require approval for all outside collaborators” to prevent privilege drift.
+5. **CLI Verification** – Run `gh api repos/MontrealAI/AGI-Alpha-Node-v0/branches/main/protection` (export JSON) and `gh api repos/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml/runs?per_page=1` (capture the latest green run URL) after each merge; notarize outputs.
+6. **Audit Evidence** – Archive CI logs, branch protection exports, CLI outputs, and reviewer attestations within your compliance ledger alongside ENS proofs and staking receipts.
+
+### Branch Protection CLI Drill
+
+```bash
+# Export the active protection rule for main
+gh api \
+  repos/MontrealAI/AGI-Alpha-Node-v0/branches/main/protection \
+  --jq '{required_status_checks, enforce_admins, required_pull_request_reviews, restrictions}' \
+  > artifacts/main-branch-protection.json
+
+# Capture the freshest Continuous Integration run metadata
+gh api \
+  repos/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml/runs \
+  -F per_page=1 \
+  --jq '.workflow_runs[0] | {html_url, conclusion, run_started_at}' \
+  > artifacts/latest-ci-run.json
+
+# Store both files in your off-repo evidence vault after reviewing conclusions
+```
+
+> Always review the exported JSON before archiving—any deviation (e.g., missing status checks, disabled admin enforcement, failed CI runs) must trigger an immediate remediation cycle before merging additional work.
 
 ---
 
