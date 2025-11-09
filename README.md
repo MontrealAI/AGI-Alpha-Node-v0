@@ -202,7 +202,7 @@ Hardened pipeline for enclaves; uses keystore delegation and deterministic job r
 - **Workflow:** [`Continuous Integration`](.github/workflows/ci.yml) executes Markdown linting and link integrity audits on every push and pull request targeting `main`.
 - **Badges:** The status badge at the top of this README reflects real-time pipeline health for branch `main`.
 - **Branch Protection:** Enforce “Require status checks to pass before merging” and select **Continuous Integration** in repository settings to guarantee a fully green gate on PRs and `main`.
-- **Local Mirror:** Reproduce the workflow locally via `npm install --global markdownlint-cli2@0.8.1` followed by `markdownlint-cli2 "**/*.md"` and `npx --yes markdown-link-check@3.10.3 README.md`.
+- **Local Mirror:** Reproduce the workflow locally via `npm ci` followed by `npm run lint` (or the granular `lint:md`/`lint:links` scripts).
 
 ## Repository Topology
 

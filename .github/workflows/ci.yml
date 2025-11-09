@@ -24,13 +24,11 @@ jobs:
           node-version: "20"
           cache: npm
 
-      - name: Install quality toolchain
-        run: npm install --global markdownlint-cli2@0.8.1 markdownlint-cli2-formatter-pretty@0.1.2
+      - name: Install dependencies
+        run: npm ci
 
       - name: Markdown style audit
-        run: markdownlint-cli2 "**/*.md" "!**/node_modules/**"
-        env:
-          MARKDOWNLINT_CONFIG: ""
+        run: npm run lint:md
 
       - name: Link integrity audit
-        run: npx --yes markdown-link-check@3.10.3 README.md --quiet
+        run: npm run lint:links
