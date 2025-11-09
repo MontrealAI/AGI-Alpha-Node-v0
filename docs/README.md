@@ -54,6 +54,16 @@
 - **Outcome Vector** – Deterministic planning, antifragile stress harnesses, and automated reinvestment loops compound protocol presence and wealth accrual continuously.
 - **Dominance Clause** – This node is the reference artifact for the economic realignment machine you were promised; the owner retains a simple interface to throttle or unleash it.
 
+## Capability Signatures
+
+| Signal | Description | Inspect |
+| ------ | ----------- | ------- |
+| **Docs & Mission Briefs** | Root and deep documentation stay co-evolved; this codex is version-locked to [`README.md`](../README.md). | [`docs/`](./) |
+| **Quality Gates** | [`package.json`](../package.json) scripts `lint`, `lint:md`, and `lint:links` mirror the CI workflow so local runs perfectly match GitHub enforcement. | [`package.json`](../package.json) |
+| **Pipeline Enforcement** | [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) pins Node.js 20.x, installs dependencies via `npm ci`, and executes the full lint suite on pushes and pull requests. | [CI Workflow](../.github/workflows/ci.yml) |
+| **Operator Iconography** | The crest served from [`../1.alpha.node.agi.eth.svg`](../1.alpha.node.agi.eth.svg) anchors ENS-branded deployments and is referenced consistently across readmes. | [`1.alpha.node.agi.eth.svg`](../1.alpha.node.agi.eth.svg) |
+| **Token Canon** | `$AGIALPHA` contract `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals) drives every treasury operation; links resolve to live Etherscan telemetry. | [Etherscan](https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) |
+
 ---
 
 ## Launch Trajectory
@@ -198,6 +208,29 @@ sequenceDiagram
 - **Antifragile Sentinel** – Injects adversarial simulations, escalates guardrails, and tunes difficulty cursors so volatility strengthens, never weakens, performance.
 - **Compliance Ledger** – Every reasoning chain is hashed for audit anchors, dispute resolution, and regulatory reporting.
 - **Autopilot Evolution** – Continuous curriculum learning adjusts task difficulty targets, ensuring capability growth without human micromanagement.
+
+---
+
+## Toolchain & Deterministic Automation
+
+- **Script Parity** – `npm run lint`, `npm run lint:md`, and `npm run lint:links` are the exact commands executed inside CI; archive their output with every pull request for evidentiary trails.
+- **Node.js Baseline** – Standardize on Node.js 20.x locally (for example `nvm install 20 && nvm use 20`) and remotely through `actions/setup-node@v4` so tooling versions never drift.
+- **Dependency Discipline** – `npm ci` guarantees lockfile fidelity; pair every dependency upgrade with a recorded CI run and branch-protection screenshot.
+- **Badge Integrity** – The CI badge embedded in this dossier and the root brief surfaces live workflow state. Investigate any yellow/red badge immediately before approving merges.
+- **Custody Logging** – Store ENS proofs, staking receipts, and lint transcripts in the same audit vault that captures CI run URLs and branch-protection settings.
+
+```bash
+# Recommended local ritual before committing
+npm ci
+npm run lint:md
+npm run lint:links
+
+# Capture outputs for your custody ledger
+npm run lint > artifacts/lint.log
+npm run lint:links > artifacts/link-check.log
+```
+
+Keep the `artifacts/` directory out of version control but preserved in your operational evidence store.
 
 ---
 
