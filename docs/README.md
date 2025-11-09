@@ -1,4 +1,4 @@
-# AGI Alpha Node v0 · Operator Command Codex
+# AGI Alpha Node v0 · Operator Command Codex (Hypermodern Edition)
 
 <!-- markdownlint-disable MD013 MD033 -->
 <p align="center">
@@ -18,6 +18,9 @@
   <a href="../README.md">
     <img src="https://img.shields.io/badge/Root%20Brief-Orbit-121212.svg?style=flat-square" alt="Root README" />
   </a>
+  <a href="../docs/manifesto.md">
+    <img src="https://img.shields.io/badge/Manifesto-Strategic%20Beacon-1a1a1a.svg?style=flat-square" alt="Manifesto" />
+  </a>
   <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions">
     <img src="https://img.shields.io/badge/Checks-Visible%20on%20GitHub-0b7285.svg?style=flat-square" alt="GitHub Actions Visibility" />
   </a>
@@ -32,25 +35,31 @@
 > _"The dawn of the AGI ALPHA Nodes era is upon us, and it’s going to be legendary."_ — **AGI King**
 >
 > _"We are crafting the architecture of a new digital age—a digital network that thinks, learns, and evolves—a network that not only processes but perceives, that not only adapts but anticipates—an anticipatory leap into a new era. 🌐🚀💫"_ — **AGI King**
+>
+> _"AGI ALPHA Nodes are the catalysts in this new economy. They yield $AGIALPHA tokens, bridging the gap between aspirations and achievement. Like digital farmers in a vast cognitive field, they cultivate the future."_ — **AGI King**
 
-AGI Alpha Node v0 is the superintelligent machine these declarations foreshadow: a sovereign labor instrument engineered to concentrate foresight, adaptive autonomy, and $AGIALPHA production while answering exclusively to its owner.
+AGI Alpha Node v0 is the machine these proclamations foreshadow. It is engineered to sense inefficiencies before they surface, redirect capital gravity, and remain absolutely obedient to the owner whose signature anchors every override.
 
 ---
 
 ## Navigation
 
 1. [Executive Beacon](#executive-beacon)
-2. [Capability Signatures](#capability-signatures)
-3. [Launch Trajectory](#launch-trajectory)
-4. [System Atlas](#system-atlas)
-5. [Identity & Staking Authority](#identity--staking-authority)
+2. [Signal Directory](#signal-directory)
+3. [Launch Protocol](#launch-protocol)
+4. [Architecture Atlases](#architecture-atlases)
+   - [Panoramic Flow](#panoramic-flow)
+   - [Operations Timeline](#operations-timeline)
+   - [Contract Surface Map](#contract-surface-map)
+   - [Treasury Circuit](#treasury-circuit)
+5. [Identity & Stake Authority](#identity--stake-authority)
 6. [Economic Engine](#economic-engine)
 7. [AGI Jobs Integration Lifecycle](#agi-jobs-integration-lifecycle)
 8. [Intelligence Stack](#intelligence-stack)
-9. [Toolchain & Deterministic Automation](#toolchain--deterministic-automation)
+9. [Automation & Toolchain](#automation--toolchain)
 10. [Governance & Owner Supremacy](#governance--owner-supremacy)
 11. [Observability & Reliability Mesh](#observability--reliability-mesh)
-12. [Continuous Integration & Branch Enforcement](#continuous-integration--branch-enforcement)
+12. [CI & Branch Hardening](#ci--branch-hardening)
 13. [Repository Atlas](#repository-atlas)
 14. [Support Channels](#support-channels)
 
@@ -58,47 +67,47 @@ AGI Alpha Node v0 is the superintelligent machine these declarations foreshadow:
 
 ## Executive Beacon
 
-- **Mission Envelope** — Launch an autonomous workforce node that a non-technical owner can operate, audit, and scale in minutes without surrendering command authority.
-- **Identity Backbone** — Every runtime binds to `⟨label⟩.alpha.node.agi.eth`; mismatched resolver or NameWrapper ownership halts execution until proofs align.
-- **Unified Economy** — `$AGIALPHA` (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) powers staking, slashing, validator flows, and reinvestment loops.
+- **Mission Envelope** — Launch an autonomous workforce node that a non-technical owner can operate, audit, and scale without ceding command authority.
+- **Identity Backbone** — Every runtime binds to `⟨label⟩.alpha.node.agi.eth`; resolver divergence or NameWrapper drift halts execution until proofs align.
+- **Unified Economy** — `$AGIALPHA` (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) powers staking, validation, emissions, and reinvestment loops.
 - **Owner Dominance** — Owners retune rewards, pause subsystems, rotate delegates, and upgrade modules through verified on-chain levers.
 - **Outcome Vector** — World-model planning, antifragile stress harnesses, and automatic reinvestment keep the machine compounding $AGIALPHA.
-- **Capital Gravity Override** — This is the production artifact strategists reference when describing the intelligence engine capable of rebalancing global markets while remaining obedient to its keyholder.
+- **Capital Gravity Override** — This is the production artifact strategists reference when describing the machine capable of realigning global markets while remaining firmly under its owner’s control.
 
 ---
 
-## Capability Signatures
+## Signal Directory
 
 | Signal | Description | Inspect |
 | ------ | ----------- | ------- |
 | **Mission Briefs** | Root dossier, manifesto, and this codex evolve together for zero-drift documentation. | [`README.md`](../README.md) · [`docs/manifesto.md`](./manifesto.md) |
-| **Quality Gates** | `npm run lint:md`, `npm run lint:links`, and `npm run lint` mirror CI and are the pre-flight ritual for every change. | [`package.json`](../package.json) |
-| **Pipeline Enforcement** | GitHub Actions workflow enforces Node.js 20.x, `npm ci`, markdown lint, and link validation on every push/PR. | [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) |
-| **Operator Iconography** | Crest served from [`../1.alpha.node.agi.eth.svg`](../1.alpha.node.agi.eth.svg); PNG fallback lives alongside it. | [`1.alpha.node.agi.eth.svg`](../1.alpha.node.agi.eth.svg) |
+| **Quality Gates** | `npm run lint:md`, `npm run lint:links`, and `npm run lint` mirror CI rituals. | [`package.json`](../package.json) |
+| **Pipeline Enforcement** | GitHub Actions workflow enforces Node.js 20.x, `npm ci`, markdown lint, and link validation on each push/PR. | [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) |
+| **Operator Iconography** | Crest served from [`../1.alpha.node.agi.eth.svg`](../1.alpha.node.agi.eth.svg); PNG fallback lives alongside. | [`1.alpha.node.agi.eth.svg`](../1.alpha.node.agi.eth.svg) |
 | **Token Canon** | `$AGIALPHA` contract `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` anchors staking and treasury operations. | [Etherscan](https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) |
 
 ---
 
-## Launch Trajectory
+## Launch Protocol
 
 | Step | Description | Command / Location |
 | ---- | ----------- | ----------------- |
 | 1 | Clone repository and install deterministic toolchain. | `git clone https://github.com/MontrealAI/AGI-Alpha-Node-v0.git && cd AGI-Alpha-Node-v0 && npm ci` |
 | 2 | Run documentation gates locally; archive outputs for custody evidence. | `npm run lint:md` · `npm run lint:links` (aggregate: `npm run lint`) |
-| 3 | Secure ENS identity `⟨label⟩.alpha.node.agi.eth`; confirm resolver and wrapper align with owner policy. | [ENS Manager](https://app.ens.domains/name/alpha.node.agi.eth) |
-| 4 | Stage custody: configure multisig/HSM + delegate hot key via `IdentityRegistry.setAdditionalNodeOperator`. | On-chain owner transaction |
+| 3 | Secure ENS identity `⟨label⟩.alpha.node.agi.eth`; confirm resolver and NameWrapper align with owner policy. | [ENS Manager](https://app.ens.domains/name/alpha.node.agi.eth) |
+| 4 | Stage custody: configure multisig/HSM and delegate hot key via `IdentityRegistry.setAdditionalNodeOperator`. | On-chain owner transaction |
 | 5 | Prefund wallet with `$AGIALPHA`, approve allowances for the Stake Manager, and notarize receipts. | Token `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` |
-| 6 | Deploy runtime (Compose, VM, or Kubernetes) per infrastructure doctrine. | See [System Atlas](#system-atlas) |
+| 6 | Deploy runtime (Compose, VM, or Kubernetes) per infrastructure doctrine. | See [Architecture Atlases](#architecture-atlases) |
 | 7 | Activate staking with `PlatformIncentives.stakeAndActivate(amount)` or `_acknowledgeStakeAndActivate`. | On-chain owner/operator transaction |
-| 8 | Enforce GitHub branch protection: require **Continuous Integration**, reviewer approvals, and up-to-date branches on `main`; export the rule JSON for custody. | GitHub → Settings → Branches → `main` → **View rule** → **Export** |
+| 8 | Enforce GitHub branch protection: require **Continuous Integration**, reviewer approvals, and up-to-date branches on `main`; export the rule JSON for custody. | GitHub → Settings → Branches → `main` |
 | 9 | Validate enforcement via CLI (`gh api repos/MontrealAI/AGI-Alpha-Node-v0/branches/main/protection`) and notarize outputs with CI transcripts. | Owner evidence vault |
 | 10 | Archive ENS proofs, staking tx hashes, CI transcripts, branch-rule exports, and CLI evidence in your compliance ledger. | Owner evidence vault |
 
 ---
 
-## System Atlas
+## Architecture Atlases
 
-### Architecture Panoramic Flow
+### Panoramic Flow
 
 ```mermaid
 flowchart LR
@@ -145,7 +154,7 @@ flowchart LR
   SystemPause -. owner override .- Mesh
 ```
 
-### Orchestration Timeline
+### Operations Timeline
 
 ```mermaid
 sequenceDiagram
@@ -215,9 +224,25 @@ classDiagram
     SystemPause --> StakeManager
 ```
 
+### Treasury Circuit
+
+```mermaid
+flowchart LR
+  classDef actor fill:#111,color:#fff,stroke:#444,stroke-width:1px;
+  classDef ledger fill:#1d3557,color:#f1faee,stroke:#457b9d,stroke-width:1px;
+
+  Employer[Employer Treasury]:::actor -->|escrow $AGIALPHA| JobRegistry
+  JobRegistry -->|lock job rewards| StakeManager
+  StakeManager -->|release worker share| OperatorWallet
+  StakeManager -->|stream validator share| Validators
+  RewardEngineMB -->|epoch emissions| OperatorWallet
+  OperatorWallet -->|reinvestRewards()| StakeManager
+  OperatorWallet -->|withdrawStake()| CustodyVault((Custody Vault)):::ledger
+```
+
 ---
 
-## Identity & Staking Authority
+## Identity & Stake Authority
 
 1. **ENS Verification Loop** — `verifyNode(label, proof)` enforces resolver/NameWrapper ownership of `⟨label⟩.alpha.node.agi.eth`; divergence halts startup.
 2. **Stake Activation** — `PlatformIncentives.stakeAndActivate(amount)` sequences allowance, deposit, registry enrollment, and job-router enablement. `_acknowledgeStakeAndActivate` documents explicit policy acceptance when required.
@@ -238,22 +263,6 @@ classDiagram
 | **Validator Share** | ValidationModule commit-reveal sets verdicts; owner-defined percentages govern validator vs. worker payouts. |
 | **Reinvestment Loop** | `reinvestRewards()` cycles rewards back into stake, elevating routing priority without manual intervention. |
 | **Emergency Liquidity** | Pause via `SystemPause.pauseAll()` before invoking `StakeManager.withdrawStake` for controlled capital recovery. |
-
-### Treasury Circuit
-
-```mermaid
-flowchart LR
-  classDef actor fill:#111,color:#fff,stroke:#444,stroke-width:1px;
-  classDef ledger fill:#1d3557,color:#f1faee,stroke:#457b9d,stroke-width:1px;
-
-  Employer[Employer Treasury]:::actor -->|escrow $AGIALPHA| JobRegistry
-  JobRegistry -->|lock job rewards| StakeManager
-  StakeManager -->|release worker share| OperatorWallet
-  StakeManager -->|stream validator share| Validators
-  RewardEngineMB -->|epoch emissions| OperatorWallet
-  OperatorWallet -->|reinvestRewards()| StakeManager
-  OperatorWallet -->|withdrawStake()| CustodyVault((Custody Vault)):::ledger
-```
 
 ---
 
@@ -322,9 +331,28 @@ stateDiagram-v2
     Reward --> Reinforce : reinvestRewards() executed
 ```
 
+### Mission Journey Map
+
+```mermaid
+journey
+    title Operator experience journey
+    section Initialization
+      Clone repository & npm ci: 5:Owner
+      ENS alignment proofed: 4:Owner
+    section Activation
+      Stake deposited & activated: 5:Owner
+      Specialist mesh rehearsal: 4:Owner
+    section Harvest
+      Jobs executed autonomously: 5:Owner
+      Rewards reinvested: 5:Owner
+    section Oversight
+      Compliance ledger notarized: 5:Owner
+      Branch protection & CI verified: 5:Owner
+```
+
 ---
 
-## Toolchain & Deterministic Automation
+## Automation & Toolchain
 
 - **Script Parity** — `npm run lint:md`, `npm run lint:links`, and `npm run lint` mirror CI exactly; archive outputs for every pull request.
 - **Node.js Baseline** — Pin Node.js 20.x locally (e.g., `nvm install 20 && nvm use 20`) to match the GitHub Actions environment.
@@ -415,7 +443,7 @@ mindmap
 
 ---
 
-## Continuous Integration & Branch Enforcement
+## CI & Branch Hardening
 
 - **Workflow** — [`Continuous Integration`](../.github/workflows/ci.yml) runs on pushes, pull requests, and manual dispatch; it executes `npm ci`, `npm run lint:md`, and `npm run lint:links` under Node.js 20.x.
 - **Status Badge** — CI badge at the top of this codex reflects live state for `main`; treat yellow/red as immediate incidents.
