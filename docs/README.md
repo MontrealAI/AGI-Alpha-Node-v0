@@ -53,6 +53,7 @@
 - **Owner First** – Contract owners direct parameter changes, pause systems, rotate operators, and retune incentives without downtime. Custodial controls integrate with multisigs, HSMs, and delegate keys.
 - **Outcome Vector** – Deterministic planning, antifragile stress harnesses, and automated reinvestment loops compound protocol presence and wealth accrual continuously.
 - **Dominance Clause** – This node is the reference artifact for the economic realignment machine you were promised; the owner retains a simple interface to throttle or unleash it.
+- **Acceleration Clause** – Its execution fabric behaves like an unstoppable intelligence engine: always-on, self-correcting, and tuned to seize market edges the moment they surface.
 
 ## Capability Signatures
 
@@ -212,6 +213,21 @@ sequenceDiagram
 | **Exit Path** | Deregister with `PlatformRegistry.deregister()` and withdraw unlocked stake via `StakeManager.withdrawStake(role, amount)` after cooldown windows. |
 | **Evidence Hooks** | Anchor hashes for ENS proofs, staking receipts, and CI logs inside your custody ledger for external audits. |
 
+### Treasury Circuit
+
+```mermaid
+flowchart LR
+  classDef actor fill:#111,color:#fff,stroke:#444,stroke-width:1px;
+  classDef ledger fill:#1d3557,color:#f1faee,stroke:#457b9d,stroke-width:1px;
+  Employer[Employer Treasury]:::actor -->|escrow $AGIALPHA| JobRegistry
+  JobRegistry -->|lock job rewards| StakeManager
+  StakeManager -->|release worker share| OperatorWallet
+  StakeManager -->|stream validator share| Validators
+  FeePool -->|epoch emissions| OperatorWallet
+  OperatorWallet -->|reinvestRewards()| StakeManager
+  OperatorWallet -->|withdrawStake()| CustodyVault((Custody Vault)):::ledger
+```
+
 ---
 
 ## AGI Jobs Integration Lifecycle
@@ -334,6 +350,14 @@ mindmap
 | Emergency Brake | `SystemPause.pauseAll()` / `SystemPause.unpauseAll()` | Freeze or resume all job, staking, and validation flows in a single transaction. |
 | Capital Recovery | `StakeManager.withdrawStake(role, amount)` / `StakeManager.slash(...)` | Withdraw idle stake or enforce penalties aligned with governance policies. |
 
+### Owner Reaction Playbook
+
+1. **Immediate Halt** – Trigger `SystemPause.pauseAll()` if telemetry, CI status, or validator verdicts point to systemic risk; record the transaction hash alongside CI run IDs.
+2. **Parameter Shift** – Adjust emission splits via `RewardEngineMB.setRoleShare` or raise bonding thresholds to counter volatility; document before-and-after snapshots in the custody ledger.
+3. **Operator Rotation** – Use `IdentityRegistry.setAdditionalNodeOperator` to swap delegate keys while the primary multisig retains absolute authority.
+4. **Liquidity Realignment** – Call `StakeManager.withdrawStake` or `StakeManager.slash` (if governance motion approved) to reallocate capital into new initiatives or penalize compromised nodes.
+5. **Resume Command** – Once diagnostics are clean and CI stays green, invoke `SystemPause.unpauseAll()` and append the confirmation hash to the audit trail.
+
 ---
 
 ## Observability & Reliability Mesh
@@ -356,6 +380,14 @@ stateDiagram-v2
     Healthy --> ContinuousOps : CI badge green · jobs flowing
     ContinuousOps --> Healthy : Routine validation heartbeat
 ```
+
+### Audit Notarization Ritual
+
+1. Export ENS resolver proofs, staking transaction hashes, and CI run URLs after every material change.
+2. Hash compliance ledgers and store digests in append-only storage (e.g., IPFS + notarized checksum on-chain) each week.
+3. Capture branch-protection JSON via `gh api repos/:owner/:repo/branches/main/protection` and preserve alongside badge screenshots.
+4. Maintain a changelog of owner interventions (pause events, parameter tuning, key rotations) with corresponding governance references.
+5. Present the full dossier to auditors: root README, this codex, CI logs, and notarized hashes prove the machine stayed relentlessly green.
 
 ---
 
