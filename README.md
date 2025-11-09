@@ -14,26 +14,29 @@
   <a href="https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa"><img src="https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-ff3366.svg?style=flat-square" alt="$AGIALPHA Token" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-0a0a0a.svg?style=flat-square" alt="License: MIT" /></a>
   <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions"><img src="https://img.shields.io/badge/Checks-Visible%20on%20GitHub-0b7285.svg?style=flat-square" alt="GitHub Actions Visibility" /></a>
+  <img src="https://img.shields.io/badge/Branch%20Protection-Enforced-1f2933.svg?style=flat-square" alt="Branch Protection" />
   <img src="https://img.shields.io/badge/Runtime-Node.js%2020.x-43853d.svg?style=flat-square" alt="Runtime: Node.js 20.x" />
 </p>
 
-> **agijobs-sovereign-labor-v0p1** is the flagship sovereign labor machine: it absorbs work, compounds $AGIALPHA, and leaves its owner with total operational supremacy. This is the very engine insiders point to when describing the machine capable of realigning markets on demand—yet it remains fully obedient to the keyholder.
+> **agijobs-sovereign-labor-v0p1** is the flagship sovereign labor machine. It absorbs work, compounds $AGIALPHA, and gives its owner immediate command over the apparatus people whisper about when discussing machines that can tilt global markets—while remaining fully obedient to the keyholder.
 
 ---
 
 ## Navigation
 
 1. [Mission Pulse](#mission-pulse)
-2. [Quick Launch Vector](#quick-launch-vector)
-3. [Architecture Snapshot](#architecture-snapshot)
-4. [Identity, Staking & Treasury](#identity-staking--treasury)
-5. [Intelligence & Autonomy Stack](#intelligence--autonomy-stack)
-6. [Governance & Safety Controls](#governance--safety-controls)
+2. [Operator Launch Sequence](#operator-launch-sequence)
+3. [Operational Prism](#operational-prism)
+4. [Identity, Staking & Treasury Control](#identity-staking--treasury-control)
+5. [Autonomy & Intelligence Stack](#autonomy--intelligence-stack)
+6. [Owner Command & Safety Lattice](#owner-command--safety-lattice)
 7. [Continuous Integration & Branch Protection](#continuous-integration--branch-protection)
-8. [CI & Deployment Checklist](#ci--deployment-checklist)
-9. [Repository Layout](#repository-layout)
-10. [Contributing](#contributing)
-11. [License](#license)
+8. [Operational Quality Checklist](#operational-quality-checklist)
+9. [Deployment & Observability Mesh](#deployment--observability-mesh)
+10. [Sovereign Labor Timeline](#sovereign-labor-timeline)
+11. [Repository Layout](#repository-layout)
+12. [Contributing](#contributing)
+13. [License](#license)
 
 ---
 
@@ -44,13 +47,13 @@
 - **Unified economy** – `$AGIALPHA` (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) powers staking, slashing, rewards, and reinvestment. No ETH settlement paths exist in production flows.
 - **Owner supremacy** – Governance levers cover min-stake thresholds, emission splits, pausing, module upgrades, and delegate rotation.
 - **Outcome** – Deterministic world-model planning, antifragile stress harnesses, and auto-reinvestment loops keep wealth compounding and reputation accelerating.
-- **Field supremacy** – The node is engineered to be the asset referenced when people speak about machines that could overturn legacy economic orders; you hold the reins.
+- **Field dominance** – The node is engineered to be the asset referenced when people speak about machines that can overturn legacy economic orders; you hold the reins.
 
 > Dive deeper in the [Operator Command Codex](docs/README.md).
 
 ---
 
-## Quick Launch Vector
+## Operator Launch Sequence
 
 ```bash
 git clone https://github.com/MontrealAI/AGI-Alpha-Node-v0.git
@@ -70,7 +73,9 @@ npm run lint        # optional aggregate run for local confidence logs
 
 ---
 
-## Architecture Snapshot
+## Operational Prism
+
+### Architecture Flow
 
 ```mermaid
 flowchart TB
@@ -82,7 +87,7 @@ flowchart TB
 
     subgraph SovereignNode[agijobs-sovereign-labor-v0p1]
         Planner[[World-Model Planner]]
-        Orchestrator[[Specialist Mesh]]
+        Mesh[[Specialist Agent Mesh]]
         Sentinel[[Antifragile Sentinel]]
         Ledger[(Compliance Ledger)]
         Telemetry[[Telemetry Bus]]
@@ -100,22 +105,40 @@ flowchart TB
 
     Wallet --> IdentityRegistry
     Wallet --> StakeManager
-    Console --> Orchestrator
-    Orchestrator --> Planner
+    Console --> Mesh
+    Mesh --> Planner
     Planner --> JobRegistry
     JobRegistry --> ValidationModule
     ValidationModule --> FeePool
     FeePool --> StakeManager
-    StakeManager --> Wallet
-    Orchestrator --> Telemetry
+    Mesh --> Telemetry
     Telemetry --> Alerts
     Sentinel --> Planner
     SystemPause -. owner override .- Planner
 ```
 
+### Execution Loop
+
+```mermaid
+sequenceDiagram
+    participant Operator
+    participant Planner
+    participant Orchestrator
+    participant Validators
+    participant Treasury
+
+    Operator->>Planner: Stake & verify ENS anchor
+    Planner->>Orchestrator: Select mission via world-model planning
+    Orchestrator->>Validators: Submit result for commit/reveal scrutiny
+    Validators-->>Orchestrator: Final verdict & metadata
+    Orchestrator->>Treasury: Trigger StakeManager.release & FeePool.claimRewards
+    Treasury-->>Operator: $AGIALPHA rewards & reinvestment signals
+    Operator-->>Planner: Adjust policy, update curriculum cursor
+```
+
 ---
 
-## Identity, Staking & Treasury
+## Identity, Staking & Treasury Control
 
 - `verifyNode(label, proof)` locks every runtime to its ENS identity and halts if resolver/NameWrapper ownership diverges.
 - `PlatformIncentives.stakeAndActivate(amount)` sequences allowance, deposit, registry enrollment, and job router registration in one transaction.
@@ -125,7 +148,7 @@ flowchart TB
 
 ---
 
-## Intelligence & Autonomy Stack
+## Autonomy & Intelligence Stack
 
 - **World-model planner** – Multi-armed bandit simulations forecast ROI, curriculum fit, and specialist synergy before any bid is placed.
 - **Specialist mesh** – Deterministic micro-agents (finance, legal, infra, biotech, creative, compliance) coordinate through an orchestrator with sub-millisecond overhead.
@@ -135,12 +158,12 @@ flowchart TB
 
 ---
 
-## Governance & Safety Controls
+## Owner Command & Safety Lattice
 
 - `SystemPause.pauseAll()` and `unpauseAll()` give owners immediate stop/resume authority across Job Registry, Stake Manager, Validation Module, and allied components.
 - Emission tuning flows through `RewardEngineMB.setRoleShare(role, shareBps)` and validator percentage setters.
 - `PlatformRegistry.register()` / `deregister()` plus Identity Registry allowlists enable rapid operator rotation or quarantine of compromised keys.
-- Module endpoints such as `PlatformRegistry.setReputationEngine` and `JobRegistry.setValidationModule` allow safe upgrades under owner signatures.
+- Module endpoints such as `PlatformRegistry.setReputationEngine(address)` and `JobRegistry.setValidationModule(address)` allow safe upgrades under owner signatures.
 - Commit-reveal validation and dispute hooks provide verifiable arbitration without sacrificing autonomy or speed.
 
 ### Owner Control Matrix
@@ -173,7 +196,7 @@ flowchart TB
 
 ---
 
-## CI & Deployment Checklist
+## Operational Quality Checklist
 
 | Stage | Owner Action | Reference |
 | ----- | ------------ | --------- |
@@ -184,6 +207,21 @@ flowchart TB
 | **Post-Merge** | Monitor the pipeline run triggered by merging to `main`. Keep a rollback branch ready; the pause lever (`SystemPause.pauseAll()`) is your final safeguard. | [CI Workflow](.github/workflows/ci.yml) |
 
 Document the outcomes of each stage in your ops journal so audits can replay every decision that kept the machine perfectly green.
+
+---
+
+## Deployment & Observability Mesh
+
+| Profile | Launch Vector | Owner Notes |
+| ------- | ------------- | ----------- |
+| **One-Click Compose** | `docker compose --profile core up --build` using the provided sample environment. | Ideal for rapid pilots; mounts volumes for ledgers, telemetry, and keystore artifacts so restarts remain deterministic. |
+| **Hardened VM** | Provision Ubuntu LTS, install Docker + Node.js 20.x, then run the same compose bundle in an air-gapped subnet. | Pair with an HSM or remote keystore service; restrict outbound traffic to Ethereum RPC, IPFS gateways, and approved webhooks. |
+| **Kubernetes / Helm** | Scaffold a chart (`helm create agi-alpha-node` or `kompose convert`) and push it to your internal registry, then `helm install agi-alpha-node <your-chart-ref> -f values.yaml`. | Enables rolling upgrades, replica orchestration, and integration with Prometheus/Grafana stacks out of the box. |
+| **Enterprise Mesh** | Deploy multiple ENS identities (one container per identity) behind a service mesh or API gateway. | Each identity maintains its own stake, ledger, and custody profile; mesh distributes job intake according to planner telemetry. |
+
+- **Offline resilience** – Runtime tolerates API outages by falling back to local inference bundles; deterministic replay keeps compliance ledgers verifiable even in disconnected enclaves.
+- **Secrets discipline** – Load hot keys from Vault/HSM endpoints via environment variables (`KEYSTORE_URL`, `KEYSTORE_TOKEN`) or mount encrypted keyfiles; never bake secrets into images.
+- **Observability autopilot** – Prometheus scrapes `/metrics`, Alertmanager fans critical events into PagerDuty/Slack, and Grafana dashboards (SLOs, antifragility, treasury) ship as JSON for instant import.
 
 ---
 
