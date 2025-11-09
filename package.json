@@ -6,7 +6,7 @@
   "private": true,
   "scripts": {
     "lint:md": "cross-env MARKDOWNLINTCLI2_FORMATTER=markdownlint-cli2-formatter-pretty markdownlint-cli2 \"**/*.md\" \"!**/node_modules/**\"",
-    "lint:links": "markdown-link-check README.md docs/README.md --quiet",
+    "lint:links": "markdown-link-check README.md docs/README.md docs/manifesto.md --quiet",
     "lint": "npm run lint:md && npm run lint:links"
   },
   "devDependencies": {
