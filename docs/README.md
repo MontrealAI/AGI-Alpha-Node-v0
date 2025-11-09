@@ -130,6 +130,19 @@ flowchart LR
   SystemPause -. owner override .- Planner
 ```
 
+### Deployment Flight Deck
+
+| Profile | Launch Vector | Owner Notes |
+| ------- | ------------- | ----------- |
+| **One-Click Compose** | `docker compose --profile core up --build` using the provided sample environment. | Ideal for rapid pilots; mounts volumes for ledgers, telemetry, and keystore artifacts so restarts remain deterministic. |
+| **Hardened VM** | Provision Ubuntu LTS, install Docker + Node.js 20.x, then run the same compose bundle in an air-gapped subnet. | Pair with an HSM or remote keystore service; restrict outbound traffic to Ethereum RPC, IPFS gateways, and approved webhooks. |
+| **Kubernetes / Helm** | `helm install agi-alpha-node ./deploy/helm/agi-stack -f values.yaml` (or GitOps equivalent). | Enables rolling upgrades, replica orchestration, and integration with Prometheus/Grafana stacks out of the box. |
+| **Enterprise Mesh** | Deploy multiple ENS identities (one container per identity) behind a service mesh or API gateway. | Each identity maintains its own stake, ledger, and custody profile; mesh distributes job intake according to planner telemetry. |
+
+- **Offline resilience** – Runtime tolerates API outages by falling back to local inference bundles; deterministic replay keeps compliance ledgers verifiable even in disconnected enclaves.
+- **Secrets discipline** – Load hot keys from Vault/HSM endpoints via environment variables (`KEYSTORE_URL`, `KEYSTORE_TOKEN`) or mount encrypted keyfiles; never bake secrets into images.
+- **Observability autopilot** – Prometheus scrapes `/metrics`, Alertmanager fans critical events into PagerDuty/Slack, and Grafana dashboards (SLOs, antifragility, treasury) ship as JSON for instant import.
+
 ### CI Telemetry Circuit
 
 ```mermaid
@@ -201,6 +214,46 @@ sequenceDiagram
 
 ---
 
+## AGI Jobs Integration Lifecycle
+
+1. **Discovery** – Gateway subscribes to `JobCreated` events (or indexed subgraph) and filters opportunities through capability tags, stake level, and antifragility posture.
+2. **Identity Gate** – Before any bid, runtime resolves `⟨label⟩.alpha.node.agi.eth`; resolver vs. NameWrapper ownership mismatches halt execution and raise owner alerts.
+3. **Application** – `JobRegistry.applyForJob(jobId, label, proof)` locks the assignment; proofs can be ENS allowlists (Merkle) or live resolver checks.
+4. **Specialist Execution** – Planner hands the mission to the specialist mesh (finance, legal, biotech, infra, creative, compliance). Deterministic ledgers capture every reasoning frame for audit.
+5. **Submission** – `JobRegistry.submit(jobId, resultHash, resultURI)` anchors outputs; IPFS/Arweave URIs track artifacts, with hashes recorded on-chain.
+6. **Validation** – Validator swarm runs commit/reveal verdicts; the node simultaneously validates its own output and prepares dispute packages if ever challenged.
+7. **Settlement** – `StakeManager.release(jobId, worker, validators[], validatorShare)` streams `$AGIALPHA` to worker and validators. Epoch rewards are claimed via `FeePool.claimRewards` and optionally reinvested.
+8. **Reinforcement** – `stressTest()` harness updates antifragility posture, `reinvestRewards()` adjusts stake, and compliance ledgers notarize hashes to your custody vault.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Gateway
+    participant Planner
+    participant Specialists
+    participant JobRegistry
+    participant Validators
+    participant StakeManager
+    participant Owner
+
+    Gateway->>JobRegistry: Subscribe JobCreated
+    JobRegistry-->>Gateway: Jobs[jobId, tags, reward]
+    Gateway->>Planner: Feed filtered opportunities
+    Planner->>Owner: Alert if ENS/stake drift detected
+    Planner->>JobRegistry: applyForJob(jobId, label, proof)
+    JobRegistry-->>Planner: assignment(jobId)
+    Planner->>Specialists: Execute deterministic playbook
+    Specialists-->>Planner: resultHash · evidence bundle
+    Planner->>JobRegistry: submit(jobId, resultHash, URI)
+    Validators->>JobRegistry: commitRevealVerdicts(jobId)
+    JobRegistry->>StakeManager: release(jobId, worker, validators)
+    StakeManager-->>Planner: $AGIALPHA distribution
+    Planner->>Owner: Compliance ledger hash · telemetry snapshot
+    Planner->>StakeManager: reinvestRewards() · withdrawStake()
+```
+
+---
+
 ## Intelligence Stack
 
 - **World-Model Planner** – Multi-armed bandit simulations estimate ROI, curriculum fit, and specialist synergy before any bid is signed.
@@ -208,6 +261,8 @@ sequenceDiagram
 - **Antifragile Sentinel** – Injects adversarial simulations, escalates guardrails, and tunes difficulty cursors so volatility strengthens, never weakens, performance.
 - **Compliance Ledger** – Every reasoning chain is hashed for audit anchors, dispute resolution, and regulatory reporting.
 - **Autopilot Evolution** – Continuous curriculum learning adjusts task difficulty targets, ensuring capability growth without human micromanagement.
+- **Economic Reflexes** – Planner tracks ROI per capability, triggers `reinvestRewards()` when surplus accrues, and schedules liquidity events via `StakeManager.withdrawStake` when treasury buffers exceed policy thresholds.
+- **Validator Duality** – Optional validator mode commits verdicts with salted hashes, reveals within governance windows, and collects validator share percentages for compounding authority.
 
 ---
 
@@ -243,6 +298,7 @@ Keep the `artifacts/` directory out of version control but preserved in your ope
 - **Operator Rotation** – `PlatformRegistry.register()` / `deregister()` and Identity Registry allowlists let owners swap operators, rotate delegates, or quarantine compromised keys.
 - **Module Upgrades** – Owner-guarded setters (e.g., `PlatformRegistry.setReputationEngine`, `JobRegistry.setValidationModule`) permit module evolution while preserving audit trails.
 - **Dispute Hooks** – Commit-reveal validation plus optional dispute modules give owners verifiable, trustless arbitration levers.
+- **Audit Anchors** – Compliance ledgers push hashes to append-only storage, and ENS text records (e.g., `agijobs:v2:node`) memorialize operator metadata for ecosystem discovery.
 
 ### Control Mindmap
 
@@ -288,6 +344,7 @@ mindmap
 - **Alert Lattice** – PagerDuty, Slack, and webhook integrations trigger on stake erosion, pause events, validator summons, or unusual latency.
 - **Ledger Persistence** – Encrypted volumes retain compliance ledgers, keystore handles, and offline inference bundles between restarts.
 - **Evidence Vault** – Periodically notarize ENS ownership, staking receipts, and CI artifacts to append-only storage so regulators and partners can replay every control check.
+- **Blackout Recovery** – Offline bundles allow the node to keep operating without external APIs; once connectivity returns, ledgers sync and stake operations continue without manual intervention.
 
 ```mermaid
 stateDiagram-v2
