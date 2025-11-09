@@ -13,6 +13,7 @@
   <a href="https://app.ens.domains/name/alpha.node.agi.eth"><img src="https://img.shields.io/badge/ENS-alpha.node.agi.eth-6f3aff.svg?style=flat-square" alt="ENS Verified" /></a>
   <a href="https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa"><img src="https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-ff3366.svg?style=flat-square" alt="$AGIALPHA Token" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-0a0a0a.svg?style=flat-square" alt="License: MIT" /></a>
+  <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions"><img src="https://img.shields.io/badge/Checks-Visible%20on%20GitHub-0b7285.svg?style=flat-square" alt="GitHub Actions Visibility" /></a>
   <img src="https://img.shields.io/badge/Runtime-Node.js%2020.x-43853d.svg?style=flat-square" alt="Runtime: Node.js 20.x" />
 </p>
 
@@ -56,15 +57,15 @@ git clone https://github.com/MontrealAI/AGI-Alpha-Node-v0.git
 cd AGI-Alpha-Node-v0
 npm ci
 npm run lint        # mirrors Continuous Integration
-npm run lint:md     # optional focused Markdown sweep
-npm run lint:links  # optional focused link validation
+npm run lint:md     # capture Markdown lint output for evidence
+npm run lint:links  # capture link validation output for evidence
 ```
 
 1. Secure your ENS subdomain under `alpha.node.agi.eth` and map resolver/wrapper ownership to the operator wallet.
 2. Register delegate keys with `IdentityRegistry.setAdditionalNodeOperator` if using multisig or HSM custody.
 3. Fund the operator wallet with `$AGIALPHA` plus gas, approve Stake Manager allowances, then execute `PlatformIncentives.stakeAndActivate(amount)` (or `_acknowledgeStakeAndActivate`).
 4. Deploy the runtime via container, Kubernetes, or enclave workflows described in the [codex](docs/README.md#system-constellation).
-5. Enforce GitHub branch protections: require **Continuous Integration** on every PR and `main` push so the badge stays green.
+5. Enforce GitHub branch protections: require **Continuous Integration**, approving reviews, and status check visibility on every PR and `main` push so the badge stays green.
 6. Record proof of ENS control, staking tx hashes, and CI output in your custody ledger to satisfy audits and institutional policy.
 
 ---
@@ -158,8 +159,8 @@ flowchart TB
 ## Continuous Integration & Branch Protection
 
 - [`Continuous Integration`](.github/workflows/ci.yml) runs on every push and pull request targeting `main`, executing `npm ci`, Markdown linting, and link verification.
-- Keep the badge green: reproduce the workflow locally with `npm ci` followed by `npm run lint` before opening a PR.
-- Enforce “Require status checks to pass before merging” and select **Continuous Integration** inside GitHub Branch Protection settings.
+- Keep the badge green: reproduce the workflow locally with `npm ci` followed by `npm run lint`, `npm run lint:md`, and `npm run lint:links` before opening a PR.
+- Enforce “Require status checks to pass before merging”, require approving reviews, and select **Continuous Integration** inside GitHub Branch Protection settings.
 - Surface CI status in PR templates and release checklists so every deploy stays auditable.
 
 ---
@@ -168,10 +169,10 @@ flowchart TB
 
 | Stage | Owner Action | Reference |
 | ----- | ------------ | --------- |
-| **Branch Protection** | GitHub → Settings → Branches → `main` → enable “Require a pull request before merging”, “Require status checks to pass” and select **Continuous Integration**. | [GitHub Docs](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests) |
-| **Visibility** | Pin the CI badge from this README in internal portals so stakeholders see real-time status. | [Badge](https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml) |
+| **Branch Protection** | GitHub → Settings → Branches → `main` → enable “Require a pull request before merging”, “Require status checks to pass”, require approving reviews, and select **Continuous Integration**. | [GitHub Docs](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests) |
+| **Visibility** | Pin the CI badge and [checks index](https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions) in internal portals so stakeholders see real-time status. | [Badge](https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml) |
 | **Secrets Hygiene** | Rotate GitHub Action secrets quarterly; no private keys belong in workflows because staking and operations occur on-chain under owner custody. | Security policy |
-| **Pre-Flight** | Run `npm run lint` locally or in a Codespace before every PR to mirror CI, then archive logs with the PR description. | Local CLI |
+| **Pre-Flight** | Run `npm run lint`, `npm run lint:md`, and `npm run lint:links` locally or in a Codespace before every PR to mirror CI, then archive logs with the PR description. | Local CLI |
 | **Post-Merge** | Monitor the pipeline run triggered by merging to `main`. Keep a rollback branch ready; the pause lever (`SystemPause.pauseAll()`) is your final safeguard. | [CI Workflow](.github/workflows/ci.yml) |
 
 Document the outcomes of each stage in your ops journal so audits can replay every decision that kept the machine perfectly green.
@@ -189,6 +190,7 @@ AGI-Alpha-Node-v0/
 │       └── ci.yml                # Continuous Integration workflow
 ├── docs/
 │   └── README.md                 # Operator command codex
+├── node_modules/                 # Local tooling cache (generated, not committed)
 ├── package.json                  # Lint scripts and metadata
 ├── package-lock.json             # Deterministic npm lockfile
 └── README.md                     # This mission brief
@@ -201,7 +203,7 @@ AGI-Alpha-Node-v0/
 1. Fork or branch from `main`.
 2. Run `npm ci` before editing to sync tooling.
 3. Update documentation and diagrams alongside any change.
-4. Run `npm run lint` and ensure **Continuous Integration** passes before requesting review.
+4. Run `npm run lint`, `npm run lint:md`, and `npm run lint:links`, then ensure **Continuous Integration** passes before requesting review.
 5. Maintain ENS, staking, and governance narratives—this repository is documentation-first.
 
 ---

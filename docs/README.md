@@ -16,7 +16,10 @@
     <img src="https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-ff3366.svg?style=flat-square" alt="$AGIALPHA Contract" />
   </a>
   <a href="../README.md">
-    <img src="https://img.shields.io/badge/Root%20README-Orbit-121212.svg?style=flat-square" alt="Root Readme" />
+    <img src="https://img.shields.io/badge/Root%20README-Orbit-121212.svg?style=flat-square" alt="Root README" />
+  </a>
+  <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions">
+    <img src="https://img.shields.io/badge/Checks-Visible%20on%20GitHub-0b7285.svg?style=flat-square" alt="GitHub Actions Visibility" />
   </a>
   <img src="https://img.shields.io/badge/Runtime-Node.js%2020.x-43853d.svg?style=flat-square" alt="Runtime: Node.js 20.x" />
 </p>
@@ -58,14 +61,14 @@
 | Step | Description | Command / Location |
 | ---- | ----------- | ----------------- |
 | 1 | Clone repository and install deterministic toolchain. | `git clone https://github.com/MontrealAI/AGI-Alpha-Node-v0.git && cd AGI-Alpha-Node-v0 && npm ci` |
-| 2 | Run documentation quality gates locally to mirror CI. | `npm run lint` (optionally `npm run lint:md`, `npm run lint:links`) |
+| 2 | Run documentation quality gates locally to mirror CI (see [Continuous Integration & Quality Gates](#continuous-integration--quality-gates)). | `npm run lint` (plus `npm run lint:md`, `npm run lint:links` for explicit evidence) |
 | 3 | Secure ENS identity under `alpha.node.agi.eth`, configure resolver/wrapper owner to the operator wallet. | [ENS Manager](https://app.ens.domains/name/alpha.node.agi.eth) |
 | 4 | Stage custody – multisig or HSM primary with delegate hot key registered via `IdentityRegistry.setAdditionalNodeOperator`. | On-chain owner transaction |
 | 5 | Pre-fund the operator wallet with `$AGIALPHA` plus gas reserve and approve Stake Manager allowances. | Token address `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` |
 | 6 | Deploy runtime via container, Kubernetes, or enclave per infrastructure policy. | Refer to [System Constellation](#system-constellation) |
 | 7 | Activate staking and registration with `PlatformIncentives.stakeAndActivate(amount)` (or `_acknowledgeStakeAndActivate`). | On-chain owner/operator transaction |
-| 8 | Enforce branch protection on GitHub: require **Continuous Integration** to pass for `main` and every pull request. | GitHub → Settings → Branches |
-| 9 | Archive ENS proofs, staking receipts, and CI transcripts in your custody ledger to maintain institutional audit trails. | Owner compliance ledger |
+| 8 | Enforce branch protection on GitHub: require **Continuous Integration** and review gates for `main` and every pull request. | GitHub → Settings → Branches |
+| 9 | Archive ENS proofs, staking receipts, CI transcripts, and branch-protection screenshots in your custody ledger to maintain institutional audit trails. | Owner compliance ledger |
 
 ---
 
@@ -117,6 +120,24 @@ flowchart LR
   SystemPause -. owner override .- Planner
 ```
 
+### CI Telemetry Circuit
+
+```mermaid
+flowchart LR
+  Commit[Commit or PR] --> GitHub[GitHub Actions]
+  GitHub -->|Checkout| Checkout
+  Checkout -->|npm ci| Dependencies
+  Dependencies -->|npm run lint:md| MarkdownLint
+  Dependencies -->|npm run lint:links| LinkCheck
+  MarkdownLint --> Results
+  LinkCheck --> Results
+  Results --> Badge[CI Badge · README]
+  Results --> BranchRules[Branch Protection]
+  BranchRules --> Merge[Merge Allowed]
+  Results --> AlertsCI[Owner Ledger / Alerts]
+  AlertsCI --> Operator
+```
+
 ### Execution Flightpath
 
 ```mermaid
@@ -166,6 +187,7 @@ sequenceDiagram
 | **Validator Share** | ValidationModule enforces commit-reveal verdicts; owner-set percentages govern worker versus validator payouts. |
 | **Reinvestment Loop** | `reinvestRewards()` claims accruals and cycles them back into stake, compounding routing priority and influence without manual intervention. |
 | **Exit Path** | Deregister with `PlatformRegistry.deregister()` and withdraw unlocked stake via `StakeManager.withdrawStake(role, amount)` after cooldown windows. |
+| **Evidence Hooks** | Anchor hashes for ENS proofs, staking receipts, and CI logs inside your custody ledger for external audits. |
 
 ---
 
@@ -228,7 +250,7 @@ mindmap
 
 - **Metrics Fabric** – Prometheus endpoints surface job throughput, success ratios, ROI curves, antifragility scores, gas consumption, and stake coverage.
 - **Structured Telemetry** – JSONL traces stream to SIEM targets; each log entry correlates on-chain tx hashes with agent reasoning steps.
-- **Health Automation** – Docker/Kubernetes manifests ship with liveness/readiness probes, restart policies, and rolling-upgrade safe points.
+- **Health Automation** – Docker/Kubernetes manifests ship with liveness/readiness probes, restart policies, and rolling-upgrade safe points. Document probe URLs and restart policies in ops runbooks alongside CI outputs.
 - **Alert Lattice** – PagerDuty, Slack, and webhook integrations trigger on stake erosion, pause events, validator summons, or unusual latency.
 - **Ledger Persistence** – Encrypted volumes retain compliance ledgers, keystore handles, and offline inference bundles between restarts.
 - **Evidence Vault** – Periodically notarize ENS ownership, staking receipts, and CI artifacts to append-only storage so regulators and partners can replay every control check.
@@ -239,8 +261,8 @@ mindmap
 
 - **Workflow** – [`Continuous Integration`](../.github/workflows/ci.yml) executes `npm ci`, Markdown linting, and link validation on every push and pull request targeting `main`.
 - **Status Badge** – The CI badge at the top of this dossier reflects live pipeline state for `main`. Keep it green before merging.
-- **Branch Protection** – Enable “Require status checks to pass before merging” and select **Continuous Integration** to guarantee PR gates remain enforced.
-- **Local Mirror** – Reproduce CI locally via `npm ci` followed by `npm run lint` to avoid feedback loops.
+- **Branch Protection** – Enable “Require status checks to pass before merging”, require approving reviews, and select **Continuous Integration** to guarantee PR gates remain enforced.
+- **Local Mirror** – Reproduce CI locally via `npm ci` followed by `npm run lint`, `npm run lint:md`, and `npm run lint:links` to avoid feedback loops and collect evidence.
 - **Dependency Hygiene** – Renovate or manual dependency reviews should run under owner supervision; every update must keep CI green before deployment.
 
 ---
@@ -249,9 +271,9 @@ mindmap
 
 | Stage | How | Notes |
 | ----- | --- | ----- |
-| **Branch Rule Hardening** | GitHub → Settings → Branches → `main` → enable pull request requirement, require reviews, require passing **Continuous Integration**, and block force pushes. | Mirrors production controls; document screenshot evidence for auditors. |
-| **Check Visibility** | Add the CI badge from this README and the [Operator Command Codex](../README.md) to internal wikis so status is visible without opening GitHub. | Keep a history of badge states for incident reviews. |
-| **Pre-Merge Ritual** | Run `npm run lint`, capture terminal output, and attach it to the PR description alongside ENS/stake verification notes. | Provides immutable proof that the machine was green before merge. |
+| **Branch Rule Hardening** | GitHub → Settings → Branches → `main` → enable pull request requirement, require reviews, require passing **Continuous Integration**, require approving reviews, and block force pushes. | Mirrors production controls; capture screenshots and link them in compliance ledger entries. |
+| **Check Visibility** | Add the CI badge from this README and the [root brief](../README.md) to internal wikis so status is visible without opening GitHub. | Maintain a rolling archive of badge states for incident reviews. |
+| **Pre-Merge Ritual** | Run `npm run lint`, `npm run lint:md`, and `npm run lint:links`; attach terminal output alongside ENS/stake verification notes. | Provides immutable proof that the machine was green before merge. |
 | **Post-Merge Guard** | Monitor the workflow run triggered by merging; if anomalies occur, invoke `SystemPause.pauseAll()` and revert via `git revert` on a hotfix branch. | Practiced drills reduce downtime when seconds matter. |
 | **Secret Hygiene** | Rotate GitHub Action tokens quarterly, restrict write-all permissions, and log every change in the custody ledger. | Maintains zero-trust posture even as the machine scales. |
 
@@ -270,6 +292,7 @@ AGI-Alpha-Node-v0/
 │       └── ci.yml                # Continuous Integration workflow (lint + link checks)
 ├── docs/
 │   └── README.md                 # Operator command codex (this document)
+├── node_modules/                 # Local tooling cache (generated, not committed)
 ├── package.json                  # Tooling metadata and lint scripts
 ├── package-lock.json             # Deterministic npm lockfile
 └── README.md                     # Root mission brief and quick links
