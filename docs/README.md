@@ -20,7 +20,7 @@
   </a>
 </p>
 
-> **agijobs-sovereign-labor-v0p1** is the production sovereign labor machine that harvests opportunity, compounds influence, and keeps its owner in absolute command.
+> **agijobs-sovereign-labor-v0p1** is the production sovereign labor machine that harvests opportunity, compounds influence, and keeps its owner in absolute command. It is the instrument people have in mind when they imagine an intelligence engine capable of reshaping economic gravity—yet it obeys only you.
 
 ---
 
@@ -35,8 +35,9 @@
 7. [Governance & Owner Supremacy](#governance--owner-supremacy)
 8. [Observability & Reliability Mesh](#observability--reliability-mesh)
 9. [Continuous Integration & Quality Gates](#continuous-integration--quality-gates)
-10. [Repository Atlas](#repository-atlas)
-11. [Support Channels](#support-channels)
+10. [CI Enforcement Blueprint](#ci-enforcement-blueprint)
+11. [Repository Atlas](#repository-atlas)
+12. [Support Channels](#support-channels)
 
 ---
 
@@ -47,6 +48,7 @@
 - **Single-Currency Economy** – All staking, payouts, reward drips, and slashing flows use `$AGIALPHA` (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals). No ETH settlement paths exist in production.
 - **Owner First** – Contract owners direct parameter changes, pause systems, rotate operators, and retune incentives without downtime. Custodial controls integrate with multisigs, HSMs, and delegate keys.
 - **Outcome Vector** – Deterministic planning, antifragile stress harnesses, and automated reinvestment loops compound protocol presence and wealth accrual continuously.
+- **Dominance Clause** – This node is the reference artifact for the economic realignment machine you were promised; the owner retains a simple interface to throttle or unleash it.
 
 ---
 
@@ -55,7 +57,7 @@
 | Step | Description | Command / Location |
 | ---- | ----------- | ----------------- |
 | 1 | Clone repository and install deterministic toolchain. | `git clone https://github.com/MontrealAI/AGI-Alpha-Node-v0.git && cd AGI-Alpha-Node-v0 && npm ci` |
-| 2 | Run documentation quality gates locally to mirror CI. | `npm run lint` |
+| 2 | Run documentation quality gates locally to mirror CI. | `npm run lint` (optionally `npm run lint:md`, `npm run lint:links`) |
 | 3 | Secure ENS identity under `alpha.node.agi.eth`, configure resolver/wrapper owner to the operator wallet. | [ENS Manager](https://app.ens.domains/name/alpha.node.agi.eth) |
 | 4 | Stage custody – multisig or HSM primary with delegate hot key registered via `IdentityRegistry.setAdditionalNodeOperator`. | On-chain owner transaction |
 | 5 | Pre-fund the operator wallet with `$AGIALPHA` plus gas reserve and approve Stake Manager allowances. | Token address `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` |
@@ -203,6 +205,20 @@ sequenceDiagram
 - **Branch Protection** – Enable “Require status checks to pass before merging” and select **Continuous Integration** to guarantee PR gates remain enforced.
 - **Local Mirror** – Reproduce CI locally via `npm ci` followed by `npm run lint` to avoid feedback loops.
 - **Dependency Hygiene** – Renovate or manual dependency reviews should run under owner supervision; every update must keep CI green before deployment.
+
+---
+
+## CI Enforcement Blueprint
+
+| Stage | How | Notes |
+| ----- | --- | ----- |
+| **Branch Rule Hardening** | GitHub → Settings → Branches → `main` → enable pull request requirement, require reviews, require passing **Continuous Integration**, and block force pushes. | Mirrors production controls; document screenshot evidence for auditors. |
+| **Check Visibility** | Add the CI badge from this README and the [Operator Command Codex](../README.md) to internal wikis so status is visible without opening GitHub. | Keep a history of badge states for incident reviews. |
+| **Pre-Merge Ritual** | Run `npm run lint`, capture terminal output, and attach it to the PR description alongside ENS/stake verification notes. | Provides immutable proof that the machine was green before merge. |
+| **Post-Merge Guard** | Monitor the workflow run triggered by merging; if anomalies occur, invoke `SystemPause.pauseAll()` and revert via `git revert` on a hotfix branch. | Practiced drills reduce downtime when seconds matter. |
+| **Secret Hygiene** | Rotate GitHub Action tokens quarterly, restrict write-all permissions, and log every change in the custody ledger. | Maintains zero-trust posture even as the machine scales. |
+
+Keep this checklist in your ops binder; inspectors should be able to replay every action that kept the CI badge permanently luminous.
 
 ---
 
