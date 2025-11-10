@@ -58,10 +58,27 @@ fi
 METRICS_PORT="${METRICS_PORT:-9464}"
 API_PORT="${API_PORT:-8080}"
 
+RPC_LOG_VALUE="[redacted]"
+if [ "$RPC_URL" != "" ]; then
+  RPC_LOG_VALUE=$(printf '%s' "$RPC_URL" \
+    | sed -E 's#://[^/@]+@#://***@#' \
+    | sed -E 's#^([a-zA-Z][a-zA-Z0-9+.-]*://[^/]+)/?.*#\1/...#')
+  if [ "$RPC_LOG_VALUE" = "$RPC_URL" ]; then
+    case "$RPC_URL" in
+      unix://*)
+        RPC_LOG_VALUE="unix://..."
+        ;;
+      *)
+        RPC_LOG_VALUE="[redacted]"
+        ;;
+    esac
+  fi
+fi
+
 echo "[entrypoint] configuration summary"
 printf '  node: %s.%s\n' "$NODE_LABEL" "$ENS_PARENT_DOMAIN"
 printf '  operator: %s\n' "$OPERATOR_ADDRESS"
-printf '  rpc: %s\n' "$RPC_URL"
+printf '  rpc: %s\n' "$RPC_LOG_VALUE"
 printf '  metrics_port: %s\n' "$METRICS_PORT"
 printf '  api_port: %s\n' "$API_PORT"
 
