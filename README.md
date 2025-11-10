@@ -90,7 +90,15 @@ This repository houses that machine. The runtime enforces ENS identity at activa
    npm ci
    ```
 
-2. **Verify Toolchain** – confirm Node.js ≥ 20 (`node --version`).
+2. **Verify Toolchain** – confirm Node.js ≥ 20 (`node --version`). If your environment ships an older binary, enforce the runtime baseline with
+
+   ```bash
+   npm install -g n
+   sudo n 20.19.5
+   hash -r
+   ```
+
+   The CLI and markdown link validation depend on the Web Streams API shipped in Node.js 20.18.1+, so running below that floor will surface `File is not defined` errors.
 3. **Generate ENS Checklist** – obtain the subdomain playbook for your label + operator:
 
    ```bash
