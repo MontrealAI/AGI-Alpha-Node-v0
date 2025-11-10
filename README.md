@@ -48,10 +48,11 @@ This repository houses that machine. The runtime enforces ENS identity at activa
 9. [Governance & Owner Supremacy](#governance--owner-supremacy)
 10. [Telemetry, Containerization & Deployment](#telemetry-containerization--deployment)
 11. [Quality Gates & CI](#quality-gates--ci)
-12. [Repository Atlas](#repository-atlas)
-13. [Contributing](#contributing)
-14. [License](#license)
-15. [Eternal Transmission](#eternal-transmission)
+12. [CI Enforcement Playbook](#ci-enforcement-playbook)
+13. [Repository Atlas](#repository-atlas)
+14. [Contributing](#contributing)
+15. [License](#license)
+16. [Eternal Transmission](#eternal-transmission)
 
 ---
 
@@ -302,6 +303,36 @@ All modules are pure functions backed by tests so you can integrate them into au
 * GitHub Actions workflow (`ci.yml`) runs linting (`markdownlint`, `markdown-link-check`) and Vitest suites on every push/PR; badge shows main-branch health.
 * Branch protection requires green checks; PRs cannot merge without passing lint + test gates.
 * Tests cover ENS normalization, staking adapters, governance payloads, token utilities, economic optimizer, and the new intelligence lattice modules.
+
+---
+
+## CI Enforcement Playbook
+
+```mermaid
+sequenceDiagram
+  participant Dev as Maintainer
+  participant GH as GitHub Actions
+  participant Main as main Branch
+  participant PR as Pull Request
+
+  Dev->>GH: Push / open PR
+  GH->>GH: Run lint + test jobs
+  GH-->>PR: Report status checks (pass/fail)
+  Dev->>GH: Re-run if necessary (workflow dispatch)
+  Dev->>Main: Enable branch protection (require status checks)
+  GH-->>Main: Enforce required checks before merge
+  Main-->>Dev: Reject merge if checks fail
+```
+
+To maintain a visible, verifiably green pipeline:
+
+1. **Enable Required Checks** – In repository settings, add the `Continuous Integration / Lint Markdown & Links` and `Continuous Integration / Unit & Integration Tests` jobs as required status checks for `main`.
+2. **Require Pull Request Reviews** – Combine the status checks with at least one approving review to prevent accidental merges during incident response.
+3. **Lock Direct Pushes** – Disable direct pushes to `main` so every contribution flows through CI-verifiable pull requests.
+4. **Surface Badges** – Keep the workflow badge pinned near the top of this README (already linked above) so external auditors can confirm the latest run.
+5. **Audit Logs** – Periodically export the Actions run history and store it with compliance artifacts to evidence continuous enforcement.
+
+These steps, together with the provided workflow, ensure all production merges remain provably green and traceable.
 
 ---
 
