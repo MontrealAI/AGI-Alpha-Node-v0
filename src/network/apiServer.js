@@ -41,6 +41,94 @@ function parseRequestBody(req) {
   });
 }
 
+function cloneValue(value) {
+  if (value === null) {
+    return null;
+  }
+  const valueType = typeof value;
+  if (valueType === 'bigint' || valueType === 'number' || valueType === 'boolean' || valueType === 'string') {
+    return value;
+  }
+  if (Array.isArray(value)) {
+    return value.map((entry) => cloneValue(entry));
+  }
+  if (valueType === 'object') {
+    const clone = {};
+    for (const [key, nested] of Object.entries(value)) {
+      clone[key] = cloneValue(nested);
+    }
+    return clone;
+  }
+  return value;
+}
+
+function sanitizeActions(actions) {
+  if (actions === undefined) {
+    return null;
+  }
+  if (!Array.isArray(actions)) {
+    throw new Error('actions must be an array');
+  }
+  return actions.map((action, index) => {
+    if (!action || typeof action !== 'object' || Array.isArray(action)) {
+      throw new Error(`actions[${index}] must be an object`);
+    }
+    if (typeof action.type !== 'string' || action.type.trim().length === 0) {
+      throw new Error(`actions[${index}].type must be a non-empty string`);
+    }
+    const sanitized = {};
+    for (const [key, value] of Object.entries(action)) {
+      if (key === 'type') {
+        sanitized.type = action.type.trim();
+      } else if (key === 'level') {
+        sanitized.level = typeof value === 'string' ? value.trim() : String(value);
+      } else if (key === 'reason') {
+        sanitized.reason = typeof value === 'string' ? value : String(value);
+      } else {
+        sanitized[key] = cloneValue(value);
+      }
+    }
+    if (!sanitized.type) {
+      sanitized.type = action.type.trim();
+    }
+    return sanitized;
+  });
+}
+
+function sanitizeNotices(notices) {
+  if (notices === undefined) {
+    return null;
+  }
+  if (!Array.isArray(notices)) {
+    throw new Error('notices must be an array');
+  }
+  return notices.map((notice, index) => {
+    if (notice === undefined || notice === null) {
+      return '';
+    }
+    if (typeof notice === 'string') {
+      return notice;
+    }
+    if (typeof notice === 'number' || typeof notice === 'boolean' || typeof notice === 'bigint') {
+      return String(notice);
+    }
+    throw new Error(`notices[${index}] must be a string, number, boolean, or bigint`);
+  });
+}
+
+function sanitizeContext(context) {
+  if (context === undefined) {
+    return null;
+  }
+  if (context === null) {
+    return null;
+  }
+  if (typeof context !== 'object' || Array.isArray(context)) {
+    throw new Error('context must be an object');
+  }
+  return cloneValue(context);
+}
+
 export function startAgentApi({
   port = 8080,
   offlineMode = false,
@@ -72,8 +160,25 @@ export function startAgentApi({
   let ownerDirectives = {
     priority: 'nominal',
     actions: [],
-    notices: []
+    notices: [],
+    context: {}
   };
+
+  function exportOwnerDirectives() {
+    return {
+      priority: ownerDirectives.priority,
+      actions: Array.isArray(ownerDirectives.actions)
+        ? ownerDirectives.actions.map((action) => cloneValue(action))
+        : [],
+      notices: Array.isArray(ownerDirectives.notices)
+        ? ownerDirectives.notices.map((notice) => (typeof notice === 'string' ? notice : String(notice)))
+        : [],
+      context:
+        ownerDirectives.context && typeof ownerDirectives.context === 'object'
+          ? cloneValue(ownerDirectives.context)
+          : {}
+    };
+  }
 
   if (jobLifecycle) {
     try {
@@ -204,7 +309,39 @@ export function startAgentApi({
       }
 
       if (req.method === 'GET' && req.url === '/governance/directives') {
-        jsonResponse(res, 200, { directives: ownerDirectives });
+        jsonResponse(res, 200, { directives: exportOwnerDirectives() });
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/directives') {
+        try {
+          const body = await parseRequestBody(req);
+          if (!body || typeof body !== 'object' || Array.isArray(body)) {
+            jsonResponse(res, 400, { error: 'Directive payload must be an object' });
+            return;
+          }
+          if (body.priority !== undefined && typeof body.priority !== 'string') {
+            jsonResponse(res, 400, { error: 'priority must be a string' });
+            return;
+          }
+          const sanitizedActions = sanitizeActions(body.actions);
+          const sanitizedNotices = sanitizeNotices(body.notices);
+          const sanitizedContext = sanitizeContext(body.context);
+          ownerDirectives = {
+            priority:
+              typeof body.priority === 'string' && body.priority.trim().length > 0
+                ? body.priority
+                : ownerDirectives.priority,
+            actions: sanitizedActions ?? ownerDirectives.actions,
+            notices: sanitizedNotices ?? ownerDirectives.notices,
+            context: sanitizedContext ?? ownerDirectives.context
+          };
+          metrics.governance.directivesUpdates += 1;
+          jsonResponse(res, 200, { directives: exportOwnerDirectives() });
+        } catch (error) {
+          logger.error(error, 'Failed to update owner directives via API');
+          jsonResponse(res, 400, { error: error.message });
+        }
         return;
       }
 
@@ -464,21 +601,24 @@ export function startAgentApi({
       if (!directives || typeof directives !== 'object') {
         return;
       }
-      ownerDirectives = {
-        priority: directives.priority ?? ownerDirectives.priority,
-        actions: Array.isArray(directives.actions)
-          ? directives.actions.map((action) => ({ ...action }))
-          : ownerDirectives.actions,
-        notices: Array.isArray(directives.notices) ? [...directives.notices] : ownerDirectives.notices
-      };
-      metrics.governance.directivesUpdates += 1;
+      try {
+        const sanitizedActions = sanitizeActions(directives.actions);
+        const sanitizedNotices = sanitizeNotices(directives.notices);
+        const sanitizedContext = sanitizeContext(directives.context);
+        ownerDirectives = {
+          priority:
+            typeof directives.priority === 'string' && directives.priority.trim().length > 0
+              ? directives.priority
+              : ownerDirectives.priority,
+          actions: sanitizedActions ?? ownerDirectives.actions,
+          notices: sanitizedNotices ?? ownerDirectives.notices,
+          context: sanitizedContext ?? ownerDirectives.context
+        };
+        metrics.governance.directivesUpdates += 1;
+      } catch (error) {
+        logger.error(error, 'Failed to set owner directives');
+      }
     },
-    getOwnerDirectives: () => ({
-      priority: ownerDirectives.priority,
-      actions: Array.isArray(ownerDirectives.actions)
-        ? ownerDirectives.actions.map((action) => ({ ...action }))
-        : [],
-      notices: Array.isArray(ownerDirectives.notices) ? [...ownerDirectives.notices] : []
-    })
+    getOwnerDirectives: () => exportOwnerDirectives()
   };
 }

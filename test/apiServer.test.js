@@ -111,7 +111,8 @@ describe('agent API server', () => {
     api.setOwnerDirectives({
       priority: 'critical',
       actions: [{ type: 'pause', level: 'critical' }],
-      notices: ['Stake deficit detected']
+      notices: ['Stake deficit detected'],
+      context: { meetsMinimum: false }
     });
 
     const directivesResponse = await fetch(`${baseUrl}/governance/directives`);
@@ -120,6 +121,7 @@ describe('agent API server', () => {
     expect(directivesPayload.directives.priority).toBe('critical');
     expect(Array.isArray(directivesPayload.directives.actions)).toBe(true);
     expect(directivesPayload.directives.actions[0].type).toBe('pause');
+    expect(directivesPayload.directives.context.meetsMinimum).toBe(false);
 
     const pauseResponse = await fetch(`${baseUrl}/governance/pause`, {
       method: 'POST',
@@ -184,8 +186,37 @@ describe('agent API server', () => {
     const stakeTopUpPayload = await stakeTopUpResponse.json();
     expect(stakeTopUpPayload.tx.to).toBe('0x0000000000000000000000000000000000000005');
 
+    const updateDirectivesResponse = await fetch(`${baseUrl}/governance/directives`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        priority: 'warning',
+        actions: [
+          {
+            type: 'resume',
+            level: 'warning',
+            reason: 'Stake posture nominal',
+            tx: { to: '0x0000000000000000000000000000000000000010', method: 'resumeAll' }
+          }
+        ],
+        notices: ['Operations can resume'],
+        context: { meetsMinimum: true, deficit: '0' }
+      })
+    });
+    expect(updateDirectivesResponse.status).toBe(200);
+    const updateDirectivesPayload = await updateDirectivesResponse.json();
+    expect(updateDirectivesPayload.directives.priority).toBe('warning');
+    expect(updateDirectivesPayload.directives.actions[0].type).toBe('resume');
+    expect(updateDirectivesPayload.directives.actions[0].level).toBe('warning');
+    expect(updateDirectivesPayload.directives.context.meetsMinimum).toBe(true);
+
+    const confirmDirectives = await fetch(`${baseUrl}/governance/directives`);
+    const confirmPayload = await confirmDirectives.json();
+    expect(confirmPayload.directives.priority).toBe('warning');
+    expect(confirmPayload.directives.context.meetsMinimum).toBe(true);
+
     const metrics = api.getMetrics();
-    expect(metrics.governance.directivesUpdates).toBeGreaterThanOrEqual(1);
+    expect(metrics.governance.directivesUpdates).toBeGreaterThanOrEqual(2);
     expect(metrics.governance.payloads).toBeGreaterThanOrEqual(5);
 
     const invalidResponse = await fetch(`${baseUrl}/governance/minimum-stake`, {
@@ -194,5 +225,12 @@ describe('agent API server', () => {
       body: JSON.stringify({ stakeManagerAddress: '0x0' })
     });
     expect(invalidResponse.status).toBe(400);
+
+    const invalidDirectives = await fetch(`${baseUrl}/governance/directives`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ actions: { type: 'pause' } })
+    });
+    expect(invalidDirectives.status).toBe(400);
   });
 });

@@ -57,6 +57,32 @@ describe('job lifecycle service', () => {
     expect(jobs[0].tags).toEqual(['alpha']);
   });
 
+  it('merges getOpenJobs results when registry exposes helper', async () => {
+    provider.getLogs.mockResolvedValue([]);
+
+    const jobId = '0x' + '33'.repeat(32);
+    const client = '0x0000000000000000000000000000000000000003';
+    const reward = 250n;
+    const deadline = 1_800_000_000n;
+    const getOpenJobs = vi.fn(async () => [[jobId, client, reward, deadline, 'ipfs://open', ['ops', 'urgent']]]);
+
+    const lifecycle = createJobLifecycle({
+      provider,
+      jobRegistryAddress: registryAddress,
+      contractFactory: () => ({ target: registryAddress, interface: iface, getOpenJobs })
+    });
+
+    const jobs = await lifecycle.discover({ maxJobs: 5 });
+    expect(getOpenJobs).toHaveBeenCalled();
+    expect(jobs).toHaveLength(1);
+    expect(jobs[0].jobId).toBe(jobId.toLowerCase());
+    expect(jobs[0].client).toBe(client);
+    expect(jobs[0].reward).toBe(reward);
+    expect(jobs[0].deadline).toBe(deadline);
+    expect(jobs[0].status).toBe('open');
+    expect(jobs[0].tags).toEqual(['ops', 'urgent']);
+  });
+
   it('applies, submits, and finalizes jobs using available contract methods', async () => {
     const normalizedJobId = zeroPadValue(keccak256(toUtf8Bytes('job-7')), 32);
 
