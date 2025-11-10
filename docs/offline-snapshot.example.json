@@ -1,0 +1,20 @@
+{
+  "label": "1",
+  "parentDomain": "alpha.node.agi.eth",
+  "ens": {
+    "resolvedAddress": "0x1234567890abcdef1234567890abcdef12345678",
+    "registryOwner": "0x1234567890abcdef1234567890abcdef12345678",
+    "wrapperOwner": "0x1234567890abcdef1234567890abcdef12345678"
+  },
+  "staking": {
+    "minimumStake": "1500000000000000000000",
+    "operatorStake": "1750000000000000000000",
+    "slashingPenalty": "0x0",
+    "lastHeartbeat": "1700000000",
+    "active": true
+  },
+  "rewards": {
+    "projectedPool": "2500",
+    "operatorShareBps": 1500
+  }
+}

@@ -1,4 +1,8 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { loadOfflineSnapshot } from '../src/services/offlineSnapshot.js';
 
 vi.mock('../src/services/ensVerifier.js', () => ({
   verifyNodeOwnership: vi.fn()
@@ -25,15 +29,28 @@ import { deriveOwnerDirectives } from '../src/services/controlPlane.js';
 import { runNodeDiagnostics } from '../src/orchestrator/nodeRuntime.js';
 
 describe('runNodeDiagnostics', () => {
-  const logger = {
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn()
-  };
+const logger = {
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn()
+};
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
+const tempDirs = new Set();
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
+afterEach(() => {
+  for (const dir of tempDirs) {
+    try {
+      fs.rmSync(dir, { recursive: true, force: true });
+    } catch {
+      // ignore cleanup issues
+    }
+    tempDirs.delete(dir);
+  }
+});
 
   it('logs NodeIdentityVerified and returns diagnostics when ENS ownership matches', async () => {
     verifyNodeOwnership.mockResolvedValue({
@@ -151,5 +168,86 @@ describe('runNodeDiagnostics', () => {
     expect(getStakeStatus).not.toHaveBeenCalled();
     expect(projectEpochRewards).not.toHaveBeenCalled();
     expect(deriveOwnerDirectives).not.toHaveBeenCalled();
+  });
+
+  it('supports offline snapshots when RPC connectivity is unavailable', async () => {
+    evaluateStakeConditions.mockReturnValue({
+      meets: false,
+      deficit: 200n,
+      penaltyActive: false,
+      heartbeatAgeSeconds: 120,
+      heartbeatStale: true,
+      shouldPause: false,
+      recommendedAction: 'increase-stake'
+    });
+    projectEpochRewards.mockReturnValue({
+      pool: 1500n,
+      operatorPortion: 240n,
+      operatorShareBps: 1600
+    });
+    deriveOwnerDirectives.mockReturnValue({
+      priority: 'warning',
+      actions: [
+        { type: 'stake-top-up', level: 'warning', reason: 'Increase stake', tx: { to: '0x0', data: '0x' } }
+      ],
+      notices: ['Offline diagnostics']
+    });
+
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'agi-node-runtime-'));
+    tempDirs.add(dir);
+    const snapshotPath = path.join(dir, 'snapshot.json');
+    fs.writeFileSync(
+      snapshotPath,
+      JSON.stringify(
+        {
+          label: '3',
+          ens: {
+            resolvedAddress: '0x0000000000000000000000000000000000000abc',
+            registryOwner: '0x0000000000000000000000000000000000000abc'
+          },
+          staking: {
+            minimumStake: '1000',
+            operatorStake: '800',
+            slashingPenalty: '0x0',
+            lastHeartbeat: '1700000000',
+            active: true
+          },
+          rewards: {
+            projectedPool: '1500',
+            operatorShareBps: 1600
+          }
+        },
+        null,
+        2
+      )
+    );
+    const offlineSnapshot = loadOfflineSnapshot(snapshotPath);
+
+    const diagnostics = await runNodeDiagnostics({
+      rpcUrl: 'https://unused.rpc',
+      label: '3',
+      parentDomain: 'alpha.node.agi.eth',
+      operatorAddress: '0x0000000000000000000000000000000000000abc',
+      offlineSnapshot,
+      logger
+    });
+
+    expect(verifyNodeOwnership).not.toHaveBeenCalled();
+    expect(getStakeStatus).not.toHaveBeenCalled();
+    expect(diagnostics.verification.success).toBe(true);
+    expect(diagnostics.stakeStatus).toEqual({
+      operator: null,
+      minimumStake: 1000n,
+      operatorStake: 800n,
+      active: true,
+      lastHeartbeat: 1_700_000_000n,
+      healthy: null,
+      slashingPenalty: 0n
+    });
+    expect(projectEpochRewards).toHaveBeenCalledWith(
+      expect.objectContaining({ projectedPool: '1500', operatorShareBps: 1600 })
+    );
+    expect(diagnostics.ownerDirectives.priority).toBe('warning');
+    expect(diagnostics.ownerDirectives.actions[0].type).toBe('stake-top-up');
   });
 });

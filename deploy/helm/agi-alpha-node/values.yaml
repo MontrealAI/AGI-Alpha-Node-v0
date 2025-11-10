@@ -1,0 +1,42 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/montrealai/agi-alpha-node-v0
+  tag: latest
+  pullPolicy: IfNotPresent
+
+env:
+  rpcUrl: "https://rpc.ankr.com/eth"
+  label: "1"
+  operatorAddress: "0x0000000000000000000000000000000000000000"
+  stakeManagerAddress: ""
+  platformIncentivesAddress: ""
+  systemPauseAddress: ""
+  desiredMinimumStake: ""
+  autoResume: false
+  projectedRewards: ""
+  offlineSnapshot: ""
+  metricsPort: 9464
+  intervalSeconds: 60
+
+service:
+  type: ClusterIP
+  port: 9464
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+serviceAccount:
+  create: true
+  name: ""

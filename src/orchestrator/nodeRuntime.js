@@ -6,6 +6,11 @@ import { projectEpochRewards } from '../services/rewards.js';
 import { startMonitoringServer } from '../telemetry/monitoring.js';
 import { formatTokenAmount } from '../utils/formatters.js';
 import { deriveOwnerDirectives } from '../services/controlPlane.js';
+import {
+  buildOfflineVerification,
+  buildOfflineStakeStatus,
+  buildOfflineRewardsProjection
+} from '../services/offlineSnapshot.js';
 
 export async function runNodeDiagnostics({
   rpcUrl,
@@ -18,17 +23,34 @@ export async function runNodeDiagnostics({
   desiredMinimumStake,
   autoResume = false,
   projectedRewards,
+  offlineSnapshot,
   logger = pino({ level: 'info', name: 'agi-alpha-node' })
 }) {
-  const provider = createProvider(rpcUrl);
-  logger.info({ rpcUrl }, 'Connected provider');
+  const offlineMode = Boolean(offlineSnapshot);
+  const provider = offlineMode ? null : createProvider(rpcUrl);
 
-  const verification = await verifyNodeOwnership({
-    provider,
-    label,
-    parentDomain,
-    expectedAddress: operatorAddress
-  });
+  if (offlineMode) {
+    logger.info(
+      { snapshotSource: offlineSnapshot?.source ?? 'in-memory' },
+      'Offline diagnostics engaged'
+    );
+  } else {
+    logger.info({ rpcUrl }, 'Connected provider');
+  }
+
+  const verification = offlineMode
+    ? buildOfflineVerification({
+        snapshot: offlineSnapshot,
+        label,
+        parentDomain,
+        expectedAddress: operatorAddress
+      })
+    : await verifyNodeOwnership({
+        provider,
+        label,
+        parentDomain,
+        expectedAddress: operatorAddress
+      });
 
   if (verification.success) {
     logger.info(
@@ -61,7 +83,9 @@ export async function runNodeDiagnostics({
     throw error;
   }
 
-  const stakeStatus = operatorAddress
+  const stakeStatus = offlineMode
+    ? buildOfflineStakeStatus(offlineSnapshot)
+    : operatorAddress
     ? await getStakeStatus({
         provider,
         operatorAddress,
@@ -98,8 +122,13 @@ export async function runNodeDiagnostics({
     }, 'Stake posture evaluation');
   }
 
-  const rewardsProjection = projectedRewards
-    ? projectEpochRewards({ projectedPool: projectedRewards })
+  const offlineRewards = offlineMode ? buildOfflineRewardsProjection(offlineSnapshot) : null;
+  const rewardsProjection = (projectedRewards || offlineRewards?.projectedPool)
+    ? projectEpochRewards({
+        projectedPool: projectedRewards ?? offlineRewards?.projectedPool,
+        operatorShareBps: offlineRewards?.operatorShareBps,
+        decimals: offlineRewards?.decimals
+      })
     : null;
 
   if (rewardsProjection) {

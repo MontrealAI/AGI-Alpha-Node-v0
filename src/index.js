@@ -29,6 +29,7 @@ import { orchestrateSwarm } from './intelligence/swarmOrchestrator.js';
 import { runCurriculumEvolution } from './intelligence/learningLoop.js';
 import { assessAntifragility } from './intelligence/stressHarness.js';
 import { createJobProof, buildProofSubmissionTx } from './services/jobProof.js';
+import { loadOfflineSnapshot } from './services/offlineSnapshot.js';
 
 const program = new Command();
 
@@ -309,9 +310,24 @@ program
   .option('--auto-resume', 'Generate resume transaction when the stake posture is healthy')
   .option('--projected-rewards <amount>', 'Projected reward pool for the next epoch (decimal)')
   .option('--metrics-port <port>', 'Expose Prometheus metrics on the specified port')
+  .option(
+    '--offline-snapshot <path>',
+    'Use offline snapshot JSON when RPC connectivity is unavailable'
+  )
   .action(async (options) => {
     const logger = pino({ level: 'info', name: 'status' });
     try {
+      let offlineSnapshot = null;
+      if (options.offlineSnapshot) {
+        try {
+          offlineSnapshot = loadOfflineSnapshot(options.offlineSnapshot);
+        } catch (snapshotError) {
+          logger.error(snapshotError, 'Failed to load offline snapshot');
+          console.error(chalk.red(snapshotError.message));
+          process.exitCode = 1;
+          return;
+        }
+      }
       const configOverrides = {
         RPC_URL: options.rpc,
         NODE_LABEL: options.label,
@@ -340,6 +356,7 @@ program
         desiredMinimumStake: config.DESIRED_MINIMUM_STAKE,
         autoResume: config.AUTO_RESUME,
         projectedRewards: options.projectedRewards,
+        offlineSnapshot,
         logger
       });
 
@@ -442,6 +459,137 @@ program
         });
       }
       process.exitCode = 1;
+    }
+  });
+
+program
+  .command('monitor')
+  .description('Continuously run diagnostics, refresh Prometheus metrics, and honour offline snapshots')
+  .option('-l, --label <label>', 'ENS label for the node')
+  .option('-a, --address <address>', 'Operator address')
+  .option('--rpc <url>', 'RPC endpoint URL')
+  .option('--stake-manager <address>', 'StakeManager contract address')
+  .option('--incentives <address>', 'PlatformIncentives contract address')
+  .option('--system-pause <address>', 'System pause contract address for owner overrides')
+  .option('--desired-minimum <amount>', 'Desired minimum stake floor in $AGIALPHA (decimal)')
+  .option('--auto-resume', 'Generate resume transaction when the stake posture is healthy')
+  .option('--projected-rewards <amount>', 'Projected reward pool for the next epoch (decimal)')
+  .option('--metrics-port <port>', 'Expose Prometheus metrics on the specified port')
+  .option('--offline-snapshot <path>', 'Use offline snapshot JSON when RPC connectivity is unavailable')
+  .option('--interval <seconds>', 'Seconds between diagnostic refreshes', '60')
+  .action(async (options) => {
+    const logger = pino({ level: 'info', name: 'monitor' });
+    const intervalSeconds = Number.parseInt(options.interval, 10);
+    if (!Number.isFinite(intervalSeconds) || intervalSeconds <= 0) {
+      console.error(chalk.red('Interval must be a positive integer number of seconds'));
+      process.exitCode = 1;
+      return;
+    }
+
+    const configOverrides = {
+      RPC_URL: options.rpc,
+      NODE_LABEL: options.label,
+      OPERATOR_ADDRESS: options.address,
+      STAKE_MANAGER_ADDRESS: options.stakeManager,
+      PLATFORM_INCENTIVES_ADDRESS: options.incentives,
+      SYSTEM_PAUSE_ADDRESS: options.systemPause,
+      DESIRED_MINIMUM_STAKE: options.desiredMinimum,
+      AUTO_RESUME: options.autoResume,
+      METRICS_PORT: options.metricsPort
+    };
+
+    const config = loadConfig(
+      Object.fromEntries(Object.entries(configOverrides).filter(([, value]) => value !== undefined))
+    );
+
+    const projectedRewards = options.projectedRewards ?? process.env.PROJECTED_REWARDS ?? null;
+    const offlineSnapshotPath = options.offlineSnapshot ?? process.env.OFFLINE_SNAPSHOT_PATH ?? null;
+
+    const resolveSnapshot = () => {
+      if (!offlineSnapshotPath) return null;
+      try {
+        return loadOfflineSnapshot(offlineSnapshotPath);
+      } catch (error) {
+        logger.error(error, 'Unable to load offline snapshot');
+        return null;
+      }
+    };
+
+    let telemetryServer = null;
+    let shuttingDown = false;
+
+    const updateTelemetry = (stakeStatus) => {
+      if (!telemetryServer) return;
+      if (stakeStatus?.operatorStake !== null && stakeStatus?.operatorStake !== undefined) {
+        telemetryServer.stakeGauge.set(Number(stakeStatus.operatorStake));
+      } else {
+        telemetryServer.stakeGauge.set(0);
+      }
+      if (stakeStatus?.lastHeartbeat !== null && stakeStatus?.lastHeartbeat !== undefined) {
+        telemetryServer.heartbeatGauge.set(Number(stakeStatus.lastHeartbeat));
+      } else {
+        telemetryServer.heartbeatGauge.set(0);
+      }
+    };
+
+    const gracefulShutdown = () => {
+      if (shuttingDown) return;
+      shuttingDown = true;
+      logger.info('Shutting down monitor loop');
+      if (telemetryServer?.server) {
+        telemetryServer.server.close(() => {
+          process.exit(0);
+        });
+      } else {
+        process.exit(0);
+      }
+    };
+
+    process.on('SIGINT', gracefulShutdown);
+    process.on('SIGTERM', gracefulShutdown);
+
+    while (!shuttingDown) {
+      try {
+        const diagnostics = await runNodeDiagnostics({
+          rpcUrl: config.RPC_URL,
+          label: config.NODE_LABEL,
+          parentDomain: config.ENS_PARENT_DOMAIN,
+          operatorAddress: config.OPERATOR_ADDRESS,
+          stakeManagerAddress: config.STAKE_MANAGER_ADDRESS,
+          incentivesAddress: config.PLATFORM_INCENTIVES_ADDRESS,
+          systemPauseAddress: config.SYSTEM_PAUSE_ADDRESS,
+          desiredMinimumStake: config.DESIRED_MINIMUM_STAKE,
+          autoResume: config.AUTO_RESUME,
+          projectedRewards,
+          offlineSnapshot: resolveSnapshot(),
+          logger
+        });
+
+        if (!telemetryServer) {
+          telemetryServer = await launchMonitoring({
+            port: config.METRICS_PORT,
+            stakeStatus: diagnostics.stakeStatus,
+            logger
+          });
+        } else {
+          updateTelemetry(diagnostics.stakeStatus);
+        }
+
+        const actionSummary = diagnostics.ownerDirectives?.actions?.map((action) => action.type).join(', ');
+        logger.info(
+          {
+            node: diagnostics.verification?.nodeName,
+            healthy: diagnostics.stakeEvaluation?.meets,
+            priority: diagnostics.ownerDirectives?.priority,
+            actions: actionSummary ?? 'none'
+          },
+          'Monitor iteration completed'
+        );
+      } catch (error) {
+        logger.error(error, 'Monitor iteration failed');
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, intervalSeconds * 1000));
     }
   });
 
