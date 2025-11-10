@@ -57,6 +57,7 @@ config:
   autoStake: false
   stakeAmount: ""
   interactiveStake: true
+  dryRun: true
   offlineSnapshotPath: ""
   offlineMode: false
   vaultAddr: ""

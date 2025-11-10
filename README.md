@@ -43,6 +43,7 @@
 11. [Quality Gates & Branch Discipline](#quality-gates--branch-discipline)
 12. [Contributing](#contributing)
 13. [License](#license)
+14. [Deployment Reference Library](#deployment-reference-library)
 
 ---
 
@@ -424,6 +425,14 @@ All configuration is re-validated on every container start; canonical `$AGIALPHA
 │   └── healthcheck.js        # Docker health probe entry
 └── test/                     # Vitest suites covering every subsystem
 ```
+
+---
+
+## Deployment Reference Library
+
+* **Container Playbook** — [`deploy/docker/README.md`](deploy/docker/README.md) documents the one-command Docker workflow, env file template, staking checklist, and offline/observability options.
+* **Env Template** — [`deploy/docker/node.env.example`](deploy/docker/node.env.example) lists the required variables for identity, staking, Vault secrets, and offline mode.
+* **Helm Chart** — [`deploy/helm/agi-alpha-node`](deploy/helm/agi-alpha-node) ships Kubernetes manifests with autoscaling, health probes, ServiceMonitor hooks, and rolling upgrade defaults.
 
 ---
 
