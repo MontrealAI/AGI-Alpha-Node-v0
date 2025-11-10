@@ -1,0 +1,8 @@
+apiVersion: v2
+name: agi-alpha-node
+version: 0.1.0
+appVersion: "1.1.0"
+description: >-
+  Production-ready deployment chart for the AGI Alpha Node monitor with ENS verification,
+  $AGIALPHA staking telemetry, and offline snapshot resilience.
+type: application

@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "agi-alpha-node.fullname" . }}
+  labels:
+    {{- include "agi-alpha-node.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "agi-alpha-node.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        {{- include "agi-alpha-node.labels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "agi-alpha-node.serviceAccountName" . }}
+      containers:
+        - name: agi-alpha-node
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: RPC_URL
+              value: {{ .Values.env.rpcUrl | quote }}
+            - name: NODE_LABEL
+              value: {{ .Values.env.label | quote }}
+            - name: OPERATOR_ADDRESS
+              value: {{ .Values.env.operatorAddress | quote }}
+            - name: STAKE_MANAGER_ADDRESS
+              value: {{ .Values.env.stakeManagerAddress | quote }}
+            - name: PLATFORM_INCENTIVES_ADDRESS
+              value: {{ .Values.env.platformIncentivesAddress | quote }}
+            - name: SYSTEM_PAUSE_ADDRESS
+              value: {{ .Values.env.systemPauseAddress | quote }}
+            - name: DESIRED_MINIMUM_STAKE
+              value: {{ .Values.env.desiredMinimumStake | quote }}
+            - name: AUTO_RESUME
+              value: {{ .Values.env.autoResume | quote }}
+            - name: METRICS_PORT
+              value: {{ .Values.env.metricsPort | quote }}
+          args:
+            - monitor
+            - --interval
+            - {{ .Values.env.intervalSeconds | quote }}
+            {{- if .Values.env.offlineSnapshot }}
+            - --offline-snapshot
+            - {{ .Values.env.offlineSnapshot | quote }}
+            {{- end }}
+            {{- if .Values.env.projectedRewards }}
+            - --projected-rewards
+            - {{ .Values.env.projectedRewards | quote }}
+            {{- end }}
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.env.metricsPort }}
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
