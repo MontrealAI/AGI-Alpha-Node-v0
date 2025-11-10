@@ -1,8 +1,13 @@
 AGI Alpha Node deployed.
 
-Metrics endpoint: http://{{ include "agi-alpha-node.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}/metrics
+Metrics endpoint: http://{{ include "agi-alpha-node.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.metricsPort }}/metrics
+API endpoint: http://{{ include "agi-alpha-node.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.apiPort }}
 
 Set the following values to customize the deployment:
 - config.nodeLabel / config.operatorAddress for ENS enforcement
 - secretConfig.operatorPrivateKey for stake activation automation
 - offlineSnapshot.configMapName to mount an offline fallback snapshot
+- autoscaling.enabled=true to activate the HorizontalPodAutoscaler
+
+Verify autoscaling state with:
+  kubectl get hpa -n {{ .Release.Namespace }} {{ include "agi-alpha-node.fullname" . }}

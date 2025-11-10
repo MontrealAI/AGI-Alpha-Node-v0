@@ -257,6 +257,19 @@ helm upgrade --install agi-alpha-node ./deploy/helm/agi-alpha-node \
 
 The bundled chart provisions service accounts, Prometheus scrape hints, liveness/readiness probes, and optional offline snapshots. Customize [`deploy/helm/agi-alpha-node/values.yaml`](deploy/helm/agi-alpha-node/values.yaml) to integrate with Vault (`config.vaultAddr`, `config.vaultSecretPath`, `secretConfig.vaultToken`), expose the REST agent port through your preferred service mesh, or mount an `offlineSnapshot` ConfigMap when RPC access is intermittent.
 
+Autoscaling and zero-downtime rollouts ship in the chart by default:
+
+```bash
+helm upgrade --install agi-alpha-node ./deploy/helm/agi-alpha-node \
+  --namespace agi-alpha --create-namespace \
+  --set autoscaling.enabled=true \
+  --set autoscaling.minReplicas=2 \
+  --set autoscaling.maxReplicas=6 \
+  --set autoscaling.targetCPUUtilizationPercentage=55
+```
+
+RollingUpdate settings (surge `25%`, unavailable `0%`) ensure new Pods become ready before the old generation drains. Override them with `updateStrategy.*` values for blue/green or canary orchestration. Additional autoscaling metrics can be rendered by pasting raw YAML into `autoscaling.extraMetrics` (for example, queue-depth based KPIs).
+
 ### Agent REST Interface & Job Intake
 
 The container now exposes a hardened REST interface for agent coordination and external job submission on `API_PORT` (default `8080`). Endpoints are powered by [`src/network/apiServer.js`](src/network/apiServer.js) and fuse directly into the monitoring loop so job throughput and reward projections appear in Prometheus gauges.
