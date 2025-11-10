@@ -7,6 +7,8 @@ import { formatTokenAmount } from '../utils/formatters.js';
 import { AGIALPHA_TOKEN_DECIMALS, AGIALPHA_TOKEN_SYMBOL } from '../constants/token.js';
 import { loadOfflineSnapshot } from '../services/offlineSnapshot.js';
 import { handleStakeActivation } from './stakeActivator.js';
+import { startAgentApi } from '../network/apiServer.js';
+import { hydrateOperatorPrivateKey } from '../services/secretManager.js';
 
 function assertConfigField(value, field) {
   if (!value) {
@@ -85,6 +87,8 @@ export async function bootstrapContainer({
     )
   );
 
+  await hydrateOperatorPrivateKey(config, { logger });
+
   assertConfigField(config.NODE_LABEL, 'NODE_LABEL');
   assertConfigField(config.OPERATOR_ADDRESS, 'OPERATOR_ADDRESS');
 
@@ -100,20 +104,43 @@ export async function bootstrapContainer({
     }
   }
 
-  const diagnostics = await runNodeDiagnostics({
-    rpcUrl: config.RPC_URL,
-    label: config.NODE_LABEL,
-    parentDomain: config.ENS_PARENT_DOMAIN,
-    operatorAddress: config.OPERATOR_ADDRESS,
-    stakeManagerAddress: config.STAKE_MANAGER_ADDRESS,
-    incentivesAddress: config.PLATFORM_INCENTIVES_ADDRESS,
-    systemPauseAddress: config.SYSTEM_PAUSE_ADDRESS,
-    desiredMinimumStake: config.DESIRED_MINIMUM_STAKE,
-    autoResume: config.AUTO_RESUME,
-    projectedRewards,
-    offlineSnapshot,
-    logger
-  });
+  let apiServer = null;
+  try {
+    apiServer = startAgentApi({
+      port: config.API_PORT,
+      offlineMode: config.OFFLINE_MODE,
+      logger
+    });
+  } catch (error) {
+    logger.error(error, 'Failed to start agent API server');
+    throw error;
+  }
+
+  const metricsProvider = apiServer ? () => apiServer.getMetrics() : null;
+
+  let diagnostics;
+  try {
+    diagnostics = await runNodeDiagnostics({
+      rpcUrl: config.RPC_URL,
+      label: config.NODE_LABEL,
+      parentDomain: config.ENS_PARENT_DOMAIN,
+      operatorAddress: config.OPERATOR_ADDRESS,
+      stakeManagerAddress: config.STAKE_MANAGER_ADDRESS,
+      incentivesAddress: config.PLATFORM_INCENTIVES_ADDRESS,
+      systemPauseAddress: config.SYSTEM_PAUSE_ADDRESS,
+      desiredMinimumStake: config.DESIRED_MINIMUM_STAKE,
+      autoResume: config.AUTO_RESUME,
+      projectedRewards,
+      offlineSnapshot,
+      jobMetricsProvider: metricsProvider,
+      logger
+    });
+  } catch (error) {
+    if (apiServer) {
+      await apiServer.stop();
+    }
+    throw error;
+  }
 
   console.log(
     chalk.bold(`Container bootstrap verification for ${diagnostics.verification.nodeName}`)
@@ -132,17 +159,29 @@ export async function bootstrapContainer({
   await handleStakeActivation({ diagnostics, config, logger });
 
   if (skipMonitor) {
-    return { config, diagnostics, monitor: null };
+    if (apiServer) {
+      await apiServer.stop();
+    }
+    return { config, diagnostics, monitor: null, apiServer: null };
   }
 
-  const monitor = await startMonitorLoop({
-    config,
-    intervalSeconds,
-    projectedRewards,
-    offlineSnapshotPath,
-    logger,
-    maxIterations
-  });
+  let monitor;
+  try {
+    monitor = await startMonitorLoop({
+      config,
+      intervalSeconds,
+      projectedRewards,
+      offlineSnapshotPath,
+      logger,
+      maxIterations,
+      jobMetricsProvider: metricsProvider
+    });
+  } catch (error) {
+    if (apiServer) {
+      await apiServer.stop();
+    }
+    throw error;
+  }
 
-  return { config, diagnostics, monitor };
+  return { config, diagnostics, monitor, apiServer };
 }

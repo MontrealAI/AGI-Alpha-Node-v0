@@ -549,8 +549,10 @@ program
   .option('--desired-minimum <amount>', 'Desired minimum stake floor in $AGIALPHA (decimal)')
   .option('--auto-resume', 'Generate resume transaction when the stake posture is healthy')
   .option('--metrics-port <port>', 'Expose Prometheus metrics on the specified port')
+  .option('--api-port <port>', 'Expose the agent REST API on the specified port')
   .option('--projected-rewards <amount>', 'Projected reward pool for the next epoch (decimal)')
   .option('--offline-snapshot <path>', 'Use offline snapshot JSON when RPC connectivity is unavailable')
+  .option('--offline-mode', 'Force local/offline intelligence runtime')
   .option('--auto-stake', 'Automatically broadcast stake activation when a deficit is detected')
   .option('--no-interactive-stake', 'Disable interactive staking prompts during container bootstrap')
   .option('--stake-amount <amount>', 'Override the stake amount when auto activation is enabled')
@@ -573,10 +575,12 @@ program
         DESIRED_MINIMUM_STAKE: options.desiredMinimum,
         AUTO_RESUME: options.autoResume,
         METRICS_PORT: options.metricsPort,
+        API_PORT: options.apiPort,
         AUTO_STAKE: options.autoStake,
         STAKE_AMOUNT: options.stakeAmount,
         INTERACTIVE_STAKE: options.interactiveStake,
-        OPERATOR_PRIVATE_KEY: options.privateKey
+        OPERATOR_PRIVATE_KEY: options.privateKey,
+        OFFLINE_MODE: options.offlineMode
       };
 
       const projectedRewards = options.projectedRewards ?? process.env.PROJECTED_REWARDS ?? null;
@@ -599,14 +603,20 @@ program
         return;
       }
 
-      const { monitor } = result;
+      const { monitor, apiServer } = result;
       if (!monitor) {
+        if (apiServer) {
+          await apiServer.stop();
+        }
         return;
       }
 
       const gracefulShutdown = async () => {
         logger.info('Shutting down container monitor loop');
         await monitor.stop();
+        if (apiServer) {
+          await apiServer.stop();
+        }
         process.exit(0);
       };
 
@@ -619,6 +629,9 @@ program
         process.off('SIGINT', gracefulShutdown);
         process.off('SIGTERM', gracefulShutdown);
         await monitor.stop();
+        if (apiServer) {
+          await apiServer.stop();
+        }
       }
     } catch (error) {
       logger.error(error, 'Container bootstrap failed');

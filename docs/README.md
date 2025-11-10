@@ -366,6 +366,7 @@ journey
 - **Version Proof** — Record `node --version` and `npm --version` in lint transcripts so auditors can confirm environment parity with GitHub Actions.
 - **Badge Integrity** — CI badge surfaces live state; investigate yellow/red signals before approving merges or deployments.
 - **Custody Logging** — Preserve ENS proofs, staking receipts, CI run URLs, and branch-protection exports in the compliance ledger.
+- **Secret Hydration** — Feed runtime variables via `CONFIG_PATH` (.env files) or HashiCorp Vault (`VAULT_ADDR`, `VAULT_SECRET_PATH`, `VAULT_SECRET_KEY`, `VAULT_TOKEN`) so [`hydrateOperatorPrivateKey`](../src/services/secretManager.js) can load signing keys at bootstrap.
 
 ```bash
 # Recommended local ritual before committing
@@ -432,12 +433,13 @@ mindmap
 ## Observability & Reliability Mesh
 
 - **Metrics Fabric** — Prometheus endpoints expose throughput, success ratios, ROI, antifragility scores, gas consumption, and stake coverage.
+- **REST Agent Plane** — [`src/network/apiServer.js`](../src/network/apiServer.js) serves `/healthz` and `/jobs` for institutional job intake; metrics flow straight into Prometheus via [`runNodeDiagnostics`](../src/orchestrator/nodeRuntime.js).
 - **Structured Telemetry** — JSONL traces correlate on-chain tx hashes with agent reasoning frames for deterministic replay.
 - **Health Automation** — Docker/Kubernetes manifests define liveness/readiness probes, restart policies, and rolling-upgrade safepoints.
 - **Alert Lattice** — PagerDuty, Slack, and webhook integrations trigger on stake erosion, pause events, validator summons, or anomalous latency.
 - **Ledger Persistence** — Encrypted volumes retain compliance ledgers, keystores, and offline inference bundles between restarts.
 - **Evidence Vault** — Periodically notarize ENS ownership, staking receipts, and CI artifacts to append-only storage for regulator-ready dossiers.
-- **Blackout Recovery** — Offline bundles allow continued execution without external APIs; ledgers sync once connectivity returns.
+- **Blackout Recovery** — Offline bundles allow continued execution without external APIs; set `OFFLINE_MODE=true` to force local heuristics, and ledgers sync once connectivity returns.
 
 ### Audit Notarization Ritual
 

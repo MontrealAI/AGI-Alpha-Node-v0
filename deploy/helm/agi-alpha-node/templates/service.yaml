@@ -11,6 +11,8 @@ spec:
     app.kubernetes.io/instance: {{ .Release.Name }}
   ports:
     - name: metrics
-      port: {{ .Values.service.port }}
+      port: {{ .Values.service.metricsPort }}
       targetPort: metrics
-      protocol: TCP
+    - name: api
+      port: {{ .Values.service.apiPort }}
+      targetPort: api

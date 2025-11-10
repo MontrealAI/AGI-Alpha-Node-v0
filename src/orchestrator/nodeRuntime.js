@@ -25,6 +25,7 @@ export async function runNodeDiagnostics({
   autoResume = false,
   projectedRewards,
   offlineSnapshot,
+  jobMetricsProvider = null,
   logger = pino({ level: 'info', name: 'agi-alpha-node' })
 }) {
   const offlineMode = Boolean(offlineSnapshot);
@@ -140,7 +141,30 @@ export async function runNodeDiagnostics({
     }, 'Projected epoch rewards');
   }
 
-  const performance = derivePerformanceProfile();
+  let performance = derivePerformanceProfile();
+
+  if (typeof jobMetricsProvider === 'function') {
+    try {
+      const jobMetrics = jobMetricsProvider();
+      if (jobMetrics && typeof jobMetrics === 'object') {
+        const merged = { ...performance };
+        if (Number.isFinite(jobMetrics.throughput)) {
+          merged.throughputPerEpoch = Number(jobMetrics.throughput);
+        }
+        if (Number.isFinite(jobMetrics.successRate)) {
+          merged.successRate = Number(jobMetrics.successRate);
+        }
+        const projected = jobMetrics.lastProjectedReward ?? jobMetrics.tokensEarned;
+        if (typeof projected === 'bigint') {
+          merged.tokenEarningsProjection = projected;
+        }
+        merged.jobMetrics = jobMetrics;
+        performance = merged;
+      }
+    } catch (metricsError) {
+      logger.warn(metricsError, 'Failed to merge job metrics into performance profile');
+    }
+  }
 
   const ownerDirectives = deriveOwnerDirectives({
     stakeStatus,
