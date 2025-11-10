@@ -43,17 +43,18 @@ This repository houses that machine. The runtime enforces ENS identity at activa
 4. [Architecture & Cognitive Flow](#architecture--cognitive-flow)
 5. [ENS Identity Enforcement](#ens-identity-enforcement)
 6. [$AGIALPHA Staking & Token Control](#agialpha-staking--token-control)
-7. [On-Chain Proof & Escrow Release](#on-chain-proof--escrow-release)
-8. [Economic Optimization Engine](#economic-optimization-engine)
-9. [Autonomous Intelligence Lattice](#autonomous-intelligence-lattice)
-10. [Governance & Owner Supremacy](#governance--owner-supremacy)
-11. [Telemetry, Containerization & Deployment](#telemetry-containerization--deployment)
-12. [Quality Gates & CI](#quality-gates--ci)
-13. [CI Enforcement Playbook](#ci-enforcement-playbook)
-14. [Repository Atlas](#repository-atlas)
-15. [Contributing](#contributing)
-16. [License](#license)
-17. [Eternal Transmission](#eternal-transmission)
+7. [Thermodynamic Rewards & Fee Split](#thermodynamic-rewards--fee-split)
+8. [On-Chain Proof & Escrow Release](#on-chain-proof--escrow-release)
+9. [Economic Optimization Engine](#economic-optimization-engine)
+10. [Autonomous Intelligence Lattice](#autonomous-intelligence-lattice)
+11. [Governance & Owner Supremacy](#governance--owner-supremacy)
+12. [Telemetry, Containerization & Deployment](#telemetry-containerization--deployment)
+13. [Quality Gates & CI](#quality-gates--ci)
+14. [CI Enforcement Playbook](#ci-enforcement-playbook)
+15. [Repository Atlas](#repository-atlas)
+16. [Contributing](#contributing)
+17. [License](#license)
+18. [Eternal Transmission](#eternal-transmission)
 
 ---
 
@@ -78,7 +79,7 @@ This repository houses that machine. The runtime enforces ENS identity at activa
 | **Telemetry Spine** | Metrics publisher | [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) – Prometheus gauges for stake and heartbeat state. |
 | **Configuration** | Deterministic env parsing | [`src/config`](src/config) – schema-coerced environment with canonical $AGIALPHA enforcement. |
 | **Container** | Production image | [`Dockerfile`](Dockerfile) – one command diagnostics anywhere Node.js 20 runs. |
-| **Quality Harness** | Automated proof | [`test`](test) – 52 Vitest assertions covering ENS, staking, rewards, governance, economics, intelligence lattice, and job proofs. |
+| **Quality Harness** | Automated proof | [`test`](test) – 56 Vitest assertions covering ENS, staking, rewards, governance, economics, intelligence lattice, and job proofs. |
 
 ---
 
@@ -221,6 +222,7 @@ Use the CLI with environment variables or the `--rpc`, `--stake-manager`, and `-
 | `stake-tx` | Builds a `stakeAndActivate` transaction for PlatformIncentives. | [`src/services/staking.js`](src/services/staking.js) |
 | `status` | Aggregates ENS proofs, stake posture, reward projections, Prometheus metrics. | [`src/orchestrator/nodeRuntime.js`](src/orchestrator/nodeRuntime.js) |
 | `reward-share` | Calculates operator payouts from any reward pool. | [`src/services/rewards.js`](src/services/rewards.js) |
+| `reward-distribution` | Weights thermodynamic epoch pool across operator, validators, and treasury via stake gravity. | [`src/services/rewards.js`](src/services/rewards.js) |
 | `token metadata/approve/allowance` | Canonical $AGIALPHA metadata + allowances. | [`src/services/token.js`](src/services/token.js) |
 | `proof commit/submit-tx` | Derives commitments and encodes JobRegistry escrow release transactions. | [`src/services/jobProof.js`](src/services/jobProof.js) |
 | `economics optimize` | Reinvestment optimizer obeying buffer & obligation policy. | [`src/services/economics.js`](src/services/economics.js) |
@@ -296,8 +298,51 @@ The runtime binds ENS identity with staking posture, token supremacy, economic p
 * `$AGIALPHA` checksum enforced via [`AGIALPHA_TOKEN_CHECKSUM_ADDRESS`](src/constants/token.js); attempts to override address must pass normalization checks.
 * `token approve` encodes unlimited or explicit allowances; `token allowance` reads existing approvals.
 * `stake-tx` produces a ready-to-sign `stakeAndActivate` calldata payload.
-* `status` pulls minimum stake, operator stake, and health via StakeManager + PlatformIncentives; deficits are surfaced with basis-point deltas.
-* Slashing posture is visible through diagnostics – deficits produce explicit warnings so the owner can replenish stake before automatic pause logic triggers on-chain.
+* `status` resolves minimum stake, operator stake, slashing penalties, and heartbeat recency via StakeManager + PlatformIncentives.
+* Stake posture analytics (`evaluateStakeConditions`) output recommended owner actions (`pause-and-recover`, `increase-stake`, `submit-heartbeat`) before chain-level automation intervenes.
+
+```mermaid
+stateDiagram-v2
+  [*] --> Healthy
+  Healthy --> Warning: deficit detected / increase-stake
+  Warning --> Healthy: top-up executed
+  Healthy --> HeartbeatDrift: heartbeat stale / submit-heartbeat
+  HeartbeatDrift --> Healthy: heartbeat restored
+  Healthy --> Slashed: penaltyActive / pause-and-recover
+  Warning --> Slashed: slashing penalty triggered
+  Slashed --> Recovery: governance pause + replenishment
+  Recovery --> Healthy
+```
+
+The diagnostics CLI mirrors this flow, surfacing `heartbeatAgeSeconds`, `slashingPenalty`, and the actionable response so the owner can remediate before on-chain automation escalates.
+
+---
+
+## Thermodynamic Rewards & Fee Split
+
+* `reward-distribution` invokes [`splitRewardPool`](src/services/rewards.js) to guarantee the 15% operator floor while weighting the remaining pool by stake gravity.
+* Validator and treasury shares stay locked to basis-point policy (must sum to 10 000 bps); the CLI refuses inconsistent allocations before any calldata is produced.
+* Outputs expose both the floor and the weighted bonus so auditors can trace how much alpha accrues purely from stake depth.
+
+```mermaid
+pie title Reward Split Example (stake=2000 / total=5000)
+  "Operator Floor" : 150
+  "Operator Weighted" : 340
+  "Validator" : 450
+  "Treasury" : 60
+```
+
+```bash
+npx agi-alpha-node reward-distribution \
+  --total 1000 \
+  --stake 2000 \
+  --total-stake 5000 \
+  --floor-bps 1500 \
+  --validator-bps 7500 \
+  --treasury-bps 1000
+```
+
+The returned table mirrors the pie chart above, presenting `operatorFloor`, `operatorWeighted`, `operatorTotal`, `validator`, and `treasury` in canonical 18-decimal precision so payouts can be signed directly from cold storage.
 
 ---
 
@@ -413,7 +458,7 @@ The table and flow reinforce that the custodian retains **total spectrum control
 
 * GitHub Actions workflow (`ci.yml`) runs linting (`markdownlint`, `markdown-link-check`) and Vitest suites on every push/PR; badge shows main-branch health.
 * Branch protection requires green checks; PRs cannot merge without passing lint + test gates.
-* Tests cover ENS normalization, staking adapters, governance payloads, token utilities, economic optimizer, and the new intelligence lattice modules.
+* Tests (56 assertions) cover ENS normalization, staking adapters, governance payloads, token utilities, economic optimizer, the thermodynamic reward engine, and the intelligence lattice modules.
 
 ---
 

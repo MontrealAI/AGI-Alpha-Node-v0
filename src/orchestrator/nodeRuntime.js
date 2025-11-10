@@ -1,7 +1,7 @@
 import pino from 'pino';
 import { createProvider } from '../services/provider.js';
 import { verifyNodeOwnership } from '../services/ensVerifier.js';
-import { getStakeStatus, validateStakeThreshold } from '../services/staking.js';
+import { getStakeStatus, validateStakeThreshold, evaluateStakeConditions } from '../services/staking.js';
 import { projectEpochRewards } from '../services/rewards.js';
 import { startMonitoringServer } from '../telemetry/monitoring.js';
 import { formatTokenAmount } from '../utils/formatters.js';
@@ -66,7 +66,15 @@ export async function runNodeDiagnostics({
       })
     : null;
 
+  let stakeEvaluation = null;
   if (stakeStatus) {
+    stakeEvaluation = evaluateStakeConditions({
+      minimumStake: stakeStatus.minimumStake,
+      operatorStake: stakeStatus.operatorStake,
+      slashingPenalty: stakeStatus.slashingPenalty,
+      lastHeartbeat: stakeStatus.lastHeartbeat,
+      currentTimestamp: Math.floor(Date.now() / 1000)
+    });
     const threshold = validateStakeThreshold(stakeStatus);
     if (threshold) {
       logger.info({
@@ -76,6 +84,14 @@ export async function runNodeDiagnostics({
         deficit: threshold.deficit ? formatTokenAmount(threshold.deficit) : null
       }, 'Stake threshold evaluation');
     }
+    logger.info({
+      slashingPenalty: stakeStatus.slashingPenalty ? formatTokenAmount(stakeStatus.slashingPenalty) : null,
+      penaltyActive: stakeEvaluation?.penaltyActive ?? null,
+      heartbeatAgeSeconds: stakeEvaluation?.heartbeatAgeSeconds ?? null,
+      heartbeatStale: stakeEvaluation?.heartbeatStale ?? null,
+      shouldPause: stakeEvaluation?.shouldPause ?? null,
+      recommendedAction: stakeEvaluation?.recommendedAction ?? null
+    }, 'Stake posture evaluation');
   }
 
   const rewardsProjection = projectedRewards
@@ -93,7 +109,8 @@ export async function runNodeDiagnostics({
   return {
     verification,
     stakeStatus,
-    rewardsProjection
+    rewardsProjection,
+    stakeEvaluation
   };
 }
 

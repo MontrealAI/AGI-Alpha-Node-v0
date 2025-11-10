@@ -6,7 +6,8 @@ vi.mock('../src/services/ensVerifier.js', () => ({
 
 vi.mock('../src/services/staking.js', () => ({
   getStakeStatus: vi.fn(),
-  validateStakeThreshold: vi.fn()
+  validateStakeThreshold: vi.fn(),
+  evaluateStakeConditions: vi.fn()
 }));
 
 vi.mock('../src/services/rewards.js', () => ({
@@ -14,7 +15,7 @@ vi.mock('../src/services/rewards.js', () => ({
 }));
 
 import { verifyNodeOwnership } from '../src/services/ensVerifier.js';
-import { getStakeStatus, validateStakeThreshold } from '../src/services/staking.js';
+import { getStakeStatus, validateStakeThreshold, evaluateStakeConditions } from '../src/services/staking.js';
 import { projectEpochRewards } from '../src/services/rewards.js';
 import { runNodeDiagnostics } from '../src/orchestrator/nodeRuntime.js';
 
@@ -41,6 +42,15 @@ describe('runNodeDiagnostics', () => {
     });
     getStakeStatus.mockResolvedValue({ minimumStake: 1000n, operatorStake: 1500n });
     validateStakeThreshold.mockReturnValue({ meets: true, deficit: 0n });
+    evaluateStakeConditions.mockReturnValue({
+      meets: true,
+      deficit: 0n,
+      penaltyActive: false,
+      heartbeatAgeSeconds: 120,
+      heartbeatStale: false,
+      shouldPause: false,
+      recommendedAction: 'maintain'
+    });
     projectEpochRewards.mockReturnValue({ pool: 1500n, operatorPortion: 225n, operatorShareBps: 1500 });
 
     const diagnostics = await runNodeDiagnostics({
@@ -56,6 +66,9 @@ describe('runNodeDiagnostics', () => {
 
     expect(diagnostics.verification.nodeName).toBe('1.alpha.node.agi.eth');
     expect(diagnostics.stakeStatus).toEqual({ minimumStake: 1000n, operatorStake: 1500n });
+    expect(diagnostics.stakeEvaluation).toEqual(
+      expect.objectContaining({ recommendedAction: 'maintain', penaltyActive: false })
+    );
     expect(diagnostics.rewardsProjection.operatorShareBps).toBe(1500);
     expect(logger.info).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -66,6 +79,13 @@ describe('runNodeDiagnostics', () => {
     );
     expect(validateStakeThreshold).toHaveBeenCalledWith({ minimumStake: 1000n, operatorStake: 1500n });
     expect(projectEpochRewards).toHaveBeenCalledWith({ projectedPool: '1500' });
+    expect(evaluateStakeConditions).toHaveBeenCalledWith({
+      minimumStake: 1000n,
+      operatorStake: 1500n,
+      slashingPenalty: undefined,
+      lastHeartbeat: undefined,
+      currentTimestamp: expect.any(Number)
+    });
   });
 
   it('throws when ENS ownership fails verification and logs failure event', async () => {

@@ -33,7 +33,8 @@ export async function getStakeStatus({
     operatorStake: null,
     active: null,
     lastHeartbeat: null,
-    healthy: null
+    healthy: null,
+    slashingPenalty: null
   };
 
   if (stakeManagerAddress) {
@@ -49,6 +50,12 @@ export async function getStakeStatus({
     } catch (error) {
       status.operatorStake = null;
       status.operatorStakeError = error;
+    }
+    try {
+      status.slashingPenalty = BigInt(await stakeManager.slashingPenalty(normalizedOperator));
+    } catch (error) {
+      status.slashingPenalty = null;
+      status.slashingPenaltyError = error;
     }
     try {
       status.healthy = await stakeManager.isOperatorHealthy(normalizedOperator);
@@ -119,5 +126,83 @@ export function validateStakeThreshold({ minimumStake, operatorStake }) {
   return {
     meets,
     deficit: meets ? 0n : minimumStake - operatorStake
+  };
+}
+
+function toOptionalBigInt(value) {
+  if (value === undefined || value === null) return null;
+  if (typeof value === 'bigint') return value;
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) {
+      throw new Error('Numeric values must be finite to convert to bigint');
+    }
+    return BigInt(Math.trunc(value));
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (trimmed.length === 0) {
+      return null;
+    }
+    if (!/^[-+]?\d+$/.test(trimmed)) {
+      throw new Error(`Cannot convert value "${value}" to bigint`);
+    }
+    return BigInt(trimmed);
+  }
+  throw new TypeError('Unsupported type for bigint conversion');
+}
+
+export function evaluateStakeConditions({
+  minimumStake,
+  operatorStake,
+  slashingPenalty = 0n,
+  lastHeartbeat,
+  heartbeatGraceSeconds = 3600,
+  currentTimestamp = Math.floor(Date.now() / 1000)
+}) {
+  const normalizedMinimum = toOptionalBigInt(minimumStake);
+  const normalizedStake = toOptionalBigInt(operatorStake);
+  const normalizedPenalty = toOptionalBigInt(slashingPenalty) ?? 0n;
+  const normalizedHeartbeat = toOptionalBigInt(lastHeartbeat);
+  const normalizedNow = toOptionalBigInt(currentTimestamp);
+
+  let meets = null;
+  let deficit = null;
+  if (normalizedMinimum !== null && normalizedStake !== null) {
+    meets = normalizedStake >= normalizedMinimum;
+    deficit = meets ? 0n : normalizedMinimum - normalizedStake;
+  }
+
+  let heartbeatAgeSeconds = null;
+  let heartbeatStale = null;
+  if (normalizedHeartbeat !== null && normalizedNow !== null) {
+    const delta = normalizedNow > normalizedHeartbeat ? normalizedNow - normalizedHeartbeat : 0n;
+    heartbeatAgeSeconds = Number(delta);
+    const grace = Number(heartbeatGraceSeconds ?? 0);
+    heartbeatStale = heartbeatAgeSeconds > grace;
+  }
+
+  const penaltyActive = normalizedPenalty > 0n;
+  const shouldPause = penaltyActive || meets === false;
+
+  let recommendedAction = 'maintain';
+  if (penaltyActive) {
+    recommendedAction = 'pause-and-recover';
+  } else if (meets === false) {
+    recommendedAction = 'increase-stake';
+  } else if (heartbeatStale === true) {
+    recommendedAction = 'submit-heartbeat';
+  } else if (meets === null) {
+    recommendedAction = 'inspect';
+  }
+
+  return {
+    meets,
+    deficit,
+    slashingPenalty: normalizedPenalty,
+    penaltyActive,
+    heartbeatAgeSeconds,
+    heartbeatStale,
+    shouldPause,
+    recommendedAction
   };
 }
