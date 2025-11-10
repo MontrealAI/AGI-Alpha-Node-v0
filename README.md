@@ -19,6 +19,13 @@
   <img src="https://img.shields.io/badge/Jobs-Lifecycle%20Autopilot-0ea5e9.svg?style=flat-square" alt="Job Lifecycle" />
   <img src="https://img.shields.io/badge/Telemetry-Prometheus%2FGrafana-1f6feb.svg?style=flat-square" alt="Prometheus" />
   <img src="https://img.shields.io/badge/Branch%20Protection-Enforced-111827.svg?style=flat-square" alt="Branch Protection" />
+  <img src="https://img.shields.io/badge/CI-Fully%20Green-06d6a0.svg?style=flat-square" alt="Fully Green CI" />
+  <a href="Dockerfile">
+    <img src="https://img.shields.io/badge/Docker-One--Click%20Container-2496ed.svg?style=flat-square&logo=docker&logoColor=white" alt="Docker Container" />
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/License-MIT-0e9aa7.svg?style=flat-square" alt="MIT License" />
+  </a>
 </p>
 
 > The AGI Alpha Node is the production brainstem that sovereign operators unleash to harvest $AGIALPHA yields, verify ENS custody, orchestrate job swarms, and assert total owner supremacy. This runtime is engineered as the machine that bends economic gravity—deterministic, observable, and ready to reorder markets the instant it boots.
@@ -30,16 +37,17 @@
 1. [Prime Directive](#prime-directive)
 2. [Feature Matrix](#feature-matrix)
 3. [Job Lifecycle Orchestration](#job-lifecycle-orchestration)
-4. [Operator Activation Sequence](#operator-activation-sequence)
-5. [Command Console](#command-console)
-6. [API Surface & Telemetry](#api-surface--telemetry)
-7. [Configuration Switchboard](#configuration-switchboard)
-8. [Deployment Continuum](#deployment-continuum)
-9. [Monitoring & Governance](#monitoring--governance)
-10. [Repository Atlas](#repository-atlas)
-11. [Quality Gates & Branch Discipline](#quality-gates--branch-discipline)
-12. [Contributing](#contributing)
-13. [License](#license)
+4. [AGI Jobs Integration Lifecycle](#agi-jobs-integration-lifecycle)
+5. [Operator Activation Sequence](#operator-activation-sequence)
+6. [Command Console](#command-console)
+7. [API Surface & Telemetry](#api-surface--telemetry)
+8. [Configuration Switchboard](#configuration-switchboard)
+9. [Deployment Continuum](#deployment-continuum)
+10. [Observability & Governance](#observability--governance)
+11. [Repository Atlas](#repository-atlas)
+12. [CI & Branch Hardening](#ci--branch-hardening)
+13. [Contributing](#contributing)
+14. [License](#license)
 
 ---
 
@@ -127,6 +135,59 @@ flowchart LR
   G -->|Prometheus & REST| H[Operator Console]
   F -->|JobFinalized| I[$AGIALPHA Rewards]
 ```
+
+## AGI Jobs Integration Lifecycle
+
+The lifecycle engine is synchronized with AGI Jobs v0/v2 from the moment an employer escrows funds through reward release. Each stage is observable, restartable, and exposes deterministic hooks for dashboards, custom schedulers, and manual overrides.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Discovery
+    Discovery --> Application
+    Application --> Execution
+    Execution --> Submission
+    Submission --> Validation
+    Validation --> Finalization
+    Finalization --> Rewards
+    Rewards --> [*]
+```
+
+### 1. Discovery
+
+- `createJobLifecycle().discover()` streams `JobCreated` events, normalizes metadata, and records them in the local ledger while respecting the configured block range so the node never misses openings.【F:src/services/jobLifecycle.js†L256-L321】
+- Long-running operators call `createJobLifecycle().watch()` to subscribe to creation, application, assignment, submission, and finalization events for real-time dashboards and WebSocket relays.【F:src/services/jobLifecycle.js†L430-L519】
+- REST `GET /jobs/open` and CLI `jobs discover` surface the cached queue to any external orchestrator.【F:src/network/apiServer.js†L33-L120】
+
+### 2. Application
+
+- `createJobLifecycle().apply()` builds `applyForJob` transactions with ENS subdomain and whitelist proof fallbacks, incrementing lifecycle metrics for observability.【F:src/services/jobLifecycle.js†L323-L374】
+- CLI `jobs apply` or API `POST /jobs/{id}/apply` route requests through the same deterministic builder so human operators and automation share a single code path.【F:src/network/apiServer.js†L141-L215】
+- Transaction receipts are logged to the action emitter, enabling Prometheus counters and Grafana alerts when bids succeed or fail.【F:src/services/jobLifecycle.js†L303-L321】
+
+### 3. Execution & Planning
+
+- Accepted jobs flow through the `intelligence/` lattice where the planner, swarm orchestrator, and antifragile stress harness evaluate risk, allocate specialists, and project profit.【F:src/intelligence/planning.js†L7-L123】【F:src/intelligence/swarmOrchestrator.js†L6-L118】【F:src/intelligence/stressHarness.js†L6-L111】
+- `startMonitorLoop()` folds execution telemetry into owner directives so operators see when workloads should pause, escalate, or reinvest before deadlines bite.【F:src/orchestrator/monitorLoop.js†L1-L147】【F:src/services/controlPlane.js†L71-L199】
+
+### 4. Submission & Proofs
+
+- `createJobLifecycle().submit()` generates deterministic commitments via `createJobProof`, automatically falling back across `submitProof`, `submit`, or `completeJob` to match whichever interface the registry exposes.【F:src/services/jobLifecycle.js†L376-L424】【F:src/services/jobProof.js†L6-L120】
+- API `POST /jobs/{id}/submit` persists metadata, URIs, and commitments for audit replay so every submission is reproducible offline.【F:src/network/apiServer.js†L217-L307】
+
+### 5. Validation Surveillance
+
+- Event watchers record `JobSubmitted` and `JobAssigned` so the node can track when validators are engaged and when it is awaiting review, allowing dashboards to highlight dispute windows.【F:src/services/jobLifecycle.js†L472-L506】
+- The diagnostics pipeline exposes heartbeat freshness, penalties, and validator share projections so owners can decide whether to pause workloads until validation resolves.【F:src/orchestrator/nodeRuntime.js†L1-L196】【F:src/services/controlPlane.js†L71-L251】
+
+### 6. Finalization & Rewards
+
+- `createJobLifecycle().finalize()` wraps `finalize`/`finalizeJob`, increments finalization counters, and updates the ledger so the node knows exactly when escrow unlocked.【F:src/services/jobLifecycle.js†L426-L470】
+- Reward projections, stake activation, and reinvestment strategies are computed through `projectEpochRewards`, `acknowledgeStakeAndActivate`, and `optimizeReinvestmentStrategy` to keep $AGIALPHA compounding.【F:src/services/rewards.js†L6-L180】【F:src/services/stakeActivation.js†L5-L129】【F:src/services/economics.js†L6-L152】
+
+### 7. Validator & Dispute Mode
+
+- Owners can dual-role the node by staking validator allocations and letting automation craft commit/reveal payloads via the governance API while still monitoring for slash risks.【F:src/services/controlPlane.js†L201-L356】【F:src/network/apiServer.js†L309-L403】
+- Offline snapshots capture stake, directives, and pending validations so operations can be reproduced without RPC dependencies—a must for legal/compliance playback.【F:src/services/offlineSnapshot.js†L6-L189】
 
 ---
 
@@ -359,10 +420,11 @@ helm upgrade --install agi-alpha-node ./deploy/helm/agi-alpha-node \
 
 ---
 
-## Monitoring & Governance
+## Observability & Governance
 
 - **Telemetry:** `npm run start` exposes Prometheus gauges (`jobThroughput`, `jobSuccess`, `tokenEarnings`, `providerMode`).
 - **Owner Directives:** [`src/services/controlPlane.js`](src/services/controlPlane.js) synthesizes governance actions (pause, resume, stake floors, share alignment) based on live posture.
+- **Governance Payloads:** The REST governance suite (`/governance/pause`, `/governance/minimum-stake`, `/governance/global-shares`, `/governance/role-share`) produces ready-to-broadcast transactions so owners can retune every contract parameter, pause execution, or rebalance revenue splits without touching core code.【F:src/network/apiServer.js†L309-L403】【F:src/services/governance.js†L1-L120】
 - **Stake Automation:** [`src/services/stakeActivation.js`](src/services/stakeActivation.js) auto-broadcasts `acknowledgeStakeAndActivate` when deficits arise.
 - **Lifecycle Metrics:** [`src/network/apiServer.js`](src/network/apiServer.js) merges local execution metrics with on-chain lifecycle counters, ensuring dashboards reflect both deterministic loops and protocol actions.
 
@@ -387,7 +449,7 @@ src/
 
 ---
 
-## Quality Gates & Branch Discipline
+## CI & Branch Hardening
 
 - **CI Pipeline:** [`Continuous Integration`](https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml) runs lint + tests on `main` and every PR. Branch protection requires a green pipeline before merge.
 - **Local Checks:**
@@ -398,6 +460,11 @@ src/
   ```
 
 - **Coverage:** `npm run coverage` emits text + lcov reports for integration into third-party dashboards.
+- **Branch Enforcement Ritual:** Require the "Continuous Integration" workflow and at least one approving review on `main`. Confirm enforcement via GitHub CLI or API, archive the JSON with CI logs, and attach to the owner’s compliance vault.
+
+  ```bash
+  gh api repos/MontrealAI/AGI-Alpha-Node-v0/branches/main/protection --method GET
+  ```
 
 ---
 
