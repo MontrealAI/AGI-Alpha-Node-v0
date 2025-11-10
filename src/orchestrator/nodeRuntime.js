@@ -29,6 +29,7 @@ export async function runNodeDiagnostics({
   logger = pino({ level: 'info', name: 'agi-alpha-node' })
 }) {
   const offlineMode = Boolean(offlineSnapshot);
+  const runtimeMode = offlineMode ? 'offline-snapshot' : 'online';
   const provider = offlineMode ? null : createProvider(rpcUrl);
 
   if (offlineMode) {
@@ -195,7 +196,8 @@ export async function runNodeDiagnostics({
     rewardsProjection,
     stakeEvaluation,
     ownerDirectives,
-    performance
+    performance,
+    runtimeMode
   };
 }
 
@@ -203,6 +205,7 @@ export async function launchMonitoring({
   port,
   stakeStatus,
   performance = null,
+  runtimeMode = 'online',
   logger = pino({ level: 'info', name: 'agi-alpha-node' })
 }) {
   const telemetry = startMonitoringServer({ port, logger });
@@ -211,6 +214,10 @@ export async function launchMonitoring({
   }
   if (stakeStatus?.lastHeartbeat) {
     telemetry.heartbeatGauge.set(Number(stakeStatus.lastHeartbeat));
+  }
+  if (telemetry.providerModeGauge) {
+    telemetry.providerModeGauge.reset();
+    telemetry.providerModeGauge.set({ mode: runtimeMode }, 1);
   }
   if (performance) {
     if (telemetry.jobThroughputGauge && performance.throughputPerEpoch !== undefined) {
@@ -231,6 +238,10 @@ export async function launchMonitoring({
           telemetry.agentUtilizationGauge.set({ agent: entry.agent }, value);
         }
       });
+    }
+    if (telemetry.providerModeGauge && performance.jobMetrics?.lastJobProvider) {
+      telemetry.providerModeGauge.reset();
+      telemetry.providerModeGauge.set({ mode: performance.jobMetrics.lastJobProvider }, 1);
     }
   }
   return telemetry;

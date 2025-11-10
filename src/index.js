@@ -445,7 +445,13 @@ program
       }
 
       if (options.metricsPort) {
-        await launchMonitoring({ port: Number(options.metricsPort), stakeStatus: diagnostics.stakeStatus, logger });
+        await launchMonitoring({
+          port: Number(options.metricsPort),
+          stakeStatus: diagnostics.stakeStatus,
+          performance: diagnostics.performance,
+          runtimeMode: diagnostics.runtimeMode,
+          logger
+        });
         console.log(`Metrics available on :${options.metricsPort}/metrics`);
       }
     } catch (error) {

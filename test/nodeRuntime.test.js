@@ -136,6 +136,7 @@ afterEach(() => {
     expect(diagnostics.performance).toEqual(
       expect.objectContaining({ throughputPerEpoch: 4, successRate: 0.9 })
     );
+    expect(diagnostics.runtimeMode).toBe('online');
   });
 
   it('throws when ENS ownership fails verification and logs failure event', async () => {
@@ -260,5 +261,6 @@ afterEach(() => {
     );
     expect(diagnostics.ownerDirectives.priority).toBe('warning');
     expect(diagnostics.ownerDirectives.actions[0].type).toBe('stake-top-up');
+    expect(diagnostics.runtimeMode).toBe('offline-snapshot');
   });
 });
