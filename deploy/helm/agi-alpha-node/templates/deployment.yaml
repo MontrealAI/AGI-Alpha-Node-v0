@@ -75,6 +75,8 @@ spec:
               value: {{ ternary "true" "false" .Values.config.autoStake | quote }}
             - name: INTERACTIVE_STAKE
               value: {{ ternary "true" "false" .Values.config.interactiveStake | quote }}
+            - name: DRY_RUN
+              value: {{ ternary "true" "false" .Values.config.dryRun | quote }}
             - name: OFFLINE_MODE
               value: {{ ternary "true" "false" .Values.config.offlineMode | quote }}
             - name: VAULT_SECRET_KEY
