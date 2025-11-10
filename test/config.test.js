@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { coerceConfig } from '../src/config/schema.js';
+import {
+  AGIALPHA_TOKEN_CHECKSUM_ADDRESS,
+  AGIALPHA_TOKEN_DECIMALS
+} from '../src/constants/token.js';
 
 describe('config schema', () => {
   it('coerces boolean flags', () => {
@@ -11,12 +15,32 @@ describe('config schema', () => {
     const config = coerceConfig({ RPC_URL: 'https://rpc.ankr.com/eth' });
     expect(config.ENS_PARENT_DOMAIN).toBe('alpha.node.agi.eth');
     expect(config.METRICS_PORT).toBe(9464);
+    expect(config.AGIALPHA_TOKEN_ADDRESS).toBe(AGIALPHA_TOKEN_CHECKSUM_ADDRESS);
+    expect(config.AGIALPHA_TOKEN_DECIMALS).toBe(AGIALPHA_TOKEN_DECIMALS);
   });
 
   it('rejects invalid addresses', () => {
-    expect(() => coerceConfig({
-      RPC_URL: 'https://rpc.ankr.com/eth',
-      OPERATOR_ADDRESS: 'not-an-address'
-    })).toThrow();
+    expect(() =>
+      coerceConfig({
+        RPC_URL: 'https://rpc.ankr.com/eth',
+        OPERATOR_ADDRESS: 'not-an-address'
+      })
+    ).toThrow();
+  });
+
+  it('enforces canonical token settings', () => {
+    expect(() =>
+      coerceConfig({
+        RPC_URL: 'https://rpc.ankr.com/eth',
+        AGIALPHA_TOKEN_ADDRESS: '0x0000000000000000000000000000000000000001'
+      })
+    ).toThrow(/canonical/);
+
+    expect(() =>
+      coerceConfig({
+        RPC_URL: 'https://rpc.ankr.com/eth',
+        AGIALPHA_TOKEN_DECIMALS: '8'
+      })
+    ).toThrow(/fixed decimals/);
   });
 });

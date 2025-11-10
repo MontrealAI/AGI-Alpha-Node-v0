@@ -1,4 +1,11 @@
 import { z } from 'zod';
+import {
+  AGIALPHA_TOKEN_CHECKSUM_ADDRESS,
+  AGIALPHA_TOKEN_DECIMALS,
+  AGIALPHA_TOKEN_SYMBOL,
+  assertCanonicalAgialphaAddress,
+  normalizeTokenAddress
+} from '../constants/token.js';
 
 const addressRegex = /^0x[a-fA-F0-9]{40}$/;
 
@@ -25,7 +32,30 @@ export const configSchema = z
     STAKE_MANAGER_ADDRESS: z.string().regex(addressRegex).optional(),
     REWARD_ENGINE_ADDRESS: z.string().regex(addressRegex).optional(),
     METRICS_PORT: z.coerce.number().int().min(1024).max(65535).default(9464),
-    DRY_RUN: booleanCoercion
+    DRY_RUN: booleanCoercion,
+    AGIALPHA_TOKEN_ADDRESS: z
+      .string()
+      .regex(addressRegex)
+      .default(AGIALPHA_TOKEN_CHECKSUM_ADDRESS)
+      .transform((value) => normalizeTokenAddress(value))
+      .superRefine((value, ctx) => {
+        try {
+          assertCanonicalAgialphaAddress(value);
+        } catch (error) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: error instanceof Error ? error.message : 'Token must remain canonical'
+          });
+        }
+      }),
+    AGIALPHA_TOKEN_DECIMALS: z
+      .coerce.number()
+      .int()
+      .positive()
+      .default(AGIALPHA_TOKEN_DECIMALS)
+      .refine((value) => value === AGIALPHA_TOKEN_DECIMALS, {
+        message: `${AGIALPHA_TOKEN_SYMBOL} uses fixed decimals ${AGIALPHA_TOKEN_DECIMALS}`
+      })
   })
   .strict();
 
