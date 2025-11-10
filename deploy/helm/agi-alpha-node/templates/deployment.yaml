@@ -40,7 +40,7 @@ spec:
             - name: METRICS_PORT
               value: {{ .Values.env.metricsPort | quote }}
           args:
-            - monitor
+            - container
             - --interval
             - {{ .Values.env.intervalSeconds | quote }}
             {{- if .Values.env.offlineSnapshot }}

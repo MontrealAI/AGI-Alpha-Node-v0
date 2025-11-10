@@ -17,6 +17,8 @@ import {
 } from './constants/token.js';
 import { buildTokenApproveTx, describeAgialphaToken, getTokenAllowance } from './services/token.js';
 import { runNodeDiagnostics, launchMonitoring } from './orchestrator/nodeRuntime.js';
+import { startMonitorLoop } from './orchestrator/monitorLoop.js';
+import { bootstrapContainer } from './orchestrator/bootstrap.js';
 import {
   buildSystemPauseTx,
   buildMinimumStakeTx,
@@ -479,117 +481,134 @@ program
   .option('--interval <seconds>', 'Seconds between diagnostic refreshes', '60')
   .action(async (options) => {
     const logger = pino({ level: 'info', name: 'monitor' });
-    const intervalSeconds = Number.parseInt(options.interval, 10);
-    if (!Number.isFinite(intervalSeconds) || intervalSeconds <= 0) {
-      console.error(chalk.red('Interval must be a positive integer number of seconds'));
-      process.exitCode = 1;
-      return;
-    }
-
-    const configOverrides = {
-      RPC_URL: options.rpc,
-      NODE_LABEL: options.label,
-      OPERATOR_ADDRESS: options.address,
-      STAKE_MANAGER_ADDRESS: options.stakeManager,
-      PLATFORM_INCENTIVES_ADDRESS: options.incentives,
-      SYSTEM_PAUSE_ADDRESS: options.systemPause,
-      DESIRED_MINIMUM_STAKE: options.desiredMinimum,
-      AUTO_RESUME: options.autoResume,
-      METRICS_PORT: options.metricsPort
-    };
-
-    const config = loadConfig(
-      Object.fromEntries(Object.entries(configOverrides).filter(([, value]) => value !== undefined))
-    );
-
-    const projectedRewards = options.projectedRewards ?? process.env.PROJECTED_REWARDS ?? null;
-    const offlineSnapshotPath = options.offlineSnapshot ?? process.env.OFFLINE_SNAPSHOT_PATH ?? null;
-
-    const resolveSnapshot = () => {
-      if (!offlineSnapshotPath) return null;
-      try {
-        return loadOfflineSnapshot(offlineSnapshotPath);
-      } catch (error) {
-        logger.error(error, 'Unable to load offline snapshot');
-        return null;
+    try {
+      const intervalSeconds = Number.parseInt(options.interval, 10);
+      if (!Number.isFinite(intervalSeconds) || intervalSeconds <= 0) {
+        throw new Error('Interval must be a positive integer number of seconds');
       }
-    };
 
-    let telemetryServer = null;
-    let shuttingDown = false;
+      const configOverrides = {
+        RPC_URL: options.rpc,
+        NODE_LABEL: options.label,
+        OPERATOR_ADDRESS: options.address,
+        STAKE_MANAGER_ADDRESS: options.stakeManager,
+        PLATFORM_INCENTIVES_ADDRESS: options.incentives,
+        SYSTEM_PAUSE_ADDRESS: options.systemPause,
+        DESIRED_MINIMUM_STAKE: options.desiredMinimum,
+        AUTO_RESUME: options.autoResume,
+        METRICS_PORT: options.metricsPort
+      };
 
-    const updateTelemetry = (stakeStatus) => {
-      if (!telemetryServer) return;
-      if (stakeStatus?.operatorStake !== null && stakeStatus?.operatorStake !== undefined) {
-        telemetryServer.stakeGauge.set(Number(stakeStatus.operatorStake));
-      } else {
-        telemetryServer.stakeGauge.set(0);
-      }
-      if (stakeStatus?.lastHeartbeat !== null && stakeStatus?.lastHeartbeat !== undefined) {
-        telemetryServer.heartbeatGauge.set(Number(stakeStatus.lastHeartbeat));
-      } else {
-        telemetryServer.heartbeatGauge.set(0);
-      }
-    };
+      const config = loadConfig(
+        Object.fromEntries(Object.entries(configOverrides).filter(([, value]) => value !== undefined))
+      );
 
-    const gracefulShutdown = () => {
-      if (shuttingDown) return;
-      shuttingDown = true;
-      logger.info('Shutting down monitor loop');
-      if (telemetryServer?.server) {
-        telemetryServer.server.close(() => {
-          process.exit(0);
-        });
-      } else {
+      const projectedRewards = options.projectedRewards ?? process.env.PROJECTED_REWARDS ?? null;
+      const offlineSnapshotPath = options.offlineSnapshot ?? process.env.OFFLINE_SNAPSHOT_PATH ?? null;
+
+      const monitor = await startMonitorLoop({
+        config,
+        intervalSeconds,
+        projectedRewards,
+        offlineSnapshotPath,
+        logger
+      });
+
+      const gracefulShutdown = async () => {
+        logger.info('Shutting down monitor loop');
+        await monitor.stop();
         process.exit(0);
-      }
-    };
+      };
 
-    process.on('SIGINT', gracefulShutdown);
-    process.on('SIGTERM', gracefulShutdown);
+      process.on('SIGINT', gracefulShutdown);
+      process.on('SIGTERM', gracefulShutdown);
 
-    while (!shuttingDown) {
-      try {
-        const diagnostics = await runNodeDiagnostics({
-          rpcUrl: config.RPC_URL,
-          label: config.NODE_LABEL,
-          parentDomain: config.ENS_PARENT_DOMAIN,
-          operatorAddress: config.OPERATOR_ADDRESS,
-          stakeManagerAddress: config.STAKE_MANAGER_ADDRESS,
-          incentivesAddress: config.PLATFORM_INCENTIVES_ADDRESS,
-          systemPauseAddress: config.SYSTEM_PAUSE_ADDRESS,
-          desiredMinimumStake: config.DESIRED_MINIMUM_STAKE,
-          autoResume: config.AUTO_RESUME,
-          projectedRewards,
-          offlineSnapshot: resolveSnapshot(),
-          logger
-        });
+      await monitor.loopPromise;
+    } catch (error) {
+      logger.error(error, 'Monitor loop failed');
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
+  });
 
-        if (!telemetryServer) {
-          telemetryServer = await launchMonitoring({
-            port: config.METRICS_PORT,
-            stakeStatus: diagnostics.stakeStatus,
-            logger
-          });
-        } else {
-          updateTelemetry(diagnostics.stakeStatus);
-        }
-
-        const actionSummary = diagnostics.ownerDirectives?.actions?.map((action) => action.type).join(', ');
-        logger.info(
-          {
-            node: diagnostics.verification?.nodeName,
-            healthy: diagnostics.stakeEvaluation?.meets,
-            priority: diagnostics.ownerDirectives?.priority,
-            actions: actionSummary ?? 'none'
-          },
-          'Monitor iteration completed'
-        );
-      } catch (error) {
-        logger.error(error, 'Monitor iteration failed');
+program
+  .command('container')
+  .description(
+    'Bootstrap container deployment: verify ENS, evaluate stake posture, and launch the monitoring loop'
+  )
+  .option('--skip-monitor', 'Run diagnostics only and exit')
+  .option('--once', 'Run a single monitor iteration then exit')
+  .option('--interval <seconds>', 'Seconds between diagnostic refreshes', '60')
+  .option('--rpc <url>', 'RPC endpoint URL override')
+  .option('-l, --label <label>', 'ENS label override')
+  .option('-a, --address <address>', 'Operator address override')
+  .option('--stake-manager <address>', 'StakeManager contract address override')
+  .option('--incentives <address>', 'PlatformIncentives contract address override')
+  .option('--system-pause <address>', 'System pause contract address override')
+  .option('--desired-minimum <amount>', 'Desired minimum stake floor in $AGIALPHA (decimal)')
+  .option('--auto-resume', 'Generate resume transaction when the stake posture is healthy')
+  .option('--metrics-port <port>', 'Expose Prometheus metrics on the specified port')
+  .option('--projected-rewards <amount>', 'Projected reward pool for the next epoch (decimal)')
+  .option('--offline-snapshot <path>', 'Use offline snapshot JSON when RPC connectivity is unavailable')
+  .action(async (options) => {
+    const logger = pino({ level: 'info', name: 'container' });
+    try {
+      const intervalSeconds = Number.parseInt(options.interval ?? '60', 10);
+      if (!Number.isFinite(intervalSeconds) || intervalSeconds <= 0) {
+        throw new Error('Interval must be a positive integer number of seconds');
       }
 
-      await new Promise((resolve) => setTimeout(resolve, intervalSeconds * 1000));
+      const configOverrides = {
+        RPC_URL: options.rpc,
+        NODE_LABEL: options.label,
+        OPERATOR_ADDRESS: options.address,
+        STAKE_MANAGER_ADDRESS: options.stakeManager,
+        PLATFORM_INCENTIVES_ADDRESS: options.incentives,
+        SYSTEM_PAUSE_ADDRESS: options.systemPause,
+        DESIRED_MINIMUM_STAKE: options.desiredMinimum,
+        AUTO_RESUME: options.autoResume,
+        METRICS_PORT: options.metricsPort
+      };
+
+      const projectedRewards = options.projectedRewards ?? process.env.PROJECTED_REWARDS ?? null;
+      const offlineSnapshotPath = options.offlineSnapshot ?? process.env.OFFLINE_SNAPSHOT_PATH ?? null;
+      const skipMonitor = Boolean(options.skipMonitor);
+      const runOnce = Boolean(options.once);
+      const maxIterations = runOnce ? 1 : Infinity;
+
+      const result = await bootstrapContainer({
+        overrides: configOverrides,
+        skipMonitor,
+        intervalSeconds,
+        projectedRewards,
+        offlineSnapshotPath,
+        maxIterations,
+        logger
+      });
+
+      if (skipMonitor) {
+        return;
+      }
+
+      const { monitor } = result;
+      if (!monitor) {
+        return;
+      }
+
+      const gracefulShutdown = async () => {
+        logger.info('Shutting down container monitor loop');
+        await monitor.stop();
+        process.exit(0);
+      };
+
+      process.on('SIGINT', gracefulShutdown);
+      process.on('SIGTERM', gracefulShutdown);
+
+      await monitor.loopPromise;
+    } catch (error) {
+      logger.error(error, 'Container bootstrap failed');
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
     }
   });
 

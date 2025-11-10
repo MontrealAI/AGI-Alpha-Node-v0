@@ -14,7 +14,7 @@
   <a href="docs/README.md"><img src="https://img.shields.io/badge/Operator%20Codex-Live-2d2d2d.svg?style=flat-square" alt="Documentation" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-0a0a0a.svg?style=flat-square" alt="License: MIT" /></a>
   <img src="https://img.shields.io/badge/Runtime-Node.js%2020.x-43853d.svg?style=flat-square" alt="Runtime: Node.js 20.x" />
-  <img src="https://img.shields.io/badge/Tests-64%20passing-34d058.svg?style=flat-square" alt="Tests: 64 passing" />
+  <img src="https://img.shields.io/badge/Tests-Vitest%20Green-34d058.svg?style=flat-square" alt="Tests: Vitest passing" />
   <img src="https://img.shields.io/badge/Docker-Monitor%20Ready-0db7ed.svg?style=flat-square" alt="Docker Ready" />
   <img src="https://img.shields.io/badge/Helm-Chart%20Ready-326ce5.svg?style=flat-square" alt="Helm chart" />
   <img src="https://img.shields.io/badge/Telemetry-Prometheus-1f6feb.svg?style=flat-square" alt="Prometheus" />
@@ -32,14 +32,15 @@ The node now ships a dedicated monitoring loop, offline survivability, and conta
 1. [Mission Field Briefing](#mission-field-briefing)
 2. [Launch Checklist](#launch-checklist)
 3. [Command Surface](#command-surface)
-4. [Operational Telemetry Flow](#operational-telemetry-flow)
-5. [Offline Continuity Mode](#offline-continuity-mode)
-6. [Container & Helm Deployment](#container--helm-deployment)
-7. [Owner Supremacy & Governance Payloads](#owner-supremacy--governance-payloads)
-8. [Repository Atlas](#repository-atlas)
-9. [Quality Gates & CI Enforcement](#quality-gates--ci-enforcement)
-10. [Contributing](#contributing)
-11. [License](#license)
+4. [Autonomous Container Bootstrap](#autonomous-container-bootstrap)
+5. [Operational Telemetry Flow](#operational-telemetry-flow)
+6. [Offline Continuity Mode](#offline-continuity-mode)
+7. [Container & Helm Deployment](#container--helm-deployment)
+8. [Owner Supremacy & Governance Payloads](#owner-supremacy--governance-payloads)
+9. [Repository Atlas](#repository-atlas)
+10. [Quality Gates & CI Enforcement](#quality-gates--ci-enforcement)
+11. [Contributing](#contributing)
+12. [License](#license)
 
 ---
 
@@ -110,7 +111,17 @@ The node now ships a dedicated monitoring loop, offline survivability, and conta
      --metrics-port 9464
    ```
 
-7. **Activate Continuous Monitoring**
+7. **Container Bootstrap (one iteration)**
+
+   ```bash
+   npx agi-alpha-node container \
+     --once \
+     --interval 60 \
+     --metrics-port 9464
+   # Validates ENS ownership, stake posture, and telemetry wiring in a single guarded pass
+   ```
+
+8. **Activate Continuous Monitoring**
 
    ```bash
    npx agi-alpha-node monitor \
@@ -125,7 +136,7 @@ The node now ships a dedicated monitoring loop, offline survivability, and conta
    # Metrics stream at http://localhost:9464/metrics (Prometheus scrape-ready)
    ```
 
-8. **Run the Full Test Harness**
+9. **Run the Full Test Harness**
 
    ```bash
    npm test
@@ -146,6 +157,47 @@ The node now ships a dedicated monitoring loop, offline survivability, and conta
 | `intelligence plan/swarm/learn` | Engages planning, swarm routing, and curriculum modules. | Entirely local — no external API dependency. |
 | `governance` helpers | Build pause/resume, minimum stake, role share, and global share transactions. | Owner retains full supremacy over runtime parameters. |
 | `job-proof` | Deterministic job commitment & submission payloads. | Ensures trustless escrow releases on-chain. |
+
+## Autonomous Container Bootstrap
+
+The `container` command fuses ENS verification, stake diagnostics, and the monitoring loop into a single orchestrated launch sequence. It is the entrypoint for both the Docker image and the Helm chart, guaranteeing that the rightful ENS custodian activates the node and that every owner override is queued before workloads execute.
+
+```bash
+docker run --rm \
+  -e RPC_URL=https://mainnet.infura.io/v3/<key> \
+  -e NODE_LABEL=1 \
+  -e OPERATOR_ADDRESS=0xYOURADDRESS \
+  -e STAKE_MANAGER_ADDRESS=0xStakeManager \
+  -e PLATFORM_INCENTIVES_ADDRESS=0xIncentives \
+  -e SYSTEM_PAUSE_ADDRESS=0xSystemPause \
+  -p 9464:9464 \
+  ghcr.io/montrealai/agi-alpha-node-v0:latest
+```
+
+*Autonomous start-up includes:*
+
+1. Loading and validating `RPC_URL`, `NODE_LABEL`, `OPERATOR_ADDRESS`, and governance parameters through the config schema.
+2. Resolving `<label>.alpha.node.agi.eth` (registry + name wrapper) and matching it against the operator wallet.
+3. Evaluating stake posture, slashing risk, and minimum thresholds, then synthesizing owner directives with encoded transactions.
+4. Launching the Prometheus monitoring surface and persisting the diagnostics loop at the cadence defined by `--interval`/`intervalSeconds`.
+
+`npx agi-alpha-node container --skip-monitor` provides a compliance-only pass, while `--once` executes a single guarded iteration for GitOps validation.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Boot as Container Entrypoint
+  participant Config as Config Schema
+  participant ENS as ENS Registry
+  participant Staking as Stake + Incentives
+  participant Monitor as Prometheus Loop
+  Boot->>Config: loadConfig(overrides)
+  Boot->>ENS: verifyNodeOwnership()
+  Boot->>Staking: runNodeDiagnostics()
+  Boot->>Boot: deriveOwnerDirectives()
+  Boot->>Monitor: startMonitorLoop()
+  Monitor-->>Boot: Metrics & heartbeat telemetry
+```
 
 ---
 
@@ -207,7 +259,7 @@ When offline mode is engaged, the runtime logs the snapshot source, synthesizes 
 
 ### Docker
 
-Build and run the production monitor image. The container defaults to the continuous `monitor` loop and exposes `/metrics` for health checks.
+Build and run the production monitor image. The container now boots through the `container` command, which validates ENS custody, inspects stake posture, and then hands control to the monitoring loop while `/metrics` stays live for health probes.
 
 ```bash
 # Build
@@ -256,7 +308,7 @@ helm install alpha-node deploy/helm/agi-alpha-node \
 
 The chart provisions:
 
-- Deployment with `monitor --interval <seconds>` arguments and optional offline snapshot support.
+- Deployment with `container --interval <seconds>` arguments and optional offline snapshot support.
 - Service + Prometheus-ready port (`/metrics`).
 - Liveness/readiness probes bound to the same health endpoint.
 - Configurable resource requests, tolerations, node selectors, and service account.
@@ -287,6 +339,8 @@ src/
   healthcheck.js          # Docker/Helm health probe
   index.js                # CLI entrypoint + command surface
   intelligence/           # Planning, swarm orchestrator, learning loop, stress harness
+  orchestrator/bootstrap.js   # Container bootstrap + owner directives summary
+  orchestrator/monitorLoop.js # Shared monitor loop for CLI & containers
   orchestrator/nodeRuntime.js # Diagnostics engine
   services/               # ENS, staking, governance, offline snapshots, provider, economics
   telemetry/monitoring.js # Prometheus gauges & server
@@ -307,7 +361,7 @@ Tests live under [`test/`](test/) (Vitest). Docs & manifest live under [`docs/`]
 - **CI Workflow** — `.github/workflows/ci.yml` executes markdown lint, link checks, and Vitest on every PR & push to `main`.
 - **Local Guards**
   - `npm run lint` – markdown + link sanity.
-  - `npm test` – 64 Vitest suites spanning ENS proofs, staking, offline snapshots, intelligence lattice, and governance payloads.
+  - `npm test` – Vitest suites spanning ENS proofs, staking, offline snapshots, intelligence lattice, governance payloads, container bootstrap, and monitor loop invariants.
   - `npm run coverage` – optional `c8` coverage output.
 - **Branch Protection** — CI badges and shields confirm visibility; enforce checks on PRs and the `main` branch.
 

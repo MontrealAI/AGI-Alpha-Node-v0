@@ -10,7 +10,7 @@ COPY src ./src
 COPY README.md ./
 
 ENTRYPOINT ["node", "src/index.js"]
-CMD ["monitor"]
+CMD ["container"]
 
 HEALTHCHECK --interval=45s --timeout=10s --start-period=60s --retries=5 \
   CMD ["node", "src/healthcheck.js"]
