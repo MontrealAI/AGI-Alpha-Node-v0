@@ -9,6 +9,12 @@ import { buildStakeAndActivateTx, validateStakeThreshold } from './services/stak
 import { calculateRewardShare } from './services/rewards.js';
 import { formatTokenAmount } from './utils/formatters.js';
 import { runNodeDiagnostics, launchMonitoring } from './orchestrator/nodeRuntime.js';
+import {
+  buildSystemPauseTx,
+  buildMinimumStakeTx,
+  buildRoleShareTx,
+  buildGlobalSharesTx
+} from './services/governance.js';
 
 const program = new Command();
 program
@@ -171,6 +177,95 @@ program
   .action((options) => {
     const nodeName = buildNodeNameFromLabel(options.label, options.parent);
     console.log(nodeName);
+  });
+
+const governance = program.command('governance').description('Owner supremacy governance utilities');
+
+governance
+  .command('pause')
+  .description('Build pause or resume transaction payload for the SystemPause contract')
+  .requiredOption('-c, --contract <address>', 'SystemPause contract address')
+  .option('-a, --action <action>', 'pause | resume | unpause', 'pause')
+  .action((options) => {
+    try {
+      const tx = buildSystemPauseTx({ systemPauseAddress: options.contract, action: options.action });
+      console.log('SystemPause transaction payload');
+      console.table({ to: tx.to, method: tx.method, data: tx.data });
+    } catch (error) {
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
+  });
+
+governance
+  .command('set-min-stake')
+  .description('Encode a setMinimumStake call for the StakeManager')
+  .requiredOption('-s, --stake-manager <address>', 'StakeManager contract address')
+  .requiredOption('-m, --amount <amount>', 'Minimum stake amount (decimal)')
+  .option('-d, --decimals <decimals>', 'Token decimals', '18')
+  .action((options) => {
+    try {
+      const tx = buildMinimumStakeTx({
+        stakeManagerAddress: options.stakeManager,
+        amount: options.amount,
+        decimals: Number.parseInt(options.decimals, 10)
+      });
+      console.log('StakeManager setMinimumStake payload');
+      console.table({ to: tx.to, data: tx.data, amount: tx.amount.toString() });
+    } catch (error) {
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
+  });
+
+governance
+  .command('set-role-share')
+  .description('Encode setRoleShare for the RewardEngine contract')
+  .requiredOption('-r, --reward-engine <address>', 'RewardEngine contract address')
+  .requiredOption('-o, --role <role>', 'Role identifier or alias (e.g. node, validator, treasury)')
+  .requiredOption('-b, --bps <bps>', 'Share allocation in basis points')
+  .action((options) => {
+    try {
+      const tx = buildRoleShareTx({
+        rewardEngineAddress: options.rewardEngine,
+        role: options.role,
+        shareBps: Number.parseInt(options.bps, 10)
+      });
+      console.log('RewardEngine setRoleShare payload');
+      console.table({ to: tx.to, role: tx.role, shareBps: tx.shareBps, data: tx.data });
+    } catch (error) {
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
+  });
+
+governance
+  .command('set-global-shares')
+  .description('Encode setGlobalShares for operator / validator / treasury splits')
+  .requiredOption('-r, --reward-engine <address>', 'RewardEngine contract address')
+  .requiredOption('--operator-bps <bps>', 'Operator share in basis points')
+  .requiredOption('--validator-bps <bps>', 'Validator share in basis points')
+  .requiredOption('--treasury-bps <bps>', 'Treasury share in basis points')
+  .action((options) => {
+    try {
+      const tx = buildGlobalSharesTx({
+        rewardEngineAddress: options.rewardEngine,
+        operatorShareBps: Number.parseInt(options.operatorBps, 10),
+        validatorShareBps: Number.parseInt(options.validatorBps, 10),
+        treasuryShareBps: Number.parseInt(options.treasuryBps, 10)
+      });
+      console.log('RewardEngine setGlobalShares payload');
+      console.table({
+        to: tx.to,
+        operatorShareBps: tx.shares.operatorShare,
+        validatorShareBps: tx.shares.validatorShare,
+        treasuryShareBps: tx.shares.treasuryShare,
+        data: tx.data
+      });
+    } catch (error) {
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
   });
 
 await program.parseAsync(process.argv);
