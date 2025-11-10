@@ -20,12 +20,43 @@ vi.mock('../src/orchestrator/stakeActivator.js', () => ({
   handleStakeActivation: vi.fn()
 }));
 
+vi.mock('../src/services/provider.js', () => ({
+  createProvider: vi.fn(() => ({ rpc: true })),
+  createWallet: vi.fn(() => ({ address: '0x00000000000000000000000000000000000000ff' }))
+}));
+
+const lifecycleMockFactory = () => ({
+  discover: vi.fn(async () => []),
+  watch: vi.fn(() => vi.fn()),
+  stop: vi.fn(),
+  getMetrics: vi.fn(() => ({ discovered: 0, lastJobProvider: 'agi-jobs' }))
+});
+
+vi.mock('../src/services/jobLifecycle.js', () => ({
+  createJobLifecycle: vi.fn(() => lifecycleMockFactory())
+}));
+
+const apiInstanceFactory = () => ({
+  server: { close: (cb) => cb && cb() },
+  stop: vi.fn(async () => {}),
+  getMetrics: vi.fn(() => ({ submitted: 0, completed: 0, failed: 0, tokensEarned: 0n })),
+  setOwnerDirectives: vi.fn(),
+  getOwnerDirectives: vi.fn(() => ({ priority: 'nominal', actions: [], notices: [] }))
+});
+
+vi.mock('../src/network/apiServer.js', () => ({
+  startAgentApi: vi.fn(() => apiInstanceFactory())
+}));
+
 import { bootstrapContainer } from '../src/orchestrator/bootstrap.js';
 import { loadConfig } from '../src/config/env.js';
 import { runNodeDiagnostics } from '../src/orchestrator/nodeRuntime.js';
 import { startMonitorLoop } from '../src/orchestrator/monitorLoop.js';
 import { loadOfflineSnapshot } from '../src/services/offlineSnapshot.js';
 import { handleStakeActivation } from '../src/orchestrator/stakeActivator.js';
+import { createProvider, createWallet } from '../src/services/provider.js';
+import { createJobLifecycle } from '../src/services/jobLifecycle.js';
+import { startAgentApi } from '../src/network/apiServer.js';
 
 const baseConfig = {
   RPC_URL: 'https://rpc.example',
@@ -69,6 +100,8 @@ const diagnosticsMock = {
 describe('bootstrapContainer', () => {
   const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
   const consoleTable = vi.spyOn(console, 'table').mockImplementation(() => {});
+  let lifecycleInstance;
+  let apiInstance;
 
   beforeEach(() => {
     loadConfig.mockReturnValue({ ...baseConfig });
@@ -81,6 +114,14 @@ describe('bootstrapContainer', () => {
     });
     loadOfflineSnapshot.mockClear();
     handleStakeActivation.mockClear();
+    createProvider.mockClear();
+    createWallet.mockClear();
+    createJobLifecycle.mockReset();
+    startAgentApi.mockClear();
+    lifecycleInstance = lifecycleMockFactory();
+    createJobLifecycle.mockReturnValue(lifecycleInstance);
+    apiInstance = apiInstanceFactory();
+    startAgentApi.mockReturnValue(apiInstance);
   });
 
   afterEach(() => {
@@ -106,6 +147,8 @@ describe('bootstrapContainer', () => {
     );
     expect(startMonitorLoop).not.toHaveBeenCalled();
     expect(handleStakeActivation).toHaveBeenCalled();
+    expect(startAgentApi).toHaveBeenCalled();
+    expect(apiInstance.setOwnerDirectives).toHaveBeenCalledWith(diagnosticsMock.ownerDirectives);
   });
 
   it('invokes monitor loop when not skipped', async () => {
@@ -117,8 +160,30 @@ describe('bootstrapContainer', () => {
         intervalSeconds: 45,
         projectedRewards: '123.4',
         offlineSnapshotPath: null,
-        maxIterations: 1
+        maxIterations: 1,
+        onDiagnostics: expect.any(Function)
       })
     );
+
+    const args = startMonitorLoop.mock.calls[0][0];
+    args.onDiagnostics({ ownerDirectives: { priority: 'critical', actions: [] } });
+    expect(apiInstance.setOwnerDirectives).toHaveBeenCalledWith(
+      expect.objectContaining({ priority: 'critical' })
+    );
+  });
+
+  it('initializes job lifecycle when registry address is provided', async () => {
+    loadConfig.mockReturnValue({ ...baseConfig, JOB_REGISTRY_ADDRESS: '0x00000000000000000000000000000000000000aa' });
+    lifecycleInstance = lifecycleMockFactory();
+    createJobLifecycle.mockReturnValue(lifecycleInstance);
+
+    await bootstrapContainer({ skipMonitor: true });
+
+    expect(createJobLifecycle).toHaveBeenCalledWith(
+      expect.objectContaining({ jobRegistryAddress: '0x00000000000000000000000000000000000000aa' })
+    );
+    expect(lifecycleInstance.discover).toHaveBeenCalled();
+    expect(lifecycleInstance.watch).toHaveBeenCalled();
+    expect(lifecycleInstance.stop).toHaveBeenCalled();
   });
 });

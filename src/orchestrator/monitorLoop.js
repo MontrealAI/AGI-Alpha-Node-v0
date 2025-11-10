@@ -85,7 +85,8 @@ export async function startMonitorLoop({
   offlineSnapshotPath = null,
   logger = pino({ level: 'info', name: 'monitor-loop' }),
   maxIterations = Infinity,
-  jobMetricsProvider = null
+  jobMetricsProvider = null,
+  onDiagnostics = null
 }) {
   if (!config) {
     throw new Error('config is required');
@@ -150,6 +151,14 @@ export async function startMonitorLoop({
           jobMetricsProvider,
           logger
         });
+
+        if (typeof onDiagnostics === 'function') {
+          try {
+            onDiagnostics(diagnostics);
+          } catch (callbackError) {
+            logger?.warn?.(callbackError, 'onDiagnostics callback failed');
+          }
+        }
 
         if (!telemetryServer) {
           telemetryServer = await launchMonitoring({

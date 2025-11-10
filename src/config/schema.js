@@ -74,6 +74,23 @@ export const configSchema = z
     PLATFORM_INCENTIVES_ADDRESS: z.string().regex(addressRegex).optional(),
     STAKE_MANAGER_ADDRESS: z.string().regex(addressRegex).optional(),
     REWARD_ENGINE_ADDRESS: z.string().regex(addressRegex).optional(),
+    JOB_REGISTRY_ADDRESS: z.string().regex(addressRegex).optional(),
+    JOB_DISCOVERY_BLOCK_RANGE: z
+      .coerce.number()
+      .int()
+      .positive()
+      .max(500_000)
+      .default(4_800),
+    JOB_APPLICATION_PROOF: z
+      .string()
+      .optional()
+      .transform((value) => {
+        if (value === undefined || value === null) {
+          return undefined;
+        }
+        const trimmed = value.trim();
+        return trimmed.length ? trimmed : undefined;
+      }),
     METRICS_PORT: z.coerce.number().int().min(1024).max(65535).default(9464),
     API_PORT: z.coerce.number().int().min(1024).max(65535).default(8080),
     DRY_RUN: booleanFlag.optional().default(true),

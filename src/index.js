@@ -1,9 +1,10 @@
 #!/usr/bin/env node
+import fs from 'node:fs';
 import { Command } from 'commander';
 import chalk from 'chalk';
 import pino from 'pino';
 import { loadConfig } from './config/env.js';
-import { createProvider } from './services/provider.js';
+import { createProvider, createWallet } from './services/provider.js';
 import { verifyNodeOwnership, buildNodeNameFromLabel } from './services/ensVerifier.js';
 import { buildStakeAndActivateTx, validateStakeThreshold } from './services/staking.js';
 import { calculateRewardShare, splitRewardPool } from './services/rewards.js';
@@ -33,6 +34,7 @@ import { assessAntifragility } from './intelligence/stressHarness.js';
 import { createJobProof, buildProofSubmissionTx } from './services/jobProof.js';
 import { loadOfflineSnapshot } from './services/offlineSnapshot.js';
 import { acknowledgeStakeAndActivate } from './services/stakeActivation.js';
+import { createJobLifecycle } from './services/jobLifecycle.js';
 
 const program = new Command();
 
@@ -209,6 +211,68 @@ function parseMetadataOption(input) {
     }
   }
   return trimmed;
+}
+
+function parseJsonMaybe(value) {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (typeof value !== 'string') {
+    return value;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return trimmed;
+  }
+}
+
+function loadFileContents(filePath) {
+  if (!filePath) return undefined;
+  const resolved = filePath.trim();
+  if (!resolved) return undefined;
+  try {
+    return fs.readFileSync(resolved, 'utf8');
+  } catch (error) {
+    throw new Error(`Unable to read file at ${resolved}: ${error.message}`);
+  }
+}
+
+function resolveResultPayload({ result, resultFile }) {
+  const explicit = result !== undefined && result !== null ? result : undefined;
+  const fileContent = resultFile ? loadFileContents(resultFile) : undefined;
+  return parseJsonMaybe(fileContent ?? explicit);
+}
+
+function resolveMetadataPayload(metadata, metadataFile) {
+  const fileContent = metadataFile ? loadFileContents(metadataFile) : undefined;
+  const source = fileContent ?? metadata;
+  return parseJsonMaybe(source);
+}
+
+function buildJobLifecycleFromConfig(config, overrides = {}, logger = pino({ level: 'info', name: 'jobs-cli' })) {
+  const registryAddress = overrides.registry ?? config.JOB_REGISTRY_ADDRESS;
+  if (!registryAddress) {
+    throw new Error('Job registry address is required. Configure JOB_REGISTRY_ADDRESS or supply --registry.');
+  }
+  const rpcUrl = overrides.rpcUrl ?? config.RPC_URL;
+  const provider = createProvider(rpcUrl);
+  const privateKey = overrides.privateKey ?? config.OPERATOR_PRIVATE_KEY ?? null;
+  const signer = privateKey ? createWallet(privateKey, provider) : null;
+  const lifecycle = createJobLifecycle({
+    provider,
+    jobRegistryAddress: registryAddress,
+    defaultSigner: signer,
+    defaultSubdomain: overrides.subdomain ?? config.NODE_LABEL,
+    defaultProof: overrides.proof ?? config.JOB_APPLICATION_PROOF ?? '0x',
+    discoveryBlockRange: overrides.discoveryBlockRange ?? config.JOB_DISCOVERY_BLOCK_RANGE,
+    logger
+  });
+  return { lifecycle, provider, signer };
 }
 
 function collectRoleShareTargets(value, previous) {
@@ -972,6 +1036,219 @@ proof
       logger.error(error, 'Failed to build submitProof payload');
       console.error(chalk.red(error.message));
       process.exitCode = 1;
+    }
+  });
+
+const jobs = program.command('jobs').description('On-chain AGI Jobs lifecycle orchestration');
+
+jobs
+  .command('discover')
+  .description('Scan the JobRegistry for open jobs and print a telemetry feed')
+  .option('--registry <address>', 'JobRegistry contract address override')
+  .option('--rpc <url>', 'RPC endpoint override')
+  .option('--from-block <number>', 'Starting block height for the discovery window')
+  .option('--blocks <number>', 'Override the discovery block range window')
+  .action(async (options) => {
+    const logger = pino({ level: 'info', name: 'jobs-discover' });
+    const config = loadConfig();
+    let lifecycle;
+    try {
+      const blockRange = options.blocks ? Number.parseInt(options.blocks, 10) : undefined;
+      const { lifecycle: jobLifecycle } = buildJobLifecycleFromConfig(
+        config,
+        {
+          registry: options.registry,
+          rpcUrl: options.rpc,
+          discoveryBlockRange: blockRange
+        },
+        logger
+      );
+      lifecycle = jobLifecycle;
+      const fromBlock = options.fromBlock ? Number.parseInt(options.fromBlock, 10) : undefined;
+      const discovered = await jobLifecycle.discover({
+        fromBlock: Number.isFinite(fromBlock) && fromBlock >= 0 ? fromBlock : undefined
+      });
+      if (!discovered.length) {
+        console.log(chalk.yellow('No open jobs detected in the selected block window.'));
+      } else {
+        discovered.forEach((job) => {
+          const reward = typeof job.reward === 'bigint' ? formatTokenAmount(job.reward) : String(job.reward ?? '0');
+          const status = chalk.cyan(job.status ?? 'unknown');
+          console.log(`${status} :: ${chalk.bold(job.jobId)} :: reward ${reward} ${AGIALPHA_TOKEN_SYMBOL}`);
+          if (job.deadline) {
+            const deadline = typeof job.deadline === 'bigint' ? job.deadline : BigInt(job.deadline ?? 0);
+            if (deadline > 0n && deadline < BigInt(Number.MAX_SAFE_INTEGER)) {
+              console.log(`  deadline: ${new Date(Number(deadline) * 1000).toISOString()}`);
+            }
+          }
+          if (job.uri) {
+            console.log(`  uri: ${job.uri}`);
+          }
+          if (Array.isArray(job.tags) && job.tags.length > 0) {
+            console.log(`  tags: ${job.tags.join(', ')}`);
+          }
+        });
+      }
+    } catch (error) {
+      logger.error(error, 'Job discovery failed');
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    } finally {
+      lifecycle?.stop?.();
+    }
+  });
+
+jobs
+  .command('apply <jobId>')
+  .description('Apply for a job using the configured ENS subdomain and staked identity')
+  .option('--registry <address>', 'JobRegistry contract address override')
+  .option('--rpc <url>', 'RPC endpoint override')
+  .option('--subdomain <label>', 'ENS label override (defaults to NODE_LABEL)')
+  .option('--proof <bytes>', 'Merkle proof bytes (hex string) for gated registries')
+  .option('--private-key <hex>', 'Override private key used for signing the transaction')
+  .action(async (jobId, options) => {
+    const logger = pino({ level: 'info', name: 'jobs-apply' });
+    const config = loadConfig();
+    let lifecycle;
+    try {
+      const { lifecycle: jobLifecycle } = buildJobLifecycleFromConfig(
+        config,
+        {
+          registry: options.registry,
+          rpcUrl: options.rpc,
+          subdomain: options.subdomain,
+          proof: options.proof,
+          privateKey: options.privateKey
+        },
+        logger
+      );
+      lifecycle = jobLifecycle;
+      const response = await jobLifecycle.apply(jobId, {
+        subdomain: options.subdomain ?? config.NODE_LABEL,
+        proof: options.proof
+      });
+      console.log(chalk.green(`Applied for job ${response.jobId}`));
+      if (response.transactionHash) {
+        console.log(`  tx: ${response.transactionHash}`);
+      }
+      console.log(`  method: ${response.method}`);
+    } catch (error) {
+      logger.error(error, 'Job application failed');
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    } finally {
+      lifecycle?.stop?.();
+    }
+  });
+
+jobs
+  .command('submit <jobId>')
+  .description('Submit completed work to the JobRegistry and emit deterministic commitments')
+  .option('--registry <address>', 'JobRegistry contract address override')
+  .option('--rpc <url>', 'RPC endpoint override')
+  .option('--result <payload>', 'Inline result payload (utf-8, JSON, or hex)')
+  .option('--result-file <path>', 'Path to file containing the result payload')
+  .option('--result-uri <uri>', 'Off-chain URI for the published artifact')
+  .option('--metadata <value>', 'Supplemental metadata JSON/utf-8/hex blob')
+  .option('--metadata-file <path>', 'Path to supplemental metadata JSON file')
+  .option('--timestamp <seconds>', 'Custom commitment timestamp (defaults to now)')
+  .option('--subdomain <label>', 'ENS label override (defaults to NODE_LABEL)')
+  .option('--proof <bytes>', 'Merkle proof bytes (hex string) for gated registries')
+  .option('--private-key <hex>', 'Override private key used for signing the transaction')
+  .action(async (jobId, options) => {
+    const logger = pino({ level: 'info', name: 'jobs-submit' });
+    const config = loadConfig();
+    let lifecycle;
+    try {
+      const resultPayload = resolveResultPayload({ result: options.result, resultFile: options.resultFile });
+      if (resultPayload === undefined && options.resultUri === undefined) {
+        throw new Error('Provide --result, --result-file, or --result-uri to derive a commitment.');
+      }
+      const metadataPayload = resolveMetadataPayload(options.metadata, options.metadataFile);
+      let timestamp;
+      if (options.timestamp !== undefined) {
+        try {
+          timestamp = BigInt(options.timestamp);
+          if (timestamp < 0n) {
+            throw new Error('timestamp must be non-negative');
+          }
+        } catch (error) {
+          throw new Error(`Invalid timestamp: ${error.message}`);
+        }
+      }
+      const { lifecycle: jobLifecycle } = buildJobLifecycleFromConfig(
+        config,
+        {
+          registry: options.registry,
+          rpcUrl: options.rpc,
+          subdomain: options.subdomain,
+          proof: options.proof,
+          privateKey: options.privateKey
+        },
+        logger
+      );
+      lifecycle = jobLifecycle;
+      const submission = await jobLifecycle.submit(jobId, {
+        result: resultPayload ?? options.resultUri ?? '',
+        resultUri: options.resultUri,
+        metadata: metadataPayload,
+        subdomain: options.subdomain ?? config.NODE_LABEL,
+        proof: options.proof,
+        timestamp
+      });
+      console.log(chalk.green(`Submitted result for job ${submission.jobId}`));
+      if (submission.transactionHash) {
+        console.log(`  tx: ${submission.transactionHash}`);
+      }
+      if (submission.commitment) {
+        console.log(`  commitment: ${submission.commitment}`);
+      }
+      if (submission.resultHash) {
+        console.log(`  resultHash: ${submission.resultHash}`);
+      }
+      console.log(`  method: ${submission.method}`);
+    } catch (error) {
+      logger.error(error, 'Job submission failed');
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    } finally {
+      lifecycle?.stop?.();
+    }
+  });
+
+jobs
+  .command('finalize <jobId>')
+  .description('Finalize a validated job and release escrowed $AGIALPHA rewards')
+  .option('--registry <address>', 'JobRegistry contract address override')
+  .option('--rpc <url>', 'RPC endpoint override')
+  .option('--private-key <hex>', 'Override private key used for signing the transaction')
+  .action(async (jobId, options) => {
+    const logger = pino({ level: 'info', name: 'jobs-finalize' });
+    const config = loadConfig();
+    let lifecycle;
+    try {
+      const { lifecycle: jobLifecycle } = buildJobLifecycleFromConfig(
+        config,
+        {
+          registry: options.registry,
+          rpcUrl: options.rpc,
+          privateKey: options.privateKey
+        },
+        logger
+      );
+      lifecycle = jobLifecycle;
+      const result = await jobLifecycle.finalize(jobId);
+      console.log(chalk.green(`Finalized job ${result.jobId}`));
+      if (result.transactionHash) {
+        console.log(`  tx: ${result.transactionHash}`);
+      }
+      console.log(`  method: ${result.method}`);
+    } catch (error) {
+      logger.error(error, 'Job finalization failed');
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    } finally {
+      lifecycle?.stop?.();
     }
   });
 
