@@ -18,7 +18,7 @@
   <img src="https://img.shields.io/badge/Branch%20Protection-Enforced-1f2933.svg?style=flat-square" alt="Branch Protection" />
   <img src="https://img.shields.io/badge/Runtime-Node.js%2020.x-43853d.svg?style=flat-square" alt="Runtime: Node.js 20.x" />
   <img src="https://img.shields.io/badge/Status-Fully%20Green%20CI-06d6a0.svg?style=flat-square" alt="Status: Fully Green CI" />
-  <img src="https://img.shields.io/badge/Tests-Vitest%2043%20passing-34d058.svg?style=flat-square" alt="Vitest Coverage" />
+  <img src="https://img.shields.io/badge/Tests-Vitest%2047%20passing-34d058.svg?style=flat-square" alt="Vitest Coverage" />
   <img src="https://img.shields.io/badge/Docker-Production%20Ready-0db7ed.svg?style=flat-square" alt="Docker Ready" />
   <img src="https://img.shields.io/badge/Telemetry-Prometheus%20%26%20Metrics-1f6feb.svg?style=flat-square" alt="Prometheus Ready" />
 </p>
@@ -75,7 +75,7 @@ This repository houses that machine. The runtime enforces ENS identity at activa
 | **Telemetry Spine** | Metrics publisher | [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) – Prometheus gauges for stake and heartbeat state. |
 | **Configuration** | Deterministic env parsing | [`src/config`](src/config) – schema-coerced environment with canonical $AGIALPHA enforcement. |
 | **Container** | Production image | [`Dockerfile`](Dockerfile) – one command diagnostics anywhere Node.js 20 runs. |
-| **Quality Harness** | Automated proof | [`test`](test) – 43 Vitest assertions covering ENS, staking, rewards, governance, economics, and intelligence lattice. |
+| **Quality Harness** | Automated proof | [`test`](test) – 47 Vitest assertions covering ENS, staking, rewards, governance, economics, and intelligence lattice. |
 
 ---
 
