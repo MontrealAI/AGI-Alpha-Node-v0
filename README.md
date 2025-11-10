@@ -18,7 +18,7 @@
   <img src="https://img.shields.io/badge/Branch%20Protection-Enforced-1f2933.svg?style=flat-square" alt="Branch Protection" />
   <img src="https://img.shields.io/badge/Runtime-Node.js%2020.x-43853d.svg?style=flat-square" alt="Runtime: Node.js 20.x" />
   <img src="https://img.shields.io/badge/Status-Fully%20Green%20CI-06d6a0.svg?style=flat-square" alt="Status: Fully Green CI" />
-  <img src="https://img.shields.io/badge/Tests-Vitest%2052%20passing-34d058.svg?style=flat-square" alt="Vitest Coverage" />
+  <img src="https://img.shields.io/badge/Tests-Vitest%2062%20passing-34d058.svg?style=flat-square" alt="Vitest Coverage" />
   <img src="https://img.shields.io/badge/Docker-Production%20Ready-0db7ed.svg?style=flat-square" alt="Docker Ready" />
   <img src="https://img.shields.io/badge/Telemetry-Prometheus%20%26%20Metrics-1f6feb.svg?style=flat-square" alt="Prometheus Ready" />
 </p>
@@ -48,13 +48,14 @@ This repository houses that machine. The runtime enforces ENS identity at activa
 9. [Economic Optimization Engine](#economic-optimization-engine)
 10. [Autonomous Intelligence Lattice](#autonomous-intelligence-lattice)
 11. [Governance & Owner Supremacy](#governance--owner-supremacy)
-12. [Telemetry, Containerization & Deployment](#telemetry-containerization--deployment)
-13. [Quality Gates & CI](#quality-gates--ci)
-14. [CI Enforcement Playbook](#ci-enforcement-playbook)
-15. [Repository Atlas](#repository-atlas)
-16. [Contributing](#contributing)
-17. [License](#license)
-18. [Eternal Transmission](#eternal-transmission)
+12. [Owner Control Plane & Emergency Directives](#owner-control-plane--emergency-directives)
+13. [Telemetry, Containerization & Deployment](#telemetry-containerization--deployment)
+14. [Quality Gates & CI](#quality-gates--ci)
+15. [CI Enforcement Playbook](#ci-enforcement-playbook)
+16. [Repository Atlas](#repository-atlas)
+17. [Contributing](#contributing)
+18. [License](#license)
+19. [Eternal Transmission](#eternal-transmission)
 
 ---
 
@@ -76,10 +77,11 @@ This repository houses that machine. The runtime enforces ENS identity at activa
 | **Open-Ended Learning** | POET-style curriculum | [`src/intelligence/learningLoop.js`](src/intelligence/learningLoop.js) – generates new challenges from performance traces. |
 | **Antifragile Harness** | Stress simulation | [`src/intelligence/stressHarness.js`](src/intelligence/stressHarness.js) – institutional resilience scoring + remediation plans. |
 | **Owner Supremacy** | Governance payloads | [`src/services/governance.js`](src/services/governance.js) – pause/resume, stake floors, reward splits. |
+| **Owner Control Plane** | Emergency directives | [`src/services/controlPlane.js`](src/services/controlPlane.js) – auto-derives pause/resume, stake top-ups, and stake floor governance payloads. |
 | **Telemetry Spine** | Metrics publisher | [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) – Prometheus gauges for stake and heartbeat state. |
 | **Configuration** | Deterministic env parsing | [`src/config`](src/config) – schema-coerced environment with canonical $AGIALPHA enforcement. |
 | **Container** | Production image | [`Dockerfile`](Dockerfile) – one command diagnostics anywhere Node.js 20 runs. |
-| **Quality Harness** | Automated proof | [`test`](test) – 56 Vitest assertions covering ENS, staking, rewards, governance, economics, intelligence lattice, and job proofs. |
+| **Quality Harness** | Automated proof | [`test`](test) – 62 Vitest assertions covering ENS, staking, rewards, governance, economics, intelligence lattice, job proofs, and the owner control plane. |
 
 ---
 
@@ -133,11 +135,15 @@ This repository houses that machine. The runtime enforces ENS identity at activa
      --rpc https://mainnet.infura.io/v3/<key> \
      --stake-manager 0xStakeManager \
      --incentives 0xIncentivesContract \
+     --system-pause 0xSystemPause \
+     --desired-minimum 1500 \
+     --auto-resume \
      --projected-rewards 1500 \
      --metrics-port 9464
    ```
 
    Metrics stream at `http://localhost:9464/metrics` (Prometheus scrape-ready).
+   The diagnostics now emit an **Owner Control Directives** table summarizing pause, resume, stake top-up, and minimum-stake governance payloads tailored to your telemetry.
 
 7. **Deploy Intelligence Modules** – wield the autonomous lattice directly:
 
@@ -179,7 +185,7 @@ This repository houses that machine. The runtime enforces ENS identity at activa
 | ----------------- | --------------- | ---------------- | ---------------- |
 | ENS subdomain custody (`⟨label⟩.alpha.node.agi.eth`) | `npx agi-alpha-node verify-ens --label 1 --address <0x...>` | `test/ensVerifier.test.js` validates resolver, registry, and wrapper owners. | [`src/services/ensVerifier.js`](src/services/ensVerifier.js) |
 | Canonical `$AGIALPHA` enforcement (18 decimals, checksum) | `npx agi-alpha-node token metadata` / `token approve` | `test/token.test.js` locks symbol, decimals, and approval payloads. | [`src/constants/token.js`](src/constants/token.js) |
-| Stake posture + health thresholding | `npx agi-alpha-node status --stake-manager <addr> --incentives <addr>` | `test/staking.test.js` confirms minimum stake evaluation + payloads. | [`src/services/staking.js`](src/services/staking.js) |
+| Stake posture + owner directives | `npx agi-alpha-node status --stake-manager <addr> --incentives <addr> --system-pause <addr> --desired-minimum <amt> --auto-resume` | `test/staking.test.js` + `test/controlPlane.test.js` confirm stake evaluation and directive synthesis. | [`src/services/staking.js`](src/services/staking.js)<br />[`src/services/controlPlane.js`](src/services/controlPlane.js) |
 | Reward share projections (15% basis) | `npx agi-alpha-node reward-share --total 10000 --bps 1500` | `test/rewards.test.js` exercises thermodynamic share calculations. | [`src/services/rewards.js`](src/services/rewards.js) |
 | Economic reinvestment policy | `npx agi-alpha-node economics optimize --stake 1500 --rewards 420,380,410` | `test/economics.test.js` + `test/formatters.test.js` guard scoring + formatting invariants. | [`src/services/economics.js`](src/services/economics.js) |
 | Governance supremacy (pause, share tuning, stake floor) | `npx agi-alpha-node governance pause --system <addr>` etc. | `test/governance.test.js` enforces payload encoding + guard rails. | [`src/services/governance.js`](src/services/governance.js) |
@@ -203,13 +209,16 @@ All runtime commands resolve their environment through the schema in [`src/confi
 | `OPERATOR_ADDRESS` | Checksummed address that must own the ENS subdomain. | Required for activation |
 | `STAKE_MANAGER_ADDRESS` | StakeManager contract that enforces minimum stake and slashing. | Optional override |
 | `PLATFORM_INCENTIVES_ADDRESS` | PlatformIncentives contract used for `stakeAndActivate`. | Optional override |
+| `SYSTEM_PAUSE_ADDRESS` | System pause contract powering emergency pause/resume payloads. | Optional override |
 | `REWARD_ENGINE_ADDRESS` | Reward engine contract for share tuning operations. | Optional override |
+| `DESIRED_MINIMUM_STAKE` | Target minimum stake floor (decimal string) used to suggest governance updates. | Optional override |
+| `AUTO_RESUME` | Boolean toggle that emits resume payloads when stake health is restored. | `false` |
 | `METRICS_PORT` | TCP port for Prometheus metrics exposure. | `9464` (range 1024–65535 enforced) |
 | `DRY_RUN` | Boolean flag toggling transaction broadcasting. Accepts `true/false/1/0`. | `true` |
 | `AGIALPHA_TOKEN_ADDRESS` | Canonical `$AGIALPHA` ERC-20 contract. Attempts to override must equal the checksum address. | `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` |
 | `AGIALPHA_TOKEN_DECIMALS` | Token decimals accepted by staking + rewards calculations. | Locked to `18` |
 
-Use the CLI with environment variables or the `--rpc`, `--stake-manager`, and `--incentives` flags to target different deployments (local Anvil, Sepolia, mainnet) while preserving the canonical `$AGIALPHA` surface. Any mismatch, including ENS resolver drift or token substitution attempts, is rejected before the node issues transactions.
+Use the CLI with environment variables or the `--rpc`, `--stake-manager`, `--incentives`, `--system-pause`, and `--desired-minimum` flags (plus `--auto-resume` when desired) to target different deployments while preserving the canonical `$AGIALPHA` surface. Any mismatch, including ENS resolver drift or token substitution attempts, is rejected before the node issues transactions.
 
 ---
 
@@ -220,7 +229,7 @@ Use the CLI with environment variables or the `--rpc`, `--stake-manager`, and `-
 | `ens-guide` | Prints ENS registration checklist, resolver alignment, funding guidance. | [`src/index.js`](src/index.js) |
 | `verify-ens` | Confirms ownership of `⟨label⟩.alpha.node.agi.eth` via registry + wrapper proofs. | [`src/index.js`](src/index.js) |
 | `stake-tx` | Builds a `stakeAndActivate` transaction for PlatformIncentives. | [`src/services/staking.js`](src/services/staking.js) |
-| `status` | Aggregates ENS proofs, stake posture, reward projections, Prometheus metrics. | [`src/orchestrator/nodeRuntime.js`](src/orchestrator/nodeRuntime.js) |
+| `status` | Aggregates ENS proofs, stake posture, owner directives, reward projections, Prometheus metrics. | [`src/orchestrator/nodeRuntime.js`](src/orchestrator/nodeRuntime.js) |
 | `reward-share` | Calculates operator payouts from any reward pool. | [`src/services/rewards.js`](src/services/rewards.js) |
 | `reward-distribution` | Weights thermodynamic epoch pool across operator, validators, and treasury via stake gravity. | [`src/services/rewards.js`](src/services/rewards.js) |
 | `token metadata/approve/allowance` | Canonical $AGIALPHA metadata + allowances. | [`src/services/token.js`](src/services/token.js) |
@@ -300,6 +309,7 @@ The runtime binds ENS identity with staking posture, token supremacy, economic p
 * `stake-tx` produces a ready-to-sign `stakeAndActivate` calldata payload.
 * `status` resolves minimum stake, operator stake, slashing penalties, and heartbeat recency via StakeManager + PlatformIncentives.
 * Stake posture analytics (`evaluateStakeConditions`) output recommended owner actions (`pause-and-recover`, `increase-stake`, `submit-heartbeat`) before chain-level automation intervenes.
+* Owner control plane (`deriveOwnerDirectives`) fuses telemetry with governance tooling to print ready-to-sign pause, resume, top-up, and stake-floor transactions.
 
 ```mermaid
 stateDiagram-v2
@@ -445,6 +455,38 @@ The table and flow reinforce that the custodian retains **total spectrum control
 
 ---
 
+## Owner Control Plane & Emergency Directives
+
+> The `status` command now synthesizes your stake telemetry into executable ownership directives—no spreadsheet triage, just live control payloads for the operator.
+
+```mermaid
+flowchart LR
+  Telemetry[Stake Telemetry\nminimum, penalty, heartbeat] --> Evaluation[deriveOwnerDirectives\ncontrol plane]
+  Evaluation --> PauseTx[Pause / Resume payloads\npauseAll | resumeAll]
+  Evaluation --> TopUpTx[Stake top-up\nstakeAndActivate]
+  Evaluation --> MinStakeTx[Stake floor governance\nsetMinimumStake]
+  Evaluation --> Notices[Operator notices\nheartbeat + guidance]
+```
+
+[`src/services/controlPlane.js`](src/services/controlPlane.js) orchestrates the data into four possible directives:
+
+| Trigger | Output | Required Inputs | Transaction Builder |
+| ------- | ------ | --------------- | ------------------- |
+| Slashing penalty active | `pause` action surfaces emergency `pauseAll` payloads | `--system-pause` flag or `SYSTEM_PAUSE_ADDRESS` env | [`buildSystemPauseTx`](src/services/governance.js) |
+| Stake deficit below minimum | `stake-top-up` action encodes `stakeAndActivate` with precise deficit amount | `--incentives` flag / `PLATFORM_INCENTIVES_ADDRESS` env | [`buildStakeAndActivateTx`](src/services/staking.js) |
+| Desired minimum stake mismatch | `set-minimum-stake` governance payload resets the floor | `--desired-minimum` + `--stake-manager` flags (or env) | [`buildMinimumStakeTx`](src/services/governance.js) |
+| Healthy stake posture with auto-resume | `resume` action queues `resumeAll` to reopen flows | `--auto-resume` + `--system-pause` | [`buildSystemPauseTx`](src/services/governance.js) |
+
+Additional guard rails:
+
+* Heartbeat drift injects warning notices prompting manual heartbeat submissions before inactivity slashing can occur.
+* Missing addresses trigger yellow alerts rather than silent failure—operators always know which pointer to provide.
+* Amounts render via `formatExactAmount` so deficit sizes match on-chain precision; tests in [`test/controlPlane.test.js`](test/controlPlane.test.js) guarantee the math.
+
+All directives print under the **Owner Control Directives** banner when running `status`. Combine them with the CLI one-liners to issue the transactions in seconds—your node never waits for an analyst to prepare remediation instructions.
+
+---
+
 ## Telemetry, Containerization & Deployment
 
 * Docker image ships with production dependencies only (`npm ci --omit=dev`), entrypoint bound to `status` command.
@@ -458,7 +500,7 @@ The table and flow reinforce that the custodian retains **total spectrum control
 
 * GitHub Actions workflow (`ci.yml`) runs linting (`markdownlint`, `markdown-link-check`) and Vitest suites on every push/PR; badge shows main-branch health.
 * Branch protection requires green checks; PRs cannot merge without passing lint + test gates.
-* Tests (56 assertions) cover ENS normalization, staking adapters, governance payloads, token utilities, economic optimizer, the thermodynamic reward engine, and the intelligence lattice modules.
+* Tests (62 assertions) cover ENS normalization, staking adapters, governance payloads, token utilities, economic optimizer, the thermodynamic reward engine, the intelligence lattice modules, and the owner control plane directives.
 
 ---
 
@@ -499,7 +541,7 @@ These steps, together with the provided workflow, ensure all production merges r
 | [`src/index.js`](src/index.js) | CLI entrypoint, command definitions, intelligence modules integration. |
 | [`src/config`](src/config) | Environment schema + defaults. |
 | [`src/constants/token.js`](src/constants/token.js) | Canonical $AGIALPHA metadata + checksum enforcement. |
-| [`src/services`](src/services) | ENS, staking, rewards, token, governance, economics, and job proof utilities. |
+| [`src/services`](src/services) | ENS, staking, rewards, token, governance, economics, job proof, and owner control-plane utilities. |
 | [`src/intelligence`](src/intelligence) | Planning, swarm orchestration, learning loop, stress harness. |
 | [`src/orchestrator/nodeRuntime.js`](src/orchestrator/nodeRuntime.js) | Diagnostics runner + Prometheus bootstrap. |
 | [`src/telemetry`](src/telemetry) | Prometheus gauges and HTTP server. |

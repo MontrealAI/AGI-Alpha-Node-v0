@@ -5,6 +5,7 @@ import { getStakeStatus, validateStakeThreshold, evaluateStakeConditions } from 
 import { projectEpochRewards } from '../services/rewards.js';
 import { startMonitoringServer } from '../telemetry/monitoring.js';
 import { formatTokenAmount } from '../utils/formatters.js';
+import { deriveOwnerDirectives } from '../services/controlPlane.js';
 
 export async function runNodeDiagnostics({
   rpcUrl,
@@ -13,6 +14,9 @@ export async function runNodeDiagnostics({
   operatorAddress,
   stakeManagerAddress,
   incentivesAddress,
+  systemPauseAddress,
+  desiredMinimumStake,
+  autoResume = false,
   projectedRewards,
   logger = pino({ level: 'info', name: 'agi-alpha-node' })
 }) {
@@ -106,11 +110,35 @@ export async function runNodeDiagnostics({
     }, 'Projected epoch rewards');
   }
 
+  const ownerDirectives = deriveOwnerDirectives({
+    stakeStatus,
+    stakeEvaluation,
+    config: {
+      systemPauseAddress,
+      incentivesAddress,
+      stakeManagerAddress,
+      desiredMinimumStake,
+      autoResume
+    }
+  });
+
+  if (ownerDirectives?.actions?.length) {
+    logger.warn(
+      {
+        priority: ownerDirectives.priority,
+        actions: ownerDirectives.actions.map((action) => ({ type: action.type, level: action.level })),
+        notices: ownerDirectives.notices
+      },
+      'Owner control directives generated'
+    );
+  }
+
   return {
     verification,
     stakeStatus,
     rewardsProjection,
-    stakeEvaluation
+    stakeEvaluation,
+    ownerDirectives
   };
 }
 

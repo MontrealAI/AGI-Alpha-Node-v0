@@ -12,6 +12,7 @@ import { formatTokenAmount } from './utils/formatters.js';
 import {
   AGIALPHA_TOKEN_CHECKSUM_ADDRESS,
   AGIALPHA_TOKEN_DECIMALS,
+  AGIALPHA_TOKEN_SYMBOL,
   normalizeTokenAddress
 } from './constants/token.js';
 import { buildTokenApproveTx, describeAgialphaToken, getTokenAllowance } from './services/token.js';
@@ -303,19 +304,31 @@ program
   .option('--rpc <url>', 'RPC endpoint URL')
   .option('--stake-manager <address>', 'StakeManager contract address')
   .option('--incentives <address>', 'PlatformIncentives contract address')
+  .option('--system-pause <address>', 'System pause contract address for owner overrides')
+  .option('--desired-minimum <amount>', 'Desired minimum stake floor in $AGIALPHA (decimal)')
+  .option('--auto-resume', 'Generate resume transaction when the stake posture is healthy')
   .option('--projected-rewards <amount>', 'Projected reward pool for the next epoch (decimal)')
   .option('--metrics-port <port>', 'Expose Prometheus metrics on the specified port')
   .action(async (options) => {
     const logger = pino({ level: 'info', name: 'status' });
     try {
-      const config = loadConfig({
+      const configOverrides = {
         RPC_URL: options.rpc,
         NODE_LABEL: options.label,
         OPERATOR_ADDRESS: options.address,
         STAKE_MANAGER_ADDRESS: options.stakeManager,
         PLATFORM_INCENTIVES_ADDRESS: options.incentives,
+        SYSTEM_PAUSE_ADDRESS: options.systemPause,
+        DESIRED_MINIMUM_STAKE: options.desiredMinimum,
+        AUTO_RESUME: options.autoResume,
         METRICS_PORT: options.metricsPort
-      });
+      };
+
+      const config = loadConfig(
+        Object.fromEntries(
+          Object.entries(configOverrides).filter(([, value]) => value !== undefined)
+        )
+      );
       const diagnostics = await runNodeDiagnostics({
         rpcUrl: config.RPC_URL,
         label: config.NODE_LABEL,
@@ -323,6 +336,9 @@ program
         operatorAddress: config.OPERATOR_ADDRESS,
         stakeManagerAddress: config.STAKE_MANAGER_ADDRESS,
         incentivesAddress: config.PLATFORM_INCENTIVES_ADDRESS,
+        systemPauseAddress: config.SYSTEM_PAUSE_ADDRESS,
+        desiredMinimumStake: config.DESIRED_MINIMUM_STAKE,
+        autoResume: config.AUTO_RESUME,
         projectedRewards: options.projectedRewards,
         logger
       });
@@ -378,6 +394,34 @@ program
           operatorShare: formatTokenAmount(diagnostics.rewardsProjection.operatorPortion),
           shareBps: diagnostics.rewardsProjection.operatorShareBps
         });
+      }
+
+      if (diagnostics.ownerDirectives) {
+        const directives = diagnostics.ownerDirectives;
+        console.log(chalk.bold(`Owner Control Directives [${directives.priority.toUpperCase()}]`));
+        if (directives.actions.length > 0) {
+          const actionRows = directives.actions.map((action, index) => ({
+            '#': index + 1,
+            type: action.type,
+            level: action.level,
+            reason: action.reason,
+            to: action.tx?.to ?? 'n/a',
+            method: action.tx?.method ?? (action.tx?.data ? 'call' : 'n/a'),
+            amount:
+              action.formattedAmount ??
+              (typeof action.amount === 'bigint'
+                ? `${formatTokenAmount(action.amount, AGIALPHA_TOKEN_DECIMALS)} ${AGIALPHA_TOKEN_SYMBOL}`
+                : 'n/a')
+          }));
+          console.table(actionRows);
+        } else {
+          console.log(chalk.gray('No actionable transactions derived.'));
+        }
+        if (directives.notices.length > 0) {
+          directives.notices.forEach((notice) => {
+            console.log(chalk.yellow(`⚠️  ${notice}`));
+          });
+        }
       }
 
       if (options.metricsPort) {

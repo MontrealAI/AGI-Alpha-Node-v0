@@ -9,18 +9,16 @@ import {
 
 const addressRegex = /^0x[a-fA-F0-9]{40}$/;
 
-const booleanCoercion = z
-  .union([
-    z.boolean(),
-    z.string().transform((value) => {
-      const lower = value.toLowerCase();
-      if (['1', 'true', 'yes', 'on'].includes(lower)) return true;
-      if (['0', 'false', 'no', 'off', ''].includes(lower)) return false;
-      throw new Error(`Cannot coerce boolean from "${value}"`);
-    }),
-    z.number().transform((value) => value !== 0)
-  ])
-  .default(true);
+const booleanFlag = z.union([
+  z.boolean(),
+  z.string().transform((value) => {
+    const lower = value.toLowerCase();
+    if (['1', 'true', 'yes', 'on'].includes(lower)) return true;
+    if (['0', 'false', 'no', 'off', ''].includes(lower)) return false;
+    throw new Error(`Cannot coerce boolean from "${value}"`);
+  }),
+  z.number().transform((value) => value !== 0)
+]);
 
 export const configSchema = z
   .object({
@@ -32,7 +30,7 @@ export const configSchema = z
     STAKE_MANAGER_ADDRESS: z.string().regex(addressRegex).optional(),
     REWARD_ENGINE_ADDRESS: z.string().regex(addressRegex).optional(),
     METRICS_PORT: z.coerce.number().int().min(1024).max(65535).default(9464),
-    DRY_RUN: booleanCoercion,
+    DRY_RUN: booleanFlag.optional().default(true),
     AGIALPHA_TOKEN_ADDRESS: z
       .string()
       .regex(addressRegex)
@@ -55,7 +53,21 @@ export const configSchema = z
       .default(AGIALPHA_TOKEN_DECIMALS)
       .refine((value) => value === AGIALPHA_TOKEN_DECIMALS, {
         message: `${AGIALPHA_TOKEN_SYMBOL} uses fixed decimals ${AGIALPHA_TOKEN_DECIMALS}`
-      })
+      }),
+    SYSTEM_PAUSE_ADDRESS: z.string().regex(addressRegex).optional(),
+    DESIRED_MINIMUM_STAKE: z
+      .union([z.string(), z.number(), z.bigint()])
+      .optional()
+      .transform((value) => {
+        if (value === undefined || value === null) return undefined;
+        const asString = value.toString().trim();
+        if (!asString) return undefined;
+        if (!/^\d+(\.\d+)?$/.test(asString)) {
+          throw new Error('DESIRED_MINIMUM_STAKE must be a numeric value');
+        }
+        return asString;
+      }),
+    AUTO_RESUME: booleanFlag.optional().default(false)
   })
   .strict();
 

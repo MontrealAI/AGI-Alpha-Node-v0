@@ -14,9 +14,14 @@ vi.mock('../src/services/rewards.js', () => ({
   projectEpochRewards: vi.fn()
 }));
 
+vi.mock('../src/services/controlPlane.js', () => ({
+  deriveOwnerDirectives: vi.fn()
+}));
+
 import { verifyNodeOwnership } from '../src/services/ensVerifier.js';
 import { getStakeStatus, validateStakeThreshold, evaluateStakeConditions } from '../src/services/staking.js';
 import { projectEpochRewards } from '../src/services/rewards.js';
+import { deriveOwnerDirectives } from '../src/services/controlPlane.js';
 import { runNodeDiagnostics } from '../src/orchestrator/nodeRuntime.js';
 
 describe('runNodeDiagnostics', () => {
@@ -52,6 +57,7 @@ describe('runNodeDiagnostics', () => {
       recommendedAction: 'maintain'
     });
     projectEpochRewards.mockReturnValue({ pool: 1500n, operatorPortion: 225n, operatorShareBps: 1500 });
+    deriveOwnerDirectives.mockReturnValue({ priority: 'nominal', actions: [], notices: ['Stake posture nominal – maintain monitoring cadence.'] });
 
     const diagnostics = await runNodeDiagnostics({
       rpcUrl: 'https://example.rpc',
@@ -60,6 +66,9 @@ describe('runNodeDiagnostics', () => {
       operatorAddress: '0x000000000000000000000000000000000000dEaD',
       stakeManagerAddress: '0x0000000000000000000000000000000000000001',
       incentivesAddress: '0x0000000000000000000000000000000000000002',
+      systemPauseAddress: undefined,
+      desiredMinimumStake: undefined,
+      autoResume: false,
       projectedRewards: '1500',
       logger
     });
@@ -86,6 +95,20 @@ describe('runNodeDiagnostics', () => {
       lastHeartbeat: undefined,
       currentTimestamp: expect.any(Number)
     });
+    expect(deriveOwnerDirectives).toHaveBeenCalledWith({
+      stakeStatus: { minimumStake: 1000n, operatorStake: 1500n },
+      stakeEvaluation: expect.objectContaining({ recommendedAction: 'maintain' }),
+      config: {
+        systemPauseAddress: undefined,
+        incentivesAddress: '0x0000000000000000000000000000000000000002',
+        stakeManagerAddress: '0x0000000000000000000000000000000000000001',
+        desiredMinimumStake: undefined,
+        autoResume: false
+      }
+    });
+    expect(diagnostics.ownerDirectives).toEqual(
+      expect.objectContaining({ priority: 'nominal', notices: expect.arrayContaining([expect.any(String)]) })
+    );
   });
 
   it('throws when ENS ownership fails verification and logs failure event', async () => {
@@ -107,6 +130,9 @@ describe('runNodeDiagnostics', () => {
         operatorAddress: '0x000000000000000000000000000000000000c0de',
         stakeManagerAddress: undefined,
         incentivesAddress: undefined,
+        systemPauseAddress: undefined,
+        desiredMinimumStake: undefined,
+        autoResume: false,
         projectedRewards: undefined,
         logger
       })
@@ -124,5 +150,6 @@ describe('runNodeDiagnostics', () => {
     );
     expect(getStakeStatus).not.toHaveBeenCalled();
     expect(projectEpochRewards).not.toHaveBeenCalled();
+    expect(deriveOwnerDirectives).not.toHaveBeenCalled();
   });
 });
