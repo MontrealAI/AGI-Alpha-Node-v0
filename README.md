@@ -249,44 +249,62 @@ Use the CLI with environment variables or the `--rpc`, `--stake-manager`, `--inc
 
 ## Architecture & Cognitive Flow
 
+> The node composes verifiable identity, token supremacy, thermodynamic rewards, and autonomous cognition into a single sovereign runtime that the owner can bend in real time.
+
 ```mermaid
 flowchart LR
-  subgraph Identity
-    ENS[ENS Registry & NameWrapper]
-    Guide[ens-guide CLI]
-  end
-  subgraph Economy
-    Stake[StakeManager]
-    Incentives[PlatformIncentives]
-    Token[$AGIALPHA ERC-20]
-    Rewards[Reward Engine]
-  end
-  subgraph Intelligence
-    Planner[World-Model Planner]
-    Swarm[Swarm Orchestrator]
-    Learning[Curriculum Evolution]
-    Stress[Antifragile Harness]
-  end
-  subgraph OwnerControl
-    Governance[Governance Payload Builder]
-    Telemetry[Prometheus Metrics]
-  end
+    subgraph OwnerControl[Owner Control Plane]
+        CLI[CLI Commands]
+        ControlPayloads[Governance Payload Builders]
+    end
+    subgraph ChainInterface[On-Chain Interfaces]
+        ENS[ENS Sentinel]
+        StakeMgr[StakeManager Adapter]
+        Incentives[PlatformIncentives]
+        Token[$AGIALPHA Token]
+    end
+    subgraph IntelligenceMesh[Intelligence Lattice]
+        Planner[World-Model Planner]
+        Swarm[Swarm Orchestrator]
+        Learning[Curriculum Evolution]
+        Stress[Antifragile Harness]
+    end
+    subgraph Runtime[Runtime & Telemetry]
+        Diagnostics[Diagnostics Core]
+        Metrics[Prometheus Exporter]
+    end
 
-  ENS -->|verify-ens| Runtime
-  Guide --> Runtime[CLI Runtime]
-  Runtime --> Stake
-  Runtime --> Incentives
-  Runtime --> Token
-  Runtime --> Rewards
-  Runtime --> Planner
-  Planner --> Swarm
-  Swarm --> Learning
-  Learning --> Stress
-  Stress --> Governance
-  Governance --> OwnerControl
-  Telemetry --> OwnerControl
-  OwnerControl --> Operator[Node Operator]
+    CLI --> ENS
+    CLI --> StakeMgr
+    CLI --> Incentives
+    CLI --> Token
+    CLI --> Planner
+    CLI --> Swarm
+    CLI --> Learning
+    CLI --> Stress
+
+    ControlPayloads --> StakeMgr
+    ControlPayloads --> Incentives
+    ControlPayloads --> Token
+
+    ENS --> Diagnostics
+    StakeMgr --> Diagnostics
+    Incentives --> Diagnostics
+    Token --> Diagnostics
+    IntelligenceMesh --> Diagnostics
+    Diagnostics --> Metrics
+    Metrics -->|Prometheus scrape| OwnerControl
 ```
+
+| Layer | Purpose | Key Modules |
+| ----- | ------- | ----------- |
+| **Command & Control** | Owner-only CLI entrypoint orchestrating activation, diagnostics, and intelligence payloads | [`src/index.js`](src/index.js)
+| **Identity Spine** | ENS ownership proofing and registry interrogation | [`src/services/ensVerifier.js`](src/services/ensVerifier.js), [`src/services/ensGuide.js`](src/services/ensGuide.js)
+| **Stake & Rewards Core** | $AGIALPHA approvals, stakes, slashing posture, epoch rewards | [`src/services/staking.js`](src/services/staking.js), [`src/services/rewards.js`](src/services/rewards.js), [`src/services/token.js`](src/services/token.js)
+| **Governance Supremacy** | Complete owner control over pause, stake floors, and reward shares | [`src/services/governance.js`](src/services/governance.js), [`src/services/controlPlane.js`](src/services/controlPlane.js)
+| **Autonomous Intelligence** | Planning, swarm routing, antifragility, continuous learning | [`src/intelligence`](src/intelligence)
+| **Telemetry & Runtime** | Diagnostics, Prometheus metrics, operational insights | [`src/orchestrator/nodeRuntime.js`](src/orchestrator/nodeRuntime.js), [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js)
+| **Config & Utilities** | Deterministic env parsing, formatting, helpers | [`src/config`](src/config), [`src/utils`](src/utils)
 
 The runtime binds ENS identity with staking posture, token supremacy, economic projections, and the autonomous intelligence lattice. The owner orchestrates everything from a single CLI surface or the container entrypoint while Prometheus metrics expose stake depth and heartbeat state for institutional observability.
 
