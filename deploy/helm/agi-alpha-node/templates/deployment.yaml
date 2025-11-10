@@ -5,11 +5,24 @@ metadata:
   labels:
     {{- include "agi-alpha-node.labels" . | nindent 4 }}
 spec:
+  {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
+  {{- end }}
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "agi-alpha-node.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
+  strategy:
+    type: {{ .Values.updateStrategy.type }}
+    {{- if and .Values.updateStrategy.rollingUpdate (eq (default "" .Values.updateStrategy.type) "RollingUpdate") }}
+    rollingUpdate:
+      {{- with .Values.updateStrategy.rollingUpdate.maxSurge }}
+      maxSurge: {{ . | quote }}
+      {{- end }}
+      {{- with .Values.updateStrategy.rollingUpdate.maxUnavailable }}
+      maxUnavailable: {{ . | quote }}
+      {{- end }}
+    {{- end }}
   template:
     metadata:
       labels:

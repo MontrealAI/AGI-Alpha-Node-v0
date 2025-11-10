@@ -1,5 +1,13 @@
 replicaCount: 1
 
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 60
+  targetMemoryUtilizationPercentage: 70
+  extraMetrics: ""
+
 image:
   repository: ghcr.io/montrealai/agi-alpha-node
   tag: latest
@@ -23,6 +31,12 @@ service:
   apiPort: 8080
 
 resources: {}
+
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: "25%"
+    maxUnavailable: "0%"
 
 affinity: {}
 nodeSelector: {}
