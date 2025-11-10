@@ -75,6 +75,16 @@ function parseTags(raw) {
   return [trimmed];
 }
 
+function cloneTags(tagsRaw) {
+  if (Array.isArray(tagsRaw)) {
+    return tagsRaw.map((entry) => String(entry));
+  }
+  if (typeof tagsRaw === 'string') {
+    return parseTags(tagsRaw);
+  }
+  return [];
+}
+
 function deriveStatus(value) {
   if (typeof value === 'string') {
     return value.toLowerCase();
@@ -137,6 +147,32 @@ async function callFirstAvailable(contract, candidates) {
     }
   }
   throw new Error('No supported contract method available for this operation');
+}
+
+function decodeOpenJobEntry(entry) {
+  if (!entry) return null;
+  if (Array.isArray(entry)) {
+    const [jobId, client, rewardRaw, deadlineRaw, uri, tags] = entry;
+    return {
+      jobId,
+      client: client ?? null,
+      rewardRaw,
+      deadlineRaw,
+      uri: uri ?? '',
+      tags
+    };
+  }
+  if (typeof entry === 'object') {
+    return {
+      jobId: entry.jobId ?? entry.id ?? null,
+      client: entry.client ?? null,
+      rewardRaw: entry.reward ?? entry.bounty ?? entry.rewardRaw ?? 0,
+      deadlineRaw: entry.deadline ?? entry.deadlineRaw ?? 0,
+      uri: entry.uri ?? entry.metadataUri ?? '',
+      tags: entry.tags ?? []
+    };
+  }
+  return null;
 }
 
 function normalizeJobMetadata(job) {
@@ -262,40 +298,96 @@ export function createJobLifecycle({
       return Array.from(jobs.values()).map((job) => normalizeJobMetadata(job));
     }
 
+    const contract = (() => {
+      try {
+        return getContract();
+      } catch (error) {
+        logger?.warn?.(error, 'Job registry contract unavailable for discovery');
+        return null;
+      }
+    })();
+
     const latestBlock = toBlock ?? (await provider.getBlockNumber());
     const range = Number.isFinite(discoveryBlockRange) ? discoveryBlockRange : 4_800;
     const startBlock = fromBlock ?? Math.max(latestBlock - range + 1, 0);
     const filter = buildEventFilter(registryAddress, iface, 'JobCreated');
+    let logs = [];
     if (!filter) {
       logger?.warn?.('JobCreated event not available on registry interface');
-      return Array.from(jobs.values()).map((job) => normalizeJobMetadata(job));
+    } else {
+      logs = await provider.getLogs({
+        ...filter,
+        fromBlock: startBlock,
+        toBlock: latestBlock
+      });
+      logs.slice(-maxJobs).forEach((log) => {
+        try {
+          const decoded = iface.decodeEventLog('JobCreated', log.data, log.topics);
+          const [jobId, client, rewardRaw, deadlineRaw, uri, tags] = decoded;
+          recordJob(jobId, {
+            client: client ?? null,
+            reward: typeof rewardRaw === 'bigint' ? rewardRaw : BigInt(rewardRaw ?? 0),
+            deadline: typeof deadlineRaw === 'bigint' ? deadlineRaw : BigInt(deadlineRaw ?? 0),
+            uri: uri ?? '',
+            tags: parseTags(tags),
+            status: 'open',
+            lastEvent: {
+              type: 'JobCreated',
+              blockNumber: log.blockNumber ?? null,
+              transactionHash: log.transactionHash ?? null
+            }
+          });
+        } catch (error) {
+          logger?.warn?.(error, 'Failed to decode JobCreated log');
+        }
+      });
     }
-    const logs = await provider.getLogs({
-      ...filter,
-      fromBlock: startBlock,
-      toBlock: latestBlock
-    });
-    logs.slice(-maxJobs).forEach((log) => {
+
+    if (contract && typeof contract.getOpenJobs === 'function') {
       try {
-        const decoded = iface.decodeEventLog('JobCreated', log.data, log.topics);
-        const [jobId, client, rewardRaw, deadlineRaw, uri, tags] = decoded;
-        recordJob(jobId, {
-          client: client ?? null,
-          reward: typeof rewardRaw === 'bigint' ? rewardRaw : BigInt(rewardRaw ?? 0),
-          deadline: typeof deadlineRaw === 'bigint' ? deadlineRaw : BigInt(deadlineRaw ?? 0),
-          uri: uri ?? '',
-          tags: parseTags(tags),
-          status: 'open',
-          lastEvent: {
-            type: 'JobCreated',
-            blockNumber: log.blockNumber ?? null,
-            transactionHash: log.transactionHash ?? null
-          }
-        });
+        const openJobs = await contract.getOpenJobs();
+        if (Array.isArray(openJobs)) {
+          const limit = Number.isFinite(maxJobs) && maxJobs > 0 ? maxJobs : 100;
+          openJobs.slice(0, limit).forEach((entry) => {
+            const decoded = decodeOpenJobEntry(entry);
+            if (!decoded?.jobId) {
+              return;
+            }
+            let normalizedJobId;
+            try {
+              normalizedJobId = normalizeJobId(decoded.jobId);
+            } catch (error) {
+              logger?.warn?.(error, 'Failed to normalize job id from getOpenJobs');
+              return;
+            }
+            const existing = jobs.get(normalizedJobId);
+            const reward = typeof decoded.rewardRaw === 'bigint' ? decoded.rewardRaw : BigInt(decoded.rewardRaw ?? 0);
+            const deadline =
+              typeof decoded.deadlineRaw === 'bigint'
+                ? decoded.deadlineRaw
+                : BigInt(decoded.deadlineRaw ?? 0);
+            const patch = {
+              client: decoded.client ?? existing?.client ?? null,
+              reward,
+              deadline,
+              uri: decoded.uri ?? existing?.uri ?? '',
+              tags: cloneTags(decoded.tags)
+            };
+            if (!existing?.status || existing.status === 'unknown') {
+              patch.status = 'open';
+            }
+            patch.lastEvent = {
+              type: 'getOpenJobs',
+              blockNumber: null,
+              transactionHash: null
+            };
+            recordJob(normalizedJobId, patch);
+          });
+        }
       } catch (error) {
-        logger?.warn?.(error, 'Failed to decode JobCreated log');
+        logger?.warn?.(error, 'Failed to fetch open jobs from registry');
       }
-    });
+    }
 
     metrics.discovered = jobs.size;
     return Array.from(jobs.values()).map((job) => normalizeJobMetadata(job));

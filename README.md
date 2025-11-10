@@ -110,6 +110,7 @@ sequenceDiagram
 ### Real-time Discovery
 
 - WebSocket-grade polling grabs `JobCreated` logs within a configurable block window (`JOB_DISCOVERY_BLOCK_RANGE`).
+- When registries expose `getOpenJobs()`, the lifecycle merges direct contract reads so fresh openings surface even if log windows roll over or RPC history is pruned.
 - Snapshot-aware fallback ensures discovery continues when RPC routes falter.
 - REST endpoint `GET /jobs/open` streams the active queue for dashboards.
 
@@ -311,6 +312,7 @@ stateDiagram-v2
 | `/jobs/{id}/finalize` | POST | Finalizes a validated job and releases rewards. |
 | `/metrics` | GET | Prometheus gauges for stake, throughput, success rate, token earnings, provider modes. |
 | `/governance/directives` | GET | Snapshotted owner directives (priority, notices, encoded actions). |
+| `/governance/directives` | POST | Update directives (priority/actions/notices/context) directly from the owner’s control plane. |
 | `/governance/pause` | POST | Generates pause/resume payloads for the SystemPause contract. |
 | `/governance/minimum-stake` | POST | Encodes StakeManager `setMinimumStake` transactions. |
 | `/governance/role-share` | POST | Crafts RewardEngine `setRoleShare` payloads for targeted roles. |
