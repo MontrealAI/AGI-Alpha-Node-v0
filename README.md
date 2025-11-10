@@ -230,8 +230,8 @@ mindmap
 | 1 | Clone repository and install deterministic toolchain. | `git clone https://github.com/MontrealAI/AGI-Alpha-Node-v0.git && cd AGI-Alpha-Node-v0 && npm ci` |
 | 2 | Run documentation quality gates locally to mirror CI (see [Quality & Branch Safeguards](#quality--branch-safeguards)). | `npm run lint:md` · `npm run lint:links` (aggregate: `npm run lint`) |
 | 3 | Generate a personalized ENS + staking runbook for the operator. | `node src/index.js ens-guide --label <name> --address <0x...>` |
-| 4 | Execute the sovereign CLI to notarize ENS control before mainnet activation. | `node src/index.js verify-ens --label <name> --address <0x...> --rpc https://rpc.ankr.com/eth` |
-| 5 | Secure ENS identity under `alpha.node.agi.eth`; configure resolver/wrapper ownership for the operator wallet. | [ENS Manager](https://app.ens.domains/name/alpha.node.agi.eth) |
+| 4 | Execute the sovereign CLI to notarize ENS control before mainnet activation; the verifier rejects any parent domain outside `alpha.node.agi.eth`/`node.agi.eth` and surfaces registry, wrapper, and resolver custody. | `node src/index.js verify-ens --label <name> --address <0x...> --rpc https://rpc.ankr.com/eth` |
+| 5 | Secure ENS identity under `alpha.node.agi.eth`; configure resolver/wrapper ownership for the operator wallet (the CLI cross-checks against canonical namehashes baked into the runtime). | [ENS Manager](https://app.ens.domains/name/alpha.node.agi.eth) |
 | 6 | Stage custody – multisig or HSM primary with delegate hot key registered via `IdentityRegistry.setAdditionalNodeOperator`. | On-chain owner transaction |
 | 7 | Pre-fund the operator wallet with `$AGIALPHA` plus gas reserve and approve Stake Manager allowances. | Token address `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` |
 | 8 | Deploy runtime via container, Kubernetes, or enclave per infrastructure policy (see [Sovereign Runtime CLI](#sovereign-runtime-cli)). | Review [Sovereign Architecture](#sovereign-architecture) |
@@ -260,7 +260,7 @@ flowchart LR
 | Command | Purpose | Example |
 | ------- | ------- | ------- |
 | `node src/index.js ens-guide` | Emits a seven-step ENS and staking preparation script tailored to your label and operator address. | `node src/index.js ens-guide --label 1 --address 0xYourKey` |
-| `node src/index.js verify-ens` | Resolves resolver, registry, and NameWrapper owners for `⟨label⟩.alpha.node.agi.eth`; surfaces mismatches before activation. | `node src/index.js verify-ens --label 1 --address 0xYourKey --rpc https://rpc.ankr.com/eth` |
+| `node src/index.js verify-ens` | Resolves resolver, registry, and NameWrapper owners for `⟨label⟩.alpha.node.agi.eth`; enforces the canonical `alpha.node.agi.eth`/`node.agi.eth` parent whitelist and surfaces mismatches before activation. | `node src/index.js verify-ens --label 1 --address 0xYourKey --rpc https://rpc.ankr.com/eth` |
 | `node src/index.js status` | Runs end-to-end diagnostics (ENS, stake thresholds, reward projection) and can expose Prometheus metrics. | `node src/index.js status --label 1 --address 0xYourKey --stake-manager 0x... --incentives 0x... --metrics-port 9464` |
 | `node src/index.js stake-tx` | Builds deterministic calldata for `PlatformIncentives.stakeAndActivate` so offline signers can review before broadcast. | `node src/index.js stake-tx --amount 1500 --incentives 0x...` |
 | `node src/index.js reward-share` | Calculates operator share from any reward pool using basis points. | `node src/index.js reward-share --total 5000 --bps 1500` |
@@ -337,7 +337,7 @@ stateDiagram-v2
 
 ## Quality & Branch Safeguards
 
-1. **Workflow Enforcement** – [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to `main` and every pull request. It checks out the repo, installs dependencies with `npm ci`, executes the lint suites (`npm run lint:md`, `npm run lint:links`), and now drives the full Vitest battery via `npm test` so ENS, staking, rewards, and governance payloads stay provably correct.
+1. **Workflow Enforcement** – [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to `main` and every pull request. It checks out the repo, installs dependencies with `npm ci`, executes the lint suites (`npm run lint:md`, `npm run lint:links`), and now drives the full Vitest battery via `npm test` so ENS, staking, rewards, governance payloads, and the canonical `node.agi.eth`/`alpha.node.agi.eth` namehash guardrail stay provably correct.
 2. **Local Parity** – `npm run lint` mirrors the CI job; `npm test` exercises ENS, staking, and reward projections through `vitest` before opening a pull request.
 3. **Branch Protection** – In GitHub → **Settings → Branches → main**, enable:
    - Require pull request reviews before merging.
