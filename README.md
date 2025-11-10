@@ -230,12 +230,12 @@ Use the provided Helm snippets in [`docs/README.md`](docs/README.md#kubernetes-a
 
 ## AGI Jobs Convergence
 
-- **Job Discovery** – `jobs sync` (documented in the Operator Codex) subscribes to `JobRegistry` events, filters by capability tags, and surfaces actionable missions to the planner.
-- **Application Workflow** – When a job matches, the node calls `JobRegistry.applyForJob` with ENS-backed identity proofs.
+- **Job Discovery** – The node runtime integrates with `JobRegistry` watchers (detailed in the Operator Codex) so planners inside the container receive capability-filtered missions without a separate `jobs` namespace in the CLI.
+- **Application Workflow** – When a job matches, orchestrated agents submit `JobRegistry.applyForJob` payloads using the operator’s configured ENS identity and signer policies.
 - **Execution & Proofs** – Specialized agents handle domain tasks while the MuZero++ planner forecasts risk and ROI. Completion results are hashed and submitted on-chain for validator review.
-- **Reward Settlement** – Upon validator approval, the CLI triggers `StakeManager.releasePayment` and routes earnings through the reinvestment policy chosen by the owner.
+- **Reward Settlement** – After validator approval, operators can use `stake-tx` to build restake payloads or `reward-share` to model compounding strategies before broadcasting final transactions from their custody stack.
 - **Legacy Compatibility** – Compatibility adapters allow operation against AGI Jobs v0 for regression or sandbox testing, but v2 `$AGIALPHA` flows remain the default and recommended pathway.
-- **Operator Dashboard** – The CLI exposes `economics report` and `rewards history` commands to summarize completed jobs, accrued earnings, gas expenses, and compounding recommendations in real time.
+- **Operator Dashboard** – Combine the `status` diagnostics command with observability exports (`--metrics-port`) to monitor active jobs, staking health, and economics from centralized dashboards.
 
 ---
 
