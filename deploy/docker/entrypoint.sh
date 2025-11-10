@@ -86,5 +86,13 @@ if [ "${AUTO_STAKE:-}" = "true" ] && [ "${OPERATOR_PRIVATE_KEY:-}" = "" ]; then
   echo "[entrypoint] WARNING: AUTO_STAKE is enabled but OPERATOR_PRIVATE_KEY is not set; staking cannot be broadcast." >&2
 fi
 
+if [ "${AUTO_STAKE:-}" = "true" ] && [ "${PLATFORM_INCENTIVES_ADDRESS:-}" = "" ]; then
+  echo "[entrypoint] WARNING: AUTO_STAKE requires PLATFORM_INCENTIVES_ADDRESS; staking helper will be skipped." >&2
+fi
+
+if [ "${OFFLINE_MODE:-}" = "true" ] && [ "${OFFLINE_SNAPSHOT_PATH:-}" = "" ]; then
+  echo "[entrypoint] WARNING: OFFLINE_MODE is true but no OFFLINE_SNAPSHOT_PATH provided – runtime will rely on embedded heuristics only." >&2
+fi
+
 echo "[entrypoint] launching AGI Alpha Node runtime"
 exec node src/index.js container "$@"

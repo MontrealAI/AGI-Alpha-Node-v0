@@ -218,6 +218,8 @@ sequenceDiagram
 
 ### One-Click Docker Run
 
+> Need the condensed checklist? Consult the [One-Click Deployment Playbook](docs/deployment/one-click.md) for step-by-step Docker and Helm guidance, including offline resilience and funding procedures.
+
 1. Copy the sample config and tailor it for your operator:
 
    ```bash
@@ -245,6 +247,8 @@ sequenceDiagram
 * Vault operators can hydrate secrets automatically using `VAULT_ADDR`, `VAULT_SECRET_PATH`, `VAULT_SECRET_KEY`, and `VAULT_TOKEN`. When `AUTO_STAKE=true` but the private key is missing, the entrypoint emits a warning before hand-off.
 
 ### Kubernetes / Helm
+
+Additional chart scenarios, autoscaling examples, and troubleshooting tips live in the [One-Click Deployment Playbook](docs/deployment/one-click.md).
 
 ```bash
 helm upgrade --install agi-alpha-node ./deploy/helm/agi-alpha-node \
