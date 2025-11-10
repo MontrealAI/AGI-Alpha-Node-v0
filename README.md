@@ -262,6 +262,10 @@ flowchart LR
 | `node src/index.js status` | Runs end-to-end diagnostics (ENS, stake thresholds, reward projection) and can expose Prometheus metrics. | `node src/index.js status --label 1 --address 0xYourKey --stake-manager 0x... --incentives 0x... --metrics-port 9464` |
 | `node src/index.js stake-tx` | Builds deterministic calldata for `PlatformIncentives.stakeAndActivate` so offline signers can review before broadcast. | `node src/index.js stake-tx --amount 1500 --incentives 0x...` |
 | `node src/index.js reward-share` | Calculates operator share from any reward pool using basis points. | `node src/index.js reward-share --total 5000 --bps 1500` |
+| `node src/index.js governance pause` | Produces owner-signed payloads for `SystemPause.pauseAll()`/`resumeAll()` to freeze or resume the network instantly. | `node src/index.js governance pause --contract 0x... --action pause` |
+| `node src/index.js governance set-min-stake` | Encodes `StakeManager.setMinimumStake` transactions to raise or lower entry thresholds. | `node src/index.js governance set-min-stake --stake-manager 0x... --amount 2500` |
+| `node src/index.js governance set-role-share` | Generates `RewardEngine.setRoleShare` calldata for precision tuning of emissions. | `node src/index.js governance set-role-share --reward-engine 0x... --role node --bps 1500` |
+| `node src/index.js governance set-global-shares` | Creates deterministic payload for `RewardEngine.setGlobalShares` enforcing the 10,000 bps covenant. | `node src/index.js governance set-global-shares --reward-engine 0x... --operator-bps 1500 --validator-bps 7000 --treasury-bps 1500` |
 | `npx agi-alpha-node ...` | Leverage the CLI via the binary entry point (`bin` field) once published to a private registry. | `npx agi-alpha-node status --label 1 --address 0x...` |
 
 **Container Launch** — deterministic one-liner for institutional rollouts:
@@ -284,9 +288,9 @@ The container performs the same ENS verification and stake diagnostics, exposing
 
 | Control Surface | Functionality | Owner Action |
 | --------------- | ------------- | ------------ |
-| **Pause Vector** | Freeze every on-chain module and halt mission execution instantly. | Call `SystemPause.pauseAll()` (resume with `SystemPause.resumeAll()`). |
-| **Stake Lifecycle** | Manage staking, activation, and restaking flows. | Execute `PlatformIncentives.stakeAndActivate()` or `_acknowledgeStakeAndActivate()`; rotate stake via `StakeManager.adjustStake()`. |
-| **Reward Split** | Tune emissions, delegate shares, and treasury routing. | Update `RewardEngineMB.setRoleShare(role, bps)` under owner signature. |
+| **Pause Vector** | Freeze every on-chain module and halt mission execution instantly. | Call `SystemPause.pauseAll()` (resume with `SystemPause.resumeAll()`) via `node src/index.js governance pause`. |
+| **Stake Lifecycle** | Manage staking, activation, and restaking flows. | Execute `PlatformIncentives.stakeAndActivate()` or `_acknowledgeStakeAndActivate()`; adjust thresholds through `node src/index.js governance set-min-stake`. |
+| **Reward Split** | Tune emissions, delegate shares, and treasury routing. | Update `RewardEngineMB.setRoleShare(role, bps)`/`setGlobalShares(...)` with the governance CLI payloads for deterministic calldata. |
 | **Operator Delegation** | Add or revoke mission executors without redeploying. | `IdentityRegistry.setAdditionalNodeOperator(address, enabled)` or equivalent governance transaction. |
 | **Module Upgrades** | Roll forward protocol modules or AI runtimes with deterministic audit trails. | Use upgrade proxy governance (where available) and log proofs in the compliance ledger. |
 | **Policy Refresh** | Adjust mission filters, risk tolerances, and antifragile parameters. | Issue signed configuration transactions and publish policy diffs in the operator console. |
@@ -331,7 +335,7 @@ stateDiagram-v2
 
 ## Quality & Branch Safeguards
 
-1. **Workflow Enforcement** – [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to `main` and every pull request. It checks out the repo, installs dependencies with `npm ci`, executes the lint suites (`npm run lint:md`, `npm run lint:links`), and leaves space for `npm test` expansion as integration coverage grows.
+1. **Workflow Enforcement** – [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to `main` and every pull request. It checks out the repo, installs dependencies with `npm ci`, executes the lint suites (`npm run lint:md`, `npm run lint:links`), and now drives the full Vitest battery via `npm test` so ENS, staking, rewards, and governance payloads stay provably correct.
 2. **Local Parity** – `npm run lint` mirrors the CI job; `npm test` exercises ENS, staking, and reward projections through `vitest` before opening a pull request.
 3. **Branch Protection** – In GitHub → **Settings → Branches → main**, enable:
    - Require pull request reviews before merging.
