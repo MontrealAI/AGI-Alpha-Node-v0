@@ -312,7 +312,7 @@ program
   .action(async (options) => {
     const logger = pino({ level: 'info', name: 'status' });
     try {
-      const config = loadConfig({
+      const configOverrides = {
         RPC_URL: options.rpc,
         NODE_LABEL: options.label,
         OPERATOR_ADDRESS: options.address,
@@ -322,7 +322,13 @@ program
         DESIRED_MINIMUM_STAKE: options.desiredMinimum,
         AUTO_RESUME: options.autoResume,
         METRICS_PORT: options.metricsPort
-      });
+      };
+
+      const config = loadConfig(
+        Object.fromEntries(
+          Object.entries(configOverrides).filter(([, value]) => value !== undefined)
+        )
+      );
       const diagnostics = await runNodeDiagnostics({
         rpcUrl: config.RPC_URL,
         label: config.NODE_LABEL,
