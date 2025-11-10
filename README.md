@@ -138,9 +138,11 @@
 
    ```bash
    npx agi-alpha-node container \
+     --label 1 \
+     --address 0xYOUR_OPERATOR_ADDRESS \
+     --rpc https://mainnet.infura.io/v3/<PROJECT_ID> \
      --interval 60 \
-     --metrics-port 9464 \
-     --rpc https://mainnet.infura.io/v3/<PROJECT_ID>
+     --metrics-port 9464
    ```
 
 8. **Continuous Monitoring**
@@ -220,11 +222,11 @@ For the full CLI reference, run `npx agi-alpha-node --help`.
 
 ```bash
 docker run -it --rm \
-  -e OPERATOR_ENS_LABEL=1 \
+  -e NODE_LABEL=1 \
   -e OPERATOR_ADDRESS=0xYOUR_OPERATOR_ADDRESS \
-  -e ETH_RPC_URL=https://mainnet.infura.io/v3/<PROJECT_ID> \
+  -e RPC_URL=https://mainnet.infura.io/v3/<PROJECT_ID> \
   -e STAKE_MANAGER_ADDRESS=0xStakeManager \
-  -e INCENTIVES_ADDRESS=0xIncentivesContract \
+  -e PLATFORM_INCENTIVES_ADDRESS=0xIncentivesContract \
   -e SYSTEM_PAUSE_ADDRESS=0xSystemPause \
   -p 9464:9464 \
   ghcr.io/montrealai/agi-alpha-node:latest
@@ -240,12 +242,12 @@ docker run -it --rm \
 helm repo add agi-alpha-node https://montrealai.github.io/agi-alpha-node
 helm upgrade --install agi-alpha-node agi-alpha-node/agi-alpha-node \
   --namespace agi-alpha --create-namespace \
-  --set operator.ensLabel=1 \
-  --set operator.address=0xYOUR_OPERATOR_ADDRESS \
-  --set ethereum.rpcUrl=https://mainnet.infura.io/v3/<PROJECT_ID> \
-  --set contracts.stakeManager=0xStakeManager \
-  --set contracts.incentives=0xIncentivesContract \
-  --set contracts.systemPause=0xSystemPause
+  --set env.label=1 \
+  --set env.operatorAddress=0xYOUR_OPERATOR_ADDRESS \
+  --set env.rpcUrl=https://mainnet.infura.io/v3/<PROJECT_ID> \
+  --set env.stakeManagerAddress=0xStakeManager \
+  --set env.platformIncentivesAddress=0xIncentivesContract \
+  --set env.systemPauseAddress=0xSystemPause
 ```
 
 The chart ships autoscaling annotations, dedicated service accounts, network policies, and Prometheus scrape configs. Customize `values.yaml` to integrate with your Vault or external secrets manager.
