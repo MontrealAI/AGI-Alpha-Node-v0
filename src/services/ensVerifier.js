@@ -1,4 +1,11 @@
 import { Contract, getAddress, isAddress, namehash, toUtf8Bytes, keccak256 } from 'ethers';
+import {
+  ALPHA_NODE_ROOT_NODE,
+  NODE_ROOT_NODE,
+  assertNodeParentDomain,
+  getAllowedNodeDomains,
+  normalizeDomain
+} from './ensConstants.js';
 
 export const ENS_REGISTRY_ADDRESS = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e';
 export const NAME_WRAPPER_ADDRESS = '0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401';
@@ -16,7 +23,8 @@ function normalizeAddress(value) {
 
 function buildNodeName(label, parentDomain) {
   const sanitizedLabel = label.trim().toLowerCase();
-  return `${sanitizedLabel}.${parentDomain}`;
+  const normalizedParent = normalizeDomain(parentDomain);
+  return `${sanitizedLabel}.${normalizedParent}`;
 }
 
 export function computeLabelhash(label) {
@@ -56,13 +64,16 @@ export async function verifyNodeOwnership({
   label,
   parentDomain,
   expectedAddress,
-  contractFactory
+  contractFactory,
+  allowedParentDomains = getAllowedNodeDomains()
 }) {
   if (!provider) throw new Error('provider is required');
   if (!label) throw new Error('label is required');
   if (!parentDomain) throw new Error('parentDomain is required');
 
-  const nodeName = buildNodeName(label, parentDomain);
+  const normalizedParent = assertNodeParentDomain(parentDomain, { allowedDomains: allowedParentDomains });
+
+  const nodeName = buildNodeName(label, normalizedParent);
   const expected = expectedAddress ? getAddress(expectedAddress) : null;
 
   const records = await fetchEnsRecords({
@@ -85,10 +96,13 @@ export async function verifyNodeOwnership({
     ...records,
     expectedAddress: expected,
     matches,
-    success
+    success,
+    parentDomain: normalizedParent
   };
 }
 
 export function buildNodeNameFromLabel(label, parentDomain = 'alpha.node.agi.eth') {
   return buildNodeName(label, parentDomain);
 }
+
+export { ALPHA_NODE_ROOT_NODE, NODE_ROOT_NODE };

@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ENS_REGISTRY_ADDRESS, NAME_WRAPPER_ADDRESS, fetchEnsRecords, verifyNodeOwnership } from '../src/services/ensVerifier.js';
+import {
+  ENS_REGISTRY_ADDRESS,
+  NAME_WRAPPER_ADDRESS,
+  fetchEnsRecords,
+  verifyNodeOwnership
+} from '../src/services/ensVerifier.js';
 
 describe('ENS verifier', () => {
   it('fetches ENS records with dependency injection', async () => {
@@ -46,5 +51,17 @@ describe('ENS verifier', () => {
 
     expect(verification.success).toBe(true);
     expect(verification.matches.registry).toBe(true);
+    expect(verification.parentDomain).toBe('alpha.node.agi.eth');
+  });
+
+  it('rejects unexpected parent domains', async () => {
+    await expect(
+      verifyNodeOwnership({
+        provider: { resolveName: vi.fn() },
+        label: '1',
+        parentDomain: 'unauthorized.agi.eth',
+        expectedAddress: '0x000000000000000000000000000000000000dEaD'
+      })
+    ).rejects.toThrow(/AGI Alpha Node subdomain/);
   });
 });
