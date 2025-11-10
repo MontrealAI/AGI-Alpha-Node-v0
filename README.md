@@ -430,6 +430,22 @@ helm upgrade --install agi-alpha-node ./deploy/helm/agi-alpha-node \
 - **Stake Automation:** [`src/services/stakeActivation.js`](src/services/stakeActivation.js) auto-broadcasts `acknowledgeStakeAndActivate` when deficits arise.
 - **Lifecycle Metrics:** [`src/network/apiServer.js`](src/network/apiServer.js) merges local execution metrics with on-chain lifecycle counters, ensuring dashboards reflect both deterministic loops and protocol actions.
 
+### Owner Control Matrix
+
+| Capability | CLI Builder | REST Surface | Execution Engine | Owner Leverage |
+| ---------- | ----------- | ------------ | ---------------- | -------------- |
+| Pause / resume execution | `npx agi-alpha-node governance pause --contract 0xSYSTEM_PAUSE --action pause\|resume\|unpause` | `POST /governance/pause` | `buildSystemPauseTx` | Toggle the entire platform from the owner console with encoded pause or resume transactions.【F:src/index.js†L1350-L1367】【F:src/network/apiServer.js†L348-L366】【F:src/services/governance.js†L58-L76】 |
+| Minimum stake floor | `npx agi-alpha-node governance set-min-stake --stake-manager 0xSTAKE_MANAGER --amount 2500` | `POST /governance/minimum-stake` | `buildMinimumStakeTx` | Align contract minimums with business policy in a single step and export the payload for cold signing.【F:src/index.js†L1369-L1387】【F:src/network/apiServer.js†L368-L398】【F:src/services/governance.js†L78-L89】 |
+| Stake top-up | `npx agi-alpha-node stake-tx --amount 1500 --incentives 0xINCENTIVES` | `POST /governance/stake-top-up` | `buildStakeAndActivateTx` | Generate `stakeAndActivate` payloads to erase deficits before penalties escalate.【F:src/index.js†L361-L383】【F:src/network/apiServer.js†L459-L489】【F:src/services/staking.js†L105-L121】 |
+| Global share alignment | `npx agi-alpha-node governance set-global-shares --reward-engine 0xRE --operator-bps 1800 --validator-bps 7000 --treasury-bps 1200` | `POST /governance/global-shares` | `buildGlobalSharesTx` | Rebalance protocol revenue splits to match the owner’s treasury strategy without editing contracts.【F:src/index.js†L1410-L1432】【F:src/network/apiServer.js†L430-L456】【F:src/services/governance.js†L102-L119】 |
+| Role share retuning | `npx agi-alpha-node governance set-role-share --reward-engine 0xRE --role guardian --bps 250` | `POST /governance/role-share` | `buildRoleShareTx` | Issue targeted basis-point adjustments for any role identifier, keeping validator and guardian incentives precise.【F:src/index.js†L1389-L1408】【F:src/network/apiServer.js†L401-L427】【F:src/services/governance.js†L91-L100】 |
+
+### Directive Automation
+
+- The diagnostics loop feeds live ENS, stake, and reward telemetry into `deriveOwnerDirectives`, producing prioritized pause, stake, and share recommendations before handing results to the operator.【F:src/orchestrator/nodeRuntime.js†L16-L213】【F:src/services/controlPlane.js†L55-L199】
+- The Agent API caches those directives, exposes them over `GET /governance/directives`, and lets owners push updated priorities with metric-backed audit trails via `POST /governance/directives`.【F:src/network/apiServer.js†L140-L341】
+- Governance requests increment dedicated Prometheus counters so dashboards reveal how often the owner broadcasts overrides and payloads in real time.【F:src/network/apiServer.js†L140-L212】【F:src/network/apiServer.js†L339-L360】【F:src/network/apiServer.js†L392-L483】
+
 ---
 
 ## Repository Atlas
