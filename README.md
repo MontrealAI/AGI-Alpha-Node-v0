@@ -222,6 +222,8 @@ sequenceDiagram
 
 ## Deployment Continuum
 
+See [`docs/deployment/one-click-deployment.md`](docs/deployment/one-click-deployment.md) for an end-to-end operator playbook covering Docker, Docker Compose (Prometheus + Grafana), and Helm activation flows.
+
 ### One-Click Docker Run
 
 > Need the condensed checklist? Consult the [One-Click Deployment Playbook](docs/deployment/one-click.md) for step-by-step Docker and Helm guidance, including offline resilience and funding procedures.

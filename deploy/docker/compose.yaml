@@ -1,0 +1,56 @@
+version: '3.9'
+
+services:
+  agi-alpha-node:
+    image: agi-alpha-node:latest
+    restart: unless-stopped
+    env_file:
+      - ./operator.env
+    ports:
+      - "9464:9464"
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "node", "src/healthcheck.js"]
+      interval: 45s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    depends_on:
+      prometheus:
+        condition: service_started
+    volumes:
+      - type: bind
+        source: ./snapshots
+        target: /snapshots
+        read_only: true
+      - type: bind
+        source: ./models
+        target: /models
+        read_only: true
+    command: []
+
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=changeit
+    ports:
+      - "3000:3000"
+    depends_on:
+      prometheus:
+        condition: service_started
+    volumes:
+      - grafana-data:/var/lib/grafana
+
+volumes:
+  grafana-data:
