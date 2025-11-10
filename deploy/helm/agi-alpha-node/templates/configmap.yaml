@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "agi-alpha-node.fullname" . }}-config
+  labels:
+    {{- include "agi-alpha-node.labels" . | nindent 4 }}
+data:
+  RPC_URL: {{ .Values.config.rpcUrl | quote }}
+  ENS_PARENT_DOMAIN: {{ .Values.config.ensParentDomain | quote }}
+  NODE_LABEL: {{ .Values.config.nodeLabel | quote }}
+  OPERATOR_ADDRESS: {{ .Values.config.operatorAddress | quote }}
+  STAKE_MANAGER_ADDRESS: {{ .Values.config.stakeManagerAddress | quote }}
+  PLATFORM_INCENTIVES_ADDRESS: {{ .Values.config.platformIncentivesAddress | quote }}
+  SYSTEM_PAUSE_ADDRESS: {{ .Values.config.systemPauseAddress | quote }}
+  DESIRED_MINIMUM_STAKE: {{ .Values.config.desiredMinimumStake | quote }}
+  METRICS_PORT: {{ .Values.config.metricsPort | quote }}
+  AUTO_RESUME: {{ .Values.config.autoResume | quote }}
+  AUTO_STAKE: {{ .Values.config.autoStake | quote }}
+  STAKE_AMOUNT: {{ .Values.config.stakeAmount | quote }}
+  INTERACTIVE_STAKE: {{ .Values.config.interactiveStake | quote }}
+  OFFLINE_SNAPSHOT_PATH: {{ .Values.config.offlineSnapshotPath | quote }}

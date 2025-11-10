@@ -16,11 +16,16 @@ vi.mock('../src/services/offlineSnapshot.js', () => ({
   loadOfflineSnapshot: vi.fn(() => ({ snapshot: true }))
 }));
 
+vi.mock('../src/orchestrator/stakeActivator.js', () => ({
+  handleStakeActivation: vi.fn()
+}));
+
 import { bootstrapContainer } from '../src/orchestrator/bootstrap.js';
 import { loadConfig } from '../src/config/env.js';
 import { runNodeDiagnostics } from '../src/orchestrator/nodeRuntime.js';
 import { startMonitorLoop } from '../src/orchestrator/monitorLoop.js';
 import { loadOfflineSnapshot } from '../src/services/offlineSnapshot.js';
+import { handleStakeActivation } from '../src/orchestrator/stakeActivator.js';
 
 const baseConfig = {
   RPC_URL: 'https://rpc.example',
@@ -52,7 +57,13 @@ const diagnosticsMock = {
     heartbeatStale: false,
     recommendedAction: null
   },
-  ownerDirectives: { actions: [], notices: [], priority: 'nominal' }
+  ownerDirectives: { actions: [], notices: [], priority: 'nominal' },
+  performance: {
+    throughputPerEpoch: 3,
+    successRate: 0.95,
+    averageReward: 1.5,
+    tokenEarningsProjection: 1200n
+  }
 };
 
 describe('bootstrapContainer', () => {
@@ -69,6 +80,7 @@ describe('bootstrapContainer', () => {
       getIterations: vi.fn()
     });
     loadOfflineSnapshot.mockClear();
+    handleStakeActivation.mockClear();
   });
 
   afterEach(() => {
@@ -93,6 +105,7 @@ describe('bootstrapContainer', () => {
       expect.objectContaining({ offlineSnapshot: expect.any(Object) })
     );
     expect(startMonitorLoop).not.toHaveBeenCalled();
+    expect(handleStakeActivation).toHaveBeenCalled();
   });
 
   it('invokes monitor loop when not skipped', async () => {

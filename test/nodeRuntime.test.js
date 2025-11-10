@@ -22,10 +22,15 @@ vi.mock('../src/services/controlPlane.js', () => ({
   deriveOwnerDirectives: vi.fn()
 }));
 
+vi.mock('../src/services/performance.js', () => ({
+  derivePerformanceProfile: vi.fn()
+}));
+
 import { verifyNodeOwnership } from '../src/services/ensVerifier.js';
 import { getStakeStatus, validateStakeThreshold, evaluateStakeConditions } from '../src/services/staking.js';
 import { projectEpochRewards } from '../src/services/rewards.js';
 import { deriveOwnerDirectives } from '../src/services/controlPlane.js';
+import { derivePerformanceProfile } from '../src/services/performance.js';
 import { runNodeDiagnostics } from '../src/orchestrator/nodeRuntime.js';
 
 describe('runNodeDiagnostics', () => {
@@ -75,6 +80,7 @@ afterEach(() => {
     });
     projectEpochRewards.mockReturnValue({ pool: 1500n, operatorPortion: 225n, operatorShareBps: 1500 });
     deriveOwnerDirectives.mockReturnValue({ priority: 'nominal', actions: [], notices: ['Stake posture nominal – maintain monitoring cadence.'] });
+    derivePerformanceProfile.mockReturnValue({ throughputPerEpoch: 4, successRate: 0.9, tokenEarningsProjection: 1500n });
 
     const diagnostics = await runNodeDiagnostics({
       rpcUrl: 'https://example.rpc',
@@ -125,6 +131,10 @@ afterEach(() => {
     });
     expect(diagnostics.ownerDirectives).toEqual(
       expect.objectContaining({ priority: 'nominal', notices: expect.arrayContaining([expect.any(String)]) })
+    );
+    expect(derivePerformanceProfile).toHaveBeenCalled();
+    expect(diagnostics.performance).toEqual(
+      expect.objectContaining({ throughputPerEpoch: 4, successRate: 0.9 })
     );
   });
 
@@ -192,6 +202,7 @@ afterEach(() => {
       ],
       notices: ['Offline diagnostics']
     });
+    derivePerformanceProfile.mockReturnValue({ throughputPerEpoch: 2, successRate: 0.75, tokenEarningsProjection: 800n });
 
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'agi-node-runtime-'));
     tempDirs.add(dir);

@@ -6,13 +6,26 @@ const mockDiagnostics = {
   verification: { nodeName: '1.alpha.node.agi.eth' },
   stakeStatus: { operatorStake: 100n, lastHeartbeat: 10n },
   stakeEvaluation: { meets: true },
-  ownerDirectives: { actions: [] }
+  ownerDirectives: { actions: [] },
+  performance: {
+    throughputPerEpoch: 3,
+    successRate: 0.92,
+    tokenEarningsProjection: 1500n,
+    utilization: [
+      { agent: 'orion', utilization: 0.9 },
+      { agent: 'helix', utilization: 0.75 }
+    ]
+  }
 };
 
 const telemetryMock = {
   server: { close: vi.fn((cb) => cb && cb()) },
   stakeGauge: { set: vi.fn() },
-  heartbeatGauge: { set: vi.fn() }
+  heartbeatGauge: { set: vi.fn() },
+  jobThroughputGauge: { set: vi.fn() },
+  jobSuccessGauge: { set: vi.fn() },
+  tokenEarningsGauge: { set: vi.fn() },
+  agentUtilizationGauge: { set: vi.fn(), reset: vi.fn() }
 };
 
 vi.mock('../src/orchestrator/nodeRuntime.js', () => ({
@@ -46,6 +59,11 @@ describe('monitorLoop', () => {
     telemetryMock.server.close.mockClear();
     telemetryMock.stakeGauge.set.mockClear();
     telemetryMock.heartbeatGauge.set.mockClear();
+    telemetryMock.jobThroughputGauge.set.mockClear();
+    telemetryMock.jobSuccessGauge.set.mockClear();
+    telemetryMock.tokenEarningsGauge.set.mockClear();
+    telemetryMock.agentUtilizationGauge.set.mockClear();
+    telemetryMock.agentUtilizationGauge.reset.mockClear();
   });
 
   afterEach(() => {
@@ -66,7 +84,9 @@ describe('monitorLoop', () => {
 
     expect(runNodeDiagnostics).toHaveBeenCalledTimes(1);
     expect(launchMonitoring).toHaveBeenCalledTimes(1);
-    expect(telemetryMock.stakeGauge.set).not.toHaveBeenCalled();
+    expect(launchMonitoring.mock.calls[0][0]).toMatchObject({
+      performance: mockDiagnostics.performance
+    });
   });
 
   it('stops gracefully when stop is invoked', async () => {

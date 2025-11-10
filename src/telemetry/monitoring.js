@@ -17,6 +17,31 @@ export function startMonitoringServer({ port = 9464, logger }) {
     registers: [registry]
   });
 
+  const jobThroughputGauge = new Gauge({
+    name: 'agi_alpha_node_job_throughput',
+    help: 'Jobs completed per monitor interval based on swarm orchestration',
+    registers: [registry]
+  });
+
+  const jobSuccessGauge = new Gauge({
+    name: 'agi_alpha_node_job_success_rate',
+    help: 'Rolling success ratio of historical jobs (0-1 scale)',
+    registers: [registry]
+  });
+
+  const tokenEarningsGauge = new Gauge({
+    name: 'agi_alpha_node_token_earnings_projection',
+    help: 'Projected $AGIALPHA earnings for the upcoming epoch',
+    registers: [registry]
+  });
+
+  const agentUtilizationGauge = new Gauge({
+    name: 'agi_alpha_node_agent_utilization',
+    help: 'Utilization ratio per sub-agent derived from the orchestrator',
+    labelNames: ['agent'],
+    registers: [registry]
+  });
+
   const server = http.createServer(async (req, res) => {
     if (req.url === '/metrics') {
       const metrics = await registry.metrics();
@@ -36,6 +61,10 @@ export function startMonitoringServer({ port = 9464, logger }) {
     registry,
     server,
     stakeGauge,
-    heartbeatGauge
+    heartbeatGauge,
+    jobThroughputGauge,
+    jobSuccessGauge,
+    tokenEarningsGauge,
+    agentUtilizationGauge
   };
 }

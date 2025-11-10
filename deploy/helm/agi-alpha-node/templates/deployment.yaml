@@ -8,52 +8,32 @@ spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "agi-alpha-node.name" . }}
-      app.kubernetes.io/instance: {{ .Release.Name }}
+      {{- include "agi-alpha-node.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "agi-alpha-node.labels" . | nindent 8 }}
+        {{- include "agi-alpha-node.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
     spec:
       serviceAccountName: {{ include "agi-alpha-node.serviceAccountName" . }}
       containers:
         - name: agi-alpha-node
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          env:
-            - name: RPC_URL
-              value: {{ .Values.env.rpcUrl | quote }}
-            - name: NODE_LABEL
-              value: {{ .Values.env.label | quote }}
-            - name: OPERATOR_ADDRESS
-              value: {{ .Values.env.operatorAddress | quote }}
-            - name: STAKE_MANAGER_ADDRESS
-              value: {{ .Values.env.stakeManagerAddress | quote }}
-            - name: PLATFORM_INCENTIVES_ADDRESS
-              value: {{ .Values.env.platformIncentivesAddress | quote }}
-            - name: SYSTEM_PAUSE_ADDRESS
-              value: {{ .Values.env.systemPauseAddress | quote }}
-            - name: DESIRED_MINIMUM_STAKE
-              value: {{ .Values.env.desiredMinimumStake | quote }}
-            - name: AUTO_RESUME
-              value: {{ .Values.env.autoResume | quote }}
-            - name: METRICS_PORT
-              value: {{ .Values.env.metricsPort | quote }}
-          args:
-            - container
-            - --interval
-            - {{ .Values.env.intervalSeconds | quote }}
-            {{- if .Values.env.offlineSnapshot }}
-            - --offline-snapshot
-            - {{ .Values.env.offlineSnapshot | quote }}
-            {{- end }}
-            {{- if .Values.env.projectedRewards }}
-            - --projected-rewards
-            - {{ .Values.env.projectedRewards | quote }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "agi-alpha-node.fullname" . }}-config
+            {{- if .Values.secretConfig.operatorPrivateKey }}
+            - secretRef:
+                name: {{ include "agi-alpha-node.fullname" . }}-secrets
             {{- end }}
           ports:
             - name: metrics
-              containerPort: {{ .Values.env.metricsPort }}
+              containerPort: {{ .Values.config.metricsPort }}
           readinessProbe:
             httpGet:
               path: /metrics
@@ -68,6 +48,21 @@ spec:
             periodSeconds: 30
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            {{- if and .Values.offlineSnapshot.enabled .Values.offlineSnapshot.configMapName }}
+            - name: offline-snapshot
+              mountPath: {{ .Values.offlineSnapshot.mountPath | quote }}
+              subPath: {{ .Values.offlineSnapshot.key | quote }}
+            {{- end }}
+      volumes:
+        {{- if and .Values.offlineSnapshot.enabled .Values.offlineSnapshot.configMapName }}
+        - name: offline-snapshot
+          configMap:
+            name: {{ .Values.offlineSnapshot.configMapName }}
+            items:
+              - key: {{ .Values.offlineSnapshot.key }}
+                path: {{ .Values.offlineSnapshot.key }}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

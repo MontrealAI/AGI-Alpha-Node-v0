@@ -11,6 +11,7 @@ import {
   buildOfflineStakeStatus,
   buildOfflineRewardsProjection
 } from '../services/offlineSnapshot.js';
+import { derivePerformanceProfile } from '../services/performance.js';
 
 export async function runNodeDiagnostics({
   rpcUrl,
@@ -139,6 +140,8 @@ export async function runNodeDiagnostics({
     }, 'Projected epoch rewards');
   }
 
+  const performance = derivePerformanceProfile();
+
   const ownerDirectives = deriveOwnerDirectives({
     stakeStatus,
     stakeEvaluation,
@@ -167,13 +170,15 @@ export async function runNodeDiagnostics({
     stakeStatus,
     rewardsProjection,
     stakeEvaluation,
-    ownerDirectives
+    ownerDirectives,
+    performance
   };
 }
 
 export async function launchMonitoring({
   port,
   stakeStatus,
+  performance = null,
   logger = pino({ level: 'info', name: 'agi-alpha-node' })
 }) {
   const telemetry = startMonitoringServer({ port, logger });
@@ -182,6 +187,27 @@ export async function launchMonitoring({
   }
   if (stakeStatus?.lastHeartbeat) {
     telemetry.heartbeatGauge.set(Number(stakeStatus.lastHeartbeat));
+  }
+  if (performance) {
+    if (telemetry.jobThroughputGauge && performance.throughputPerEpoch !== undefined) {
+      telemetry.jobThroughputGauge.set(Number(performance.throughputPerEpoch ?? 0));
+    }
+    if (telemetry.jobSuccessGauge && performance.successRate !== undefined) {
+      telemetry.jobSuccessGauge.set(Number(performance.successRate ?? 0));
+    }
+    if (telemetry.tokenEarningsGauge && typeof performance.tokenEarningsProjection === 'bigint') {
+      const formatted = Number.parseFloat(formatTokenAmount(performance.tokenEarningsProjection));
+      telemetry.tokenEarningsGauge.set(Number.isFinite(formatted) ? formatted : 0);
+    }
+    if (telemetry.agentUtilizationGauge) {
+      telemetry.agentUtilizationGauge.reset();
+      (performance.utilization ?? []).forEach((entry) => {
+        if (entry?.agent) {
+          const value = Number.isFinite(entry.utilization) ? entry.utilization : 0;
+          telemetry.agentUtilizationGauge.set({ agent: entry.agent }, value);
+        }
+      });
+    }
   }
   return telemetry;
 }
