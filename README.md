@@ -216,6 +216,8 @@ sequenceDiagram
 
 ## Deployment Continuum
 
+See [`docs/deployment/one-click-deployment.md`](docs/deployment/one-click-deployment.md) for an end-to-end operator playbook covering Docker, Docker Compose (Prometheus + Grafana), and Helm activation flows.
+
 ### One-Click Docker Run
 
 ```bash
