@@ -66,11 +66,14 @@ async function determineRuntimeMode({ offlineMode = false, logger }) {
       signal: controller.signal
     });
 
-    if (!response.ok) {
-      throw new Error(`Remote provider responded with status ${response.status}`);
+    if (response.ok || response.status === 404 || response.status === 405) {
+      return {
+        mode: 'remote',
+        reason: response.ok ? 'remote-provider-healthy' : 'remote-provider-rejected-head-request'
+      };
     }
 
-    return { mode: 'remote', reason: 'remote-provider-healthy' };
+    throw new Error(`Remote provider responded with status ${response.status}`);
   } catch (error) {
     logger?.warn?.(
       {
