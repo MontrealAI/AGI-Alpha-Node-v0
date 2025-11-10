@@ -220,22 +220,26 @@ sequenceDiagram
 
 ```bash
 docker run -it --rm \
+  -p 8080:8080 \
   -p 9464:9464 \
   -e NODE_LABEL=1 \
   -e OPERATOR_ADDRESS=0xYOUR_OPERATOR_ADDRESS \
   -e RPC_URL=https://mainnet.infura.io/v3/<PROJECT_ID> \
   -e PLATFORM_INCENTIVES_ADDRESS=0xIncentivesContract \
+  -e API_PORT=8080 \
   -e AUTO_STAKE=true \
   -e OPERATOR_PRIVATE_KEY=0xYOUR_PRIVATE_KEY \
+  -e CONFIG_PATH=/config/node.env \
   -e OFFLINE_SNAPSHOT_PATH=/config/snapshot.json \
+  -v $(pwd)/node.env:/config/node.env:ro \
   -v $(pwd)/snapshot.json:/config/snapshot.json:ro \
   ghcr.io/montrealai/agi-alpha-node:latest
 ```
 
-* `/entrypoint.sh` validates identity inputs, warns about missing snapshots, and launches `agi-alpha-node container`.
-* Health checks hit `/metrics` on `9464`; Docker restarts the node automatically when the Prometheus endpoint fails.
-* Enable unattended staking by pairing `AUTO_STAKE=true` with `OPERATOR_PRIVATE_KEY`. Disable prompts for headless servers with `INTERACTIVE_STAKE=false`.
-* All variables align with [`src/config/schema.js`](src/config/schema.js). Mount offline snapshots using `OFFLINE_SNAPSHOT_PATH` to survive RPC outages.
+* `/entrypoint.sh` loads optional environment files via `CONFIG_PATH`, validates identity inputs, warns about missing snapshots, and launches `agi-alpha-node container`.
+* Health checks hit `/metrics` on `9464`; Docker restarts the node automatically when the Prometheus endpoint fails. The agent REST interface listens on `API_PORT` (default `8080`) for job submissions and health pings (`/healthz`).
+* Enable unattended staking by pairing `AUTO_STAKE=true` with `OPERATOR_PRIVATE_KEY`. Disable prompts for headless servers with `INTERACTIVE_STAKE=false`. Vault operators can hydrate secrets automatically using `VAULT_ADDR`, `VAULT_SECRET_PATH`, `VAULT_SECRET_KEY`, and `VAULT_TOKEN`.
+* All variables align with [`src/config/schema.js`](src/config/schema.js). Mount offline snapshots using `OFFLINE_SNAPSHOT_PATH` to survive RPC outages, or flip `OFFLINE_MODE=true` to force local heuristics even when APIs are reachable.
 
 ### Kubernetes / Helm
 
@@ -246,11 +250,37 @@ helm upgrade --install agi-alpha-node ./deploy/helm/agi-alpha-node \
   --set config.operatorAddress=0xYOUR_OPERATOR_ADDRESS \
   --set config.rpcUrl=https://mainnet.infura.io/v3/<PROJECT_ID> \
   --set config.platformIncentivesAddress=0xIncentivesContract \
+  --set config.apiPort=8080 \
   --set secretConfig.operatorPrivateKey=0xYOUR_PRIVATE_KEY \
   --set config.autoStake=true
 ```
 
-The bundled chart provisions service accounts, Prometheus scrape hints, liveness/readiness probes, and optional offline snapshots. Customize [`deploy/helm/agi-alpha-node/values.yaml`](deploy/helm/agi-alpha-node/values.yaml) to integrate with Vault, tune resources, or mount an `offlineSnapshot` ConfigMap when RPC access is intermittent.
+The bundled chart provisions service accounts, Prometheus scrape hints, liveness/readiness probes, and optional offline snapshots. Customize [`deploy/helm/agi-alpha-node/values.yaml`](deploy/helm/agi-alpha-node/values.yaml) to integrate with Vault (`config.vaultAddr`, `config.vaultSecretPath`, `secretConfig.vaultToken`), expose the REST agent port through your preferred service mesh, or mount an `offlineSnapshot` ConfigMap when RPC access is intermittent.
+
+### Agent REST Interface & Job Intake
+
+The container now exposes a hardened REST interface for agent coordination and external job submission on `API_PORT` (default `8080`). Endpoints are powered by [`src/network/apiServer.js`](src/network/apiServer.js) and fuse directly into the monitoring loop so job throughput and reward projections appear in Prometheus gauges.
+
+| Endpoint | Description |
+| -------- | ----------- |
+| `GET /healthz` | Lightweight readiness probe exposing submitted/completed counters and provider mode. |
+| `GET /jobs` | Returns the active job ledger with plan, swarm, curriculum, and antifragility outputs. |
+| `POST /jobs` | Submits a job payload; the orchestrator evaluates strategies, assigns agents, and records metrics. |
+
+```bash
+curl -sS http://localhost:8080/jobs \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jobProfile": { "name": "sovereign-grid", "reward": "3200", "complexity": 5.8, "deadlineHours": 12 },
+    "agents": [
+      { "name": "orion", "domains": ["energy", "finance"], "capacity": 2 },
+      { "name": "helix", "domains": ["biotech"], "capacity": 1 }
+    ]
+  }'
+```
+
+When OpenAI or third-party AI endpoints become unreachable, [`src/intelligence/agentRuntime.js`](src/intelligence/agentRuntime.js) automatically downgrades into local heuristics (`mode: local-fallback`) while maintaining deterministic outputs. Set `OFFLINE_MODE=true` to force local execution even when upstream APIs respond.
 
 ### Stake Activation Automation
 
@@ -265,7 +295,7 @@ The bundled chart provisions service accounts, Prometheus scrape hints, liveness
 
 ## Telemetry & Monitoring
 
-* **Metrics Endpoint** — `/metrics` served by [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) exposes gauges for stake minimums, penalties, reward projections, ENS verification, job throughput, success ratio, projected token earnings, and per-agent utilization.
+* **Metrics Endpoint** — `/metrics` served by [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) exposes gauges for stake minimums, penalties, reward projections, ENS verification, job throughput, success ratio, projected token earnings, and per-agent utilization. Job submissions processed through [`src/network/apiServer.js`](src/network/apiServer.js) feed directly into these gauges via [`runNodeDiagnostics`](src/orchestrator/nodeRuntime.js).
 * **Logging** — Structured JSON logs via [`pino`](https://github.com/pinojs/pino) enable SIEM ingestion. Runtime contexts are labelled (`container-bootstrap`, `monitor-loop`, etc.) for quick filtering.
 * **Prometheus/Grafana** — Import the dashboards referenced in [`docs/README.md`](docs/README.md) or plug metrics directly into your observability stack. Configure Helm annotations to auto-scrape.
 * **Health Checks** — [`src/healthcheck.js`](src/healthcheck.js) ensures Docker & Kubernetes restart the process whenever metrics become unavailable or stale.
@@ -284,7 +314,7 @@ stateDiagram-v2
   Resync --> Online
 ```
 
-The node survives API or RPC outages using signed snapshots.
+The node survives API or RPC outages using signed snapshots and local intelligence fallbacks.
 
 1. Export a snapshot from a trusted environment:
 
@@ -297,7 +327,7 @@ The node survives API or RPC outages using signed snapshots.
    ```
 
 2. Distribute the snapshot alongside the container (`OFFLINE_SNAPSHOT_PATH=/config/snapshot.json`).
-3. When the CLI or monitor detects the snapshot, it switches to offline mode, verifying ENS/stake data locally while continuing to export metrics and owner directives.
+3. When the CLI or monitor detects the snapshot, it switches to offline mode, verifying ENS/stake data locally while continuing to export metrics and owner directives. If remote AI providers fail the runtime automatically marks jobs as `local-fallback` while preserving deterministic strategy selection.
 
 Offline resolution is validated in [`src/services/offlineSnapshot.js`](src/services/offlineSnapshot.js) and covered by [`test/offlineSnapshot.test.js`](test/offlineSnapshot.test.js).
 

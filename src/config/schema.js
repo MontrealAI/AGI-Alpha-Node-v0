@@ -32,6 +32,7 @@ export const configSchema = z
     STAKE_MANAGER_ADDRESS: z.string().regex(addressRegex).optional(),
     REWARD_ENGINE_ADDRESS: z.string().regex(addressRegex).optional(),
     METRICS_PORT: z.coerce.number().int().min(1024).max(65535).default(9464),
+    API_PORT: z.coerce.number().int().min(1024).max(65535).default(8080),
     DRY_RUN: booleanFlag.optional().default(true),
     OPERATOR_PRIVATE_KEY: z
       .string()
@@ -93,7 +94,12 @@ export const configSchema = z
         }
         return asString;
       }),
-    AUTO_RESUME: booleanFlag.optional().default(false)
+    AUTO_RESUME: booleanFlag.optional().default(false),
+    OFFLINE_MODE: booleanFlag.optional().default(false),
+    VAULT_ADDR: z.string().optional(),
+    VAULT_TOKEN: z.string().optional(),
+    VAULT_SECRET_PATH: z.string().optional(),
+    VAULT_SECRET_KEY: z.string().optional()
   })
   .strict();
 

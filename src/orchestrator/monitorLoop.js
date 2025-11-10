@@ -77,7 +77,8 @@ export async function startMonitorLoop({
   projectedRewards = null,
   offlineSnapshotPath = null,
   logger = pino({ level: 'info', name: 'monitor-loop' }),
-  maxIterations = Infinity
+  maxIterations = Infinity,
+  jobMetricsProvider = null
 }) {
   if (!config) {
     throw new Error('config is required');
@@ -139,6 +140,7 @@ export async function startMonitorLoop({
           autoResume: config.AUTO_RESUME,
           projectedRewards,
           offlineSnapshot: resolver(),
+          jobMetricsProvider,
           logger
         });
 

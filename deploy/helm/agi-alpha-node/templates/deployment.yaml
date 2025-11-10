@@ -8,61 +8,25 @@ spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "agi-alpha-node.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/name: {{ include "agi-alpha-node.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        {{- include "agi-alpha-node.selectorLabels" . | nindent 8 }}
+        {{- include "agi-alpha-node.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
       annotations:
-        {{- toYaml .Values.podAnnotations | nindent 8 }}
-    spec:
-      serviceAccountName: {{ include "agi-alpha-node.serviceAccountName" . }}
-      containers:
-        - name: agi-alpha-node
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          envFrom:
-            - configMapRef:
-                name: {{ include "agi-alpha-node.fullname" . }}-config
-            {{- if .Values.secretConfig.operatorPrivateKey }}
-            - secretRef:
-                name: {{ include "agi-alpha-node.fullname" . }}-secrets
-            {{- end }}
-          ports:
-            - name: metrics
-              containerPort: {{ .Values.config.metricsPort }}
-          readinessProbe:
-            httpGet:
-              path: /metrics
-              port: metrics
-            initialDelaySeconds: 30
-            periodSeconds: 30
-          livenessProbe:
-            httpGet:
-              path: /metrics
-              port: metrics
-            initialDelaySeconds: 60
-            periodSeconds: 30
-          resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-          volumeMounts:
-            {{- if and .Values.offlineSnapshot.enabled .Values.offlineSnapshot.configMapName }}
-            - name: offline-snapshot
-              mountPath: {{ .Values.offlineSnapshot.mountPath | quote }}
-              subPath: {{ .Values.offlineSnapshot.key | quote }}
-            {{- end }}
-      volumes:
-        {{- if and .Values.offlineSnapshot.enabled .Values.offlineSnapshot.configMapName }}
-        - name: offline-snapshot
-          configMap:
-            name: {{ .Values.offlineSnapshot.configMapName }}
-            items:
-              - key: {{ .Values.offlineSnapshot.key }}
-                path: {{ .Values.offlineSnapshot.key }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
         {{- end }}
+    spec:
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "agi-alpha-node.fullname" . }}
+      {{- else if .Values.serviceAccount.name }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -74,4 +38,111 @@ spec:
       {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: agi-alpha-node
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: NODE_LABEL
+              value: {{ .Values.config.nodeLabel | quote }}
+            - name: OPERATOR_ADDRESS
+              value: {{ .Values.config.operatorAddress | quote }}
+            - name: RPC_URL
+              value: {{ .Values.config.rpcUrl | quote }}
+            - name: ENS_PARENT_DOMAIN
+              value: {{ .Values.config.ensParentDomain | quote }}
+            - name: METRICS_PORT
+              value: {{ .Values.config.metricsPort | quote }}
+            - name: API_PORT
+              value: {{ .Values.config.apiPort | quote }}
+            - name: AUTO_RESUME
+              value: {{ ternary "true" "false" .Values.config.autoResume | quote }}
+            - name: AUTO_STAKE
+              value: {{ ternary "true" "false" .Values.config.autoStake | quote }}
+            - name: INTERACTIVE_STAKE
+              value: {{ ternary "true" "false" .Values.config.interactiveStake | quote }}
+            - name: OFFLINE_MODE
+              value: {{ ternary "true" "false" .Values.config.offlineMode | quote }}
+            - name: VAULT_SECRET_KEY
+              value: {{ .Values.config.vaultSecretKey | quote }}
+            {{- if .Values.config.stakeManagerAddress }}
+            - name: STAKE_MANAGER_ADDRESS
+              value: {{ .Values.config.stakeManagerAddress | quote }}
+            {{- end }}
+            {{- if .Values.config.platformIncentivesAddress }}
+            - name: PLATFORM_INCENTIVES_ADDRESS
+              value: {{ .Values.config.platformIncentivesAddress | quote }}
+            {{- end }}
+            {{- if .Values.config.systemPauseAddress }}
+            - name: SYSTEM_PAUSE_ADDRESS
+              value: {{ .Values.config.systemPauseAddress | quote }}
+            {{- end }}
+            {{- if .Values.config.desiredMinimumStake }}
+            - name: DESIRED_MINIMUM_STAKE
+              value: {{ .Values.config.desiredMinimumStake | quote }}
+            {{- end }}
+            {{- if .Values.config.stakeAmount }}
+            - name: STAKE_AMOUNT
+              value: {{ .Values.config.stakeAmount | quote }}
+            {{- end }}
+            {{- if .Values.config.vaultAddr }}
+            - name: VAULT_ADDR
+              value: {{ .Values.config.vaultAddr | quote }}
+            {{- end }}
+            {{- if .Values.config.vaultSecretPath }}
+            - name: VAULT_SECRET_PATH
+              value: {{ .Values.config.vaultSecretPath | quote }}
+            {{- end }}
+            {{- if .Values.config.offlineSnapshotPath }}
+            - name: OFFLINE_SNAPSHOT_PATH
+              value: {{ .Values.config.offlineSnapshotPath | quote }}
+            {{- end }}
+            {{- if .Values.secretConfig.operatorPrivateKey }}
+            - name: OPERATOR_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "agi-alpha-node.fullname" . }}
+                  key: operatorPrivateKey
+            {{- end }}
+            {{- if .Values.secretConfig.vaultToken }}
+            - name: VAULT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "agi-alpha-node.fullname" . }}
+                  key: vaultToken
+            {{- end }}
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.config.metricsPort }}
+            - name: api
+              containerPort: {{ .Values.config.apiPort }}
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: api
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if and .Values.offlineSnapshot.enabled .Values.offlineSnapshot.mountPath }}
+          volumeMounts:
+            - name: offline-snapshot
+              mountPath: {{ .Values.offlineSnapshot.mountPath }}
+              subPath: {{ .Values.offlineSnapshot.key }}
+          {{- end }}
+      {{- if and .Values.offlineSnapshot.enabled .Values.offlineSnapshot.configMapName }}
+      volumes:
+        - name: offline-snapshot
+          configMap:
+            name: {{ .Values.offlineSnapshot.configMapName }}
+            items:
+              - key: {{ .Values.offlineSnapshot.key }}
+                path: {{ .Values.offlineSnapshot.key }}
       {{- end }}

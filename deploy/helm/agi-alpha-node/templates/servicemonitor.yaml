@@ -1,0 +1,23 @@
+{{- if .Values.prometheus.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "agi-alpha-node.fullname" . }}
+  {{- with .Values.prometheus.serviceMonitor.namespace }}
+  namespace: {{ . }}
+  {{- end }}
+  labels:
+    {{- include "agi-alpha-node.labels" . | nindent 4 }}
+    {{- with .Values.prometheus.serviceMonitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "agi-alpha-node.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  endpoints:
+    - port: metrics
+      path: {{ default "/metrics" .Values.prometheus.serviceMonitor.path }}
+      interval: {{ .Values.prometheus.serviceMonitor.interval }}
+{{- end }}
