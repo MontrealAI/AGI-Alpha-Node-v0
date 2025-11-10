@@ -30,38 +30,37 @@
 
 ## Table of Contents
 
-1. [Strategic Signal](#strategic-signal)
-2. [Capabilities Matrix](#capabilities-matrix)
-3. [Launch Protocol](#launch-protocol)
-4. [Architecture Pulse](#architecture-pulse)
-5. [Command Surface](#command-surface)
-6. [Container & Cluster Deployments](#container--cluster-deployments)
-7. [Telemetry & Monitoring](#telemetry--monitoring)
-8. [Offline Continuity Mode](#offline-continuity-mode)
-9. [Owner Supremacy Controls](#owner-supremacy-controls)
-10. [Repository Atlas](#repository-atlas)
-11. [Quality Gates & CI Enforcement](#quality-gates--ci-enforcement)
-12. [Contributing](#contributing)
-13. [License](#license)
+1. [Mission Signal](#mission-signal)
+2. [Feature Constellation](#feature-constellation)
+3. [Operator Activation Sequence](#operator-activation-sequence)
+4. [Runtime Topology](#runtime-topology)
+5. [Deployment Continuum](#deployment-continuum)
+6. [Telemetry & Monitoring](#telemetry--monitoring)
+7. [Offline Continuity Protocol](#offline-continuity-protocol)
+8. [Owner Supremacy Controls](#owner-supremacy-controls)
+9. [Repository Atlas](#repository-atlas)
+10. [Quality Gates & Branch Discipline](#quality-gates--branch-discipline)
+11. [Contributing](#contributing)
+12. [License](#license)
 
 ---
 
-## Strategic Signal
+## Mission Signal
 
 | Vector | Signal | Coordinates |
 | ------ | ------ | ----------- |
-| **Identity Root** | ENS anchor enforced at runtime | [`alpha.node.agi.eth`](https://app.ens.domains/name/alpha.node.agi.eth) — activate only with your delegated subdomain such as `1.alpha.node.agi.eth`. |
-| **Treasury Asset** | `$AGIALPHA` (18 decimals) | [Etherscan contract `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa). |
-| **Runtime Spine** | CLI orchestrator & diagnostics loop | [`src/index.js`](src/index.js) — orchestrates ENS proofs, staking telemetry, monitoring, and governance payloads. |
-| **Intelligence Core** | Local-first meta-agent lattice | [`src/intelligence`](src/intelligence) — planning, swarm routing, learning, and antifragile stress harness. |
-| **Governance Plane** | Owner-only control payloads | [`src/services/governance.js`](src/services/governance.js) & [`src/services/controlPlane.js`](src/services/controlPlane.js) — pause/resume, stake floors, share allocations, and directive synthesis. |
-| **Telemetry Spine** | Prometheus metrics + health probes | [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) — surfaces live gauges for jobs, earnings, ENS verification, and heartbeat posture. |
-| **Offline Fidelity** | Snapshot-driven continuity | [`src/services/offlineSnapshot.js`](src/services/offlineSnapshot.js) — validated JSON snapshots keep the node sovereign when RPC/API links stall. |
-| **Deployment Surface** | Docker + Helm for one command activation | [`Dockerfile`](Dockerfile) & [`deploy/helm/agi-alpha-node`](deploy/helm/agi-alpha-node) — single command bootstrap with health checks, secrets, and autoscaling hooks. |
+| **Identity Root** | ENS anchor enforced at runtime. | [`alpha.node.agi.eth`](https://app.ens.domains/name/alpha.node.agi.eth) — activate only with your delegated subdomain such as `1.alpha.node.agi.eth`. |
+| **Treasury Asset** | `$AGIALPHA` (18 decimals). | [Etherscan contract `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa). |
+| **Runtime Spine** | CLI orchestrator & diagnostics loop. | [`src/index.js`](src/index.js) — orchestrates ENS proofs, staking telemetry, monitoring, and governance payloads. |
+| **Intelligence Core** | Local-first meta-agent lattice. | [`src/intelligence`](src/intelligence) — planning, swarm routing, learning, and antifragile stress harness. |
+| **Governance Plane** | Owner-only control payloads. | [`src/services/governance.js`](src/services/governance.js) & [`src/services/controlPlane.js`](src/services/controlPlane.js) — pause/resume, stake floors, share allocations, and directive synthesis. |
+| **Telemetry Spine** | Prometheus metrics + health probes. | [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) — surfaces live gauges for jobs, earnings, ENS verification, and heartbeat posture. |
+| **Offline Fidelity** | Snapshot-driven continuity. | [`src/services/offlineSnapshot.js`](src/services/offlineSnapshot.js) — validated JSON snapshots keep the node sovereign when RPC/API links stall. |
+| **Deployment Surface** | Docker + Helm for one command activation. | [`Dockerfile`](Dockerfile) & [`deploy/helm/agi-alpha-node`](deploy/helm/agi-alpha-node) — single command bootstrap with health checks, secrets, and autoscaling hooks. |
 
 ---
 
-## Capabilities Matrix
+## Feature Constellation
 
 | Capability | Highlights | Source |
 | ---------- | ---------- | ------ |
@@ -72,11 +71,11 @@
 | Monitoring Loop | Continuous diagnostics with Prometheus export and health classification. | [`src/orchestrator/monitorLoop.js`](src/orchestrator/monitorLoop.js) |
 | Container Health | Docker healthcheck hits metrics endpoint; Kubernetes liveness/readiness derived from Helm chart probes. | [`src/healthcheck.js`](src/healthcheck.js), [`deploy/helm/agi-alpha-node/templates/deployment.yaml`](deploy/helm/agi-alpha-node/templates/deployment.yaml) |
 | Offline Snapshots | Signed JSON snapshots for air-gapped continuity; automatically loaded in CLI & monitor. | [`src/services/offlineSnapshot.js`](src/services/offlineSnapshot.js) |
-| Owner Commands | Transaction builders for pausing, stake floors, and share tuning. | [`src/services/governance.js`](src/services/governance.js) |
+| Owner Commands | Transaction builders for pausing, stake floors, share tuning, and reinvestment directives. | [`src/services/governance.js`](src/services/governance.js), [`src/services/controlPlane.js`](src/services/controlPlane.js) |
 
 ---
 
-## Launch Protocol
+## Operator Activation Sequence
 
 1. **Clone & Install**
 
@@ -169,7 +168,7 @@
 
 ---
 
-## Architecture Pulse
+## Runtime Topology
 
 ```mermaid
 flowchart LR
@@ -196,27 +195,25 @@ flowchart LR
   Governance --> Chain["Ethereum Mainnet\n$AGIALPHA"]
 ```
 
----
+### Container Bootstrap Symphony
 
-## Command Surface
-
-| Command | Purpose | Highlights |
-| ------- | ------- | ---------- |
-| `status` | One-shot diagnostics with ENS, staking, reward projections, and owner directives. | Optional Prometheus export for immediate scraping. |
-| `monitor` | Continuous diagnostics loop that refreshes metrics and honours offline snapshots. | Drives Docker health and Helm readiness probes. |
-| `container` | Bootstrap sequence executed inside the Docker entrypoint. | Verifies ENS, updates metrics, emits structured logs for operators. |
-| `ens-guide` | Generates ENS preparation checklist. | Documents registry, wrapper, resolver expectations for compliance. |
-| `verify-ens` | Confirms ENS ownership matches declared operator. | Fails fast with actionable guidance when misaligned. |
-| `token approve`, `stake-tx`, `stake-status` | Handles allowances, stake encoding, and posture reporting. | Strict 18 decimal support for `$AGIALPHA`. |
-| `governance` helpers | Build pause/resume, minimum stake, role share, and global share transactions. | Keeps the contract owner in full command of parameters. |
-| `job-proof` | Creates commitment + submission payloads for AGI Jobs. | Deterministic encoding ensures auditability. |
-| `intelligence plan/swarm/learn` | Local strategic planning, swarm orchestration, and learning loops. | Functions even when remote AI APIs are unavailable. |
-
-For the full CLI reference, run `npx agi-alpha-node --help`.
+```mermaid
+sequenceDiagram
+  participant Operator
+  participant Container
+  participant Ethereum
+  participant Metrics
+  Operator->>Container: docker run ghcr.io/montrealai/agi-alpha-node:latest
+  Container->>Container: loadConfig()
+  Container->>Ethereum: ENS registry & wrapper verification
+  Container->>Ethereum: Stake posture + reward projection
+  Container->>Metrics: Expose /metrics and Prometheus gauges
+  Container-->>Operator: Structured logs + owner directives
+```
 
 ---
 
-## Container & Cluster Deployments
+## Deployment Continuum
 
 ### One-Click Docker Run
 
@@ -263,7 +260,17 @@ The chart ships autoscaling annotations, dedicated service accounts, network pol
 
 ---
 
-## Offline Continuity Mode
+## Offline Continuity Protocol
+
+```mermaid
+stateDiagram-v2
+  [*] --> Online
+  Online --> Snapshotting: agi-alpha-node status --write-offline-snapshot
+  Snapshotting --> OfflineReady: Distribute signed JSON snapshot
+  OfflineReady --> AirGapped: Provide OFFLINE_SNAPSHOT_PATH to container/CLI
+  AirGapped --> Resync: Connectivity restored, live RPC resumes
+  Resync --> Online
+```
 
 The node survives API or RPC outages using signed snapshots.
 
@@ -319,20 +326,23 @@ Review the transaction builders in [`src/services/governance.js`](src/services/g
 └── test/                     # Vitest suites covering every subsystem
 ```
 
-## Quality Gates & CI Enforcement
+---
 
-* GitHub Actions workflow [`ci.yml`](.github/workflows/ci.yml) runs linting, link checks, and the Vitest suite on every push and pull request.
-* Branch protection requires a green CI badge before merging; status is visible at the top of this README.
-* Local reproducibility: `npm test`, `npm run lint`, and `npm run coverage` match the CI stack.
-* Coverage reports (`c8`) output text & LCOV for external tooling.
+## Quality Gates & Branch Discipline
+
+* **Continuous Integration** — [`ci.yml`](.github/workflows/ci.yml) executes lint and test suites on every push and pull request targeting `main`.
+* **Branch Protection** — Enforce required status checks (`Lint Markdown & Links`, `Unit & Integration Tests`) and require PR reviews to guard the supply chain.
+* **Pre-Merge Ritual** — Run `npm test`, `npm run lint`, and refresh documentation snapshots before raising a pull request.
+* **Container Provenance** — Build and scan Docker images prior to release; publish to `ghcr.io/montrealai/agi-alpha-node` with immutable tags.
+
+---
 
 ## Contributing
 
-1. Fork and branch from `main`.
-2. Run `npm test` and `npm run lint` before opening a PR.
-3. Ensure updates include documentation adjustments when touching operator workflows.
-4. Submit PRs with detailed summaries and screenshots or metrics when applicable.
+Pull requests are welcome. Please align with the existing coding style, keep documentation in sync with code changes, and ensure the CI workflow remains green.
+
+---
 
 ## License
 
-Released under the [MIT License](LICENSE).
+[MIT](LICENSE)
