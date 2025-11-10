@@ -325,6 +325,26 @@ All modules are pure functions backed by tests so you can integrate them into au
 * `governance set-role-share` and `set-global-shares` configure thermodynamic reward splits; built-in guard rails enforce 10 000 bps totals.
 * Helpers normalize role identifiers from human-friendly aliases to 32-byte selectors (`NODE_OPERATOR_ROLE`, `VALIDATOR_ROLE`, etc.).
 
+| CLI Invocation | On-chain Method | Control Surface | Implementation |
+| -------------- | --------------- | --------------- | -------------- |
+| `npx agi-alpha-node governance pause --system <addr> --action pause` | `pauseAll()` / `resumeAll()` / `unpauseAll()` | Global kill-switch and recovery authority | [`src/services/governance.js`](src/services/governance.js) |
+| `npx agi-alpha-node governance set-min-stake --stake-manager <addr> --amount 2500` | `setMinimumStake(uint256)` | Adjust stake floors as market pressure changes | [`src/services/governance.js`](src/services/governance.js) |
+| `npx agi-alpha-node governance set-role-share --reward-engine <addr> --role operator --share-bps 6500` | `setRoleShare(bytes32,uint16)` | Recalibrate operator / validator splits in minutes | [`src/services/governance.js`](src/services/governance.js) |
+| `npx agi-alpha-node governance set-global-shares --reward-engine <addr> --operator-share-bps 6000 --validator-share-bps 2500 --treasury-share-bps 1500` | `setGlobalShares(uint16,uint16,uint16)` | Hard-lock macro distribution (must total 10 000 bps) | [`src/services/governance.js`](src/services/governance.js) |
+
+```mermaid
+stateDiagram-v2
+  [*] --> Standby
+  Standby --> IdentityVerified: verify-ens (ENS proof + registry checks)
+  IdentityVerified --> Capitalized: stake-tx (stakeAndActivate payload)
+  Capitalized --> Operational: status (diagnostics + telemetry)
+  Operational --> Paused: governance pause (pauseAll)
+  Paused --> Operational: governance pause (resumeAll/unpauseAll)
+  Operational --> [*]: governance pause (pauseAll) + withdraw capital
+```
+
+The table and flow reinforce that the custodian retains **total spectrum control**—identity, capital thresholds, profit routing, and emergency responses remain a button press away. The choreography mirrors the `owner-first` interfaces in the CLI, ensuring no external actor can displace the operator’s supremacy over the node’s economic machinery.
+
 ---
 
 ## Telemetry, Containerization & Deployment
