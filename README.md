@@ -218,29 +218,31 @@ sequenceDiagram
 
 ### One-Click Docker Run
 
-```bash
-docker run -it --rm \
-  -p 8080:8080 \
-  -p 9464:9464 \
-  -e NODE_LABEL=1 \
-  -e OPERATOR_ADDRESS=0xYOUR_OPERATOR_ADDRESS \
-  -e RPC_URL=https://mainnet.infura.io/v3/<PROJECT_ID> \
-  -e PLATFORM_INCENTIVES_ADDRESS=0xIncentivesContract \
-  -e API_PORT=8080 \
-  -e AUTO_STAKE=true \
-  -e OPERATOR_PRIVATE_KEY=0xYOUR_PRIVATE_KEY \
-  -e CONFIG_PATH=/config/node.env \
-  -e OFFLINE_SNAPSHOT_PATH=/config/snapshot.json \
-  -v $(pwd)/node.env:/config/node.env:ro \
-  -v $(pwd)/snapshot.json:/config/snapshot.json:ro \
-  ghcr.io/montrealai/agi-alpha-node:latest
-```
+1. Copy the sample config and tailor it for your operator:
 
-* `/entrypoint.sh` loads optional environment files via `CONFIG_PATH`, validates identity inputs, warns about missing snapshots, and launches `agi-alpha-node container`.
-* Health checks hit `/metrics` on `9464`; Docker restarts the node automatically when the Prometheus endpoint fails. The agent REST interface listens on `API_PORT` (default `8080`) for job submissions and health pings (`/healthz`).
-* Enable unattended staking by pairing `AUTO_STAKE=true` with `OPERATOR_PRIVATE_KEY`. Disable prompts for headless servers with `INTERACTIVE_STAKE=false`. Vault operators can hydrate secrets automatically using `VAULT_ADDR`, `VAULT_SECRET_PATH`, `VAULT_SECRET_KEY`, and `VAULT_TOKEN`.
-* All variables align with [`src/config/schema.js`](src/config/schema.js). Mount offline snapshots using `OFFLINE_SNAPSHOT_PATH` to survive RPC outages, or flip `OFFLINE_MODE=true` to force local heuristics even when APIs are reachable.
-* Provide bespoke offline heuristics by mounting a JSON definition into the container (for example `-v $(pwd)/models.json:/config/models.json:ro`) and exporting `LOCAL_MODEL_PATH=/config/models.json`.
+   ```bash
+   cp deploy/docker/node.env.example node.env
+   $EDITOR node.env
+   ```
+
+2. Launch the node with a single command. The entrypoint auto-loads `/config/node.env` so the `--env-file` flag is optional when you mount the file into the container.
+
+   ```bash
+   docker run -it --rm \
+     -p 8080:8080 \
+     -p 9464:9464 \
+     --env-file node.env \
+     -v $(pwd)/node.env:/config/node.env:ro \
+     -v $(pwd)/snapshot.json:/config/snapshot.json:ro \
+     ghcr.io/montrealai/agi-alpha-node:latest
+   ```
+
+* `/entrypoint.sh` loads optional environment files via `CONFIG_PATH` or `/config/node.env`, normalises defaults, and refuses to start when the ENS label, operator address, or RPC URL are invalid. A configuration summary is logged before the runtime boots so operators can audit which ENS label (for example `1.alpha.node.agi.eth`) will be verified.
+* ENS verification runs inside [`bootstrapContainer`](src/orchestrator/bootstrap.js). If the resolved registry/wrapper owner does not match `OPERATOR_ADDRESS` the container fails fast, preventing misconfigured custodians from staking against the wrong subdomain.
+* Stake automation triggers when a deficit is detected. With `AUTO_STAKE=true` and `OPERATOR_PRIVATE_KEY` set, the container broadcasts `acknowledgeStakeAndActivate` after optionally prompting for a custom amount (`INTERACTIVE_STAKE=true`). Funding instructions are logged for auditors when the account still needs $AGIALPHA.
+* Health checks hit `/metrics` on `9464`; Docker’s restart policy or orchestration platform can recycle the container automatically when the Prometheus endpoint fails. The agent REST interface listens on `API_PORT` (default `8080`) for job submissions and readiness checks (`/healthz`).
+* All variables align with [`src/config/schema.js`](src/config/schema.js). Mount offline snapshots using `OFFLINE_SNAPSHOT_PATH` to survive RPC outages, or flip `OFFLINE_MODE=true` to force local heuristics even when APIs are reachable. Custom local-model palettes can be mounted via `LOCAL_MODEL_PATH=/config/models.json` for air-gapped execution.
+* Vault operators can hydrate secrets automatically using `VAULT_ADDR`, `VAULT_SECRET_PATH`, `VAULT_SECRET_KEY`, and `VAULT_TOKEN`. When `AUTO_STAKE=true` but the private key is missing, the entrypoint emits a warning before hand-off.
 
 ### Kubernetes / Helm
 

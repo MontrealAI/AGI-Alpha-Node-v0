@@ -8,6 +8,13 @@ Set the following values to customize the deployment:
 - secretConfig.operatorPrivateKey for stake activation automation
 - offlineSnapshot.configMapName to mount an offline fallback snapshot
 - autoscaling.enabled=true to activate the HorizontalPodAutoscaler
+- config.vaultAddr + secretConfig.vaultToken to hydrate operator keys from Vault
 
 Verify autoscaling state with:
   kubectl get hpa -n {{ .Release.Namespace }} {{ include "agi-alpha-node.fullname" . }}
+
+Monitor the first bootstrap (ENS verification + stake summary) with:
+  kubectl logs -n {{ .Release.Namespace }} deploy/{{ include "agi-alpha-node.fullname" . }} -f
+
+Roll back safely with:
+  helm rollback {{ .Release.Name }}
