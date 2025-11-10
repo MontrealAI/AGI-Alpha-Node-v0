@@ -160,6 +160,22 @@ This repository houses that machine. The runtime enforces ENS identity at activa
 
 9. **Archive Evidence** – store ENS proofs, staking receipts, CI URLs, and governance payloads in your compliance vault before accepting production workloads.
 
+---
+
+## Activation Verification Matrix
+
+| Capability Pillar | Runtime Command | Automated Proof | Source of Truth |
+| ----------------- | --------------- | ---------------- | ---------------- |
+| ENS subdomain custody (`⟨label⟩.alpha.node.agi.eth`) | `npx agi-alpha-node verify-ens --label 1 --address <0x...>` | `test/ensVerifier.test.js` validates resolver, registry, and wrapper owners. | [`src/services/ensVerifier.js`](src/services/ensVerifier.js) |
+| Canonical `$AGIALPHA` enforcement (18 decimals, checksum) | `npx agi-alpha-node token metadata` / `token approve` | `test/token.test.js` locks symbol, decimals, and approval payloads. | [`src/constants/token.js`](src/constants/token.js) |
+| Stake posture + health thresholding | `npx agi-alpha-node status --stake-manager <addr> --incentives <addr>` | `test/staking.test.js` confirms minimum stake evaluation + payloads. | [`src/services/staking.js`](src/services/staking.js) |
+| Reward share projections (15% basis) | `npx agi-alpha-node reward-share --total 10000 --bps 1500` | `test/rewards.test.js` exercises thermodynamic share calculations. | [`src/services/rewards.js`](src/services/rewards.js) |
+| Economic reinvestment policy | `npx agi-alpha-node economics optimize --stake 1500 --rewards 420,380,410` | `test/economics.test.js` + `test/formatters.test.js` guard scoring + formatting invariants. | [`src/services/economics.js`](src/services/economics.js) |
+| Governance supremacy (pause, share tuning, stake floor) | `npx agi-alpha-node governance pause --system <addr>` etc. | `test/governance.test.js` enforces payload encoding + guard rails. | [`src/services/governance.js`](src/services/governance.js) |
+| World-model planning, swarm mesh, antifragile harness | `npx agi-alpha-node intelligence plan/swarm/learn/stress-test` | `test/planning.test.js`, `test/swarmOrchestrator.test.js`, `test/learningLoop.test.js`, `test/stressHarness.test.js`. | [`src/intelligence`](src/intelligence) |
+
+Every column closes a feedback loop between operator ritual, deterministic code, and automated coverage. Non-technical custodians can copy the commands verbatim, archive the CLI output, and cite the matching test file as the immutable control log.
+
 Every step is mirrored by automated tests so a non-technical operator can wield this machine with confidence.
 
 ---
