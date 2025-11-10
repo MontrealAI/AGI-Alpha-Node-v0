@@ -605,6 +605,12 @@ program
       process.on('SIGTERM', gracefulShutdown);
 
       await monitor.loopPromise;
+
+      if (runOnce) {
+        process.off('SIGINT', gracefulShutdown);
+        process.off('SIGTERM', gracefulShutdown);
+        await monitor.stop();
+      }
     } catch (error) {
       logger.error(error, 'Container bootstrap failed');
       console.error(chalk.red(error.message));
