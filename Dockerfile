@@ -14,5 +14,7 @@ RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 CMD []
 
+EXPOSE 8080 9464
+
 HEALTHCHECK --interval=45s --timeout=10s --start-period=60s --retries=5 \
   CMD ["node", "src/healthcheck.js"]

@@ -53,12 +53,17 @@ config:
   desiredMinimumStake: ""
   metricsPort: 9464
   apiPort: 8080
+  monitorInterval: 60
   autoResume: false
   autoStake: false
   stakeAmount: ""
   interactiveStake: true
   offlineSnapshotPath: ""
   offlineMode: false
+  skipMonitor: false
+  runOnce: false
+  projectedRewards: ""
+  dryRun: true
   vaultAddr: ""
   vaultSecretPath: ""
   vaultSecretKey: operatorPrivateKey
