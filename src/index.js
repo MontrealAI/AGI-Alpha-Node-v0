@@ -32,6 +32,7 @@ import { runCurriculumEvolution } from './intelligence/learningLoop.js';
 import { assessAntifragility } from './intelligence/stressHarness.js';
 import { createJobProof, buildProofSubmissionTx } from './services/jobProof.js';
 import { loadOfflineSnapshot } from './services/offlineSnapshot.js';
+import { acknowledgeStakeAndActivate } from './services/stakeActivation.js';
 
 const program = new Command();
 
@@ -550,6 +551,10 @@ program
   .option('--metrics-port <port>', 'Expose Prometheus metrics on the specified port')
   .option('--projected-rewards <amount>', 'Projected reward pool for the next epoch (decimal)')
   .option('--offline-snapshot <path>', 'Use offline snapshot JSON when RPC connectivity is unavailable')
+  .option('--auto-stake', 'Automatically broadcast stake activation when a deficit is detected')
+  .option('--no-interactive-stake', 'Disable interactive staking prompts during container bootstrap')
+  .option('--stake-amount <amount>', 'Override the stake amount when auto activation is enabled')
+  .option('--private-key <key>', 'Operator private key used for stake activation')
   .action(async (options) => {
     const logger = pino({ level: 'info', name: 'container' });
     try {
@@ -567,7 +572,11 @@ program
         SYSTEM_PAUSE_ADDRESS: options.systemPause,
         DESIRED_MINIMUM_STAKE: options.desiredMinimum,
         AUTO_RESUME: options.autoResume,
-        METRICS_PORT: options.metricsPort
+        METRICS_PORT: options.metricsPort,
+        AUTO_STAKE: options.autoStake,
+        STAKE_AMOUNT: options.stakeAmount,
+        INTERACTIVE_STAKE: options.interactiveStake,
+        OPERATOR_PRIVATE_KEY: options.privateKey
       };
 
       const projectedRewards = options.projectedRewards ?? process.env.PROJECTED_REWARDS ?? null;
@@ -613,6 +622,32 @@ program
       }
     } catch (error) {
       logger.error(error, 'Container bootstrap failed');
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
+  });
+
+program
+  .command('stake-activate')
+  .description('Broadcast a stake activation transaction to PlatformIncentives')
+  .requiredOption('-a, --amount <amount>', 'Amount of $AGIALPHA to stake (decimal)')
+  .requiredOption('-k, --private-key <key>', 'Operator private key (0x...)')
+  .requiredOption('-i, --incentives <address>', 'PlatformIncentives contract address')
+  .option('--rpc <url>', 'Ethereum RPC endpoint to use for the transaction')
+  .action(async (options) => {
+    const logger = pino({ level: 'info', name: 'stake-activate' });
+    try {
+      const rpcUrl = options.rpc ?? process.env.RPC_URL ?? 'https://rpc.ankr.com/eth';
+      await acknowledgeStakeAndActivate({
+        rpcUrl,
+        privateKey: options.privateKey,
+        incentivesAddress: options.incentives,
+        amount: options.amount,
+        logger
+      });
+      logger.info({ amount: options.amount }, 'Stake activation completed');
+    } catch (error) {
+      logger.error(error, 'Stake activation command failed');
       console.error(chalk.red(error.message));
       process.exitCode = 1;
     }

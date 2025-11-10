@@ -1,42 +1,60 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/montrealai/agi-alpha-node-v0
+  repository: ghcr.io/montrealai/agi-alpha-node
   tag: latest
   pullPolicy: IfNotPresent
 
-env:
-  rpcUrl: "https://rpc.ankr.com/eth"
-  label: "1"
-  operatorAddress: "0x0000000000000000000000000000000000000000"
-  stakeManagerAddress: ""
-  platformIncentivesAddress: ""
-  systemPauseAddress: ""
-  desiredMinimumStake: ""
-  autoResume: false
-  projectedRewards: ""
-  offlineSnapshot: ""
-  metricsPort: 9464
-  intervalSeconds: 60
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9464"
+  prometheus.io/path: /metrics
+
+podLabels: {}
 
 service:
   type: ClusterIP
   port: 9464
 
-resources:
-  limits:
-    cpu: 500m
-    memory: 512Mi
-  requests:
-    cpu: 100m
-    memory: 256Mi
-
-nodeSelector: {}
-
-tolerations: []
+resources: {}
 
 affinity: {}
+nodeSelector: {}
+tolerations: []
 
-serviceAccount:
-  create: true
-  name: ""
+config:
+  rpcUrl: https://rpc.ankr.com/eth
+  ensParentDomain: alpha.node.agi.eth
+  nodeLabel: "1"
+  operatorAddress: 0x0000000000000000000000000000000000000001
+  stakeManagerAddress: ""
+  platformIncentivesAddress: ""
+  systemPauseAddress: ""
+  desiredMinimumStake: ""
+  metricsPort: 9464
+  autoResume: false
+  autoStake: false
+  stakeAmount: ""
+  interactiveStake: true
+  offlineSnapshotPath: ""
+
+secretConfig:
+  operatorPrivateKey: ""
+
+offlineSnapshot:
+  enabled: false
+  configMapName: ""
+  mountPath: /config/offline-snapshot.json
+  key: snapshot.json
+
+prometheus:
+  serviceMonitor:
+    enabled: false
+    namespace: ""
+    interval: 30s
+    labels: {}

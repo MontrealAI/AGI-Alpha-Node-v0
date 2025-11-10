@@ -64,4 +64,27 @@ describe('config schema', () => {
       })
     ).toThrow(/numeric value/);
   });
+
+  it('validates stake activation fields', () => {
+    const config = coerceConfig({
+      RPC_URL: 'https://rpc.ankr.com/eth',
+      OPERATOR_PRIVATE_KEY: '0x'.padEnd(66, '1'),
+      AUTO_STAKE: 'true',
+      STAKE_AMOUNT: '1750.5',
+      INTERACTIVE_STAKE: 'false',
+      OFFLINE_SNAPSHOT_PATH: ' /data/snapshot.json '
+    });
+    expect(config.OPERATOR_PRIVATE_KEY).toBe('0x'.padEnd(66, '1'));
+    expect(config.AUTO_STAKE).toBe(true);
+    expect(config.STAKE_AMOUNT).toBe('1750.5');
+    expect(config.INTERACTIVE_STAKE).toBe(false);
+    expect(config.OFFLINE_SNAPSHOT_PATH).toBe('/data/snapshot.json');
+
+    expect(() =>
+      coerceConfig({
+        RPC_URL: 'https://rpc.ankr.com/eth',
+        OPERATOR_PRIVATE_KEY: 'invalid'
+      })
+    ).toThrow();
+  });
 });

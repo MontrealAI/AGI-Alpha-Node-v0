@@ -220,41 +220,52 @@ sequenceDiagram
 
 ```bash
 docker run -it --rm \
+  -p 9464:9464 \
   -e NODE_LABEL=1 \
   -e OPERATOR_ADDRESS=0xYOUR_OPERATOR_ADDRESS \
   -e RPC_URL=https://mainnet.infura.io/v3/<PROJECT_ID> \
-  -e STAKE_MANAGER_ADDRESS=0xStakeManager \
   -e PLATFORM_INCENTIVES_ADDRESS=0xIncentivesContract \
-  -e SYSTEM_PAUSE_ADDRESS=0xSystemPause \
-  -p 9464:9464 \
+  -e AUTO_STAKE=true \
+  -e OPERATOR_PRIVATE_KEY=0xYOUR_PRIVATE_KEY \
+  -e OFFLINE_SNAPSHOT_PATH=/config/snapshot.json \
+  -v $(pwd)/snapshot.json:/config/snapshot.json:ro \
   ghcr.io/montrealai/agi-alpha-node:latest
 ```
 
-* Entry point runs `agi-alpha-node container` and exposes Prometheus metrics on port `9464`.
-* Healthcheck probes `/metrics`; container restarts automatically when diagnostics fail.
-* Environment variables mirror CLI flags for seamless configuration. See [`src/config/schema.js`](src/config/schema.js) for the exhaustive list.
+* `/entrypoint.sh` validates identity inputs, warns about missing snapshots, and launches `agi-alpha-node container`.
+* Health checks hit `/metrics` on `9464`; Docker restarts the node automatically when the Prometheus endpoint fails.
+* Enable unattended staking by pairing `AUTO_STAKE=true` with `OPERATOR_PRIVATE_KEY`. Disable prompts for headless servers with `INTERACTIVE_STAKE=false`.
+* All variables align with [`src/config/schema.js`](src/config/schema.js). Mount offline snapshots using `OFFLINE_SNAPSHOT_PATH` to survive RPC outages.
 
 ### Kubernetes / Helm
 
 ```bash
-helm repo add agi-alpha-node https://montrealai.github.io/agi-alpha-node
-helm upgrade --install agi-alpha-node agi-alpha-node/agi-alpha-node \
+helm upgrade --install agi-alpha-node ./deploy/helm/agi-alpha-node \
   --namespace agi-alpha --create-namespace \
-  --set env.label=1 \
-  --set env.operatorAddress=0xYOUR_OPERATOR_ADDRESS \
-  --set env.rpcUrl=https://mainnet.infura.io/v3/<PROJECT_ID> \
-  --set env.stakeManagerAddress=0xStakeManager \
-  --set env.platformIncentivesAddress=0xIncentivesContract \
-  --set env.systemPauseAddress=0xSystemPause
+  --set config.nodeLabel=1 \
+  --set config.operatorAddress=0xYOUR_OPERATOR_ADDRESS \
+  --set config.rpcUrl=https://mainnet.infura.io/v3/<PROJECT_ID> \
+  --set config.platformIncentivesAddress=0xIncentivesContract \
+  --set secretConfig.operatorPrivateKey=0xYOUR_PRIVATE_KEY \
+  --set config.autoStake=true
 ```
 
-The chart ships autoscaling annotations, dedicated service accounts, network policies, and Prometheus scrape configs. Customize `values.yaml` to integrate with your Vault or external secrets manager.
+The bundled chart provisions service accounts, Prometheus scrape hints, liveness/readiness probes, and optional offline snapshots. Customize [`deploy/helm/agi-alpha-node/values.yaml`](deploy/helm/agi-alpha-node/values.yaml) to integrate with Vault, tune resources, or mount an `offlineSnapshot` ConfigMap when RPC access is intermittent.
+
+### Stake Activation Automation
+
+* The container monitors stake posture each iteration. When the deficit trigger fires it will:
+  1. Log detailed funding steps and the required deficit in `$AGIALPHA`.
+  2. Prompt operators (TTY environments) for the stake amount unless `INTERACTIVE_STAKE=false`.
+  3. Broadcast `acknowledgeStakeAndActivate` (or `stakeAndActivate` fallback) automatically when `AUTO_STAKE=true`, `DRY_RUN=false`, and `OPERATOR_PRIVATE_KEY` is supplied.
+* Manual activation is exposed via `npx agi-alpha-node stake-activate --amount <decimal> --private-key 0x... --incentives 0x... [--rpc ...]` for operators who prefer explicit control flows.
+* All broadcasts stream structured logs with transaction hashes so auditors can reconcile on-chain events with container telemetry in real time.
 
 ---
 
 ## Telemetry & Monitoring
 
-* **Metrics Endpoint** — `/metrics` served by [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) exposes gauges for stake minimums, penalties, reward projections, ENS verification state, job throughput, and container health.
+* **Metrics Endpoint** — `/metrics` served by [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) exposes gauges for stake minimums, penalties, reward projections, ENS verification, job throughput, success ratio, projected token earnings, and per-agent utilization.
 * **Logging** — Structured JSON logs via [`pino`](https://github.com/pinojs/pino) enable SIEM ingestion. Runtime contexts are labelled (`container-bootstrap`, `monitor-loop`, etc.) for quick filtering.
 * **Prometheus/Grafana** — Import the dashboards referenced in [`docs/README.md`](docs/README.md) or plug metrics directly into your observability stack. Configure Helm annotations to auto-scrape.
 * **Health Checks** — [`src/healthcheck.js`](src/healthcheck.js) ensures Docker & Kubernetes restart the process whenever metrics become unavailable or stale.
@@ -337,8 +348,13 @@ All operator and owner controls flow through environment variables or CLI flags 
 | `SYSTEM_PAUSE_ADDRESS` / `--system-pause` | Global pause switch. | Required for pause/unpause calls. |
 | `DESIRED_MINIMUM_STAKE` / `--desired-minimum` | Owner-desired stake floor guidance. | Numeric string, validated for canonical decimals. |
 | `AUTO_RESUME` / `--auto-resume` | Allow monitor loop to suggest resume directives. | Boolean (`true/false/1/0`). |
+| `DRY_RUN` | Prevents on-chain broadcasts when `true`. | Default `true`; set `false` to permit stake activation transactions. |
 | `METRICS_PORT` / `--metrics-port` | Prometheus listener port. | Integer between 1024 and 65535. |
 | `OFFLINE_SNAPSHOT_PATH` / `--offline-snapshot` | JSON snapshot for air-gapped mode. | Must point to a valid file validated in [`src/services/offlineSnapshot.js`](src/services/offlineSnapshot.js). |
+| `AUTO_STAKE` / `--auto-stake` | Automatically call `acknowledgeStakeAndActivate` when deficit detected. | Boolean; requires `DRY_RUN=false`, `OPERATOR_PRIVATE_KEY`, and incentives address. |
+| `INTERACTIVE_STAKE` / `--no-interactive-stake` | Toggle terminal prompts during stake activation. | Boolean; set `false` for headless deployments. |
+| `STAKE_AMOUNT` / `--stake-amount` | Override amount (in $AGIALPHA) used for automatic activation. | Decimal string; defaults to calculated deficit. |
+| `OPERATOR_PRIVATE_KEY` / `--private-key` | Private key for signing stake activation transactions. | 0x-prefixed 32-byte hex string; treat as secret. |
 
 All configuration is re-validated on every container start; canonical `$AGIALPHA` (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) is enforced via [`assertCanonicalAgialphaAddress`](src/constants/token.js).
 

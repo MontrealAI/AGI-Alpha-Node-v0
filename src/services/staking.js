@@ -9,6 +9,7 @@ export const STAKE_MANAGER_ABI = [
 ];
 
 export const PLATFORM_INCENTIVES_ABI = [
+  'function acknowledgeStakeAndActivate(uint256 amount) external',
   'function stakeAndActivate(uint256 amount) external',
   'function operatorInfo(address operator) view returns (uint256 stake, bool active, uint256 lastHeartbeat)',
   'function minimumStake() view returns (uint256)'

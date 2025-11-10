@@ -6,6 +6,7 @@ import { startMonitorLoop } from './monitorLoop.js';
 import { formatTokenAmount } from '../utils/formatters.js';
 import { AGIALPHA_TOKEN_DECIMALS, AGIALPHA_TOKEN_SYMBOL } from '../constants/token.js';
 import { loadOfflineSnapshot } from '../services/offlineSnapshot.js';
+import { handleStakeActivation } from './stakeActivator.js';
 
 function assertConfigField(value, field) {
   if (!value) {
@@ -50,6 +51,25 @@ function summarizeStake(diagnostics, logger) {
   }
 }
 
+function summarizePerformance(diagnostics, logger) {
+  const performance = diagnostics?.performance;
+  if (!performance) {
+    logger.warn('Performance profile unavailable – skipping metrics summary.');
+    return;
+  }
+
+  const summary = {
+    throughputPerEpoch: performance.throughputPerEpoch,
+    successRate: Number(performance.successRate?.toFixed?.(3) ?? performance.successRate ?? 0),
+    averageReward: Number(performance.averageReward?.toFixed?.(3) ?? performance.averageReward ?? 0),
+    projectedEarnings: performance.tokenEarningsProjection
+      ? formatTokenAmount(performance.tokenEarningsProjection, AGIALPHA_TOKEN_DECIMALS)
+      : '0'
+  };
+
+  logger.info(summary, 'Performance telemetry snapshot');
+}
+
 export async function bootstrapContainer({
   overrides = {},
   skipMonitor = false,
@@ -69,9 +89,11 @@ export async function bootstrapContainer({
   assertConfigField(config.OPERATOR_ADDRESS, 'OPERATOR_ADDRESS');
 
   let offlineSnapshot = null;
-  if (offlineSnapshotPath) {
+  const snapshotPath = offlineSnapshotPath ?? config.OFFLINE_SNAPSHOT_PATH ?? null;
+
+  if (snapshotPath) {
     try {
-      offlineSnapshot = loadOfflineSnapshot(offlineSnapshotPath);
+      offlineSnapshot = loadOfflineSnapshot(snapshotPath);
     } catch (error) {
       logger.error(error, 'Failed to load offline snapshot for bootstrap');
       throw error;
@@ -105,6 +127,9 @@ export async function bootstrapContainer({
   });
 
   summarizeStake(diagnostics, logger);
+  summarizePerformance(diagnostics, logger);
+
+  await handleStakeActivation({ diagnostics, config, logger });
 
   if (skipMonitor) {
     return { config, diagnostics, monitor: null };

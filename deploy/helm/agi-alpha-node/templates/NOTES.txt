@@ -1,0 +1,8 @@
+AGI Alpha Node deployed.
+
+Metrics endpoint: http://{{ include "agi-alpha-node.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}/metrics
+
+Set the following values to customize the deployment:
+- config.nodeLabel / config.operatorAddress for ENS enforcement
+- secretConfig.operatorPrivateKey for stake activation automation
+- offlineSnapshot.configMapName to mount an offline fallback snapshot

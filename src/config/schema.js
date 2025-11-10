@@ -20,6 +20,8 @@ const booleanFlag = z.union([
   z.number().transform((value) => value !== 0)
 ]);
 
+const privateKeyRegex = /^0x[a-fA-F0-9]{64}$/;
+
 export const configSchema = z
   .object({
     RPC_URL: z.string().url().default('https://rpc.ankr.com/eth'),
@@ -31,6 +33,30 @@ export const configSchema = z
     REWARD_ENGINE_ADDRESS: z.string().regex(addressRegex).optional(),
     METRICS_PORT: z.coerce.number().int().min(1024).max(65535).default(9464),
     DRY_RUN: booleanFlag.optional().default(true),
+    OPERATOR_PRIVATE_KEY: z
+      .string()
+      .regex(privateKeyRegex)
+      .optional(),
+    AUTO_STAKE: booleanFlag.optional().default(false),
+    STAKE_AMOUNT: z
+      .string()
+      .optional()
+      .transform((value) => {
+        if (value === undefined || value === null) {
+          return undefined;
+        }
+        const trimmed = value.trim();
+        return trimmed.length ? trimmed : undefined;
+      }),
+    INTERACTIVE_STAKE: booleanFlag.optional().default(true),
+    OFFLINE_SNAPSHOT_PATH: z
+      .string()
+      .optional()
+      .transform((value) => {
+        if (!value) return undefined;
+        const trimmed = value.trim();
+        return trimmed.length ? trimmed : undefined;
+      }),
     AGIALPHA_TOKEN_ADDRESS: z
       .string()
       .regex(addressRegex)

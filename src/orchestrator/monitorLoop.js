@@ -1,5 +1,6 @@
 import pino from 'pino';
 import { runNodeDiagnostics, launchMonitoring } from './nodeRuntime.js';
+import { formatTokenAmount } from '../utils/formatters.js';
 import { loadOfflineSnapshot } from '../services/offlineSnapshot.js';
 
 function assertPositiveInteger(value, name) {
@@ -8,8 +9,11 @@ function assertPositiveInteger(value, name) {
   }
 }
 
-function updateTelemetryGauges(telemetry, stakeStatus) {
+function updateTelemetryGauges(telemetry, diagnostics) {
   if (!telemetry) return;
+  const stakeStatus = diagnostics?.stakeStatus ?? null;
+  const performance = diagnostics?.performance ?? null;
+
   if (stakeStatus?.operatorStake !== null && stakeStatus?.operatorStake !== undefined) {
     telemetry.stakeGauge.set(Number(stakeStatus.operatorStake));
   } else {
@@ -19,6 +23,37 @@ function updateTelemetryGauges(telemetry, stakeStatus) {
     telemetry.heartbeatGauge.set(Number(stakeStatus.lastHeartbeat));
   } else {
     telemetry.heartbeatGauge.set(0);
+  }
+
+  if (telemetry.jobThroughputGauge) {
+    const throughput = performance?.throughputPerEpoch ?? 0;
+    telemetry.jobThroughputGauge.set(Number.isFinite(throughput) ? throughput : 0);
+  }
+
+  if (telemetry.jobSuccessGauge) {
+    const success = performance?.successRate ?? 0;
+    telemetry.jobSuccessGauge.set(Number.isFinite(success) ? success : 0);
+  }
+
+  if (telemetry.tokenEarningsGauge) {
+    const projection = performance?.tokenEarningsProjection;
+    if (typeof projection === 'bigint') {
+      const formatted = Number.parseFloat(formatTokenAmount(projection));
+      telemetry.tokenEarningsGauge.set(Number.isFinite(formatted) ? formatted : 0);
+    } else {
+      telemetry.tokenEarningsGauge.set(0);
+    }
+  }
+
+  if (telemetry.agentUtilizationGauge) {
+    telemetry.agentUtilizationGauge.reset();
+    const utilization = Array.isArray(performance?.utilization) ? performance.utilization : [];
+    utilization.forEach((entry) => {
+      const value = Number.isFinite(entry?.utilization) ? entry.utilization : 0;
+      if (entry?.agent) {
+        telemetry.agentUtilizationGauge.set({ agent: entry.agent }, value);
+      }
+    });
   }
 }
 
@@ -111,10 +146,11 @@ export async function startMonitorLoop({
           telemetryServer = await launchMonitoring({
             port: config.METRICS_PORT,
             stakeStatus: diagnostics.stakeStatus,
+            performance: diagnostics.performance,
             logger
           });
         } else {
-          updateTelemetryGauges(telemetryServer, diagnostics.stakeStatus);
+          updateTelemetryGauges(telemetryServer, diagnostics);
         }
 
         const actionSummary = diagnostics.ownerDirectives?.actions
