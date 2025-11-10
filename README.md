@@ -283,7 +283,8 @@ The runtime binds ENS identity with staking posture, token supremacy, economic p
 * ENS parent must be `alpha.node.agi.eth` or `node.agi.eth` (`NODE_ROOT_NODE`, `ALPHA_NODE_ROOT_NODE`).
 * `verify-ens` interrogates resolver, registry, and NameWrapper owners; activation requires a match with the operator address.
 * `ens-guide` prints deterministic setup steps (registrar, resolver, TXT evidence) so a non-technical custodian can acquire the subdomain before bringing the node online.
-* Every diagnostics run emits the `NodeIdentityVerified` equivalent in logs, ensuring auditable activation events.
+* Successful diagnostics emit an explicit `NodeIdentityVerified` log event with resolver/registry/wrapper evidence.
+* Verification mismatches abort the runtime before staking checks or projections execute, producing `NodeIdentityVerificationFailed` telemetry for audits.
 
 ---
 
