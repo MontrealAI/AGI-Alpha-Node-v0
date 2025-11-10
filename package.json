@@ -1,18 +1,37 @@
 {
   "name": "agi-alpha-node-v0",
-  "version": "1.0.0",
-  "description": "Tooling manifest for documentation quality gates and CI automation.",
+  "version": "1.1.0",
+  "description": "Production-grade AGI Alpha Node runtime toolkit with ENS verification, staking orchestration, and observability.",
   "license": "MIT",
   "private": true,
+  "type": "module",
+  "bin": {
+    "agi-alpha-node": "./src/index.js"
+  },
   "scripts": {
+    "start": "node src/index.js",
     "lint:md": "cross-env MARKDOWNLINTCLI2_FORMATTER=markdownlint-cli2-formatter-pretty markdownlint-cli2 \"**/*.md\" \"!**/node_modules/**\"",
     "lint:links": "markdown-link-check README.md docs/README.md docs/manifesto.md --quiet",
-    "lint": "npm run lint:md && npm run lint:links"
+    "lint": "npm run lint:md && npm run lint:links",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "coverage": "c8 --reporter=text --reporter=lcov vitest run"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^11.1.0",
+    "dotenv": "^16.4.5",
+    "ethers": "^6.11.1",
+    "pino": "^8.15.1",
+    "prom-client": "^14.2.0",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
+    "c8": "^9.1.0",
     "cross-env": "^7.0.3",
     "markdown-link-check": "^3.10.3",
     "markdownlint-cli2": "^0.8.1",
-    "markdownlint-cli2-formatter-pretty": "^0.0.9"
+    "markdownlint-cli2-formatter-pretty": "^0.0.9",
+    "vitest": "^1.6.0"
   }
 }
