@@ -18,6 +18,7 @@
   <img src="https://img.shields.io/badge/Branch%20Protection-Enforced-1f2933.svg?style=flat-square" alt="Branch Protection" />
   <img src="https://img.shields.io/badge/Runtime-Node.js%2020.x-43853d.svg?style=flat-square" alt="Runtime: Node.js 20.x" />
   <img src="https://img.shields.io/badge/Status-Fully%20Green%20CI-06d6a0.svg?style=flat-square" alt="Status: Fully Green CI" />
+  <img src="https://img.shields.io/badge/Coverage-88%25-0f9d58.svg?style=flat-square" alt="Coverage: 88%" />
   <img src="https://img.shields.io/badge/Tests-Vitest%2062%20passing-34d058.svg?style=flat-square" alt="Vitest Coverage" />
   <img src="https://img.shields.io/badge/Docker-Production%20Ready-0db7ed.svg?style=flat-square" alt="Docker Ready" />
   <img src="https://img.shields.io/badge/Telemetry-Prometheus%20%26%20Metrics-1f6feb.svg?style=flat-square" alt="Prometheus Ready" />
@@ -307,6 +308,28 @@ flowchart LR
 | **Config & Utilities** | Deterministic env parsing, formatting, helpers | [`src/config`](src/config), [`src/utils`](src/utils)
 
 The runtime binds ENS identity with staking posture, token supremacy, economic projections, and the autonomous intelligence lattice. The owner orchestrates everything from a single CLI surface or the container entrypoint while Prometheus metrics expose stake depth and heartbeat state for institutional observability.
+
+### Thermodynamic Staking & Reward Circuit
+
+```mermaid
+sequenceDiagram
+    participant Owner as Owner CLI
+    participant Token as $AGIALPHA Token
+    participant StakeMgr as StakeManager
+    participant Incentives as PlatformIncentives
+    participant Registry as PlatformRegistry
+    participant Rewards as Reward Engine
+
+    Owner->>Token: approve(spender=StakeManager, amount=max)
+    Owner->>Incentives: stakeAndActivate(amount)
+    Incentives->>StakeMgr: registerStake(operator)
+    StakeMgr->>Registry: flagOperator(active)
+    Registry-->>Owner: Activated(stake, heartbeat)
+    Rewards->>StakeMgr: query(operatorStake, totalStake)
+    Rewards-->>Owner: 15% operator share projection
+```
+
+This circuit diagram captures the enforced `$AGIALPHA` flow: the owner alone initiates the approval and activation transactions, the StakeManager validates minimums and heartbeat posture, and the reward engine continuously feeds the operator's 15% epoch entitlement. Every step links to deterministic CLI builders (`token approve`, `stake-tx`, `reward-share`, `reward-distribution`) so the custodian can update stake floors, throttle payouts, or pause the node without depending on external operators. The governance payloads (`governance pause`, `governance set-min-stake`, `governance set-role-share`, `governance set-global-shares`) guarantee that the contract owner can modify any critical parameter at will while keeping `$AGIALPHA` supremacy intact.
 
 ---
 
