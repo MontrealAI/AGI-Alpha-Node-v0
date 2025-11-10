@@ -229,16 +229,56 @@ mindmap
 | ---- | ----------- | ----------------- |
 | 1 | Clone repository and install deterministic toolchain. | `git clone https://github.com/MontrealAI/AGI-Alpha-Node-v0.git && cd AGI-Alpha-Node-v0 && npm ci` |
 | 2 | Run documentation quality gates locally to mirror CI (see [Quality & Branch Safeguards](#quality--branch-safeguards)). | `npm run lint:md` · `npm run lint:links` (aggregate: `npm run lint`) |
-| 3 | Secure ENS identity under `alpha.node.agi.eth`; configure resolver/wrapper ownership for the operator wallet. | [ENS Manager](https://app.ens.domains/name/alpha.node.agi.eth) |
-| 4 | Stage custody – multisig or HSM primary with delegate hot key registered via `IdentityRegistry.setAdditionalNodeOperator`. | On-chain owner transaction |
-| 5 | Pre-fund the operator wallet with `$AGIALPHA` plus gas reserve and approve Stake Manager allowances. | Token address `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` |
-| 6 | Deploy runtime via container, Kubernetes, or enclave per infrastructure policy. | Review [Sovereign Architecture](#sovereign-architecture) |
-| 7 | Activate staking and registration with `PlatformIncentives.stakeAndActivate(amount)` (or `_acknowledgeStakeAndActivate`). | On-chain owner/operator transaction |
-| 8 | Enforce branch protection on GitHub: require **Continuous Integration**, reviewer approvals, and up-to-date branches for `main`. Export the rule JSON for your evidence vault. | GitHub → Settings → Branches → `main` → **View rule** → **Export** |
-| 9 | Confirm GitHub Actions visibility and status check enforcement via CLI so auditors can retrieve proofs on demand. | `gh api repos/MontrealAI/AGI-Alpha-Node-v0/branches/main/protection` |
-| 10 | Archive ENS proofs, staking receipts, CI transcripts, branch-protection exports, and CLI outputs in your custody ledger. | Owner compliance ledger |
+| 3 | Execute the sovereign CLI to notarize ENS control before mainnet activation. | `node src/index.js verify-ens --label <name> --address <0x...> --rpc https://rpc.ankr.com/eth` |
+| 4 | Secure ENS identity under `alpha.node.agi.eth`; configure resolver/wrapper ownership for the operator wallet. | [ENS Manager](https://app.ens.domains/name/alpha.node.agi.eth) |
+| 5 | Stage custody – multisig or HSM primary with delegate hot key registered via `IdentityRegistry.setAdditionalNodeOperator`. | On-chain owner transaction |
+| 6 | Pre-fund the operator wallet with `$AGIALPHA` plus gas reserve and approve Stake Manager allowances. | Token address `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` |
+| 7 | Deploy runtime via container, Kubernetes, or enclave per infrastructure policy (see [Sovereign Runtime CLI](#sovereign-runtime-cli)). | Review [Sovereign Architecture](#sovereign-architecture) |
+| 8 | Activate staking and registration with `PlatformIncentives.stakeAndActivate(amount)` (or `_acknowledgeStakeAndActivate`). | On-chain owner/operator transaction |
+| 9 | Enforce branch protection on GitHub: require **Continuous Integration**, reviewer approvals, and up-to-date branches for `main`. Export the rule JSON for your evidence vault. | GitHub → Settings → Branches → `main` → **View rule** → **Export** |
+| 10 | Confirm GitHub Actions visibility and status check enforcement via CLI so auditors can retrieve proofs on demand. | `gh api repos/MontrealAI/AGI-Alpha-Node-v0/branches/main/protection` |
+| 11 | Archive ENS proofs, staking receipts, CI transcripts, branch-protection exports, and CLI outputs in your custody ledger. | Owner compliance ledger |
 
 ---
+
+## Sovereign Runtime CLI
+
+```mermaid
+flowchart LR
+  Config[.env / CLI Flags] -->|hydrate| CLI[agi-alpha-node]
+  CLI --> Verify[verify-ens]
+  CLI --> Status[status]
+  CLI --> Stake[stake-tx]
+  CLI --> Rewards[reward-share]
+  Status --> Telemetry[/Prometheus /metrics/]
+  Verify --> Evidence[(Compliance Vault)]
+  Stake --> Chain{PlatformIncentives}
+  Rewards --> Strategy[Auto-compound Policy]
+```
+
+| Command | Purpose | Example |
+| ------- | ------- | ------- |
+| `node src/index.js verify-ens` | Resolves resolver, registry, and NameWrapper owners for `⟨label⟩.alpha.node.agi.eth`; surfaces mismatches before activation. | `node src/index.js verify-ens --label 1 --address 0xYourKey --rpc https://rpc.ankr.com/eth` |
+| `node src/index.js status` | Runs end-to-end diagnostics (ENS, stake thresholds, reward projection) and can expose Prometheus metrics. | `node src/index.js status --label 1 --address 0xYourKey --stake-manager 0x... --incentives 0x... --metrics-port 9464` |
+| `node src/index.js stake-tx` | Builds deterministic calldata for `PlatformIncentives.stakeAndActivate` so offline signers can review before broadcast. | `node src/index.js stake-tx --amount 1500 --incentives 0x...` |
+| `node src/index.js reward-share` | Calculates operator share from any reward pool using basis points. | `node src/index.js reward-share --total 5000 --bps 1500` |
+| `npx agi-alpha-node ...` | Leverage the CLI via the binary entry point (`bin` field) once published to a private registry. | `npx agi-alpha-node status --label 1 --address 0x...` |
+
+**Container Launch** — deterministic one-liner for institutional rollouts:
+
+```bash
+docker build -t agi-alpha-node .
+docker run --rm \
+  -e RPC_URL=https://rpc.ankr.com/eth \
+  -e NODE_LABEL=1 \
+  -e OPERATOR_ADDRESS=0xYourKey \
+  -e STAKE_MANAGER_ADDRESS=0x... \
+  -e PLATFORM_INCENTIVES_ADDRESS=0x... \
+  -p 9464:9464 \
+  agi-alpha-node status --metrics-port 9464
+```
+
+The container performs the same ENS verification and stake diagnostics, exposing `/metrics` for Prometheus and respecting `.env` overrides. Supply a read-only wallet for verification or layer on an external signer when generating transaction payloads.
 
 ## Owner Supremacy Controls
 
@@ -291,8 +331,8 @@ stateDiagram-v2
 
 ## Quality & Branch Safeguards
 
-1. **Workflow Enforcement** – [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to `main` and every pull request. It checks out the repo, installs dependencies with `npm ci`, and executes both lint suites (`npm run lint:md`, `npm run lint:links`).
-2. **Local Parity** – `npm run lint` mirrors the CI job so contributors can validate changes before opening a pull request.
+1. **Workflow Enforcement** – [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to `main` and every pull request. It checks out the repo, installs dependencies with `npm ci`, executes the lint suites (`npm run lint:md`, `npm run lint:links`), and leaves space for `npm test` expansion as integration coverage grows.
+2. **Local Parity** – `npm run lint` mirrors the CI job; `npm test` exercises ENS, staking, and reward projections through `vitest` before opening a pull request.
 3. **Branch Protection** – In GitHub → **Settings → Branches → main**, enable:
    - Require pull request reviews before merging.
    - Require status checks to pass before merging and select **Continuous Integration**.
@@ -342,7 +382,8 @@ gh api \
 | [`docs/README.md`](docs/README.md) | Operator Command Codex with deep runbooks, CI enforcement blueprint, and deployment recipes. |
 | [`docs/manifesto.md`](docs/manifesto.md) | Strategic manifesto detailing the macro thesis behind AGI ALPHA Nodes. |
 | [`1.alpha.node.agi.eth.svg`](1.alpha.node.agi.eth.svg) / [`1.alpha.node.agi.eth.png`](1.alpha.node.agi.eth.png) | Official crest imagery for ENS-aligned deployments and dashboards. |
-| [`package.json`](package.json) | Deterministic lint scripts for markdown quality gates and link validation. |
+| [`src/`](src) | Sovereign runtime CLI, ENS verification, staking orchestration, telemetry server, and diagnostics orchestrator. |
+| [`package.json`](package.json) | Deterministic lint scripts, sovereign CLI entry point, and vitest coverage harness. |
 | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) | Continuous integration pipeline ensuring every change preserves documentation integrity. |
 
 ---

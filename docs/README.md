@@ -81,7 +81,8 @@ AGI Alpha Node v0 is the machine these proclamations foreshadow. It is engineere
 | Signal | Description | Inspect |
 | ------ | ----------- | ------- |
 | **Mission Briefs** | Root dossier, manifesto, and this codex evolve together for zero-drift documentation. | [`README.md`](../README.md) · [`docs/manifesto.md`](./manifesto.md) |
-| **Quality Gates** | `npm run lint:md`, `npm run lint:links`, and `npm run lint` mirror CI rituals. | [`package.json`](../package.json) |
+| **Quality Gates** | `npm run lint:md`, `npm run lint:links`, `npm test`, and `npm run lint` mirror CI rituals. | [`package.json`](../package.json) |
+| **Sovereign CLI** | `node src/index.js` orchestrates ENS verification, staking diagnostics, reward projections, and Prometheus metrics. | [`src/index.js`](../src/index.js) |
 | **Pipeline Enforcement** | GitHub Actions workflow enforces Node.js 20.x, `npm ci`, markdown lint, and link validation on each push/PR. | [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) |
 | **Operator Iconography** | Crest served from [`../1.alpha.node.agi.eth.svg`](../1.alpha.node.agi.eth.svg); PNG fallback lives alongside. | [`1.alpha.node.agi.eth.svg`](../1.alpha.node.agi.eth.svg) |
 | **Token Canon** | `$AGIALPHA` contract `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` anchors staking and treasury operations. | [Etherscan](https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) |
@@ -94,14 +95,15 @@ AGI Alpha Node v0 is the machine these proclamations foreshadow. It is engineere
 | ---- | ----------- | ----------------- |
 | 1 | Clone repository and install deterministic toolchain. | `git clone https://github.com/MontrealAI/AGI-Alpha-Node-v0.git && cd AGI-Alpha-Node-v0 && npm ci` |
 | 2 | Run documentation gates locally; archive outputs for custody evidence. | `npm run lint:md` · `npm run lint:links` (aggregate: `npm run lint`) |
-| 3 | Secure ENS identity `⟨label⟩.alpha.node.agi.eth`; confirm resolver and NameWrapper align with owner policy. | [ENS Manager](https://app.ens.domains/name/alpha.node.agi.eth) |
-| 4 | Stage custody: configure multisig/HSM and delegate hot key via `IdentityRegistry.setAdditionalNodeOperator`. | On-chain owner transaction |
-| 5 | Prefund wallet with `$AGIALPHA`, approve allowances for the Stake Manager, and notarize receipts. | Token `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` |
-| 6 | Deploy runtime (Compose, VM, or Kubernetes) per infrastructure doctrine. | See [Architecture Atlases](#architecture-atlases) |
-| 7 | Activate staking with `PlatformIncentives.stakeAndActivate(amount)` or `_acknowledgeStakeAndActivate`. | On-chain owner/operator transaction |
-| 8 | Enforce GitHub branch protection: require **Continuous Integration**, reviewer approvals, and up-to-date branches on `main`; export the rule JSON for custody. | GitHub → Settings → Branches → `main` |
-| 9 | Validate enforcement via CLI (`gh api repos/MontrealAI/AGI-Alpha-Node-v0/branches/main/protection`) and notarize outputs with CI transcripts. | Owner evidence vault |
-| 10 | Archive ENS proofs, staking tx hashes, CI transcripts, branch-rule exports, and CLI evidence in your compliance ledger. | Owner evidence vault |
+| 3 | Use the sovereign CLI to validate ENS bindings and stake posture before mainnet cutover. | `node src/index.js status --label <name> --address <0x...> --rpc https://rpc.ankr.com/eth` |
+| 4 | Secure ENS identity `⟨label⟩.alpha.node.agi.eth`; confirm resolver and NameWrapper align with owner policy. | [ENS Manager](https://app.ens.domains/name/alpha.node.agi.eth) |
+| 5 | Stage custody: configure multisig/HSM and delegate hot key via `IdentityRegistry.setAdditionalNodeOperator`. | On-chain owner transaction |
+| 6 | Prefund wallet with `$AGIALPHA`, approve allowances for the Stake Manager, and notarize receipts. | Token `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` |
+| 7 | Deploy runtime (Compose, VM, or Kubernetes) per infrastructure doctrine. | See [Architecture Atlases](#architecture-atlases) |
+| 8 | Activate staking with `PlatformIncentives.stakeAndActivate(amount)` or `_acknowledgeStakeAndActivate`. | On-chain owner/operator transaction |
+| 9 | Enforce GitHub branch protection: require **Continuous Integration**, reviewer approvals, and up-to-date branches on `main`; export the rule JSON for custody. | GitHub → Settings → Branches → `main` |
+| 10 | Validate enforcement via CLI (`gh api repos/MontrealAI/AGI-Alpha-Node-v0/branches/main/protection`) and notarize outputs with CI transcripts. | Owner evidence vault |
+| 11 | Archive ENS proofs, staking tx hashes, CI transcripts, branch-rule exports, and CLI evidence in your compliance ledger. | Owner evidence vault |
 
 ---
 
