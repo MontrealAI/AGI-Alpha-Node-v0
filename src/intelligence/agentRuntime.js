@@ -3,6 +3,7 @@ import { planJobExecution, describeStrategyComparison, DEFAULT_STRATEGIES } from
 import { orchestrateSwarm } from './swarmOrchestrator.js';
 import { runCurriculumEvolution } from './learningLoop.js';
 import { assessAntifragility } from './stressHarness.js';
+import { loadLocalModels, simulateLocalInference } from './localModels.js';
 
 const DEFAULT_JOB_PROFILE = {
   name: 'institutional-alpha-mission',
@@ -118,30 +119,51 @@ export async function evaluateJobRequest(
 ) {
   const providerStatus = await determineRuntimeMode({ offlineMode, logger });
 
+  const strategySet = Array.isArray(strategies) && strategies.length ? strategies : DEFAULT_STRATEGIES;
+  const taskSet = Array.isArray(tasks) && tasks.length ? tasks : DEFAULT_TASKS;
+  const agentSet = Array.isArray(agents) && agents.length ? agents : DEFAULT_AGENTS;
+  const historySet = Array.isArray(history) && history.length ? history : DEFAULT_HISTORY;
+  const scenarioSet = Array.isArray(scenarios) && scenarios.length ? scenarios : DEFAULT_SCENARIOS;
+
   const plan = planJobExecution({
     jobProfile,
-    strategies: Array.isArray(strategies) && strategies.length ? strategies : DEFAULT_STRATEGIES,
+    strategies: strategySet,
     horizon,
     decimals
   });
   const swarm = orchestrateSwarm({
-    tasks: Array.isArray(tasks) && tasks.length ? tasks : DEFAULT_TASKS,
-    agents: Array.isArray(agents) && agents.length ? agents : DEFAULT_AGENTS
+    tasks: taskSet,
+    agents: agentSet
   });
   const curriculum = runCurriculumEvolution({
-    history: Array.isArray(history) && history.length ? history : DEFAULT_HISTORY
+    history: historySet
   });
   const antifragility = assessAntifragility({
     baseline: sanitizeBaseline(baseline),
-    scenarios: Array.isArray(scenarios) && scenarios.length ? scenarios : DEFAULT_SCENARIOS
+    scenarios: scenarioSet
   });
   const comparison = describeStrategyComparison(plan, decimals);
+
+  let localModelContext = null;
+  let localModelInference = null;
+  const needsLocalRuntime = ['offline', 'local', 'local-fallback'].includes(providerStatus.mode);
+  if (needsLocalRuntime) {
+    localModelContext = loadLocalModels({ logger });
+    localModelInference = simulateLocalInference({
+      jobProfile,
+      tasks: taskSet,
+      models: localModelContext.models,
+      logger
+    });
+    localModelInference.source = localModelContext.source;
+  }
 
   const jobMetrics = {
     projectedReward: plan.projection.projectedReward,
     throughput: swarm.assignments.length,
     successRate: curriculum.curriculum.trend.avgSuccess,
-    provider: providerStatus.mode
+    provider: providerStatus.mode,
+    localModelConfidence: localModelInference?.averageConfidence ?? null
   };
 
   return {
@@ -151,6 +173,7 @@ export async function evaluateJobRequest(
     curriculum,
     antifragility,
     comparison,
-    metrics: jobMetrics
+    metrics: jobMetrics,
+    localModelInference
   };
 }

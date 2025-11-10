@@ -42,6 +42,13 @@ export function startMonitoringServer({ port = 9464, logger }) {
     registers: [registry]
   });
 
+  const providerModeGauge = new Gauge({
+    name: 'agi_alpha_node_provider_mode',
+    help: 'Current intelligence provider mode (remote, local, offline)',
+    labelNames: ['mode'],
+    registers: [registry]
+  });
+
   const server = http.createServer(async (req, res) => {
     if (req.url === '/metrics') {
       const metrics = await registry.metrics();
@@ -65,6 +72,7 @@ export function startMonitoringServer({ port = 9464, logger }) {
     jobThroughputGauge,
     jobSuccessGauge,
     tokenEarningsGauge,
-    agentUtilizationGauge
+    agentUtilizationGauge,
+    providerModeGauge
   };
 }

@@ -240,6 +240,7 @@ docker run -it --rm \
 * Health checks hit `/metrics` on `9464`; Docker restarts the node automatically when the Prometheus endpoint fails. The agent REST interface listens on `API_PORT` (default `8080`) for job submissions and health pings (`/healthz`).
 * Enable unattended staking by pairing `AUTO_STAKE=true` with `OPERATOR_PRIVATE_KEY`. Disable prompts for headless servers with `INTERACTIVE_STAKE=false`. Vault operators can hydrate secrets automatically using `VAULT_ADDR`, `VAULT_SECRET_PATH`, `VAULT_SECRET_KEY`, and `VAULT_TOKEN`.
 * All variables align with [`src/config/schema.js`](src/config/schema.js). Mount offline snapshots using `OFFLINE_SNAPSHOT_PATH` to survive RPC outages, or flip `OFFLINE_MODE=true` to force local heuristics even when APIs are reachable.
+* Provide bespoke offline heuristics by mounting a JSON definition into the container (for example `-v $(pwd)/models.json:/config/models.json:ro`) and exporting `LOCAL_MODEL_PATH=/config/models.json`.
 
 ### Kubernetes / Helm
 
@@ -293,7 +294,7 @@ curl -sS http://localhost:8080/jobs \
   }'
 ```
 
-When OpenAI or third-party AI endpoints become unreachable, [`src/intelligence/agentRuntime.js`](src/intelligence/agentRuntime.js) automatically downgrades into local heuristics (`mode: local-fallback`) while maintaining deterministic outputs. Set `OFFLINE_MODE=true` to force local execution even when upstream APIs respond.
+When OpenAI or third-party AI endpoints become unreachable, [`src/intelligence/agentRuntime.js`](src/intelligence/agentRuntime.js) automatically downgrades into local heuristics powered by [`src/intelligence/localModels.js`](src/intelligence/localModels.js) (`mode: local-fallback`) while maintaining deterministic outputs. Override the offline palette with `LOCAL_MODEL_PATH=/config/models.json` if you want to ship bespoke institution-approved models, and set `OFFLINE_MODE=true` to force local execution even when upstream APIs respond.
 
 ### Stake Activation Automation
 
@@ -308,7 +309,7 @@ When OpenAI or third-party AI endpoints become unreachable, [`src/intelligence/a
 
 ## Telemetry & Monitoring
 
-* **Metrics Endpoint** — `/metrics` served by [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) exposes gauges for stake minimums, penalties, reward projections, ENS verification, job throughput, success ratio, projected token earnings, and per-agent utilization. Job submissions processed through [`src/network/apiServer.js`](src/network/apiServer.js) feed directly into these gauges via [`runNodeDiagnostics`](src/orchestrator/nodeRuntime.js).
+* **Metrics Endpoint** — `/metrics` served by [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) exposes gauges for stake minimums, penalties, reward projections, ENS verification, job throughput, success ratio, projected token earnings, per-agent utilization, **and the new `agi_alpha_node_provider_mode` gauge** so operators can tell when the runtime is sourcing intelligence from remote APIs versus local/offline models. Job submissions processed through [`src/network/apiServer.js`](src/network/apiServer.js) feed directly into these gauges via [`runNodeDiagnostics`](src/orchestrator/nodeRuntime.js).
 * **Logging** — Structured JSON logs via [`pino`](https://github.com/pinojs/pino) enable SIEM ingestion. Runtime contexts are labelled (`container-bootstrap`, `monitor-loop`, etc.) for quick filtering.
 * **Prometheus/Grafana** — Import the dashboards referenced in [`docs/README.md`](docs/README.md) or plug metrics directly into your observability stack. Configure Helm annotations to auto-scrape.
 * **Health Checks** — [`src/healthcheck.js`](src/healthcheck.js) ensures Docker & Kubernetes restart the process whenever metrics become unavailable or stale.
@@ -398,6 +399,7 @@ All operator and owner controls flow through environment variables or CLI flags 
 | `INTERACTIVE_STAKE` / `--no-interactive-stake` | Toggle terminal prompts during stake activation. | Boolean; set `false` for headless deployments. |
 | `STAKE_AMOUNT` / `--stake-amount` | Override amount (in $AGIALPHA) used for automatic activation. | Decimal string; defaults to calculated deficit. |
 | `OPERATOR_PRIVATE_KEY` / `--private-key` | Private key for signing stake activation transactions. | 0x-prefixed 32-byte hex string; treat as secret. |
+| `LOCAL_MODEL_PATH` | Optional JSON definition for custom offline/local models. | Path to a readable file containing a `{ "models": [...] }` payload. |
 
 All configuration is re-validated on every container start; canonical `$AGIALPHA` (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) is enforced via [`assertCanonicalAgialphaAddress`](src/constants/token.js).
 

@@ -7,6 +7,7 @@ const mockDiagnostics = {
   stakeStatus: { operatorStake: 100n, lastHeartbeat: 10n },
   stakeEvaluation: { meets: true },
   ownerDirectives: { actions: [] },
+  runtimeMode: 'online',
   performance: {
     throughputPerEpoch: 3,
     successRate: 0.92,
@@ -14,7 +15,8 @@ const mockDiagnostics = {
     utilization: [
       { agent: 'orion', utilization: 0.9 },
       { agent: 'helix', utilization: 0.75 }
-    ]
+    ],
+    jobMetrics: { lastJobProvider: 'remote' }
   }
 };
 
@@ -25,7 +27,8 @@ const telemetryMock = {
   jobThroughputGauge: { set: vi.fn() },
   jobSuccessGauge: { set: vi.fn() },
   tokenEarningsGauge: { set: vi.fn() },
-  agentUtilizationGauge: { set: vi.fn(), reset: vi.fn() }
+  agentUtilizationGauge: { set: vi.fn(), reset: vi.fn() },
+  providerModeGauge: { set: vi.fn(), reset: vi.fn() }
 };
 
 vi.mock('../src/orchestrator/nodeRuntime.js', () => ({
@@ -85,7 +88,8 @@ describe('monitorLoop', () => {
     expect(runNodeDiagnostics).toHaveBeenCalledTimes(1);
     expect(launchMonitoring).toHaveBeenCalledTimes(1);
     expect(launchMonitoring.mock.calls[0][0]).toMatchObject({
-      performance: mockDiagnostics.performance
+      performance: mockDiagnostics.performance,
+      runtimeMode: 'online'
     });
   });
 

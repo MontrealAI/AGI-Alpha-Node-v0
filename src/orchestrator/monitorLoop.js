@@ -13,6 +13,7 @@ function updateTelemetryGauges(telemetry, diagnostics) {
   if (!telemetry) return;
   const stakeStatus = diagnostics?.stakeStatus ?? null;
   const performance = diagnostics?.performance ?? null;
+  const runtimeMode = diagnostics?.runtimeMode ?? 'online';
 
   if (stakeStatus?.operatorStake !== null && stakeStatus?.operatorStake !== undefined) {
     telemetry.stakeGauge.set(Number(stakeStatus.operatorStake));
@@ -54,6 +55,12 @@ function updateTelemetryGauges(telemetry, diagnostics) {
         telemetry.agentUtilizationGauge.set({ agent: entry.agent }, value);
       }
     });
+  }
+
+  if (telemetry.providerModeGauge) {
+    telemetry.providerModeGauge.reset();
+    const mode = performance?.jobMetrics?.lastJobProvider ?? runtimeMode;
+    telemetry.providerModeGauge.set({ mode }, 1);
   }
 }
 
@@ -149,6 +156,7 @@ export async function startMonitorLoop({
             port: config.METRICS_PORT,
             stakeStatus: diagnostics.stakeStatus,
             performance: diagnostics.performance,
+            runtimeMode: diagnostics.runtimeMode,
             logger
           });
         } else {
