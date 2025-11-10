@@ -7,6 +7,7 @@ import { createProvider } from './services/provider.js';
 import { verifyNodeOwnership, buildNodeNameFromLabel } from './services/ensVerifier.js';
 import { buildStakeAndActivateTx, validateStakeThreshold } from './services/staking.js';
 import { calculateRewardShare } from './services/rewards.js';
+import { optimizeReinvestmentStrategy, summarizeStrategy } from './services/economics.js';
 import { formatTokenAmount } from './utils/formatters.js';
 import { runNodeDiagnostics, launchMonitoring } from './orchestrator/nodeRuntime.js';
 import {
@@ -191,6 +192,91 @@ program
         decimals: Number.parseInt(options.decimals, 10)
       });
       console.log(`Operator share: ${formatTokenAmount(share, Number(options.decimals))}`);
+    } catch (error) {
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
+  });
+
+const economics = program.command('economics').description('Economic self-optimization and reinvestment modelling');
+
+economics
+  .command('optimize')
+  .description('Recommend a reinvestment ratio based on recent rewards and policy constraints')
+  .requiredOption('--stake <amount>', 'Current staked amount (decimal)')
+  .requiredOption('--rewards <amounts>', 'Comma-separated reward history (decimal amounts per epoch)')
+  .option('--decimals <decimals>', 'Token decimals', '18')
+  .option('--reinvest-options <bpsList>', 'Comma-separated reinvest options in basis points', '9000,8000,7000,6000,5000')
+  .option('--min-buffer-bps <bps>', 'Minimum buffer requirement in basis points of average rewards', '2500')
+  .option('--risk <bps>', 'Risk aversion weighting in basis points', '2500')
+  .option('--upcoming <amounts>', 'Comma-separated upcoming obligations to cover (decimal amounts)')
+  .action((options) => {
+    try {
+      const decimals = Number.parseInt(options.decimals, 10);
+      const reinvestOptions = options.reinvestOptions
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .map((value) => Number.parseInt(value, 10));
+      const rewardHistory = options.rewards
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean);
+      const upcomingObligations = options.upcoming
+        ? options.upcoming
+            .split(',')
+            .map((value) => value.trim())
+            .filter(Boolean)
+        : [];
+
+      const plan = optimizeReinvestmentStrategy({
+        currentStake: options.stake,
+        rewardHistory,
+        reinvestOptions,
+        upcomingObligations,
+        decimals,
+        minimumBufferBps: Number.parseInt(options.minBufferBps, 10),
+        riskAversionBps: Number.parseInt(options.risk, 10)
+      });
+
+      const summary = summarizeStrategy(plan);
+
+      console.log(
+        chalk.bold(
+          `Recommended reinvestment: ${summary.reinvestBps} bps (${formatTokenAmount(
+            plan.recommended.reinvestAmount,
+            decimals
+          )})`
+        )
+      );
+
+      console.table({
+        averageReward: formatTokenAmount(plan.historyStats.average, decimals),
+        bufferRequired: formatTokenAmount(plan.bufferRequirement.required, decimals),
+        recommendedBuffer: formatTokenAmount(plan.recommended.bufferAmount, decimals),
+        projectedStake: formatTokenAmount(plan.recommended.projectedStake, decimals),
+        bufferEpochs: summary.bufferEpochs.toString(),
+        meetsPolicy: summary.meetsMinimumBuffer
+      });
+
+      if (plan.upcomingObligations.length > 0) {
+        console.log(chalk.cyan('Upcoming obligations')); 
+        plan.upcomingObligations.forEach((obligation, index) => {
+          console.log(`  [${index + 1}] ${formatTokenAmount(obligation, decimals)}`);
+        });
+      }
+
+      console.log(chalk.gray('Strategy comparison (basis points)'));
+      console.table(
+        plan.strategies.map((strategy) => ({
+          reinvestBps: strategy.reinvestBps,
+          reinvest: formatTokenAmount(strategy.reinvestAmount, decimals),
+          buffer: formatTokenAmount(strategy.bufferAmount, decimals),
+          score: strategy.score.toString(),
+          bufferShortfall: strategy.bufferShortfall.toString(),
+          obligationsShortfall: strategy.obligationsShortfall.toString()
+        }))
+      );
     } catch (error) {
       console.error(chalk.red(error.message));
       process.exitCode = 1;
