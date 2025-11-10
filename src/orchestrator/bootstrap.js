@@ -9,6 +9,8 @@ import { loadOfflineSnapshot } from '../services/offlineSnapshot.js';
 import { handleStakeActivation } from './stakeActivator.js';
 import { startAgentApi } from '../network/apiServer.js';
 import { hydrateOperatorPrivateKey } from '../services/secretManager.js';
+import { createProvider, createWallet } from '../services/provider.js';
+import { createJobLifecycle } from '../services/jobLifecycle.js';
 
 function assertConfigField(value, field) {
   if (!value) {
@@ -104,19 +106,68 @@ export async function bootstrapContainer({
     }
   }
 
+  let provider = null;
+  let defaultSigner = null;
+  if (!config.OFFLINE_MODE) {
+    try {
+      provider = createProvider(config.RPC_URL);
+      if (config.OPERATOR_PRIVATE_KEY) {
+        defaultSigner = createWallet(config.OPERATOR_PRIVATE_KEY, provider);
+      }
+    } catch (error) {
+      logger.error(error, 'Failed to initialize provider or signer');
+      throw error;
+    }
+  }
+
+  let jobLifecycle = null;
+  let stopJobWatchers = null;
+  if (config.JOB_REGISTRY_ADDRESS) {
+    try {
+      jobLifecycle = createJobLifecycle({
+        provider,
+        jobRegistryAddress: config.JOB_REGISTRY_ADDRESS,
+        defaultSigner,
+        defaultSubdomain: config.NODE_LABEL,
+        defaultProof: config.JOB_APPLICATION_PROOF ?? '0x',
+        discoveryBlockRange: config.JOB_DISCOVERY_BLOCK_RANGE,
+        offlineJobs: offlineSnapshot?.jobs ?? [],
+        logger
+      });
+      await jobLifecycle.discover();
+      stopJobWatchers = jobLifecycle.watch();
+    } catch (error) {
+      logger.error(error, 'Failed to initialize job lifecycle');
+      throw error;
+    }
+  }
+
   let apiServer = null;
   try {
     apiServer = startAgentApi({
       port: config.API_PORT,
       offlineMode: config.OFFLINE_MODE,
+      jobLifecycle,
       logger
     });
   } catch (error) {
     logger.error(error, 'Failed to start agent API server');
+    stopJobWatchers?.();
+    jobLifecycle?.stop();
     throw error;
   }
 
-  const metricsProvider = apiServer ? () => apiServer.getMetrics() : null;
+  const metricsProvider = () => {
+    const apiMetrics = apiServer ? apiServer.getMetrics() : {};
+    const lifecycleMetrics = jobLifecycle ? jobLifecycle.getMetrics() : {};
+    return {
+      ...apiMetrics,
+      lifecycle: lifecycleMetrics,
+      throughput: apiMetrics.throughput ?? lifecycleMetrics.discovered ?? 0,
+      successRate: apiMetrics.successRate ?? 1,
+      lastJobProvider: apiMetrics.lastJobProvider ?? lifecycleMetrics.lastJobProvider ?? 'local'
+    };
+  };
 
   let diagnostics;
   try {
@@ -135,10 +186,15 @@ export async function bootstrapContainer({
       jobMetricsProvider: metricsProvider,
       logger
     });
+    if (apiServer?.setOwnerDirectives) {
+      apiServer.setOwnerDirectives(diagnostics.ownerDirectives);
+    }
   } catch (error) {
     if (apiServer) {
       await apiServer.stop();
     }
+    stopJobWatchers?.();
+    jobLifecycle?.stop();
     throw error;
   }
 
@@ -162,11 +218,18 @@ export async function bootstrapContainer({
     if (apiServer) {
       await apiServer.stop();
     }
-    return { config, diagnostics, monitor: null, apiServer: null };
+    stopJobWatchers?.();
+    jobLifecycle?.stop();
+    return { config, diagnostics, monitor: null, apiServer: null, jobLifecycle: null };
   }
 
   let monitor;
   try {
+    const onDiagnostics = (diag) => {
+      if (apiServer?.setOwnerDirectives && diag?.ownerDirectives) {
+        apiServer.setOwnerDirectives(diag.ownerDirectives);
+      }
+    };
     monitor = await startMonitorLoop({
       config,
       intervalSeconds,
@@ -174,14 +237,24 @@ export async function bootstrapContainer({
       offlineSnapshotPath,
       logger,
       maxIterations,
-      jobMetricsProvider: metricsProvider
+      jobMetricsProvider: metricsProvider,
+      onDiagnostics
     });
   } catch (error) {
     if (apiServer) {
       await apiServer.stop();
     }
+    stopJobWatchers?.();
+    jobLifecycle?.stop();
     throw error;
   }
 
-  return { config, diagnostics, monitor, apiServer };
+  return {
+    config,
+    diagnostics,
+    monitor,
+    apiServer,
+    jobLifecycle,
+    stopJobWatchers
+  };
 }

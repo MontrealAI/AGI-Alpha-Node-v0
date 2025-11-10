@@ -54,7 +54,7 @@ describe('monitorLoop', () => {
     METRICS_PORT: 9464
   };
 
-  const logger = { info: vi.fn(), error: vi.fn() };
+  const logger = { info: vi.fn(), error: vi.fn(), warn: vi.fn() };
 
   beforeEach(() => {
     runNodeDiagnostics.mockClear();
@@ -124,5 +124,22 @@ describe('monitorLoop', () => {
         maxIterations: 1
       })
     ).rejects.toThrow(/positive integer/);
+  });
+
+  it('invokes diagnostics callback when provided', async () => {
+    const callback = vi.fn();
+    const monitor = await startMonitorLoop({
+      config,
+      intervalSeconds: 60,
+      projectedRewards: null,
+      offlineSnapshotPath: null,
+      logger,
+      maxIterations: 1,
+      onDiagnostics: callback
+    });
+
+    await monitor.loopPromise;
+
+    expect(callback).toHaveBeenCalledWith(mockDiagnostics);
   });
 });
