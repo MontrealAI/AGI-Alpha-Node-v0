@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readFileSync } from 'fs';
 import { Command } from 'commander';
 import chalk from 'chalk';
 import pino from 'pino';
@@ -23,6 +24,15 @@ import {
   buildGlobalSharesTx
 } from './services/governance.js';
 import { generateEnsSetupGuide, formatEnsGuide } from './services/ensGuide.js';
+import {
+  buildApplyForJobTx,
+  buildCompleteJobTx,
+  buildReleasePaymentTx,
+  buildAcknowledgeWorkTx,
+  buildRecordHeartbeatTx,
+  encodeGetJobCall,
+  decodeJobStatus
+} from './services/jobs.js';
 
 const program = new Command();
 program
@@ -415,6 +425,143 @@ governance
     }
   });
 
+const jobs = program.command('jobs').description('AGI Jobs protocol integration payloads and telemetry');
+
+function loadOptionalFile(path) {
+  if (!path) return null;
+  const buffer = readFileSync(path);
+  return new Uint8Array(buffer);
+}
+
+jobs
+  .command('apply')
+  .description('Encode applyForJob transaction payload')
+  .requiredOption('-r, --registry <address>', 'JobRegistry contract address')
+  .requiredOption('-j, --job-id <id>', 'Job identifier')
+  .option('-m, --metadata <metadata>', 'Metadata string payload')
+  .option('--metadata-file <path>', 'Path to metadata file (binary safe)')
+  .action((options) => {
+    try {
+      const metadataFile = loadOptionalFile(options.metadataFile);
+      const tx = buildApplyForJobTx({
+        jobRegistryAddress: options.registry,
+        jobId: options.jobId,
+        metadata: metadataFile ?? options.metadata
+      });
+      console.log('JobRegistry applyForJob payload');
+      console.table({ to: tx.to, jobId: tx.jobId.toString(), metadata: tx.metadata, data: tx.data });
+    } catch (error) {
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
+  });
+
+jobs
+  .command('complete')
+  .description('Encode completeJob transaction payload')
+  .requiredOption('-r, --registry <address>', 'JobRegistry contract address')
+  .requiredOption('-j, --job-id <id>', 'Job identifier')
+  .option('-u, --result-uri <uri>', 'URI pointing to result artifact')
+  .option('-h, --result-hash <hash>', 'Precomputed 32-byte result hash')
+  .option('--result-file <path>', 'Path to result artifact to hash client-side')
+  .option('--result-data <data>', 'Raw result data string to hash when no file/hash provided')
+  .action((options) => {
+    try {
+      const resultFile = loadOptionalFile(options.resultFile);
+      const tx = buildCompleteJobTx({
+        jobRegistryAddress: options.registry,
+        jobId: options.jobId,
+        resultHash: options.resultHash,
+        resultData: resultFile ?? options.resultData,
+        resultURI: options.resultUri
+      });
+      console.log('JobRegistry completeJob payload');
+      console.table({
+        to: tx.to,
+        jobId: tx.jobId.toString(),
+        resultHash: tx.resultHash,
+        resultURI: tx.resultURI,
+        data: tx.data
+      });
+    } catch (error) {
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
+  });
+
+jobs
+  .command('release')
+  .description('Encode releasePayment transaction payload')
+  .requiredOption('-r, --registry <address>', 'JobRegistry contract address')
+  .requiredOption('-j, --job-id <id>', 'Job identifier')
+  .action((options) => {
+    try {
+      const tx = buildReleasePaymentTx({ jobRegistryAddress: options.registry, jobId: options.jobId });
+      console.log('JobRegistry releasePayment payload');
+      console.table({ to: tx.to, jobId: tx.jobId.toString(), data: tx.data });
+    } catch (error) {
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
+  });
+
+jobs
+  .command('acknowledge')
+  .description('Encode acknowledgeWork transaction payload')
+  .requiredOption('-r, --registry <address>', 'JobRegistry contract address')
+  .requiredOption('-j, --job-id <id>', 'Job identifier')
+  .requiredOption('-w, --work-hash <hash>', 'Work product hash (32 bytes, hex)')
+  .action((options) => {
+    try {
+      const tx = buildAcknowledgeWorkTx({
+        jobRegistryAddress: options.registry,
+        jobId: options.jobId,
+        workHash: options.workHash
+      });
+      console.log('JobRegistry acknowledgeWork payload');
+      console.table({ to: tx.to, jobId: tx.jobId.toString(), workHash: tx.workHash, data: tx.data });
+    } catch (error) {
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
+  });
+
+jobs
+  .command('heartbeat')
+  .description('Encode recordHeartbeat transaction payload')
+  .requiredOption('-r, --registry <address>', 'JobRegistry contract address')
+  .requiredOption('-j, --job-id <id>', 'Job identifier')
+  .action((options) => {
+    try {
+      const tx = buildRecordHeartbeatTx({ jobRegistryAddress: options.registry, jobId: options.jobId });
+      console.log('JobRegistry recordHeartbeat payload');
+      console.table({ to: tx.to, jobId: tx.jobId.toString(), data: tx.data });
+    } catch (error) {
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
+  });
+
+jobs
+  .command('status')
+  .description('Fetch and decode job status via RPC call')
+  .requiredOption('-r, --registry <address>', 'JobRegistry contract address')
+  .requiredOption('-j, --job-id <id>', 'Job identifier')
+  .requiredOption('--rpc <url>', 'Ethereum RPC URL for the call')
+  .action(async (options) => {
+    const logger = pino({ level: 'info', name: 'jobs-status' });
+    try {
+      const provider = createProvider(options.rpc);
+      const callData = encodeGetJobCall({ jobId: options.jobId });
+      const raw = await provider.call({ to: options.registry, data: callData });
+      const decoded = decodeJobStatus({ data: raw });
+      console.log(chalk.bold('Job status snapshot'));
+      console.table({ status: decoded.status, worker: decoded.worker, expiresAt: decoded.expiresAt.toString() });
+    } catch (error) {
+      logger.error(error, 'Failed to fetch job status');
+      process.exitCode = 1;
+    }
+  });
 governance
   .command('set-min-stake')
   .description('Encode a setMinimumStake call for the StakeManager')
