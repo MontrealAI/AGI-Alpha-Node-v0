@@ -18,7 +18,7 @@
   <img src="https://img.shields.io/badge/Branch%20Protection-Enforced-1f2933.svg?style=flat-square" alt="Branch Protection" />
   <img src="https://img.shields.io/badge/Runtime-Node.js%2020.x-43853d.svg?style=flat-square" alt="Runtime: Node.js 20.x" />
   <img src="https://img.shields.io/badge/Status-Fully%20Green%20CI-06d6a0.svg?style=flat-square" alt="Status: Fully Green CI" />
-  <img src="https://img.shields.io/badge/Tests-Vitest%2047%20passing-34d058.svg?style=flat-square" alt="Vitest Coverage" />
+  <img src="https://img.shields.io/badge/Tests-Vitest%2052%20passing-34d058.svg?style=flat-square" alt="Vitest Coverage" />
   <img src="https://img.shields.io/badge/Docker-Production%20Ready-0db7ed.svg?style=flat-square" alt="Docker Ready" />
   <img src="https://img.shields.io/badge/Telemetry-Prometheus%20%26%20Metrics-1f6feb.svg?style=flat-square" alt="Prometheus Ready" />
 </p>
@@ -43,16 +43,17 @@ This repository houses that machine. The runtime enforces ENS identity at activa
 4. [Architecture & Cognitive Flow](#architecture--cognitive-flow)
 5. [ENS Identity Enforcement](#ens-identity-enforcement)
 6. [$AGIALPHA Staking & Token Control](#agialpha-staking--token-control)
-7. [Economic Optimization Engine](#economic-optimization-engine)
-8. [Autonomous Intelligence Lattice](#autonomous-intelligence-lattice)
-9. [Governance & Owner Supremacy](#governance--owner-supremacy)
-10. [Telemetry, Containerization & Deployment](#telemetry-containerization--deployment)
-11. [Quality Gates & CI](#quality-gates--ci)
-12. [CI Enforcement Playbook](#ci-enforcement-playbook)
-13. [Repository Atlas](#repository-atlas)
-14. [Contributing](#contributing)
-15. [License](#license)
-16. [Eternal Transmission](#eternal-transmission)
+7. [On-Chain Proof & Escrow Release](#on-chain-proof--escrow-release)
+8. [Economic Optimization Engine](#economic-optimization-engine)
+9. [Autonomous Intelligence Lattice](#autonomous-intelligence-lattice)
+10. [Governance & Owner Supremacy](#governance--owner-supremacy)
+11. [Telemetry, Containerization & Deployment](#telemetry-containerization--deployment)
+12. [Quality Gates & CI](#quality-gates--ci)
+13. [CI Enforcement Playbook](#ci-enforcement-playbook)
+14. [Repository Atlas](#repository-atlas)
+15. [Contributing](#contributing)
+16. [License](#license)
+17. [Eternal Transmission](#eternal-transmission)
 
 ---
 
@@ -67,6 +68,7 @@ This repository houses that machine. The runtime enforces ENS identity at activa
 | **Identity Proofing** | ENS sentinel | [`src/services/ensVerifier.js`](src/services/ensVerifier.js) – registry + wrapper interrogation with namehash/labelhash utilities. |
 | **Staking Engine** | StakeManager + PlatformIncentives adapter | [`src/services/staking.js`](src/services/staking.js) – status reads, minimum enforcement, transaction builders. |
 | **Token Authority** | Canonical $AGIALPHA utilities | [`src/constants/token.js`](src/constants/token.js), [`src/services/token.js`](src/services/token.js) – enforce checksum, approvals, allowances. |
+| **Trustless Settlement** | Job proof commitments & escrow release | [`src/services/jobProof.js`](src/services/jobProof.js) – deterministic commitments, JobRegistry payloads. |
 | **Economic Core** | Alpha compounding models | [`src/services/economics.js`](src/services/economics.js) – reinvestment optimizer and policy checks. |
 | **World-Model Planner** | MuZero-inspired scoring engine | [`src/intelligence/planning.js`](src/intelligence/planning.js) – multi-strategy simulations, projection horizon analytics. |
 | **Swarm Orchestrator** | Agentic mesh router | [`src/intelligence/swarmOrchestrator.js`](src/intelligence/swarmOrchestrator.js) – deterministic assignments + fallbacks. |
@@ -76,7 +78,7 @@ This repository houses that machine. The runtime enforces ENS identity at activa
 | **Telemetry Spine** | Metrics publisher | [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) – Prometheus gauges for stake and heartbeat state. |
 | **Configuration** | Deterministic env parsing | [`src/config`](src/config) – schema-coerced environment with canonical $AGIALPHA enforcement. |
 | **Container** | Production image | [`Dockerfile`](Dockerfile) – one command diagnostics anywhere Node.js 20 runs. |
-| **Quality Harness** | Automated proof | [`test`](test) – 47 Vitest assertions covering ENS, staking, rewards, governance, economics, and intelligence lattice. |
+| **Quality Harness** | Automated proof | [`test`](test) – 52 Vitest assertions covering ENS, staking, rewards, governance, economics, intelligence lattice, and job proofs. |
 
 ---
 
@@ -220,6 +222,7 @@ Use the CLI with environment variables or the `--rpc`, `--stake-manager`, and `-
 | `status` | Aggregates ENS proofs, stake posture, reward projections, Prometheus metrics. | [`src/orchestrator/nodeRuntime.js`](src/orchestrator/nodeRuntime.js) |
 | `reward-share` | Calculates operator payouts from any reward pool. | [`src/services/rewards.js`](src/services/rewards.js) |
 | `token metadata/approve/allowance` | Canonical $AGIALPHA metadata + allowances. | [`src/services/token.js`](src/services/token.js) |
+| `proof commit/submit-tx` | Derives commitments and encodes JobRegistry escrow release transactions. | [`src/services/jobProof.js`](src/services/jobProof.js) |
 | `economics optimize` | Reinvestment optimizer obeying buffer & obligation policy. | [`src/services/economics.js`](src/services/economics.js) |
 | `label-hash` | Converts labels into ENS node names + labelhashes. | [`src/services/ensVerifier.js`](src/services/ensVerifier.js) |
 | `governance pause` | Encodes pause/resume payloads for the SystemPause contract. | [`src/services/governance.js`](src/services/governance.js) |
@@ -295,6 +298,47 @@ The runtime binds ENS identity with staking posture, token supremacy, economic p
 * `stake-tx` produces a ready-to-sign `stakeAndActivate` calldata payload.
 * `status` pulls minimum stake, operator stake, and health via StakeManager + PlatformIncentives; deficits are surfaced with basis-point deltas.
 * Slashing posture is visible through diagnostics – deficits produce explicit warnings so the owner can replenish stake before automatic pause logic triggers on-chain.
+
+---
+
+## On-Chain Proof & Escrow Release
+
+`proof commit` and `proof submit-tx` weaponize deterministic attestations so completed jobs unlock escrowed $AGIALPHA without manual arbitration:
+
+* Commitments fuse `jobId`, operator, unix timestamp, result hash, and supplemental metadata. 32-byte enforcement and checksum validation eliminate malformed payloads before they ever touch chain.
+* Metadata accepts JSON, utf-8, or raw bytes. Everything is normalized to hex so downstream contracts consume a predictable format.
+* `submit-tx` emits calldata for `JobRegistry.submitProof`, keeping settlement atomic with the existing StakeManager + PlatformIncentives stack.
+
+```mermaid
+sequenceDiagram
+  participant Operator
+  participant CLI as agi-alpha-node CLI
+  participant Registry as JobRegistry
+  participant Incentives as StakeManager / Incentives
+  Operator->>CLI: proof commit --job-id X --result payload
+  CLI->>CLI: keccak(jobId, operator, timestamp, resultHash, metadata)
+  CLI-->>Operator: commitment · resultHash · metadata
+  Operator->>CLI: proof submit-tx --registry <addr> --result-uri ipfs://...
+  CLI->>Registry: submitProof(jobId, commitment, resultHash, resultURI, metadata)
+  Registry->>Incentives: release staked rewards to operator
+  Incentives-->>Operator: $AGIALPHA disbursement
+```
+
+```bash
+npx agi-alpha-node proof commit \
+  --job-id flash-liquidity-21 \
+  --result '{"status":"complete","pnl":742000}' \
+  --operator 0xYOURADDRESS \
+  --metadata '{"validator":"sig-9"}'
+
+npx agi-alpha-node proof submit-tx \
+  --registry 0xJobRegistry \
+  --job-id flash-liquidity-21 \
+  --result '{"status":"complete","pnl":742000}' \
+  --result-uri ipfs://cid/bundle.json
+```
+
+Escrow controllers can verify commitments off-chain, sign the calldata, and push it directly into production multi-sigs. The node owner never loses control: mismatched payloads are rejected with explicit reasons, and the encoded ABI is stable for integrations.
 
 ---
 
@@ -410,7 +454,7 @@ These steps, together with the provided workflow, ensure all production merges r
 | [`src/index.js`](src/index.js) | CLI entrypoint, command definitions, intelligence modules integration. |
 | [`src/config`](src/config) | Environment schema + defaults. |
 | [`src/constants/token.js`](src/constants/token.js) | Canonical $AGIALPHA metadata + checksum enforcement. |
-| [`src/services`](src/services) | ENS, staking, rewards, token, governance, economics utilities. |
+| [`src/services`](src/services) | ENS, staking, rewards, token, governance, economics, and job proof utilities. |
 | [`src/intelligence`](src/intelligence) | Planning, swarm orchestration, learning loop, stress harness. |
 | [`src/orchestrator/nodeRuntime.js`](src/orchestrator/nodeRuntime.js) | Diagnostics runner + Prometheus bootstrap. |
 | [`src/telemetry`](src/telemetry) | Prometheus gauges and HTTP server. |

@@ -27,6 +27,7 @@ import { planJobExecution, describeStrategyComparison, DEFAULT_STRATEGIES } from
 import { orchestrateSwarm } from './intelligence/swarmOrchestrator.js';
 import { runCurriculumEvolution } from './intelligence/learningLoop.js';
 import { assessAntifragility } from './intelligence/stressHarness.js';
+import { createJobProof, buildProofSubmissionTx } from './services/jobProof.js';
 
 const program = new Command();
 
@@ -185,6 +186,24 @@ function parseScenariosOption(input) {
         financialExposure: Number.isFinite(parsedExposure) ? parsedExposure : 0
       };
     });
+}
+
+function parseMetadataOption(input) {
+  if (input === undefined || input === null) {
+    return undefined;
+  }
+  const trimmed = input.trim();
+  if (trimmed.length === 0) {
+    return undefined;
+  }
+  if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+    try {
+      return JSON.parse(trimmed);
+    } catch (error) {
+      throw new Error(`Failed to parse metadata JSON: ${error.message}`);
+    }
+  }
+  return trimmed;
 }
 program
   .name('agi-alpha-node')
@@ -470,6 +489,105 @@ token
       });
     } catch (error) {
       logger.error(error, 'Failed to read token allowance');
+      process.exitCode = 1;
+    }
+  });
+
+const proof = program.command('proof').description('On-chain job proof attestation and submission utilities');
+
+proof
+  .command('commit')
+  .description('Derive deterministic proof commitment for a completed AGI job')
+  .requiredOption('--job-id <id>', 'Job identifier or label')
+  .requiredOption('--result <result>', 'Result payload (utf-8 string, JSON, or hex)')
+  .option('--operator <address>', 'Operator address bound to the proof')
+  .option('--timestamp <seconds>', 'Unix timestamp used for the commitment (defaults to current time)')
+  .option('--metadata <metadata>', 'Supplemental metadata JSON, utf-8 string, or hex blob')
+  .action((options) => {
+    try {
+      const metadata = parseMetadataOption(options.metadata);
+      const proofPayload = createJobProof({
+        jobId: options.jobId,
+        result: options.result,
+        operator: options.operator,
+        timestamp: options.timestamp,
+        metadata
+      });
+      console.log(chalk.bold('Deterministic job proof commitment'));
+      console.table({
+        jobId: proofPayload.jobId,
+        commitment: proofPayload.commitment,
+        resultHash: proofPayload.resultHash,
+        metadata: proofPayload.metadata,
+        operator: proofPayload.operator,
+        timestamp: proofPayload.timestamp.toString()
+      });
+    } catch (error) {
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
+  });
+
+proof
+  .command('submit-tx')
+  .description('Encode JobRegistry.submitProof transaction payload')
+  .requiredOption('--registry <address>', 'JobRegistry contract address')
+  .requiredOption('--job-id <id>', 'Job identifier or label')
+  .option('--result <result>', 'Result payload to derive the commitment (utf-8 string, JSON, or hex)')
+  .option('--commitment <hash>', 'Pre-computed commitment (32-byte hex)')
+  .option('--result-hash <hash>', 'Pre-computed result hash (32-byte hex)')
+  .option('--operator <address>', 'Operator address used to bind the commitment')
+  .option('--timestamp <seconds>', 'Unix timestamp used when generating the commitment')
+  .option('--metadata <metadata>', 'Supplemental metadata JSON, utf-8 string, or hex blob')
+  .option('--result-uri <uri>', 'Off-chain artifact URI for verifiers', '')
+  .action((options) => {
+    const logger = pino({ level: 'info', name: 'proof-submit' });
+    try {
+      const metadata = parseMetadataOption(options.metadata);
+      let proofPayload;
+      if (options.result) {
+        proofPayload = createJobProof({
+          jobId: options.jobId,
+          result: options.result,
+          operator: options.operator,
+          timestamp: options.timestamp,
+          metadata
+        });
+      } else {
+        if (!options.commitment) {
+          throw new Error('commitment is required when result is not provided');
+        }
+        if (!options.resultHash) {
+          throw new Error('resultHash is required when result is not provided');
+        }
+        proofPayload = {
+          jobId: options.jobId,
+          commitment: options.commitment,
+          resultHash: options.resultHash,
+          metadata
+        };
+      }
+      const tx = buildProofSubmissionTx({
+        jobRegistryAddress: options.registry,
+        jobId: proofPayload.jobId,
+        commitment: proofPayload.commitment,
+        resultHash: proofPayload.resultHash,
+        metadata: proofPayload.metadata,
+        resultUri: options.resultUri
+      });
+      console.log('JobRegistry submitProof transaction payload');
+      console.table({
+        to: tx.to,
+        jobId: tx.jobId,
+        commitment: tx.commitment,
+        resultHash: tx.resultHash,
+        resultUri: tx.resultUri,
+        metadata: tx.metadata,
+        data: tx.data
+      });
+    } catch (error) {
+      logger.error(error, 'Failed to build submitProof payload');
+      console.error(chalk.red(error.message));
       process.exitCode = 1;
     }
   });
