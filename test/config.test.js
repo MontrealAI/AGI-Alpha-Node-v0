@@ -49,11 +49,27 @@ describe('config schema', () => {
       RPC_URL: 'https://rpc.ankr.com/eth',
       SYSTEM_PAUSE_ADDRESS: '0x0000000000000000000000000000000000000001',
       DESIRED_MINIMUM_STAKE: '1500',
-      AUTO_RESUME: 'true'
+      AUTO_RESUME: 'true',
+      DESIRED_OPERATOR_SHARE_BPS: '1600',
+      DESIRED_VALIDATOR_SHARE_BPS: '7300',
+      DESIRED_TREASURY_SHARE_BPS: '1100',
+      ROLE_SHARE_TARGETS: 'guardian=150,validator=7500'
     });
     expect(config.SYSTEM_PAUSE_ADDRESS).toBe('0x0000000000000000000000000000000000000001');
     expect(config.DESIRED_MINIMUM_STAKE).toBe('1500');
     expect(config.AUTO_RESUME).toBe(true);
+    expect(config.DESIRED_OPERATOR_SHARE_BPS).toBe(1600);
+    expect(config.DESIRED_VALIDATOR_SHARE_BPS).toBe(7300);
+    expect(config.DESIRED_TREASURY_SHARE_BPS).toBe(1100);
+    expect(config.ROLE_SHARE_TARGETS).toEqual({ guardian: 150, validator: 7500 });
+  });
+
+  it('parses role share targets from JSON', () => {
+    const config = coerceConfig({
+      RPC_URL: 'https://rpc.ankr.com/eth',
+      ROLE_SHARE_TARGETS: JSON.stringify({ treasury: 500, agent: 8500 })
+    });
+    expect(config.ROLE_SHARE_TARGETS).toEqual({ treasury: 500, agent: 8500 });
   });
 
   it('rejects malformed desired minimum stake values', () => {

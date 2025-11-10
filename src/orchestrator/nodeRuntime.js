@@ -23,6 +23,11 @@ export async function runNodeDiagnostics({
   systemPauseAddress,
   desiredMinimumStake,
   autoResume = false,
+  rewardEngineAddress,
+  desiredOperatorShareBps,
+  desiredValidatorShareBps,
+  desiredTreasuryShareBps,
+  roleShareTargets,
   projectedRewards,
   offlineSnapshot,
   jobMetricsProvider = null,
@@ -130,6 +135,9 @@ export async function runNodeDiagnostics({
     ? projectEpochRewards({
         projectedPool: projectedRewards ?? offlineRewards?.projectedPool,
         operatorShareBps: offlineRewards?.operatorShareBps,
+        validatorShareBps: offlineRewards?.validatorShareBps,
+        treasuryShareBps: offlineRewards?.treasuryShareBps,
+        roleShares: offlineRewards?.roleShares,
         decimals: offlineRewards?.decimals
       })
     : null;
@@ -170,12 +178,18 @@ export async function runNodeDiagnostics({
   const ownerDirectives = deriveOwnerDirectives({
     stakeStatus,
     stakeEvaluation,
+    rewardsProjection,
     config: {
       systemPauseAddress,
       incentivesAddress,
       stakeManagerAddress,
       desiredMinimumStake,
-      autoResume
+      autoResume,
+      rewardEngineAddress,
+      desiredOperatorShareBps,
+      desiredValidatorShareBps,
+      desiredTreasuryShareBps,
+      roleShareTargets
     }
   });
 

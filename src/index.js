@@ -210,6 +210,24 @@ function parseMetadataOption(input) {
   }
   return trimmed;
 }
+
+function collectRoleShareTargets(value, previous) {
+  const accumulator = { ...previous };
+  const trimmed = (value ?? '').trim();
+  if (trimmed.length === 0) {
+    return accumulator;
+  }
+  const [role, share] = trimmed.split('=').map((part) => part.trim());
+  if (!role || share === undefined) {
+    throw new Error('Role share definition must be formatted as role=bps');
+  }
+  const parsedShare = Number.parseInt(share, 10);
+  if (!Number.isFinite(parsedShare) || !Number.isInteger(parsedShare)) {
+    throw new Error(`Role share for ${role} must be an integer basis point value`);
+  }
+  accumulator[role] = parsedShare;
+  return accumulator;
+}
 program
   .name('agi-alpha-node')
   .description('AGI Alpha Node sovereign runtime CLI')
@@ -308,9 +326,19 @@ program
   .option('--rpc <url>', 'RPC endpoint URL')
   .option('--stake-manager <address>', 'StakeManager contract address')
   .option('--incentives <address>', 'PlatformIncentives contract address')
+  .option('--reward-engine <address>', 'RewardEngine contract address for share governance')
   .option('--system-pause <address>', 'System pause contract address for owner overrides')
   .option('--desired-minimum <amount>', 'Desired minimum stake floor in $AGIALPHA (decimal)')
   .option('--auto-resume', 'Generate resume transaction when the stake posture is healthy')
+  .option('--operator-share-bps <bps>', 'Desired operator global share (basis points)')
+  .option('--validator-share-bps <bps>', 'Desired validator global share (basis points)')
+  .option('--treasury-share-bps <bps>', 'Desired treasury global share (basis points)')
+  .option(
+    '--role-share <role=bps>',
+    'Role share target definition (repeatable). Example: guardian=250',
+    collectRoleShareTargets,
+    {}
+  )
   .option('--projected-rewards <amount>', 'Projected reward pool for the next epoch (decimal)')
   .option('--metrics-port <port>', 'Expose Prometheus metrics on the specified port')
   .option(
@@ -337,10 +365,16 @@ program
         OPERATOR_ADDRESS: options.address,
         STAKE_MANAGER_ADDRESS: options.stakeManager,
         PLATFORM_INCENTIVES_ADDRESS: options.incentives,
+        REWARD_ENGINE_ADDRESS: options.rewardEngine,
         SYSTEM_PAUSE_ADDRESS: options.systemPause,
         DESIRED_MINIMUM_STAKE: options.desiredMinimum,
         AUTO_RESUME: options.autoResume,
-        METRICS_PORT: options.metricsPort
+        METRICS_PORT: options.metricsPort,
+        DESIRED_OPERATOR_SHARE_BPS: options.operatorShareBps,
+        DESIRED_VALIDATOR_SHARE_BPS: options.validatorShareBps,
+        DESIRED_TREASURY_SHARE_BPS: options.treasuryShareBps,
+        ROLE_SHARE_TARGETS:
+          options.roleShare && Object.keys(options.roleShare).length > 0 ? options.roleShare : undefined
       };
 
       const config = loadConfig(
@@ -358,6 +392,11 @@ program
         systemPauseAddress: config.SYSTEM_PAUSE_ADDRESS,
         desiredMinimumStake: config.DESIRED_MINIMUM_STAKE,
         autoResume: config.AUTO_RESUME,
+        rewardEngineAddress: config.REWARD_ENGINE_ADDRESS,
+        desiredOperatorShareBps: config.DESIRED_OPERATOR_SHARE_BPS,
+        desiredValidatorShareBps: config.DESIRED_VALIDATOR_SHARE_BPS,
+        desiredTreasuryShareBps: config.DESIRED_TREASURY_SHARE_BPS,
+        roleShareTargets: config.ROLE_SHARE_TARGETS,
         projectedRewards: options.projectedRewards,
         offlineSnapshot,
         logger
@@ -412,8 +451,18 @@ program
         console.table({
           projectedPool: formatTokenAmount(diagnostics.rewardsProjection.pool),
           operatorShare: formatTokenAmount(diagnostics.rewardsProjection.operatorPortion),
-          shareBps: diagnostics.rewardsProjection.operatorShareBps
+          operatorShareBps: diagnostics.rewardsProjection.operatorShareBps,
+          validatorShareBps: diagnostics.rewardsProjection.validatorShareBps ?? 'N/A',
+          treasuryShareBps: diagnostics.rewardsProjection.treasuryShareBps ?? 'N/A'
         });
+        if (diagnostics.rewardsProjection.roleShares) {
+          console.log(chalk.gray('Role share telemetry'));
+          const shareRows = Object.entries(diagnostics.rewardsProjection.roleShares).map(([role, share]) => ({
+            role,
+            shareBps: share
+          }));
+          console.table(shareRows);
+        }
       }
 
       if (diagnostics.ownerDirectives) {

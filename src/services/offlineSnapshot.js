@@ -44,6 +44,8 @@ const bigintLike = z
     return BigInt(trimmed);
   });
 
+const shareBpsSchema = z.coerce.number().int().min(0).max(10_000);
+
 const offlineSnapshotSchema = z
   .object({
     label: z.string().optional(),
@@ -69,7 +71,10 @@ const offlineSnapshotSchema = z
     rewards: z
       .object({
         projectedPool: z.union([z.string(), z.number(), z.bigint()]).optional(),
-        operatorShareBps: z.number().int().min(0).max(10_000).optional(),
+        operatorShareBps: shareBpsSchema.optional(),
+        validatorShareBps: shareBpsSchema.optional(),
+        treasuryShareBps: shareBpsSchema.optional(),
+        roleShares: z.record(z.string(), shareBpsSchema).optional(),
         decimals: z.number().int().positive().optional()
       })
       .optional()
@@ -163,6 +168,9 @@ export function buildOfflineRewardsProjection(snapshot) {
   return {
     projectedPool: snapshot.rewards.projectedPool,
     operatorShareBps: snapshot.rewards.operatorShareBps,
+    validatorShareBps: snapshot.rewards.validatorShareBps,
+    treasuryShareBps: snapshot.rewards.treasuryShareBps,
+    roleShares: snapshot.rewards.roleShares,
     decimals: snapshot.rewards.decimals
   };
 }

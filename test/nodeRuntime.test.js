@@ -110,7 +110,14 @@ afterEach(() => {
       'ENS verification completed'
     );
     expect(validateStakeThreshold).toHaveBeenCalledWith({ minimumStake: 1000n, operatorStake: 1500n });
-    expect(projectEpochRewards).toHaveBeenCalledWith({ projectedPool: '1500' });
+    expect(projectEpochRewards).toHaveBeenCalledWith({
+      projectedPool: '1500',
+      operatorShareBps: undefined,
+      validatorShareBps: undefined,
+      treasuryShareBps: undefined,
+      roleShares: undefined,
+      decimals: undefined
+    });
     expect(evaluateStakeConditions).toHaveBeenCalledWith({
       minimumStake: 1000n,
       operatorStake: 1500n,
@@ -121,12 +128,18 @@ afterEach(() => {
     expect(deriveOwnerDirectives).toHaveBeenCalledWith({
       stakeStatus: { minimumStake: 1000n, operatorStake: 1500n },
       stakeEvaluation: expect.objectContaining({ recommendedAction: 'maintain' }),
+      rewardsProjection: { pool: 1500n, operatorPortion: 225n, operatorShareBps: 1500 },
       config: {
         systemPauseAddress: undefined,
         incentivesAddress: '0x0000000000000000000000000000000000000002',
         stakeManagerAddress: '0x0000000000000000000000000000000000000001',
         desiredMinimumStake: undefined,
-        autoResume: false
+        autoResume: false,
+        rewardEngineAddress: undefined,
+        desiredOperatorShareBps: undefined,
+        desiredValidatorShareBps: undefined,
+        desiredTreasuryShareBps: undefined,
+        roleShareTargets: undefined
       }
     });
     expect(diagnostics.ownerDirectives).toEqual(
@@ -257,7 +270,14 @@ afterEach(() => {
       slashingPenalty: 0n
     });
     expect(projectEpochRewards).toHaveBeenCalledWith(
-      expect.objectContaining({ projectedPool: '1500', operatorShareBps: 1600 })
+      expect.objectContaining({
+        projectedPool: '1500',
+        operatorShareBps: 1600,
+        validatorShareBps: undefined,
+        treasuryShareBps: undefined,
+        roleShares: undefined,
+        decimals: undefined
+      })
     );
     expect(diagnostics.ownerDirectives.priority).toBe('warning');
     expect(diagnostics.ownerDirectives.actions[0].type).toBe('stake-top-up');

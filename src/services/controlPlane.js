@@ -4,7 +4,13 @@ import {
 } from '../constants/token.js';
 import { formatTokenAmount, parseTokenAmount } from '../utils/formatters.js';
 import { buildStakeAndActivateTx } from './staking.js';
-import { buildSystemPauseTx, buildMinimumStakeTx } from './governance.js';
+import {
+  buildSystemPauseTx,
+  buildMinimumStakeTx,
+  buildGlobalSharesTx,
+  buildRoleShareTx,
+  resolveRoleIdentifier
+} from './governance.js';
 
 function formatExactAmount(value, decimals = AGIALPHA_TOKEN_DECIMALS) {
   if (typeof value !== 'bigint') return null;
@@ -15,9 +21,41 @@ function formatExactAmount(value, decimals = AGIALPHA_TOKEN_DECIMALS) {
   }
 }
 
+function hasValue(value) {
+  return value !== undefined && value !== null;
+}
+
+function findCurrentRoleShare(role, roleShares = {}) {
+  if (!role || !roleShares) return undefined;
+  const candidates = new Set();
+  const trimmed = role.trim();
+  if (!trimmed) return undefined;
+  candidates.add(trimmed);
+  candidates.add(trimmed.toLowerCase());
+  candidates.add(trimmed.toUpperCase());
+
+  try {
+    const identifier = resolveRoleIdentifier(trimmed);
+    candidates.add(identifier);
+    candidates.add(identifier.toLowerCase());
+    candidates.add(identifier.toUpperCase());
+  } catch {
+    // resolveRoleIdentifier will throw for malformed inputs; ignore for matching purposes.
+  }
+
+  for (const [key, value] of Object.entries(roleShares)) {
+    if (candidates.has(key) || candidates.has(key.toLowerCase()) || candidates.has(key.toUpperCase())) {
+      return value;
+    }
+  }
+
+  return undefined;
+}
+
 export function deriveOwnerDirectives({
   stakeStatus,
   stakeEvaluation,
+  rewardsProjection = null,
   config = {},
   decimals = AGIALPHA_TOKEN_DECIMALS
 } = {}) {
@@ -44,8 +82,21 @@ export function deriveOwnerDirectives({
     incentivesAddress,
     stakeManagerAddress,
     desiredMinimumStake,
-    autoResume
+    autoResume,
+    rewardEngineAddress,
+    desiredOperatorShareBps,
+    desiredValidatorShareBps,
+    desiredTreasuryShareBps,
+    roleShareTargets
   } = config;
+
+  const currentShares = {
+    operator: rewardsProjection?.operatorShareBps ?? null,
+    validator: rewardsProjection?.validatorShareBps ?? null,
+    treasury: rewardsProjection?.treasuryShareBps ?? null
+  };
+
+  const currentRoleShares = rewardsProjection?.roleShares ?? null;
 
   if (stakeEvaluation.penaltyActive) {
     directives.priority = 'critical';
@@ -108,6 +159,91 @@ export function deriveOwnerDirectives({
       } else {
         directives.notices.push(
           'Desired minimum stake differs from on-chain value – provide STAKE_MANAGER_ADDRESS to craft governance transaction.'
+        );
+      }
+    }
+  }
+
+  const globalShareTargetsProvided =
+    hasValue(desiredOperatorShareBps) &&
+    hasValue(desiredValidatorShareBps) &&
+    hasValue(desiredTreasuryShareBps);
+
+  const anyGlobalTargetProvided =
+    hasValue(desiredOperatorShareBps) || hasValue(desiredValidatorShareBps) || hasValue(desiredTreasuryShareBps);
+
+  if (globalShareTargetsProvided) {
+    if (!rewardEngineAddress) {
+      directives.notices.push(
+        'Desired global share alignment provided – configure REWARD_ENGINE_ADDRESS to synthesize governance payload.'
+      );
+    } else {
+      const sharesMatch =
+        currentShares.operator === desiredOperatorShareBps &&
+        currentShares.validator === desiredValidatorShareBps &&
+        currentShares.treasury === desiredTreasuryShareBps;
+
+      if (!sharesMatch) {
+        directives.priority = directives.priority === 'critical' ? 'critical' : 'warning';
+        const tx = buildGlobalSharesTx({
+          rewardEngineAddress,
+          operatorShareBps: desiredOperatorShareBps,
+          validatorShareBps: desiredValidatorShareBps,
+          treasuryShareBps: desiredTreasuryShareBps
+        });
+        directives.actions.push({
+          type: 'set-global-shares',
+          level: 'warning',
+          reason: `Align RewardEngine global shares to operator ${desiredOperatorShareBps}bps / validator ${desiredValidatorShareBps}bps / treasury ${desiredTreasuryShareBps}bps.`,
+          tx,
+          currentShares,
+          targetShares: {
+            operator: desiredOperatorShareBps,
+            validator: desiredValidatorShareBps,
+            treasury: desiredTreasuryShareBps
+          }
+        });
+      }
+
+      if (!hasValue(currentShares.operator) || !hasValue(currentShares.validator) || !hasValue(currentShares.treasury)) {
+        directives.notices.push(
+          'Global share telemetry unavailable – owner policy will be reasserted proactively.'
+        );
+      }
+    }
+  } else if (anyGlobalTargetProvided) {
+    directives.notices.push(
+      'Provide operator, validator, and treasury share targets to construct a complete global share transaction.'
+    );
+  }
+
+  if (roleShareTargets && Object.keys(roleShareTargets).length > 0) {
+    if (!rewardEngineAddress) {
+      directives.notices.push(
+        'Role share targets detected – configure REWARD_ENGINE_ADDRESS to craft setRoleShare payloads.'
+      );
+    } else {
+      for (const [role, share] of Object.entries(roleShareTargets)) {
+        if (!hasValue(share)) continue;
+        const currentShare = findCurrentRoleShare(role, currentRoleShares);
+        if (currentShare === share) {
+          continue;
+        }
+        directives.priority = directives.priority === 'critical' ? 'critical' : 'warning';
+        const tx = buildRoleShareTx({ rewardEngineAddress, role, shareBps: share });
+        directives.actions.push({
+          type: 'set-role-share',
+          level: 'warning',
+          role,
+          reason: `Set ${role} share to ${share}bps to mirror owner policy.`,
+          tx,
+          shareBps: share,
+          currentShareBps: currentShare ?? null
+        });
+      }
+      if (!currentRoleShares) {
+        directives.notices.push(
+          'Role share telemetry unavailable – actions generated using declared owner policy values.'
         );
       }
     }

@@ -22,6 +22,49 @@ const booleanFlag = z.union([
 
 const privateKeyRegex = /^0x[a-fA-F0-9]{64}$/;
 
+const basisPointsSchema = z.coerce.number().int().min(0).max(10_000);
+
+function coerceRoleShareTargets(value) {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return undefined;
+    }
+    try {
+      const parsed = JSON.parse(trimmed);
+      return coerceRoleShareTargets(parsed);
+    } catch {
+      const entries = trimmed.split(',').map((chunk) => chunk.trim()).filter(Boolean);
+      if (entries.length === 0) {
+        return undefined;
+      }
+      const aggregated = {};
+      for (const entry of entries) {
+        const [role, share] = entry.split('=').map((part) => part.trim());
+        if (!role || share === undefined) {
+          throw new Error('ROLE_SHARE_TARGETS must use role=bps pairs when provided as CSV');
+        }
+        aggregated[role] = share;
+      }
+      return coerceRoleShareTargets(aggregated);
+    }
+  }
+  if (typeof value !== 'object') {
+    throw new Error('ROLE_SHARE_TARGETS must be an object, JSON string, or comma-separated role=bps list');
+  }
+  const normalized = {};
+  for (const [role, share] of Object.entries(value)) {
+    if (!role) {
+      continue;
+    }
+    normalized[role] = basisPointsSchema.parse(share);
+  }
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
+
 export const configSchema = z
   .object({
     RPC_URL: z.string().url().default('https://rpc.ankr.com/eth'),
@@ -95,6 +138,10 @@ export const configSchema = z
         return asString;
       }),
     AUTO_RESUME: booleanFlag.optional().default(false),
+    DESIRED_OPERATOR_SHARE_BPS: basisPointsSchema.optional(),
+    DESIRED_VALIDATOR_SHARE_BPS: basisPointsSchema.optional(),
+    DESIRED_TREASURY_SHARE_BPS: basisPointsSchema.optional(),
+    ROLE_SHARE_TARGETS: z.any().optional().transform((value) => coerceRoleShareTargets(value)),
     OFFLINE_MODE: booleanFlag.optional().default(false),
     VAULT_ADDR: z.string().optional(),
     VAULT_TOKEN: z.string().optional(),

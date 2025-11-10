@@ -77,6 +77,42 @@ describe('control plane directives', () => {
     expect(resumeAction?.tx?.method).toBe('resumeAll');
   });
 
+  it('generates share governance actions when targets are misaligned', () => {
+    const stakeStatus = { minimumStake: scale, operatorStake: scale };
+    const stakeEvaluation = {
+      meets: true,
+      deficit: 0n,
+      penaltyActive: false,
+      heartbeatStale: false,
+      recommendedAction: 'maintain'
+    };
+
+    const directives = deriveOwnerDirectives({
+      stakeStatus,
+      stakeEvaluation,
+      rewardsProjection: {
+        operatorShareBps: 1200,
+        validatorShareBps: 7700,
+        treasuryShareBps: 1100,
+        roleShares: { guardian: 100 }
+      },
+      config: {
+        rewardEngineAddress: '0x0000000000000000000000000000000000000005',
+        desiredOperatorShareBps: 1500,
+        desiredValidatorShareBps: 7500,
+        desiredTreasuryShareBps: 1000,
+        roleShareTargets: { guardian: 250 }
+      }
+    });
+
+    const globalAction = directives.actions.find((action) => action.type === 'set-global-shares');
+    const roleAction = directives.actions.find((action) => action.type === 'set-role-share');
+    expect(globalAction?.tx?.data).toBeDefined();
+    expect(roleAction?.role).toBe('guardian');
+    expect(roleAction?.shareBps).toBe(250);
+    expect(directives.priority).toBe('warning');
+  });
+
   it('formats exact token amounts for display', () => {
     const formatted = formatExactAmount(123456n, 6);
     expect(formatted).toBe('0.123456');
