@@ -341,6 +341,17 @@ program
       }
     } catch (error) {
       logger.error(error, 'Diagnostics failed');
+      if (error?.details?.nodeName) {
+        const details = error.details;
+        console.error(chalk.red(`ENS verification mismatch for ${details.nodeName}`));
+        console.table({
+          expected: details.expectedAddress,
+          resolved: details.resolvedAddress,
+          registry: details.registryOwner,
+          wrapper: details.wrapperOwner,
+          matches: JSON.stringify(details.matches)
+        });
+      }
       process.exitCode = 1;
     }
   });

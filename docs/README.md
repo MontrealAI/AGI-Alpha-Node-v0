@@ -248,7 +248,7 @@ flowchart LR
 ## Identity & Stake Authority
 
 1. **Pre-flight Runbook** — `node src/index.js ens-guide --label <name> --address <0x...>` prints the seven-step ENS + staking checklist and links to ENS Manager workflows.
-2. **ENS Verification Loop** — `verifyNode(label, proof)` enforces resolver/NameWrapper ownership of `⟨label⟩.alpha.node.agi.eth`; divergence halts startup.
+2. **ENS Verification Loop** — `verifyNode(label, proof)` enforces resolver/NameWrapper ownership of `⟨label⟩.alpha.node.agi.eth`; confirmed proofs emit a `NodeIdentityVerified` log event while divergence halts startup with a `NodeIdentityVerificationFailed` audit signal.
 3. **Label Notarization** — `node src/index.js label-hash --label <name>` records the canonical node name for append-only evidence vaults and governance paperwork.
 4. **Stake Activation** — `PlatformIncentives.stakeAndActivate(amount)` sequences allowance, deposit, registry enrollment, and job-router enablement. `_acknowledgeStakeAndActivate` documents explicit policy acceptance when required.
 5. **Heartbeat Enforcement** — Runtime heartbeats re-check ENS control, stake minimums, and registry flags before accepting or settling work.
@@ -275,7 +275,7 @@ flowchart LR
 ## AGI Jobs Integration Lifecycle
 
 1. **Discovery** — Gateway subscribes to `JobCreated` events (or subgraph) and filters by capability tags, stake level, and antifragility posture.
-2. **Identity Gate** — Runtime resolves `⟨label⟩.alpha.node.agi.eth`; mismatched resolver ownership raises alerts and halts bidding.
+2. **Identity Gate** — Runtime resolves `⟨label⟩.alpha.node.agi.eth`; mismatched resolver ownership raises `NodeIdentityVerificationFailed` alerts and halts bidding before capital flows.
 3. **Application** — `JobRegistry.applyForJob(jobId, label, proof)` locks assignments using ENS allowlists or live resolver proofs.
 4. **Specialist Execution** — Planner deploys deterministic specialist mesh (finance, legal, infrastructure, biotech, creative, compliance). Ledgers capture reasoning for audit.
 5. **Submission** — `JobRegistry.submit(jobId, resultHash, resultURI)` anchors outputs; IPFS/Arweave URIs store artifacts with hashed integrity.

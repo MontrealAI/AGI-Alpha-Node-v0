@@ -26,10 +26,36 @@ export async function runNodeDiagnostics({
     expectedAddress: operatorAddress
   });
 
-  logger.info({
-    nodeName: verification.nodeName,
-    matches: verification.matches
-  }, 'ENS verification completed');
+  if (verification.success) {
+    logger.info(
+      {
+        event: 'NodeIdentityVerified',
+        nodeName: verification.nodeName,
+        matches: verification.matches,
+        expectedAddress: verification.expectedAddress,
+        resolvedAddress: verification.resolvedAddress,
+        registryOwner: verification.registryOwner,
+        wrapperOwner: verification.wrapperOwner
+      },
+      'ENS verification completed'
+    );
+  } else {
+    logger?.warn?.(
+      {
+        event: 'NodeIdentityVerificationFailed',
+        nodeName: verification.nodeName,
+        expectedAddress: verification.expectedAddress,
+        resolvedAddress: verification.resolvedAddress,
+        registryOwner: verification.registryOwner,
+        wrapperOwner: verification.wrapperOwner,
+        matches: verification.matches
+      },
+      'ENS verification failed'
+    );
+    const error = new Error(`ENS verification failed for ${verification.nodeName}`);
+    error.details = verification;
+    throw error;
+  }
 
   const stakeStatus = operatorAddress
     ? await getStakeStatus({
