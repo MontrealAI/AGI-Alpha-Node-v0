@@ -164,6 +164,28 @@ Every step is mirrored by automated tests so a non-technical operator can wield 
 
 ---
 
+## Deterministic Configuration Surface
+
+All runtime commands resolve their environment through the schema in [`src/config/schema.js`](src/config/schema.js). Every field is validated at startup so a misconfigured node halts before touching capital. The table below captures the full, current surface:
+
+| Variable | Description | Default / Expectation |
+| -------- | ----------- | --------------------- |
+| `RPC_URL` | Ethereum JSON-RPC endpoint used for ENS proofs and contract calls. | `https://rpc.ankr.com/eth` |
+| `ENS_PARENT_DOMAIN` | Parent ENS domain whose sublabel must be owned by the operator. | `alpha.node.agi.eth` |
+| `NODE_LABEL` | ENS label to bind (e.g., `1` for `1.alpha.node.agi.eth`). | Required for CLI commands |
+| `OPERATOR_ADDRESS` | Checksummed address that must own the ENS subdomain. | Required for activation |
+| `STAKE_MANAGER_ADDRESS` | StakeManager contract that enforces minimum stake and slashing. | Optional override |
+| `PLATFORM_INCENTIVES_ADDRESS` | PlatformIncentives contract used for `stakeAndActivate`. | Optional override |
+| `REWARD_ENGINE_ADDRESS` | Reward engine contract for share tuning operations. | Optional override |
+| `METRICS_PORT` | TCP port for Prometheus metrics exposure. | `9464` (range 1024–65535 enforced) |
+| `DRY_RUN` | Boolean flag toggling transaction broadcasting. Accepts `true/false/1/0`. | `true` |
+| `AGIALPHA_TOKEN_ADDRESS` | Canonical `$AGIALPHA` ERC-20 contract. Attempts to override must equal the checksum address. | `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` |
+| `AGIALPHA_TOKEN_DECIMALS` | Token decimals accepted by staking + rewards calculations. | Locked to `18` |
+
+Use the CLI with environment variables or the `--rpc`, `--stake-manager`, and `--incentives` flags to target different deployments (local Anvil, Sepolia, mainnet) while preserving the canonical `$AGIALPHA` surface. Any mismatch, including ENS resolver drift or token substitution attempts, is rejected before the node issues transactions.
+
+---
+
 ## Command Index
 
 | Command | Purpose | File |
