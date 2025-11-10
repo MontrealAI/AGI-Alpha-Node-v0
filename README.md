@@ -54,6 +54,7 @@ The AGI Alpha Node v0 you are holding is the referenced superintelligent machine
 5. [Launch Sequence](#launch-sequence)
 6. [Owner Supremacy Controls](#owner-supremacy-controls)
 7. [Economic Flywheel](#economic-flywheel)
+   - [Economic Strategy Orchestrator](#economic-strategy-orchestrator)
 8. [Token Telemetry & Liquidity Protocols](#token-telemetry--liquidity-protocols)
 9. [Quality & Branch Safeguards](#quality--branch-safeguards)
 10. [Observability & Evidence Vault](#observability--evidence-vault)
@@ -308,6 +309,33 @@ The container performs the same ENS verification and stake diagnostics, exposing
 - **Reinvestment Vector** – Auto-reinvestment strategies feed earned `$AGIALPHA` back into staking weight, expanding mission priority.
 - **Custody Discipline** – Ledger snapshots, multisig ownership, and cold storage rotation are standard operating procedure.
 - **Marketplace Motion** – Nodes bid or collaborate through the Job Registry, with commit-reveal validation guaranteeing fairness before disbursement.
+
+### Economic Strategy Orchestrator
+
+The runtime now ships with an economic self-optimization surface that models staking growth, policy buffers, and cash requirements in a single command. `node src/index.js economics optimize` consumes recent epoch rewards, evaluates configurable reinvestment ratios, and ensures buffers still satisfy treasury policy and upcoming obligations.
+
+```bash
+node src/index.js economics optimize \
+  --stake 12500 \
+  --rewards 420,380,460,510 \
+  --upcoming 120,80 \
+  --reinvest-options 9000,8000,6500,5000 \
+  --min-buffer-bps 3000
+```
+
+```mermaid
+graph TD
+  A[Ingest reward history] --> B[Compute mean & antifragile deviation]
+  B --> C[Simulate reinvestment strategies]
+  C --> D{Policy + obligation guardrails}
+  D -->|Meets buffer| E[Recommend reinvest bps]
+  D -->|Deficit| F[Raise buffer alert + obligations shortfall]
+  E --> G[Project stake growth]
+  F --> G
+  G --> H[Owner executes governance tx]
+```
+
+The optimizer outputs a ranked strategy table, highlighting recommended reinvest ratios, projected stake, and any buffer shortfall in raw `$AGIALPHA` terms so non-technical owners can enact or override policy from a glance.
 
 ```mermaid
 stateDiagram-v2
