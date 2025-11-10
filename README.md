@@ -236,9 +236,11 @@ docker run -it --rm \
   ghcr.io/montrealai/agi-alpha-node:latest
 ```
 
+* Start by copying [`deploy/docker/node.env.example`](deploy/docker/node.env.example) to `node.env` and customise the RPC endpoint, ENS label, staking contracts, and Vault settings for your institution.
 * `/entrypoint.sh` loads optional environment files via `CONFIG_PATH`, validates identity inputs, warns about missing snapshots, and launches `agi-alpha-node container`.
 * Health checks hit `/metrics` on `9464`; Docker restarts the node automatically when the Prometheus endpoint fails. The agent REST interface listens on `API_PORT` (default `8080`) for job submissions and health pings (`/healthz`).
 * Enable unattended staking by pairing `AUTO_STAKE=true` with `OPERATOR_PRIVATE_KEY`. Disable prompts for headless servers with `INTERACTIVE_STAKE=false`. Vault operators can hydrate secrets automatically using `VAULT_ADDR`, `VAULT_SECRET_PATH`, `VAULT_SECRET_KEY`, and `VAULT_TOKEN`.
+* Control runtime cadence with `MONITOR_INTERVAL`, `SKIP_MONITOR`, and `RUN_ONCE` environment variables. Set `PROJECTED_REWARDS` for custom earnings forecasts, or toggle `OFFLINE_MODE=true` when air-gapped.
 * All variables align with [`src/config/schema.js`](src/config/schema.js). Mount offline snapshots using `OFFLINE_SNAPSHOT_PATH` to survive RPC outages, or flip `OFFLINE_MODE=true` to force local heuristics even when APIs are reachable.
 * Provide bespoke offline heuristics by mounting a JSON definition into the container (for example `-v $(pwd)/models.json:/config/models.json:ro`) and exporting `LOCAL_MODEL_PATH=/config/models.json`.
 
@@ -256,7 +258,7 @@ helm upgrade --install agi-alpha-node ./deploy/helm/agi-alpha-node \
   --set config.autoStake=true
 ```
 
-The bundled chart provisions service accounts, Prometheus scrape hints, liveness/readiness probes, and optional offline snapshots. Customize [`deploy/helm/agi-alpha-node/values.yaml`](deploy/helm/agi-alpha-node/values.yaml) to integrate with Vault (`config.vaultAddr`, `config.vaultSecretPath`, `secretConfig.vaultToken`), expose the REST agent port through your preferred service mesh, or mount an `offlineSnapshot` ConfigMap when RPC access is intermittent.
+The bundled chart provisions service accounts, Prometheus scrape hints, liveness/readiness probes, and optional offline snapshots. Customize [`deploy/helm/agi-alpha-node/values.yaml`](deploy/helm/agi-alpha-node/values.yaml) to integrate with Vault (`config.vaultAddr`, `config.vaultSecretPath`, `secretConfig.vaultToken`), expose the REST agent port through your preferred service mesh, or mount an `offlineSnapshot` ConfigMap when RPC access is intermittent. Tune cadence and rollout safety per environment via `config.monitorInterval`, `config.skipMonitor`, `config.runOnce`, `config.projectedRewards`, and `config.dryRun`.
 
 Autoscaling and zero-downtime rollouts ship in the chart by default:
 

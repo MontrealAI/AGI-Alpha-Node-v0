@@ -69,6 +69,8 @@ spec:
               value: {{ .Values.config.metricsPort | quote }}
             - name: API_PORT
               value: {{ .Values.config.apiPort | quote }}
+            - name: MONITOR_INTERVAL
+              value: {{ .Values.config.monitorInterval | quote }}
             - name: AUTO_RESUME
               value: {{ ternary "true" "false" .Values.config.autoResume | quote }}
             - name: AUTO_STAKE
@@ -77,6 +79,14 @@ spec:
               value: {{ ternary "true" "false" .Values.config.interactiveStake | quote }}
             - name: OFFLINE_MODE
               value: {{ ternary "true" "false" .Values.config.offlineMode | quote }}
+            - name: SKIP_MONITOR
+              value: {{ ternary "true" "false" .Values.config.skipMonitor | quote }}
+            - name: RUN_ONCE
+              value: {{ ternary "true" "false" .Values.config.runOnce | quote }}
+            - name: PROJECTED_REWARDS
+              value: {{ .Values.config.projectedRewards | quote }}
+            - name: DRY_RUN
+              value: {{ ternary "true" "false" .Values.config.dryRun | quote }}
             - name: VAULT_SECRET_KEY
               value: {{ .Values.config.vaultSecretKey | quote }}
             {{- if .Values.config.stakeManagerAddress }}
