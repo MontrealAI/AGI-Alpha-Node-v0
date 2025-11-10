@@ -47,21 +47,22 @@ AGI Alpha Node v0 is the machine these proclamations foreshadow. It is engineere
 1. [Executive Beacon](#executive-beacon)
 2. [Signal Directory](#signal-directory)
 3. [Launch Protocol](#launch-protocol)
-4. [Architecture Atlases](#architecture-atlases)
+4. [One-Click Deployment Playbook](#one-click-deployment-playbook)
+5. [Architecture Atlases](#architecture-atlases)
    - [Panoramic Flow](#panoramic-flow)
    - [Operations Timeline](#operations-timeline)
    - [Contract Surface Map](#contract-surface-map)
    - [Treasury Circuit](#treasury-circuit)
-5. [Identity & Stake Authority](#identity--stake-authority)
-6. [Economic Engine](#economic-engine)
-7. [AGI Jobs Integration Lifecycle](#agi-jobs-integration-lifecycle)
-8. [Intelligence Stack](#intelligence-stack)
-9. [Automation & Toolchain](#automation--toolchain)
-10. [Governance & Owner Supremacy](#governance--owner-supremacy)
-11. [Observability & Reliability Mesh](#observability--reliability-mesh)
-12. [CI & Branch Hardening](#ci--branch-hardening)
-13. [Repository Atlas](#repository-atlas)
-14. [Support Channels](#support-channels)
+6. [Identity & Stake Authority](#identity--stake-authority)
+7. [Economic Engine](#economic-engine)
+8. [AGI Jobs Integration Lifecycle](#agi-jobs-integration-lifecycle)
+9. [Intelligence Stack](#intelligence-stack)
+10. [Automation & Toolchain](#automation--toolchain)
+11. [Governance & Owner Supremacy](#governance--owner-supremacy)
+12. [Observability & Reliability Mesh](#observability--reliability-mesh)
+13. [CI & Branch Hardening](#ci--branch-hardening)
+14. [Repository Atlas](#repository-atlas)
+15. [Support Channels](#support-channels)
 
 ---
 
@@ -105,6 +106,12 @@ AGI Alpha Node v0 is the machine these proclamations foreshadow. It is engineere
 | 10 | Enforce GitHub branch protection: require **Continuous Integration**, reviewer approvals, and up-to-date branches on `main`; export the rule JSON for custody. | GitHub → Settings → Branches → `main` |
 | 11 | Validate enforcement via CLI (`gh api repos/MontrealAI/AGI-Alpha-Node-v0/branches/main/protection`) and notarize outputs with CI transcripts. | Owner evidence vault |
 | 12 | Archive ENS proofs, staking tx hashes, CI transcripts, branch-rule exports, and CLI evidence in your compliance ledger. | Owner evidence vault |
+
+---
+
+## One-Click Deployment Playbook
+
+Operators who prefer pre-baked deployment flows can follow the [One-Click Deployment Playbook](./deployment/one-click.md) for a condensed Docker & Helm guide, offline snapshot handling, auto-stake prerequisites, and troubleshooting matrix.
 
 ---
 
