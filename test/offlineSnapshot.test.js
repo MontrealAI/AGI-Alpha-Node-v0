@@ -49,6 +49,12 @@ describe('offline snapshot utilities', () => {
       rewards: {
         projectedPool: '2500',
         operatorShareBps: 1550,
+        validatorShareBps: 7200,
+        treasuryShareBps: 1250,
+        roleShares: {
+          guardian: 100,
+          validator: 7500
+        },
         decimals: 18
       }
     });
@@ -81,6 +87,16 @@ describe('offline snapshot utilities', () => {
     });
 
     const rewardsProjection = buildOfflineRewardsProjection(snapshot);
-    expect(rewardsProjection).toEqual({ projectedPool: '2500', operatorShareBps: 1550, decimals: 18 });
+    expect(rewardsProjection).toEqual({
+      projectedPool: '2500',
+      operatorShareBps: 1550,
+      validatorShareBps: 7200,
+      treasuryShareBps: 1250,
+      roleShares: {
+        guardian: 100,
+        validator: 7500
+      },
+      decimals: 18
+    });
   });
 });

@@ -72,7 +72,7 @@
 | Monitoring Loop | Continuous diagnostics with Prometheus export and health classification. | [`src/orchestrator/monitorLoop.js`](src/orchestrator/monitorLoop.js) |
 | Container Health | Docker healthcheck hits metrics endpoint; Kubernetes liveness/readiness derived from Helm chart probes. | [`src/healthcheck.js`](src/healthcheck.js), [`deploy/helm/agi-alpha-node/templates/deployment.yaml`](deploy/helm/agi-alpha-node/templates/deployment.yaml) |
 | Offline Snapshots | Signed JSON snapshots for air-gapped continuity; automatically loaded in CLI & monitor. | [`src/services/offlineSnapshot.js`](src/services/offlineSnapshot.js) |
-| Owner Commands | Transaction builders for pausing, stake floors, share tuning, and reinvestment directives. | [`src/services/governance.js`](src/services/governance.js), [`src/services/controlPlane.js`](src/services/controlPlane.js) |
+| Owner Commands | Transaction builders for pausing, stake floors, share tuning, and reinvestment directives with CLI-derived global & role share payloads. | [`src/services/governance.js`](src/services/governance.js), [`src/services/controlPlane.js`](src/services/controlPlane.js) |
 
 ---
 
@@ -128,10 +128,16 @@
      --rpc https://mainnet.infura.io/v3/<PROJECT_ID> \
      --stake-manager 0xStakeManager \
      --incentives 0xIncentivesContract \
-     --system-pause 0xSystemPause \
-     --desired-minimum 1500 \
-     --projected-rewards 1800 \
-     --metrics-port 9464
+      --reward-engine 0xRewardEngine \
+      --system-pause 0xSystemPause \
+      --desired-minimum 1500 \
+      --operator-share-bps 1600 \
+      --validator-share-bps 7300 \
+      --treasury-share-bps 1100 \
+      --role-share guardian=250 \
+      --role-share validator=7500 \
+      --projected-rewards 1800 \
+      --metrics-port 9464
    ```
 
 7. **One-Pass Container Bootstrap**
@@ -362,6 +368,8 @@ Only the contract owner should wield the governance helpers. They provide direct
 * **Role Share Calibration** — Adjust `operator`, `validator`, `guardian`, or custom roles with `governance set-role-share`.
 * **Global Share Rebalancing** — Maintain a 10000 bps sum with `governance set-global-shares --operator-share 6000 --validator-share 3000 --treasury-share 1000`.
 
+Invoke `npx agi-alpha-node status` with `--reward-engine`, `--operator-share-bps`, `--validator-share-bps`, `--treasury-share-bps`, and repeatable `--role-share role=bps` flags to auto-generate these payloads and surface any divergence from on-chain telemetry or offline snapshots.
+
 Review the transaction builders in [`src/services/governance.js`](src/services/governance.js); tests in [`test/governance.test.js`](test/governance.test.js) guarantee correctness.
 
 ```mermaid
@@ -397,6 +405,10 @@ All operator and owner controls flow through environment variables or CLI flags 
 | `REWARD_ENGINE_ADDRESS` / `--reward-engine` | Reward engine for share tuning. | Needed when issuing share adjustments. |
 | `SYSTEM_PAUSE_ADDRESS` / `--system-pause` | Global pause switch. | Required for pause/unpause calls. |
 | `DESIRED_MINIMUM_STAKE` / `--desired-minimum` | Owner-desired stake floor guidance. | Numeric string, validated for canonical decimals. |
+| `DESIRED_OPERATOR_SHARE_BPS` / `--operator-share-bps` | Target operator share for `setGlobalShares`. | Integer 0–10000; requires RewardEngine address. |
+| `DESIRED_VALIDATOR_SHARE_BPS` / `--validator-share-bps` | Target validator share. | Integer 0–10000; total with operator & treasury must equal 10000. |
+| `DESIRED_TREASURY_SHARE_BPS` / `--treasury-share-bps` | Target treasury share. | Integer 0–10000; completes global share sum. |
+| `ROLE_SHARE_TARGETS` / `--role-share role=bps` | Per-role share policies (repeat flag for multiple roles). | Each share 0–10000; CLI accepts CSV, JSON, or repeated flags. |
 | `AUTO_RESUME` / `--auto-resume` | Allow monitor loop to suggest resume directives. | Boolean (`true/false/1/0`). |
 | `DRY_RUN` | Prevents on-chain broadcasts when `true`. | Default `true`; set `false` to permit stake activation transactions. |
 | `METRICS_PORT` / `--metrics-port` | Prometheus listener port. | Integer between 1024 and 65535. |
