@@ -15,12 +15,40 @@ import {
   buildRoleShareTx,
   buildGlobalSharesTx
 } from './services/governance.js';
+import { generateEnsSetupGuide, formatEnsGuide } from './services/ensGuide.js';
 
 const program = new Command();
 program
   .name('agi-alpha-node')
   .description('AGI Alpha Node sovereign runtime CLI')
   .version('1.1.0');
+
+program
+  .command('ens-guide')
+  .description('Print ENS subdomain setup instructions for a node label')
+  .requiredOption('-l, --label <label>', 'ENS label for the node (e.g. 1)')
+  .option('-p, --parent <domain>', 'ENS parent domain', 'alpha.node.agi.eth')
+  .requiredOption('-a, --address <address>', 'Operator address that will control the subdomain')
+  .action((options) => {
+    try {
+      const guide = generateEnsSetupGuide({
+        label: options.label,
+        parentDomain: options.parent,
+        operatorAddress: options.address
+      });
+      console.log(chalk.bold(`ENS setup guide for ${guide.nodeName}`));
+      const lines = formatEnsGuide(guide);
+      for (const line of lines) {
+        const [heading, ...rest] = line.split('\n');
+        console.log(chalk.cyan(heading));
+        rest.forEach((segment) => console.log(`   ${segment}`));
+      }
+      console.log(chalk.gray(`Reference: ${guide.ensManagerUrl}`));
+    } catch (error) {
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
+  });
 
 program
   .command('verify-ens')
