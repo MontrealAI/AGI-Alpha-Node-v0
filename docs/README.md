@@ -95,15 +95,16 @@ AGI Alpha Node v0 is the machine these proclamations foreshadow. It is engineere
 | ---- | ----------- | ----------------- |
 | 1 | Clone repository and install deterministic toolchain. | `git clone https://github.com/MontrealAI/AGI-Alpha-Node-v0.git && cd AGI-Alpha-Node-v0 && npm ci` |
 | 2 | Run documentation gates locally; archive outputs for custody evidence. | `npm run lint:md` · `npm run lint:links` (aggregate: `npm run lint`) |
-| 3 | Use the sovereign CLI to validate ENS bindings and stake posture before mainnet cutover. | `node src/index.js status --label <name> --address <0x...> --rpc https://rpc.ankr.com/eth` |
-| 4 | Secure ENS identity `⟨label⟩.alpha.node.agi.eth`; confirm resolver and NameWrapper align with owner policy. | [ENS Manager](https://app.ens.domains/name/alpha.node.agi.eth) |
-| 5 | Stage custody: configure multisig/HSM and delegate hot key via `IdentityRegistry.setAdditionalNodeOperator`. | On-chain owner transaction |
-| 6 | Prefund wallet with `$AGIALPHA`, approve allowances for the Stake Manager, and notarize receipts. | Token `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` |
-| 7 | Deploy runtime (Compose, VM, or Kubernetes) per infrastructure doctrine. | See [Architecture Atlases](#architecture-atlases) |
-| 8 | Activate staking with `PlatformIncentives.stakeAndActivate(amount)` or `_acknowledgeStakeAndActivate`. | On-chain owner/operator transaction |
-| 9 | Enforce GitHub branch protection: require **Continuous Integration**, reviewer approvals, and up-to-date branches on `main`; export the rule JSON for custody. | GitHub → Settings → Branches → `main` |
-| 10 | Validate enforcement via CLI (`gh api repos/MontrealAI/AGI-Alpha-Node-v0/branches/main/protection`) and notarize outputs with CI transcripts. | Owner evidence vault |
-| 11 | Archive ENS proofs, staking tx hashes, CI transcripts, branch-rule exports, and CLI evidence in your compliance ledger. | Owner evidence vault |
+| 3 | Generate the ENS + staking operator playbook before any on-chain writes. | `node src/index.js ens-guide --label <name> --address <0x...>` |
+| 4 | Use the sovereign CLI to validate ENS bindings and stake posture before mainnet cutover. | `node src/index.js status --label <name> --address <0x...> --rpc https://rpc.ankr.com/eth` |
+| 5 | Secure ENS identity `⟨label⟩.alpha.node.agi.eth`; confirm resolver and NameWrapper align with owner policy. | [ENS Manager](https://app.ens.domains/name/alpha.node.agi.eth) |
+| 6 | Stage custody: configure multisig/HSM and delegate hot key via `IdentityRegistry.setAdditionalNodeOperator`. | On-chain owner transaction |
+| 7 | Prefund wallet with `$AGIALPHA`, approve allowances for the Stake Manager, and notarize receipts. | Token `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` |
+| 8 | Deploy runtime (Compose, VM, or Kubernetes) per infrastructure doctrine. | See [Architecture Atlases](#architecture-atlases) |
+| 9 | Activate staking with `PlatformIncentives.stakeAndActivate(amount)` or `_acknowledgeStakeAndActivate`. | On-chain owner/operator transaction |
+| 10 | Enforce GitHub branch protection: require **Continuous Integration**, reviewer approvals, and up-to-date branches on `main`; export the rule JSON for custody. | GitHub → Settings → Branches → `main` |
+| 11 | Validate enforcement via CLI (`gh api repos/MontrealAI/AGI-Alpha-Node-v0/branches/main/protection`) and notarize outputs with CI transcripts. | Owner evidence vault |
+| 12 | Archive ENS proofs, staking tx hashes, CI transcripts, branch-rule exports, and CLI evidence in your compliance ledger. | Owner evidence vault |
 
 ---
 
@@ -246,12 +247,13 @@ flowchart LR
 
 ## Identity & Stake Authority
 
-1. **ENS Verification Loop** — `verifyNode(label, proof)` enforces resolver/NameWrapper ownership of `⟨label⟩.alpha.node.agi.eth`; divergence halts startup.
-2. **Stake Activation** — `PlatformIncentives.stakeAndActivate(amount)` sequences allowance, deposit, registry enrollment, and job-router enablement. `_acknowledgeStakeAndActivate` documents explicit policy acceptance when required.
-3. **Heartbeat Enforcement** — Runtime heartbeats re-check ENS control, stake minimums, and registry flags before accepting or settling work.
-4. **Delegate Rotation** — `IdentityRegistry.setAdditionalNodeOperator(address operator, bool allowed)` adds/removes hot keys so multisigs and HSMs can delegate without losing supremacy.
-5. **Slashing Discipline** — `StakeManager.slash(role, operator, treasuryShare, burnShare)` penalizes misconduct with owner-defined allocation ratios.
-6. **Exit Path** — `PlatformRegistry.deregister()` followed by `StakeManager.withdrawStake(role, amount)` releases capital post-cooldown; evidence snapshots should be archived.
+1. **Pre-flight Runbook** — `node src/index.js ens-guide --label <name> --address <0x...>` prints the seven-step ENS + staking checklist and links to ENS Manager workflows.
+2. **ENS Verification Loop** — `verifyNode(label, proof)` enforces resolver/NameWrapper ownership of `⟨label⟩.alpha.node.agi.eth`; divergence halts startup.
+3. **Stake Activation** — `PlatformIncentives.stakeAndActivate(amount)` sequences allowance, deposit, registry enrollment, and job-router enablement. `_acknowledgeStakeAndActivate` documents explicit policy acceptance when required.
+4. **Heartbeat Enforcement** — Runtime heartbeats re-check ENS control, stake minimums, and registry flags before accepting or settling work.
+5. **Delegate Rotation** — `IdentityRegistry.setAdditionalNodeOperator(address operator, bool allowed)` adds/removes hot keys so multisigs and HSMs can delegate without losing supremacy.
+6. **Slashing Discipline** — `StakeManager.slash(role, operator, treasuryShare, burnShare)` penalizes misconduct with owner-defined allocation ratios.
+7. **Exit Path** — `PlatformRegistry.deregister()` followed by `StakeManager.withdrawStake(role, amount)` releases capital post-cooldown; evidence snapshots should be archived.
 
 ---
 
