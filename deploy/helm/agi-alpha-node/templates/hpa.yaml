@@ -34,7 +34,7 @@ spec:
     {{- end }}
     {{- if .Values.autoscaling.extraMetrics }}
     {{- $hasMetrics = true }}
-{{ tpl .Values.autoscaling.extraMetrics . | indent 4 }}
+    {{- tpl .Values.autoscaling.extraMetrics . | nindent 4 }}
     {{- end }}
     {{- if not $hasMetrics }}
     - type: Resource
