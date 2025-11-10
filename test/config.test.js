@@ -43,4 +43,25 @@ describe('config schema', () => {
       })
     ).toThrow(/fixed decimals/);
   });
+
+  it('parses control plane overrides', () => {
+    const config = coerceConfig({
+      RPC_URL: 'https://rpc.ankr.com/eth',
+      SYSTEM_PAUSE_ADDRESS: '0x0000000000000000000000000000000000000001',
+      DESIRED_MINIMUM_STAKE: '1500',
+      AUTO_RESUME: 'true'
+    });
+    expect(config.SYSTEM_PAUSE_ADDRESS).toBe('0x0000000000000000000000000000000000000001');
+    expect(config.DESIRED_MINIMUM_STAKE).toBe('1500');
+    expect(config.AUTO_RESUME).toBe(true);
+  });
+
+  it('rejects malformed desired minimum stake values', () => {
+    expect(() =>
+      coerceConfig({
+        RPC_URL: 'https://rpc.ankr.com/eth',
+        DESIRED_MINIMUM_STAKE: 'one thousand'
+      })
+    ).toThrow(/numeric value/);
+  });
 });
