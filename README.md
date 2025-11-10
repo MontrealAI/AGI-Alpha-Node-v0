@@ -24,7 +24,7 @@
   <img src="https://img.shields.io/badge/Branch%20Protection-Enforced-111827.svg?style=flat-square" alt="Branch Protection" />
 </p>
 
-> The AGI Alpha Node is the production chassis that sovereign operators deploy to harvest $AGIALPHA yields, prove ENS custody, command intelligence swarms, and exercise absolute owner authority. Every surface is instrumented, reproducible, and ready for high-stakes mainnet labor.
+> The AGI Alpha Node is the production chassis that sovereign operators deploy to harvest $AGIALPHA yields, prove ENS custody, command intelligence swarms, and exercise absolute owner authority. This runtime is the machine that bends economic gravity—fully observable, deterministic, and prepared for the highest-stakes mainnet labor.
 
 ---
 
@@ -38,10 +38,11 @@
 6. [Telemetry & Monitoring](#telemetry--monitoring)
 7. [Offline Continuity Protocol](#offline-continuity-protocol)
 8. [Owner Supremacy Controls](#owner-supremacy-controls)
-9. [Repository Atlas](#repository-atlas)
-10. [Quality Gates & Branch Discipline](#quality-gates--branch-discipline)
-11. [Contributing](#contributing)
-12. [License](#license)
+9. [Configuration Switchboard](#configuration-switchboard)
+10. [Repository Atlas](#repository-atlas)
+11. [Quality Gates & Branch Discipline](#quality-gates--branch-discipline)
+12. [Contributing](#contributing)
+13. [License](#license)
 
 ---
 
@@ -301,6 +302,45 @@ Only the contract owner should wield the governance helpers. They provide direct
 * **Global Share Rebalancing** — Maintain a 10000 bps sum with `governance set-global-shares --operator-share 6000 --validator-share 3000 --treasury-share 1000`.
 
 Review the transaction builders in [`src/services/governance.js`](src/services/governance.js); tests in [`test/governance.test.js`](test/governance.test.js) guarantee correctness.
+
+```mermaid
+graph TD
+  Owner((Contract Owner)):::owner -->|Calldata| Pause[System Pause Console\n(governance system-pause)]
+  Owner -->|Calldata| Minimum[Stake Floor Setter\n(governance set-minimum)]
+  Owner -->|Calldata| RoleShares[Role Share Matrix\n(governance set-role-share)]
+  Owner -->|Calldata| GlobalShares[Global Shares Circuit\n(governance set-global-shares)]
+  Pause --> Chain[(Ethereum Mainnet)]
+  Minimum --> Chain
+  RoleShares --> Chain
+  GlobalShares --> Chain
+  classDef owner fill:#6f3aff,stroke:#1e1e2f,stroke-width:2px,color:#ffffff;
+  classDef default fill:#0f172a,stroke:#94a3b8,color:#f8fafc;
+```
+
+Every transaction builder enforces checksum normalization, basis point limits, and invariant checks so the owner’s instructions are always precise and reversible.
+
+---
+
+## Configuration Switchboard
+
+All operator and owner controls flow through environment variables or CLI flags defined in [`src/config/schema.js`](src/config/schema.js). Each value is validated with Zod and locked to canonical $AGIALPHA discipline.
+
+| Variable / Flag | Purpose | Requirements |
+| ---------------- | ------- | ------------ |
+| `RPC_URL` / `--rpc` | Ethereum RPC endpoint for live diagnostics. | HTTPS URL; defaults to `https://rpc.ankr.com/eth`. |
+| `ENS_PARENT_DOMAIN` / `--parent-domain` | Delegated ENS root such as `alpha.node.agi.eth`. | Minimum length 3 characters; normalized at runtime. |
+| `NODE_LABEL` / `--label` | Subdomain label (e.g., `1` for `1.alpha.node.agi.eth`). | Required for container bootstrap. |
+| `OPERATOR_ADDRESS` / `--address` | Address whose authority must match ENS and staking. | 20-byte hex, checksum enforced. |
+| `PLATFORM_INCENTIVES_ADDRESS` / `--incentives` | Platform incentives contract for staking activation. | Optional but required for stake activation flows. |
+| `STAKE_MANAGER_ADDRESS` / `--stake-manager` | Stake manager contract controlling thresholds. | Optional for diagnostics; required for governance setters. |
+| `REWARD_ENGINE_ADDRESS` / `--reward-engine` | Reward engine for share tuning. | Needed when issuing share adjustments. |
+| `SYSTEM_PAUSE_ADDRESS` / `--system-pause` | Global pause switch. | Required for pause/unpause calls. |
+| `DESIRED_MINIMUM_STAKE` / `--desired-minimum` | Owner-desired stake floor guidance. | Numeric string, validated for canonical decimals. |
+| `AUTO_RESUME` / `--auto-resume` | Allow monitor loop to suggest resume directives. | Boolean (`true/false/1/0`). |
+| `METRICS_PORT` / `--metrics-port` | Prometheus listener port. | Integer between 1024 and 65535. |
+| `OFFLINE_SNAPSHOT_PATH` / `--offline-snapshot` | JSON snapshot for air-gapped mode. | Must point to a valid file validated in [`src/services/offlineSnapshot.js`](src/services/offlineSnapshot.js). |
+
+All configuration is re-validated on every container start; canonical `$AGIALPHA` (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) is enforced via [`assertCanonicalAgialphaAddress`](src/constants/token.js).
 
 ---
 
