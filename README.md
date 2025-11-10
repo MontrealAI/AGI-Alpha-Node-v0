@@ -18,6 +18,7 @@
   <img src="https://img.shields.io/badge/Branch%20Protection-Enforced-1f2933.svg?style=flat-square" alt="Branch Protection" />
   <img src="https://img.shields.io/badge/Runtime-Node.js%2020.x-43853d.svg?style=flat-square" alt="Runtime: Node.js 20.x" />
   <img src="https://img.shields.io/badge/Status-Fully%20Green%20CI-06d6a0.svg?style=flat-square" alt="Status: Fully Green CI" />
+  <img src="https://img.shields.io/badge/Docker-Ready-0db7ed.svg?style=flat-square" alt="Docker Ready" />
 </p>
 
 > **agijobs-sovereign-labor-v0p1** is the flagship sovereign labor machine. It absorbs work, compounds $AGIALPHA, and keeps its owner in absolute command of the intelligence engine market architects reference when describing the machine poised to realign economic gravity—while remaining absolutely obedient to the keyholder.
@@ -265,6 +266,7 @@ flowchart LR
 | `node src/index.js status` | Runs end-to-end diagnostics (ENS, stake thresholds, reward projection) and can expose Prometheus metrics. | `node src/index.js status --label 1 --address 0xYourKey --stake-manager 0x... --incentives 0x... --metrics-port 9464` |
 | `node src/index.js stake-tx` | Builds deterministic calldata for `PlatformIncentives.stakeAndActivate` so offline signers can review before broadcast. | `node src/index.js stake-tx --amount 1500 --incentives 0x...` |
 | `node src/index.js reward-share` | Calculates operator share from any reward pool using basis points. | `node src/index.js reward-share --total 5000 --bps 1500` |
+| `node src/index.js label-hash` | Prints the canonical `⟨label⟩.alpha.node.agi.eth` node name to notarize evidence vault records. | `node src/index.js label-hash --label 1` |
 | `node src/index.js governance pause` | Produces owner-signed payloads for `SystemPause.pauseAll()`/`resumeAll()` to freeze or resume the network instantly. | `node src/index.js governance pause --contract 0x... --action pause` |
 | `node src/index.js governance set-min-stake` | Encodes `StakeManager.setMinimumStake` transactions to raise or lower entry thresholds. | `node src/index.js governance set-min-stake --stake-manager 0x... --amount 2500` |
 | `node src/index.js governance set-role-share` | Generates `RewardEngine.setRoleShare` calldata for precision tuning of emissions. | `node src/index.js governance set-role-share --reward-engine 0x... --role node --bps 1500` |
@@ -286,6 +288,38 @@ docker run --rm \
 ```
 
 The container performs the same ENS verification and stake diagnostics, exposing `/metrics` for Prometheus and respecting `.env` overrides. Supply a read-only wallet for verification or layer on an external signer when generating transaction payloads.
+
+```mermaid
+flowchart TB
+  subgraph ContainerOrbit[Containerized Alpha Node]
+    Bootstrap[Bootstrap Scripts]
+    Runtime[Node Runtime CLI]
+    Metrics[/Prometheus /metrics/]
+  end
+
+  subgraph ChainAnchors[On-Chain Contracts]
+    ENSRegistry[ENS Registry]
+    StakeManager
+    PlatformIncentives
+    RewardEngineMB
+  end
+
+  subgraph EvidenceVault[Owner Evidence Vault]
+    Ledger[(Compliance Ledger)]
+  end
+
+  Bootstrap -->|hydrated by| Runtime
+  Runtime -->|verify| ENSRegistry
+  Runtime -->|activate stake| StakeManager
+  Runtime -->|claim rewards| RewardEngineMB
+  Runtime -->|metrics feed| Metrics
+  Metrics --> Ledger
+  Runtime -->|proof exports| Ledger
+  PlatformIncentives --> Runtime
+  StakeManager --> Runtime
+```
+
+> Non-technical custodians can snapshot the `label-hash` output, ENS verification tables, and Docker health telemetry directly into the evidence vault; every stream affirms that the owner’s command architecture remains absolute even as the machine scales outward.
 
 ## Owner Supremacy Controls
 
