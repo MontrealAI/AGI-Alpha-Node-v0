@@ -23,8 +23,169 @@ import {
   buildGlobalSharesTx
 } from './services/governance.js';
 import { generateEnsSetupGuide, formatEnsGuide } from './services/ensGuide.js';
+import { planJobExecution, describeStrategyComparison, DEFAULT_STRATEGIES } from './intelligence/planning.js';
+import { orchestrateSwarm } from './intelligence/swarmOrchestrator.js';
+import { runCurriculumEvolution } from './intelligence/learningLoop.js';
+import { assessAntifragility } from './intelligence/stressHarness.js';
 
 const program = new Command();
+
+function parseStrategiesOption(input) {
+  if (!input) return DEFAULT_STRATEGIES;
+  return input
+    .split(';')
+    .map((chunk) => chunk.trim())
+    .filter(Boolean)
+    .map((chunk, index) => {
+      const [name, cost = '0', reliability, capability, parallelism = '1'] = chunk.split(':').map((part) => part.trim());
+      if (!name || reliability === undefined || capability === undefined) {
+        throw new Error(`Strategy definition at position ${index + 1} must include name, cost, reliability, capability`);
+      }
+      const parsedReliability = Number.parseFloat(reliability);
+      const parsedCapability = Number.parseFloat(capability);
+      const parsedParallelism = Number.parseFloat(parallelism);
+      if (!Number.isFinite(parsedReliability) || !Number.isFinite(parsedCapability) || !Number.isFinite(parsedParallelism)) {
+        throw new Error(`Strategy definition ${name} contains invalid numeric values`);
+      }
+      return {
+        name,
+        computeCost: cost,
+        reliability: parsedReliability,
+        capability: parsedCapability,
+        parallelism: parsedParallelism
+      };
+    });
+}
+
+function parseTasksOption(input) {
+  const defaults = [
+    { name: 'energy-grid', domain: 'energy', complexity: 7, urgency: 5, value: 8 },
+    { name: 'bio-synthesis', domain: 'biotech', complexity: 6, urgency: 4, value: 7 }
+  ];
+  if (!input) return defaults;
+  return input
+    .split(';')
+    .map((chunk) => chunk.trim())
+    .filter(Boolean)
+    .map((chunk, index) => {
+      const [domain, complexity, urgency = '1', value = '1', name] = chunk.split(':').map((part) => part.trim());
+      if (!domain || complexity === undefined) {
+        throw new Error(`Task definition at position ${index + 1} requires domain and complexity`);
+      }
+      const parsedComplexity = Number.parseFloat(complexity);
+      const parsedUrgency = Number.parseFloat(urgency);
+      const parsedValue = Number.parseFloat(value);
+      if (!Number.isFinite(parsedComplexity)) {
+        throw new Error(`Task ${domain} contains invalid complexity`);
+      }
+      return {
+        name: name || `${domain}-task-${index + 1}`,
+        domain,
+        complexity: parsedComplexity,
+        urgency: Number.isFinite(parsedUrgency) ? parsedUrgency : 1,
+        value: Number.isFinite(parsedValue) ? parsedValue : 1
+      };
+    });
+}
+
+function parseAgentsOption(input) {
+  const defaults = [
+    { name: 'orion', domains: ['energy', 'finance'], capacity: 2, latencyMs: 80, quality: 0.95, capability: 8 },
+    { name: 'helix', domains: ['biotech'], capacity: 1, latencyMs: 140, quality: 0.9, capability: 7 },
+    { name: 'vault', domains: ['governance', 'finance'], capacity: 1, latencyMs: 90, quality: 0.85, capability: 5 }
+  ];
+  if (!input) return defaults;
+  return input
+    .split(';')
+    .map((chunk) => chunk.trim())
+    .filter(Boolean)
+    .map((chunk, index) => {
+      const [name, domainsRaw, capacity, latency = '120', quality = '0.9', capability = '6'] = chunk
+        .split(':')
+        .map((part) => part.trim());
+      if (!name || !domainsRaw || capacity === undefined) {
+        throw new Error(`Agent definition at position ${index + 1} requires name, domains, and capacity`);
+      }
+      const domainList = domainsRaw.split('|').map((domain) => domain.trim()).filter(Boolean);
+      const parsedCapacity = Number.parseFloat(capacity);
+      const parsedLatency = Number.parseFloat(latency);
+      const parsedQuality = Number.parseFloat(quality);
+      const parsedCapability = Number.parseFloat(capability);
+      if (!Number.isFinite(parsedCapacity)) {
+        throw new Error(`Agent ${name} contains invalid capacity`);
+      }
+      return {
+        name,
+        domains: domainList,
+        capacity: parsedCapacity,
+        latencyMs: Number.isFinite(parsedLatency) ? parsedLatency : 120,
+        quality: Number.isFinite(parsedQuality) ? parsedQuality : 0.9,
+        capability: Number.isFinite(parsedCapability) ? parsedCapability : 6
+      };
+    });
+}
+
+function parseHistoryOption(input) {
+  const defaults = [
+    { difficulty: 4, successRate: 0.85, reward: 1.4 },
+    { difficulty: 4.5, successRate: 0.82, reward: 1.5 },
+    { difficulty: 5, successRate: 0.8, reward: 1.6 }
+  ];
+  if (!input) return defaults;
+  return input
+    .split(';')
+    .map((chunk) => chunk.trim())
+    .filter(Boolean)
+    .map((chunk, index) => {
+      const [difficulty, successRate, reward] = chunk.split(':').map((part) => part.trim());
+      if (difficulty === undefined || successRate === undefined || reward === undefined) {
+        throw new Error(`History definition at position ${index + 1} requires difficulty:successRate:reward`);
+      }
+      const parsedDifficulty = Number.parseFloat(difficulty);
+      const parsedSuccess = Number.parseFloat(successRate);
+      const parsedReward = Number.parseFloat(reward);
+      if (!Number.isFinite(parsedDifficulty) || !Number.isFinite(parsedSuccess) || !Number.isFinite(parsedReward)) {
+        throw new Error(`History definition ${chunk} contains invalid numbers`);
+      }
+      return {
+        difficulty: parsedDifficulty,
+        successRate: parsedSuccess,
+        reward: parsedReward
+      };
+    });
+}
+
+function parseScenariosOption(input) {
+  const defaults = [
+    { name: 'flash-crash', loadFactor: 12, errorRate: 0.12, downtimeMinutes: 14, financialExposure: 180_000 },
+    { name: 'api-outage', loadFactor: 4, errorRate: 0.05, downtimeMinutes: 60, financialExposure: 50_000 }
+  ];
+  if (!input) return defaults;
+  return input
+    .split(';')
+    .map((chunk) => chunk.trim())
+    .filter(Boolean)
+    .map((chunk, index) => {
+      const [name, loadFactor, errorRate, downtime = '0', exposure = '0'] = chunk.split(':').map((part) => part.trim());
+      if (!name || loadFactor === undefined || errorRate === undefined) {
+        throw new Error(`Scenario definition at position ${index + 1} requires name:loadFactor:errorRate`);
+      }
+      const parsedLoad = Number.parseFloat(loadFactor);
+      const parsedError = Number.parseFloat(errorRate);
+      const parsedDowntime = Number.parseFloat(downtime);
+      const parsedExposure = Number.parseFloat(exposure);
+      if (!Number.isFinite(parsedLoad) || !Number.isFinite(parsedError)) {
+        throw new Error(`Scenario definition ${name} contains invalid numbers`);
+      }
+      return {
+        name,
+        loadFactor: parsedLoad,
+        errorRate: parsedError,
+        downtimeMinutes: Number.isFinite(parsedDowntime) ? parsedDowntime : 0,
+        financialExposure: Number.isFinite(parsedExposure) ? parsedExposure : 0
+      };
+    });
+}
 program
   .name('agi-alpha-node')
   .description('AGI Alpha Node sovereign runtime CLI')
@@ -480,6 +641,221 @@ governance
         treasuryShareBps: tx.shares.treasuryShare,
         data: tx.data
       });
+    } catch (error) {
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
+  });
+
+const intelligence = program
+  .command('intelligence')
+  .description('Advanced autonomous intelligence, swarm orchestration, and antifragile safety shell');
+
+intelligence
+  .command('plan')
+  .description('Run world-model planning to evaluate strategies against a job profile')
+  .requiredOption('--reward <amount>', 'Reward for completing the job (decimal)')
+  .requiredOption('--complexity <score>', 'Job complexity score (1-10)')
+  .requiredOption('--deadline <hours>', 'Deadline in hours to complete the job')
+  .option('--risk-bps <bps>', 'Risk appetite in basis points', '2500')
+  .option('--strategies <definitions>', 'Strategy descriptors "name:cost:reliability:capability:parallelism" separated by ;')
+  .option('--horizon <epochs>', 'Projection horizon epochs', '3')
+  .option('--decimals <decimals>', 'Token decimals', String(AGIALPHA_TOKEN_DECIMALS))
+  .action((options) => {
+    try {
+      const decimals = Number.parseInt(options.decimals, 10);
+      const complexity = Number.parseFloat(options.complexity);
+      const deadline = Number.parseFloat(options.deadline);
+      const riskBps = Number.parseInt(options.riskBps, 10);
+      const horizon = Number.parseInt(options.horizon, 10);
+      if (!Number.isFinite(decimals) || !Number.isFinite(complexity) || !Number.isFinite(deadline) || !Number.isFinite(riskBps)) {
+        throw new Error('decimals, complexity, deadline, and risk must be numeric');
+      }
+      const strategies = parseStrategiesOption(options.strategies);
+      const plan = planJobExecution({
+        jobProfile: {
+          reward: options.reward,
+          complexity,
+          deadlineHours: deadline,
+          riskBps
+        },
+        strategies,
+        horizon,
+        decimals
+      });
+
+      console.log(chalk.bold(`Recommended strategy: ${plan.recommended.strategy.name}`));
+      console.table({
+        strategy: plan.recommended.strategy.name,
+        durationHours: plan.recommended.duration.toFixed(2),
+        reliability: plan.recommended.strategy.reliability,
+        capability: plan.recommended.strategy.capability,
+        netValue: formatTokenAmount(plan.recommended.netValue, decimals),
+        riskAdjusted: formatTokenAmount(plan.recommended.riskAdjusted, decimals)
+      });
+
+      console.log(chalk.gray('Strategy comparison'));
+      const comparison = describeStrategyComparison(plan);
+      console.table(
+        comparison.map((entry) => ({
+          name: entry.name,
+          reliability: entry.reliability,
+          capability: entry.capability,
+          durationHours: entry.durationHours,
+          netValue: formatTokenAmount(BigInt(entry.netValue), decimals),
+          riskAdjusted: formatTokenAmount(BigInt(entry.riskAdjusted), decimals)
+        }))
+      );
+
+      console.log(chalk.gray('Projected reinforcement timeline'));
+      plan.projection.timeline.forEach((epoch) => {
+        console.log(`  Epoch ${epoch.epoch}: ${formatTokenAmount(epoch.adjustedNet, decimals)}`);
+      });
+      console.log(chalk.gray(`Projected cumulative reward across horizon: ${formatTokenAmount(plan.projection.projectedReward, decimals)}`));
+    } catch (error) {
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
+  });
+
+intelligence
+  .command('swarm')
+  .description('Coordinate swarm agents across domains with deterministic fallbacks')
+  .option('--tasks <definitions>', 'Task descriptors "domain:complexity:urgency:value[:name]" separated by ;')
+  .option('--agents <definitions>', 'Agent descriptors "name:domainA|domainB:capacity:latency:quality:capability" separated by ;')
+  .option('--latency <ms>', 'Latency budget in milliseconds', '250')
+  .action((options) => {
+    try {
+      const tasks = parseTasksOption(options.tasks);
+      const agents = parseAgentsOption(options.agents);
+      const latencyBudgetMs = Number.parseFloat(options.latency ?? '250');
+      if (!Number.isFinite(latencyBudgetMs)) {
+        throw new Error('latency must be numeric');
+      }
+      const plan = orchestrateSwarm({ tasks, agents, latencyBudgetMs });
+
+      console.log(chalk.bold('Primary assignments'));
+      console.table(
+        plan.assignments.map((assignment) => ({
+          task: assignment.task.name,
+          domain: assignment.task.domain,
+          agent: assignment.agent.name,
+          score: assignment.score.toFixed(2)
+        }))
+      );
+
+      console.log(chalk.gray('Fallback mesh'));
+      console.table(
+        plan.fallbacks.map((assignment) => ({
+          task: assignment.task.name,
+          domain: assignment.task.domain,
+          agent: assignment.agent.name,
+          score: assignment.score.toFixed(2)
+        }))
+      );
+
+      console.log(chalk.gray('Utilization snapshot'));
+      console.table(
+        plan.utilization.map((entry) => ({
+          agent: entry.agent,
+          used: entry.used,
+          capacity: entry.capacity,
+          utilization: entry.utilization.toFixed(2)
+        }))
+      );
+    } catch (error) {
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
+  });
+
+intelligence
+  .command('learn')
+  .description('Run open-ended curriculum evolution for autonomous growth')
+  .option('--history <definitions>', 'History descriptors "difficulty:successRate:reward" separated by ;')
+  .option('--exploration <ratio>', 'Exploration bias (0-1)', '0.2')
+  .option('--shock <ratio>', 'Shock factor (0-1)', '0.1')
+  .option('--floor <ratio>', 'Target success floor (0-1)', '0.78')
+  .action((options) => {
+    try {
+      const history = parseHistoryOption(options.history);
+      const explorationBias = Number.parseFloat(options.exploration ?? '0.2');
+      const shockFactor = Number.parseFloat(options.shock ?? '0.1');
+      const floor = Number.parseFloat(options.floor ?? '0.78');
+      if (!Number.isFinite(explorationBias) || !Number.isFinite(shockFactor) || !Number.isFinite(floor)) {
+        throw new Error('exploration, shock, and floor must be numeric ratios');
+      }
+      const evolution = runCurriculumEvolution({
+        history,
+        explorationBias,
+        shockFactor,
+        targetSuccessFloor: floor
+      });
+
+      console.log(chalk.bold('Curriculum evolution status'));
+      console.table({
+        status: evolution.curriculum.status,
+        nextDifficulty: evolution.curriculum.nextDifficulty,
+        explorationBias: evolution.curriculum.explorationBias,
+        shockFactor: evolution.curriculum.shockFactor
+      });
+
+      console.log(chalk.gray('Generated challenge envelope'));
+      console.table(evolution.generatedChallenges);
+    } catch (error) {
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
+  });
+
+intelligence
+  .command('stress-test')
+  .description('Execute antifragile stress scenarios and produce remediation playbooks')
+  .option('--scenarios <definitions>', 'Scenario descriptors "name:loadFactor:errorRate:downtime:exposure" separated by ;')
+  .option('--capacity <index>', 'Baseline capacity index', '6')
+  .option('--error <budget>', 'Baseline error budget', '0.08')
+  .option('--downtime <minutes>', 'Baseline downtime budget in minutes', '20')
+  .option('--buffer <amount>', 'Baseline financial buffer', '250000')
+  .option('--remediation <ratio>', 'Remediation bias ratio', '0.65')
+  .action((options) => {
+    try {
+      const scenarios = parseScenariosOption(options.scenarios);
+      const baseline = {
+        capacityIndex: Number.parseFloat(options.capacity ?? '6'),
+        errorBudget: Number.parseFloat(options.error ?? '0.08'),
+        downtimeBudget: Number.parseFloat(options.downtime ?? '20'),
+        financialBuffer: Number.parseFloat(options.buffer ?? '250000')
+      };
+      const remediationBias = Number.parseFloat(options.remediation ?? '0.65');
+      if (
+        !Number.isFinite(baseline.capacityIndex) ||
+        !Number.isFinite(baseline.errorBudget) ||
+        !Number.isFinite(baseline.downtimeBudget) ||
+        !Number.isFinite(baseline.financialBuffer) ||
+        !Number.isFinite(remediationBias)
+      ) {
+        throw new Error('baseline metrics and remediation bias must be numeric');
+      }
+      const stress = assessAntifragility({ baseline, scenarios, remediationBias });
+
+      console.log(chalk.bold('Stress test synthesis'));
+      console.table(
+        stress.evaluations.map((entry) => ({
+          scenario: entry.scenario.name,
+          resilience: entry.resilienceScore,
+          loadFactor: entry.scenario.loadFactor,
+          errorRate: entry.scenario.errorRate,
+          downtimeMinutes: entry.scenario.downtimeMinutes,
+          financialExposure: entry.scenario.financialExposure,
+          capacityReinforcement: entry.improvementPlan.capacity,
+          redundancyBoost: entry.improvementPlan.redundancy,
+          coverageMinutes: entry.improvementPlan.coverageMinutes,
+          insuranceBuffer: entry.improvementPlan.insuranceBuffer
+        }))
+      );
+
+      console.log(chalk.gray(`Recommended focus: ${stress.recommendedFocus.join(', ')}`));
+      console.log(chalk.gray(`Antifragile gain: ${stress.antifragileGain}`));
     } catch (error) {
       console.error(chalk.red(error.message));
       process.exitCode = 1;
