@@ -64,4 +64,17 @@ describe('handleStakeActivation', () => {
     expect(logger.error).toHaveBeenCalled();
     expect(acknowledgeStakeAndActivate).not.toHaveBeenCalled();
   });
+
+  it('skips activation when auto-stake disabled and prompts disabled', async () => {
+    await handleStakeActivation({
+      diagnostics,
+      config: { ...baseConfig, AUTO_STAKE: false },
+      logger
+    });
+
+    expect(logger.warn).toHaveBeenCalledWith(
+      'AUTO_STAKE disabled and INTERACTIVE_STAKE disabled – skipping stake activation broadcast.'
+    );
+    expect(acknowledgeStakeAndActivate).not.toHaveBeenCalled();
+  });
 });

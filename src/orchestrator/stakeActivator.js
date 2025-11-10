@@ -95,9 +95,19 @@ export async function handleStakeActivation({
     return;
   }
 
+  const autoStakeEnabled = config.AUTO_STAKE === true;
+  const interactiveAllowed = config.INTERACTIVE_STAKE !== false;
+
+  if (!autoStakeEnabled && !interactiveAllowed) {
+    logger.warn(
+      'AUTO_STAKE disabled and INTERACTIVE_STAKE disabled – skipping stake activation broadcast.'
+    );
+    return;
+  }
+
   let amountToStake = defaultAmount;
 
-  if (!config.AUTO_STAKE && config.INTERACTIVE_STAKE !== false) {
+  if (!autoStakeEnabled) {
     const prompted = await promptForStakeAmount(defaultAmount, logger);
     if (!prompted) {
       return;
