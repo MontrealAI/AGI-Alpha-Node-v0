@@ -21,3 +21,69 @@ export function projectEpochRewards({
     operatorPortion
   };
 }
+
+export function splitRewardPool({
+  totalRewards,
+  operatorStake,
+  totalStake,
+  operatorFloorBps = 1500,
+  validatorShareBps = 7500,
+  treasuryShareBps = 1000,
+  decimals = 18
+}) {
+  if (operatorFloorBps < 0 || operatorFloorBps > 10_000) {
+    throw new RangeError('operatorFloorBps must be between 0 and 10000');
+  }
+  if (validatorShareBps < 0 || treasuryShareBps < 0) {
+    throw new RangeError('validatorShareBps and treasuryShareBps must be non-negative');
+  }
+  if (operatorFloorBps + validatorShareBps + treasuryShareBps !== 10_000) {
+    throw new RangeError('Reward share basis points must sum to exactly 10000');
+  }
+
+  const pool = parseTokenAmount(totalRewards, decimals);
+  const operatorStakeAmount = parseTokenAmount(operatorStake ?? 0n, decimals);
+  const totalStakeAmount = parseTokenAmount(totalStake ?? 0n, decimals);
+
+  const floor = calculateRewardShare({ totalRewards: pool, shareBps: operatorFloorBps, decimals });
+  let remainder = pool - floor;
+  if (remainder < 0n) remainder = 0n;
+
+  let weighted = 0n;
+  if (totalStakeAmount > 0n && operatorStakeAmount > 0n) {
+    weighted = (remainder * operatorStakeAmount) / totalStakeAmount;
+  }
+
+  if (weighted > remainder) {
+    weighted = remainder;
+  }
+
+  const remainderAfterOperator = remainder - weighted;
+  const remainderBps = validatorShareBps + treasuryShareBps;
+
+  let validatorShare = 0n;
+  let treasuryShare = 0n;
+  if (remainderBps > 0) {
+    validatorShare = (remainderAfterOperator * BigInt(validatorShareBps)) / BigInt(remainderBps);
+    treasuryShare = remainderAfterOperator - validatorShare;
+  }
+
+  const operatorTotal = floor + weighted;
+
+  return {
+    pool,
+    operator: {
+      floor,
+      weighted,
+      total: operatorTotal
+    },
+    validator: validatorShare,
+    treasury: treasuryShare,
+    remainder: remainderAfterOperator,
+    shares: {
+      operatorFloorBps,
+      validatorShareBps,
+      treasuryShareBps
+    }
+  };
+}

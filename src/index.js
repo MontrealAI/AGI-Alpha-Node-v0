@@ -6,7 +6,7 @@ import { loadConfig } from './config/env.js';
 import { createProvider } from './services/provider.js';
 import { verifyNodeOwnership, buildNodeNameFromLabel } from './services/ensVerifier.js';
 import { buildStakeAndActivateTx, validateStakeThreshold } from './services/staking.js';
-import { calculateRewardShare } from './services/rewards.js';
+import { calculateRewardShare, splitRewardPool } from './services/rewards.js';
 import { optimizeReinvestmentStrategy, summarizeStrategy } from './services/economics.js';
 import { formatTokenAmount } from './utils/formatters.js';
 import {
@@ -338,12 +338,38 @@ program
 
       if (diagnostics.stakeStatus) {
         const threshold = validateStakeThreshold(diagnostics.stakeStatus);
+        const penaltyDisplay =
+          diagnostics.stakeStatus.slashingPenalty === null
+            ? 'N/A'
+            : formatTokenAmount(diagnostics.stakeStatus.slashingPenalty);
         console.table({
-          minimumStake: diagnostics.stakeStatus.minimumStake ? formatTokenAmount(diagnostics.stakeStatus.minimumStake) : 'N/A',
-          operatorStake: diagnostics.stakeStatus.operatorStake ? formatTokenAmount(diagnostics.stakeStatus.operatorStake) : 'N/A',
+          minimumStake: diagnostics.stakeStatus.minimumStake
+            ? formatTokenAmount(diagnostics.stakeStatus.minimumStake)
+            : 'N/A',
+          operatorStake: diagnostics.stakeStatus.operatorStake
+            ? formatTokenAmount(diagnostics.stakeStatus.operatorStake)
+            : 'N/A',
+          slashingPenalty: penaltyDisplay,
+          lastHeartbeat: diagnostics.stakeStatus.lastHeartbeat?.toString() ?? 'N/A',
           active: diagnostics.stakeStatus.active,
           healthy: threshold?.meets ?? 'unknown'
         });
+        if (diagnostics.stakeEvaluation) {
+          const evaluation = diagnostics.stakeEvaluation;
+          const deficitDisplay =
+            evaluation.deficit === null || evaluation.deficit === undefined
+              ? 'N/A'
+              : formatTokenAmount(evaluation.deficit);
+          console.table({
+            meetsMinimum: evaluation.meets ?? 'unknown',
+            deficit: deficitDisplay,
+            penaltyActive: evaluation.penaltyActive,
+            heartbeatAgeSeconds: evaluation.heartbeatAgeSeconds ?? 'N/A',
+            heartbeatStale: evaluation.heartbeatStale ?? 'N/A',
+            shouldPause: evaluation.shouldPause ?? 'N/A',
+            recommendedAction: evaluation.recommendedAction
+          });
+        }
       }
 
       if (diagnostics.rewardsProjection) {
@@ -389,6 +415,43 @@ program
         decimals: Number.parseInt(options.decimals, 10)
       });
       console.log(`Operator share: ${formatTokenAmount(share, Number(options.decimals))}`);
+    } catch (error) {
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
+  });
+
+program
+  .command('reward-distribution')
+  .description('Simulate thermodynamic reward split across operator, validators, and treasury')
+  .requiredOption('-t, --total <amount>', 'Total reward pool amount (decimal)')
+  .requiredOption('-s, --stake <amount>', 'Operator stake amount (decimal)')
+  .requiredOption('-T, --total-stake <amount>', 'Total active stake across operators (decimal)')
+  .option('-f, --floor-bps <bps>', 'Operator floor share in basis points', '1500')
+  .option('--validator-bps <bps>', 'Validator share in basis points', '7500')
+  .option('--treasury-bps <bps>', 'Treasury share in basis points', '1000')
+  .option('-d, --decimals <decimals>', 'Token decimals', '18')
+  .action((options) => {
+    try {
+      const decimals = Number.parseInt(options.decimals, 10);
+      const distribution = splitRewardPool({
+        totalRewards: options.total,
+        operatorStake: options.stake,
+        totalStake: options.totalStake,
+        operatorFloorBps: Number.parseInt(options.floorBps, 10),
+        validatorShareBps: Number.parseInt(options.validatorBps, 10),
+        treasuryShareBps: Number.parseInt(options.treasuryBps, 10),
+        decimals
+      });
+
+      console.log(chalk.bold('Thermodynamic reward distribution'));
+      console.table({
+        operatorFloor: formatTokenAmount(distribution.operator.floor, decimals),
+        operatorWeighted: formatTokenAmount(distribution.operator.weighted, decimals),
+        operatorTotal: formatTokenAmount(distribution.operator.total, decimals),
+        validator: formatTokenAmount(distribution.validator, decimals),
+        treasury: formatTokenAmount(distribution.treasury, decimals)
+      });
     } catch (error) {
       console.error(chalk.red(error.message));
       process.exitCode = 1;
