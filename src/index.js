@@ -9,6 +9,12 @@ import { buildStakeAndActivateTx, validateStakeThreshold } from './services/stak
 import { calculateRewardShare } from './services/rewards.js';
 import { optimizeReinvestmentStrategy, summarizeStrategy } from './services/economics.js';
 import { formatTokenAmount } from './utils/formatters.js';
+import {
+  AGIALPHA_TOKEN_CHECKSUM_ADDRESS,
+  AGIALPHA_TOKEN_DECIMALS,
+  normalizeTokenAddress
+} from './constants/token.js';
+import { buildTokenApproveTx, describeAgialphaToken, getTokenAllowance } from './services/token.js';
 import { runNodeDiagnostics, launchMonitoring } from './orchestrator/nodeRuntime.js';
 import {
   buildSystemPauseTx,
@@ -194,6 +200,104 @@ program
       console.log(`Operator share: ${formatTokenAmount(share, Number(options.decimals))}`);
     } catch (error) {
       console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
+  });
+
+const token = program.command('token').description('Canonical $AGIALPHA token authority console');
+
+token
+  .command('metadata')
+  .description('Display canonical token metadata and enforcement status')
+  .action(() => {
+    try {
+      const metadata = describeAgialphaToken();
+      console.log(chalk.bold(`${metadata.symbol} token specification`));
+      console.table({
+        symbol: metadata.symbol,
+        address: metadata.address,
+        decimals: metadata.decimals,
+        canonical: metadata.canonical
+      });
+    } catch (error) {
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
+  });
+
+token
+  .command('approve')
+  .description('Encode an ERC-20 approve transaction for staking allowances')
+  .requiredOption('-s, --spender <address>', 'Spender contract address (e.g. StakeManager)')
+  .requiredOption('-a, --amount <amount>', 'Allowance amount in tokens or "max" for MaxUint256')
+  .option('-t, --token <address>', 'Token contract address (defaults to canonical $AGIALPHA)')
+  .option('-d, --decimals <decimals>', 'Token decimals', String(AGIALPHA_TOKEN_DECIMALS))
+  .action((options) => {
+    try {
+      const decimals = Number.parseInt(options.decimals, 10);
+      if (!Number.isFinite(decimals)) {
+        throw new Error('decimals must be numeric');
+      }
+      const tokenAddress = options.token ?? AGIALPHA_TOKEN_CHECKSUM_ADDRESS;
+      const tx = buildTokenApproveTx({
+        spender: options.spender,
+        amount: options.amount,
+        tokenAddress,
+        decimals
+      });
+      console.log('Approve transaction payload');
+      console.table({
+        token: tx.token,
+        spender: tx.spender,
+        amount: tx.amount.toString(),
+        data: tx.data
+      });
+    } catch (error) {
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
+  });
+
+token
+  .command('allowance')
+  .description('Read current ERC-20 allowance for an owner/spender pair')
+  .requiredOption('-o, --owner <address>', 'Owner address that granted the allowance')
+  .requiredOption('-s, --spender <address>', 'Spender contract address (e.g. StakeManager)')
+  .option('--rpc <url>', 'RPC endpoint URL (defaults to config)')
+  .option('-t, --token <address>', 'Token contract address (defaults to canonical $AGIALPHA)')
+  .option('-d, --decimals <decimals>', 'Token decimals', String(AGIALPHA_TOKEN_DECIMALS))
+  .action(async (options) => {
+    const logger = pino({ level: 'info', name: 'token-allowance' });
+    try {
+      const overrides = { RPC_URL: options.rpc };
+      if (options.token) {
+        overrides.AGIALPHA_TOKEN_ADDRESS = options.token;
+      }
+      const config = loadConfig(overrides);
+      const decimals = Number.parseInt(options.decimals ?? config.AGIALPHA_TOKEN_DECIMALS, 10);
+      if (!Number.isFinite(decimals)) {
+        throw new Error('decimals must be numeric');
+      }
+      const provider = createProvider(config.RPC_URL);
+      const ownerAddress = normalizeTokenAddress(options.owner);
+      const spenderAddress = normalizeTokenAddress(options.spender);
+      const allowance = await getTokenAllowance({
+        provider,
+        owner: ownerAddress,
+        spender: spenderAddress,
+        tokenAddress: config.AGIALPHA_TOKEN_ADDRESS
+      });
+      const normalizedToken = normalizeTokenAddress(config.AGIALPHA_TOKEN_ADDRESS);
+      console.log(chalk.bold('Current allowance state'));
+      console.table({
+        token: normalizedToken,
+        owner: ownerAddress,
+        spender: spenderAddress,
+        allowance: allowance.toString(),
+        formatted: formatTokenAmount(allowance, decimals)
+      });
+    } catch (error) {
+      logger.error(error, 'Failed to read token allowance');
       process.exitCode = 1;
     }
   });

@@ -235,7 +235,7 @@ mindmap
 | 4 | Execute the sovereign CLI to notarize ENS control before mainnet activation; the verifier rejects any parent domain outside `alpha.node.agi.eth`/`node.agi.eth` and surfaces registry, wrapper, and resolver custody. | `node src/index.js verify-ens --label <name> --address <0x...> --rpc https://rpc.ankr.com/eth` |
 | 5 | Secure ENS identity under `alpha.node.agi.eth`; configure resolver/wrapper ownership for the operator wallet (the CLI cross-checks against canonical namehashes baked into the runtime). | [ENS Manager](https://app.ens.domains/name/alpha.node.agi.eth) |
 | 6 | Stage custody – multisig or HSM primary with delegate hot key registered via `IdentityRegistry.setAdditionalNodeOperator`. | On-chain owner transaction |
-| 7 | Pre-fund the operator wallet with `$AGIALPHA` plus gas reserve and approve Stake Manager allowances. | Token address `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` |
+| 7 | Pre-fund the operator wallet with `$AGIALPHA` plus gas reserve; notarize allowances with the token console to authorize the Stake Manager. | `node src/index.js token approve --spender 0x<StakeManager> --amount MAX` |
 | 8 | Deploy runtime via container, Kubernetes, or enclave per infrastructure policy (see [Sovereign Runtime CLI](#sovereign-runtime-cli)). | Review [Sovereign Architecture](#sovereign-architecture) |
 | 9 | Activate staking and registration with `PlatformIncentives.stakeAndActivate(amount)` (or `_acknowledgeStakeAndActivate`). | On-chain owner/operator transaction |
 | 10 | Enforce branch protection on GitHub: require **Continuous Integration**, reviewer approvals, and up-to-date branches for `main`. Export the rule JSON for your evidence vault. | GitHub → Settings → Branches → `main` → **View rule** → **Export** |
@@ -266,12 +266,40 @@ flowchart LR
 | `node src/index.js status` | Runs end-to-end diagnostics (ENS, stake thresholds, reward projection) and can expose Prometheus metrics. | `node src/index.js status --label 1 --address 0xYourKey --stake-manager 0x... --incentives 0x... --metrics-port 9464` |
 | `node src/index.js stake-tx` | Builds deterministic calldata for `PlatformIncentives.stakeAndActivate` so offline signers can review before broadcast. | `node src/index.js stake-tx --amount 1500 --incentives 0x...` |
 | `node src/index.js reward-share` | Calculates operator share from any reward pool using basis points. | `node src/index.js reward-share --total 5000 --bps 1500` |
+| `node src/index.js token metadata` | Prints the canonical `$AGIALPHA` contract (checksum, decimals) and confirms enforcement posture for auditors. | `node src/index.js token metadata` |
+| `node src/index.js token approve` | Encodes ERC-20 allowance payloads (including `MAX`) so hot wallets and offline signers can authorize the Stake Manager deterministically. | `node src/index.js token approve --spender 0xStakeManager --amount MAX` |
+| `node src/index.js token allowance` | Queries live allowances via RPC, rendering raw bigint and human units to keep custody ledgers reconciled. | `node src/index.js token allowance --owner 0xOperator --spender 0xStakeManager --rpc https://rpc.ankr.com/eth` |
 | `node src/index.js label-hash` | Prints the canonical `⟨label⟩.alpha.node.agi.eth` node name to notarize evidence vault records. | `node src/index.js label-hash --label 1` |
 | `node src/index.js governance pause` | Produces owner-signed payloads for `SystemPause.pauseAll()`/`resumeAll()` to freeze or resume the network instantly. | `node src/index.js governance pause --contract 0x... --action pause` |
 | `node src/index.js governance set-min-stake` | Encodes `StakeManager.setMinimumStake` transactions to raise or lower entry thresholds. | `node src/index.js governance set-min-stake --stake-manager 0x... --amount 2500` |
 | `node src/index.js governance set-role-share` | Generates `RewardEngine.setRoleShare` calldata for precision tuning of emissions. | `node src/index.js governance set-role-share --reward-engine 0x... --role node --bps 1500` |
 | `node src/index.js governance set-global-shares` | Creates deterministic payload for `RewardEngine.setGlobalShares` enforcing the 10,000 bps covenant. | `node src/index.js governance set-global-shares --reward-engine 0x... --operator-bps 1500 --validator-bps 7000 --treasury-bps 1500` |
 | `npx agi-alpha-node ...` | Leverage the CLI via the binary entry point (`bin` field) once published to a private registry. | `npx agi-alpha-node status --label 1 --address 0x...` |
+
+### Token Authority Matrix
+
+| Surface | Purpose | Enforcement Signal |
+| ------- | ------- | ------------------ |
+| `AGIALPHA_TOKEN_ADDRESS` | Hard-locked to `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`; schema rejects overrides so production cannot drift from canonical liquidity corridors. | Config parsing halts with a canonicality error if the value deviates. |
+| `AGIALPHA_TOKEN_DECIMALS` | Fixed to `18`, matching the contract; deviations trip schema guards before runtime. | Config raises `$AGIALPHA uses fixed decimals 18` on violation. |
+| `token metadata` | Prints canonical coordinates and enforcement status for compliance ledgers. | Output surfaces checksum, decimals, canonical flag. |
+| `token approve` | Deterministically encodes allowances (`MAX` supported) so owners authorize Stake Manager or ancillaries with exact calldata. | CLI prints calldata + bigint amount; payload can be notarized pre-signature. |
+| `token allowance` | Queries on-chain allowances live, returning bigint and human-readable units for reconciliation. | CLI enforces canonical token and logs outputs for custody vault ingestion. |
+
+```mermaid
+flowchart LR
+  OwnerWallet[[Owner Wallet / Multisig]] -->|approve| AGIALPHA{$AGIALPHA Token}
+  AGIALPHA -->|allowance check| StakeManager
+  subgraph CLIConsole[Token Authority Console]
+    Meta[metadata]
+    Approve[approve]
+    Allowance[allowance]
+  end
+  Meta --> OwnerWallet
+  Approve --> OwnerWallet
+  Allowance --> StakeManager
+  StakeManager -->|reward streams| OwnerWallet
+```
 
 **Container Launch** — deterministic one-liner for institutional rollouts:
 
