@@ -178,6 +178,9 @@ function buildMethodCandidates(methodSpecs = [], context = {}) {
         method: spec.name,
         args: Array.isArray(args) ? args : []
       };
+      if (candidate.args.some((arg) => arg === undefined)) {
+        return null;
+      }
       if (spec.includeOverrides !== false && context.overrides !== undefined && context.overrides !== null) {
         candidate.overrides = context.overrides;
       }
