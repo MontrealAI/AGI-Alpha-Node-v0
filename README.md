@@ -169,10 +169,18 @@ stateDiagram-v2
   [*] --> Monitoring
   Monitoring --> Alerted : stake deficit / penalty
   Alerted --> Paused : owner issues pauseAll()
-  Paused --> Reconfiguring : setMinimumStake() / setRoleShare() / upgrade modules
+  Paused --> Reconfiguring : setMinimumStake() / incentives-* / setRoleShare() / upgrade modules
   Reconfiguring --> Resuming : resumeAll()
   Resuming --> Monitoring : governance ledger notarizes payload
 ```
+
+| CLI Directive | What it controls | Source |
+| ------------- | ---------------- | ------ |
+| `node src/index.js governance incentives-manager --incentives <addr> --stake-manager <addr>` | Swaps the `PlatformIncentives` contract dependencies to a new `StakeManager` without downtime. | [`src/index.js`](src/index.js), [`src/services/governance.js`](src/services/governance.js) |
+| `node src/index.js governance incentives-minimum --incentives <addr> --amount <decimal>` | Raises or lowers the on-chain minimum stake with 18-decimal precision before activation windows open. | [`src/index.js`](src/index.js), [`src/services/governance.js`](src/services/governance.js) |
+| `node src/index.js governance incentives-heartbeat --incentives <addr> --grace-seconds <sec>` | Tunes the heartbeat grace window to immediately slash or forgive dormant operators. | [`src/index.js`](src/index.js), [`src/services/governance.js`](src/services/governance.js) |
+| `node src/index.js governance incentives-activation-fee --incentives <addr> --fee <decimal>` | Reprices activation onboarding fees to rebalance incentives or enforce surge pricing. | [`src/index.js`](src/index.js), [`src/services/governance.js`](src/services/governance.js) |
+| `node src/index.js governance incentives-treasury --incentives <addr> --treasury <addr>` | Redirects treasury payouts to a new multisig or revenue router instantly. | [`src/index.js`](src/index.js), [`src/services/governance.js`](src/services/governance.js) |
 
 ### CI Signal Chain
 

@@ -24,6 +24,13 @@ const OWNER_ONLY_ABIS = {
   ],
   IdentityRegistry: [
     'function setAdditionalNodeOperator(address operator, bool allowed)'
+  ],
+  PlatformIncentives: [
+    'function setStakeManager(address newStakeManager)',
+    'function setMinimumStake(uint256 newMinimumStake)',
+    'function setHeartbeatGrace(uint256 newGraceSeconds)',
+    'function setActivationFee(uint256 newActivationFee)',
+    'function setTreasury(address newTreasury)'
   ]
 };
 
@@ -487,3 +494,180 @@ export function buildIdentityDelegateTx({ identityRegistryAddress, operatorAddre
 }
 
 export { resolveRoleIdentifier };
+
+export function buildIncentivesStakeManagerTx({
+  incentivesAddress,
+  stakeManagerAddress,
+  currentStakeManager = null
+}) {
+  if (!incentivesAddress) {
+    throw new Error('incentivesAddress is required');
+  }
+  if (!stakeManagerAddress) {
+    throw new Error('stakeManagerAddress is required');
+  }
+  const to = getAddress(incentivesAddress);
+  const stakeManager = getAddress(stakeManagerAddress);
+  const data = interfaces.PlatformIncentives.encodeFunctionData('setStakeManager', [stakeManager]);
+  const current = currentStakeManager
+    ? { stakeManager: getAddress(currentStakeManager) }
+    : null;
+  const proposed = { stakeManager };
+  return {
+    to,
+    data,
+    meta: createMetadata({
+      contract: 'PlatformIncentives',
+      method: 'setStakeManager',
+      to,
+      description: 'Reassign StakeManager contract for incentives orchestration',
+      args: { newStakeManager: stakeManager },
+      current,
+      proposed
+    })
+  };
+}
+
+export function buildIncentivesMinimumStakeTx({
+  incentivesAddress,
+  amount,
+  decimals = 18,
+  currentMinimum = null
+}) {
+  if (!incentivesAddress) {
+    throw new Error('incentivesAddress is required');
+  }
+  if (amount === undefined || amount === null) {
+    throw new Error('amount is required');
+  }
+  if (decimals !== 18) {
+    throw new Error('PlatformIncentives minimum stake must use 18 decimals');
+  }
+  const to = getAddress(incentivesAddress);
+  const parsedAmount = parseUnits(String(amount), decimals);
+  const data = interfaces.PlatformIncentives.encodeFunctionData('setMinimumStake', [parsedAmount]);
+  const current =
+    currentMinimum === null || currentMinimum === undefined
+      ? null
+      : { minimumStake: BigInt(currentMinimum) };
+  const proposed = { minimumStake: parsedAmount };
+  return {
+    to,
+    data,
+    amount: parsedAmount,
+    meta: createMetadata({
+      contract: 'PlatformIncentives',
+      method: 'setMinimumStake',
+      to,
+      description: 'Update PlatformIncentives minimum operator stake',
+      args: { newMinimumStake: parsedAmount.toString() },
+      current,
+      proposed
+    })
+  };
+}
+
+export function buildIncentivesHeartbeatTx({
+  incentivesAddress,
+  graceSeconds,
+  currentGraceSeconds = null
+}) {
+  if (!incentivesAddress) {
+    throw new Error('incentivesAddress is required');
+  }
+  if (graceSeconds === undefined || graceSeconds === null) {
+    throw new Error('graceSeconds is required');
+  }
+  const to = getAddress(incentivesAddress);
+  const parsedGrace = BigInt(graceSeconds);
+  if (parsedGrace < 0) {
+    throw new Error('graceSeconds must be non-negative');
+  }
+  const data = interfaces.PlatformIncentives.encodeFunctionData('setHeartbeatGrace', [parsedGrace]);
+  const current =
+    currentGraceSeconds === null || currentGraceSeconds === undefined
+      ? null
+      : { graceSeconds: BigInt(currentGraceSeconds) };
+  const proposed = { graceSeconds: parsedGrace };
+  return {
+    to,
+    data,
+    meta: createMetadata({
+      contract: 'PlatformIncentives',
+      method: 'setHeartbeatGrace',
+      to,
+      description: 'Adjust heartbeat grace window for operators',
+      args: { newGraceSeconds: parsedGrace.toString() },
+      current,
+      proposed
+    })
+  };
+}
+
+export function buildIncentivesActivationFeeTx({
+  incentivesAddress,
+  feeAmount,
+  decimals = 18,
+  currentFee = null
+}) {
+  if (!incentivesAddress) {
+    throw new Error('incentivesAddress is required');
+  }
+  if (feeAmount === undefined || feeAmount === null) {
+    throw new Error('feeAmount is required');
+  }
+  if (decimals !== 18) {
+    throw new Error('PlatformIncentives activation fee must use 18 decimals');
+  }
+  const to = getAddress(incentivesAddress);
+  const parsedFee = parseUnits(String(feeAmount), decimals);
+  const data = interfaces.PlatformIncentives.encodeFunctionData('setActivationFee', [parsedFee]);
+  const current =
+    currentFee === null || currentFee === undefined ? null : { activationFee: BigInt(currentFee) };
+  const proposed = { activationFee: parsedFee };
+  return {
+    to,
+    data,
+    fee: parsedFee,
+    meta: createMetadata({
+      contract: 'PlatformIncentives',
+      method: 'setActivationFee',
+      to,
+      description: 'Reprice activation fee for staking onboarding',
+      args: { newActivationFee: parsedFee.toString() },
+      current,
+      proposed
+    })
+  };
+}
+
+export function buildIncentivesTreasuryTx({
+  incentivesAddress,
+  treasuryAddress,
+  currentTreasury = null
+}) {
+  if (!incentivesAddress) {
+    throw new Error('incentivesAddress is required');
+  }
+  if (!treasuryAddress) {
+    throw new Error('treasuryAddress is required');
+  }
+  const to = getAddress(incentivesAddress);
+  const treasury = getAddress(treasuryAddress);
+  const data = interfaces.PlatformIncentives.encodeFunctionData('setTreasury', [treasury]);
+  const current = currentTreasury ? { treasury: getAddress(currentTreasury) } : null;
+  const proposed = { treasury };
+  return {
+    to,
+    data,
+    meta: createMetadata({
+      contract: 'PlatformIncentives',
+      method: 'setTreasury',
+      to,
+      description: 'Redirect treasury distribution address',
+      args: { newTreasury: treasury },
+      current,
+      proposed
+    })
+  };
+}

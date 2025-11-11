@@ -442,7 +442,7 @@ mindmap
 ### Reaction Playbook
 
 1. **Immediate Halt** — Trigger `SystemPause.pauseAll()` at the first sign of systemic risk; record tx hash with CI run IDs.
-2. **Parameter Shift** — Adjust emission splits via `RewardEngineMB.setRoleShare` or raise bonding thresholds; archive before/after snapshots.
+2. **Parameter Shift** — Adjust emission splits via `RewardEngine.setRoleShare` or raise bonding thresholds; use `node src/index.js governance incentives-minimum` / `incentives-heartbeat` to retune onboarding friction and heartbeat policy, then archive before/after snapshots.
 3. **Operator Rotation** — Rotate delegate keys with `IdentityRegistry.setAdditionalNodeOperator` while the primary multisig retains control.
 4. **Liquidity Realignment** — Invoke `StakeManager.withdrawStake` or `StakeManager.slash` to reposition capital or enforce penalties.
 5. **Resume Command** — Once telemetry is green and CI spotless, call `SystemPause.unpauseAll()` and notarize confirmation hashes.
