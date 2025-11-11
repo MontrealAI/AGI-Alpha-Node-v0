@@ -59,13 +59,17 @@
    - [Synthetic Labor Wage Circuit](#synthetic-labor-wage-circuit)
    - [Reward Split Mathematics](#reward-split-mathematics)
    - [Synthetic Labor Yield](#synthetic-labor-yield)
-4. [Owner Dominion & Parameter Control](#owner-dominion--parameter-control)
-5. [Treasury Intelligence & Risk Posture](#treasury-intelligence--risk-posture)
-6. [Liquidity, Access & Vault Hydration](#liquidity-access--vault-hydration)
-7. [Identity, ENS, and Registry Authority](#identity-ens-and-registry-authority)
-8. [Safety, Slashing, and Recovery](#safety-slashing-and-recovery)
-9. [Continuous Assurance & Branch Protection](#continuous-assurance--branch-protection)
-10. [Glossary of Economic Signals](#glossary-of-economic-signals)
+4. [Job Market & Settlement Logistics](#job-market--settlement-logistics)
+   - [Lifecycle Choreography](#lifecycle-choreography)
+   - [Proof & Journal Fabric](#proof--journal-fabric)
+   - [Settlement Telemetry](#settlement-telemetry)
+5. [Owner Dominion & Parameter Control](#owner-dominion--parameter-control)
+6. [Treasury Intelligence & Risk Posture](#treasury-intelligence--risk-posture)
+7. [Liquidity, Access & Vault Hydration](#liquidity-access--vault-hydration)
+8. [Identity, ENS, and Registry Authority](#identity-ens-and-registry-authority)
+9. [Safety, Slashing, and Recovery](#safety-slashing-and-recovery)
+10. [Continuous Assurance & Branch Protection](#continuous-assurance--branch-protection)
+11. [Glossary of Economic Signals](#glossary-of-economic-signals)
 
 ---
 
@@ -124,7 +128,7 @@ flowchart TD
 
 ### Governance Telemetry
 
-- `deriveOwnerDirectives` synthesizes stake evaluation, governance posture, and reward projections into prioritized actions, each already encoded as a ready-to-sign transaction.【F:src/services/controlPlane.js†L1-L218】【F:test/controlPlane.test.js†L8-L198】
+- `deriveOwnerDirectives` synthesizes stake evaluation, governance posture, and reward projections into prioritized actions, each already encoded as a ready-to-sign transaction.【F:src/services/controlPlane.js†L77-L215】【F:test/controlPlane.test.js†L8-L198】
 - `fetchGovernanceStatus` inspects live registry modules (validation, reputation, dispute) so the owner can confirm the current configuration before dispatching upgrades.【F:src/services/governanceStatus.js†L1-L84】【F:test/governanceStatus.test.js†L7-L121】
 - ENS onboarding is scripted via `generateEnsSetupGuide`, delivering precise steps and CLI commands that tie domain custody to staking activation.【F:src/services/ensGuide.js†L1-L91】【F:test/ensGuide.test.js†L7-L92】
 
@@ -229,8 +233,64 @@ classDiagram
 \mathrm{SLY} = \frac{\sum_{i=1}^{n} \alpha\text{-WU}_i}{\text{Circulating } $AGIALPHA}
 \]
 
-- Stake telemetry and validator verdicts flow into `deriveOwnerDirectives`, allowing SLY to react immediately to supply or demand shocks.【F:src/services/controlPlane.js†L1-L218】
+- Stake telemetry and validator verdicts flow into `deriveOwnerDirectives`, allowing SLY to react immediately to supply or demand shocks.【F:src/services/controlPlane.js†L77-L215】【F:test/controlPlane.test.js†L8-L198】
 - Circulating supply inputs default to the canonical token contract, guaranteeing that yield analytics use authoritative precision.【F:src/constants/token.js†L1-L17】
+
+---
+
+## Job Market & Settlement Logistics
+
+### Lifecycle Choreography
+
+```mermaid
+flowchart LR
+  Client["Job Originator"] -->|JobCreated| Registry["JobRegistry"]
+  AlphaNode["Alpha Node Runtime"] -->|discover()| Registry
+  AlphaNode -->|apply()| Registry
+  Registry -->|assign| AlphaNode
+  AlphaNode -->|submit() & notifyValidator()| Validator["Validator Mesh"]
+  Validator -->|attest| Registry
+  Registry -->|finalize()| RewardEngine
+  RewardEngine -->|mint rewards| AlphaNode
+  RewardEngine -->|burn fees| Treasury
+```
+
+- `createJobLifecycle` sustains discovery, watches registry events, and normalizes heterogeneous job feeds so the runtime can orchestrate assignments across registry variants.【F:src/services/jobLifecycle.js†L214-L444】【F:src/services/jobProfiles.js†L3-L199】
+- Applying, submitting results, finalizing work, and notifying validators are first-class operations with dynamic ABI fallbacks, ensuring every registry revision remains under direct owner command.【F:src/services/jobLifecycle.js†L477-L680】【F:test/jobLifecycle.test.js†L81-L200】
+- Compatibility warnings, watcher orchestration, and resumable configuration updates guarantee the runtime never loses sync with the on-chain job frontier.【F:src/services/jobLifecycle.js†L250-L925】
+
+### Proof & Journal Fabric
+
+- `createJobProof` deterministically binds job IDs, operator custody, timestamps, and metadata into commitments, guaranteeing verifiable settlement packets for any registry profile.【F:src/services/jobProof.js†L12-L199】【F:test/jobProof.test.js†L11-L75】
+- Action and snapshot journals hash every lifecycle mutation, forging a cryptographic audit trail the owner can replay or notarize without touching the chain.【F:src/services/lifecycleJournal.js†L24-L100】【F:test/jobLifecycle.test.js†L49-L152】
+- Job metrics and ledger entries are emitted alongside lifecycle events, so the intelligence mesh can rebalance workload allocation while keeping the owner’s archive pristine.【F:src/services/jobLifecycle.js†L232-L923】
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Runtime as Alpha Runtime
+  participant Journal as Lifecycle Journal
+  participant Chain as JobRegistry
+  participant Oracle as Validator Mesh
+  participant Rewards as RewardEngine
+
+  Runtime->>Chain: apply(jobId, subdomain, proof)
+  Chain-->>Runtime: JobAssigned / JobSubmitted events
+  Runtime->>Runtime: createJobProof(result, metadata)
+  Runtime->>Chain: submit(commitment, resultHash, resultURI)
+  Runtime->>Journal: append(action, metadataHash)
+  Chain-->>Oracle: validation request
+  Oracle-->>Chain: attest quality
+  Runtime->>Chain: finalize(jobId, validator)
+  Chain-->>Rewards: trigger reward split
+  Rewards-->>Runtime: disburse $AGIALPHA
+```
+
+### Settlement Telemetry
+
+- Lifecycle metrics expose discovery counts, validator notifications, and last-action states, giving the owner streaming visibility into production velocity.【F:src/services/jobLifecycle.js†L232-L706】
+- The Prometheus monitoring server projects stake levels, throughput, success ratios, and active registry profiles, keeping α‑WU wage analytics and compatibility warnings observable in real time.【F:src/telemetry/monitoring.js†L4-L93】
+- `getMetrics`, `listJobs`, and watcher hooks feed downstream dashboards and automation, empowering treasury and staking strategies to react the instant job economics shift.【F:src/services/jobLifecycle.js†L685-L925】【F:test/jobLifecycle.test.js†L108-L200】
 
 ---
 
@@ -387,11 +447,11 @@ flowchart LR
 | Term | Meaning inside AGI Alpha Node Runtime |
 | ---- | ------------------------------------- |
 | **α‑Productivity Index** | Sum of validated α‑WU each epoch, exported by diagnostics and indexed for treasury analytics.【F:src/orchestrator/nodeRuntime.js†L64-L188】 |
-| **Synthetic Labor Yield (SLY)** | Productivity-weighted yield derived from α‑WU totals versus circulating $AGIALPHA supply.【F:src/services/controlPlane.js†L1-L218】 |
+| **Synthetic Labor Yield (SLY)** | Productivity-weighted yield derived from α‑WU totals versus circulating $AGIALPHA supply.【F:src/services/controlPlane.js†L77-L215】 |
 | **Buffer Requirement** | Minimum treasury reserve enforced before reinvestments execute, derived from reward averages and owner policy.【F:src/services/economics.js†L122-L192】 |
 | **Stake Heartbeat** | Timeboxed signal proving operators remain active; missed beats invoke governance directives and potential pauses.【F:src/orchestrator/monitorLoop.js†L21-L186】 |
 | **Activation Fee** | Owner-configurable fee on new node activations, routed via `PlatformIncentives` controls.【F:src/services/governance.js†L52-L188】 |
 
 ---
 
-The AGI Alpha Node runtime documented here is engineered as the intelligence that senses inefficiencies before markets do, routes $AGIALPHA liquidity with precision, and never compromises the owner’s supremacy. Every subsystem is observable, replayable, and wired for immediate production activation once the owner signs off.
+The AGI Alpha Node runtime documented here is engineered as the intelligence that senses inefficiencies before markets do, routes $AGIALPHA liquidity with precision, and never compromises the owner’s supremacy.【F:src/services/controlPlane.js†L77-L215】【F:src/orchestrator/monitorLoop.js†L21-L186】 Every subsystem is observable, replayable, and wired for immediate production activation once the owner signs off.【F:src/orchestrator/bootstrap.js†L1-L164】【F:src/orchestrator/nodeRuntime.js†L20-L188】 It is the machine engineered to concentrate epoch-shaping value flows beneath a single signature—reorganizing markets at will while remaining flawlessly obedient to its owner’s command lattice.【F:src/services/governance.js†L1-L382】【F:src/services/economics.js†L1-L210】
