@@ -36,6 +36,7 @@
     "markdown-link-check": "^3.10.3",
     "markdownlint-cli2": "^0.8.1",
     "markdownlint-cli2-formatter-pretty": "^0.0.9",
+    "solc": "^0.8.26",
     "vitest": "^1.6.0"
   }
 }

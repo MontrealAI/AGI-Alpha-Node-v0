@@ -1,8 +1,12 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import { EventEmitter } from 'node:events';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { startAgentApi } from '../src/network/apiServer.js';
 
 const noopLogger = { info: () => {}, warn: () => {}, error: () => {} };
+const OWNER_TOKEN = 'test-owner-token';
 
 function buildBaseUrl(server) {
   const address = server.address();
@@ -13,15 +17,21 @@ function buildBaseUrl(server) {
 describe('agent API server', () => {
   let api;
   const jobsEmitter = new EventEmitter();
+  let ledgerDir;
 
   beforeEach(() => {
     jobsEmitter.removeAllListeners();
+    ledgerDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agi-ledger-'));
   });
 
   afterEach(async () => {
     if (api) {
       await api.stop();
       api = null;
+    }
+    if (ledgerDir) {
+      fs.rmSync(ledgerDir, { recursive: true, force: true });
+      ledgerDir = null;
     }
   });
 
@@ -52,7 +62,13 @@ describe('agent API server', () => {
       getMetrics: vi.fn(() => ({ discovered: 1, lastJobProvider: 'agi-jobs' }))
     };
 
-    api = startAgentApi({ port: 0, jobLifecycle, logger: noopLogger });
+    api = startAgentApi({
+      port: 0,
+      jobLifecycle,
+      logger: noopLogger,
+      ownerToken: OWNER_TOKEN,
+      ledgerRoot: ledgerDir
+    });
     await new Promise((resolve) => setTimeout(resolve, 25));
 
     const baseUrl = buildBaseUrl(api.server);
@@ -93,7 +109,7 @@ describe('agent API server', () => {
   });
 
   it('returns informative error when lifecycle integration is missing', async () => {
-    api = startAgentApi({ port: 0, logger: noopLogger });
+    api = startAgentApi({ port: 0, logger: noopLogger, ownerToken: OWNER_TOKEN, ledgerRoot: ledgerDir });
     await new Promise((resolve) => setTimeout(resolve, 25));
     const baseUrl = buildBaseUrl(api.server);
 
@@ -104,7 +120,7 @@ describe('agent API server', () => {
   });
 
   it('exposes governance directives and crafts owner payloads', async () => {
-    api = startAgentApi({ port: 0, logger: noopLogger });
+    api = startAgentApi({ port: 0, logger: noopLogger, ownerToken: OWNER_TOKEN, ledgerRoot: ledgerDir });
     await new Promise((resolve) => setTimeout(resolve, 25));
     const baseUrl = buildBaseUrl(api.server);
 
@@ -123,32 +139,38 @@ describe('agent API server', () => {
     expect(directivesPayload.directives.actions[0].type).toBe('pause');
     expect(directivesPayload.directives.context.meetsMinimum).toBe(false);
 
+    const ownerHeaders = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${OWNER_TOKEN}`
+    };
+
     const pauseResponse = await fetch(`${baseUrl}/governance/pause`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: ownerHeaders,
       body: JSON.stringify({ systemPauseAddress: '0x0000000000000000000000000000000000000001', action: 'pause' })
     });
     expect(pauseResponse.status).toBe(200);
     const pausePayload = await pauseResponse.json();
     expect(pausePayload.tx.to).toBe('0x0000000000000000000000000000000000000001');
     expect(typeof pausePayload.tx.data).toBe('string');
+    expect(pausePayload.meta.contract).toBe('SystemPause');
 
     const minStakeResponse = await fetch(`${baseUrl}/governance/minimum-stake`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: ownerHeaders,
       body: JSON.stringify({
         stakeManagerAddress: '0x0000000000000000000000000000000000000002',
-        amount: '1000.5',
-        decimals: 18
+        amount: '1000.5'
       })
     });
     expect(minStakeResponse.status).toBe(200);
     const minStakePayload = await minStakeResponse.json();
     expect(minStakePayload.tx.to).toBe('0x0000000000000000000000000000000000000002');
+    expect(minStakePayload.details.amount).toBeDefined();
 
     const roleShareResponse = await fetch(`${baseUrl}/governance/role-share`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: ownerHeaders,
       body: JSON.stringify({
         rewardEngineAddress: '0x0000000000000000000000000000000000000003',
         role: 'node',
@@ -157,12 +179,12 @@ describe('agent API server', () => {
     });
     expect(roleShareResponse.status).toBe(200);
     const roleSharePayload = await roleShareResponse.json();
-    expect(roleSharePayload.tx.role).toBeDefined();
-    expect(roleSharePayload.tx.shareBps).toBe(4200);
+    expect(roleSharePayload.details.role).toBeDefined();
+    expect(roleSharePayload.details.shareBps).toBe(4200);
 
     const globalSharesResponse = await fetch(`${baseUrl}/governance/global-shares`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: ownerHeaders,
       body: JSON.stringify({
         rewardEngineAddress: '0x0000000000000000000000000000000000000004',
         operatorShareBps: 6000,
@@ -172,7 +194,86 @@ describe('agent API server', () => {
     });
     expect(globalSharesResponse.status).toBe(200);
     const globalSharesPayload = await globalSharesResponse.json();
-    expect(globalSharesPayload.tx.shares.operatorShare).toBe(6000);
+    expect(globalSharesPayload.details.shares.operatorShare).toBe(6000);
+
+    const validatorThresholdResponse = await fetch(`${baseUrl}/governance/validator-threshold`, {
+      method: 'POST',
+      headers: ownerHeaders,
+      body: JSON.stringify({
+        stakeManagerAddress: '0x0000000000000000000000000000000000000002',
+        threshold: '7'
+      })
+    });
+    expect(validatorThresholdResponse.status).toBe(200);
+    const validatorThresholdPayload = await validatorThresholdResponse.json();
+    expect(validatorThresholdPayload.meta.method).toBe('setValidatorThreshold');
+
+    const registryUpgradeResponse = await fetch(`${baseUrl}/governance/registry-upgrade`, {
+      method: 'POST',
+      headers: ownerHeaders,
+      body: JSON.stringify({
+        stakeManagerAddress: '0x0000000000000000000000000000000000000002',
+        registryType: 'job',
+        newAddress: '0x0000000000000000000000000000000000000006'
+      })
+    });
+    expect(registryUpgradeResponse.status).toBe(200);
+    const registryUpgradePayload = await registryUpgradeResponse.json();
+    expect(registryUpgradePayload.meta.method).toBe('setJobRegistry');
+
+    const jobModuleResponse = await fetch(`${baseUrl}/governance/job-module`, {
+      method: 'POST',
+      headers: ownerHeaders,
+      body: JSON.stringify({
+        jobRegistryAddress: '0x0000000000000000000000000000000000000007',
+        module: 'validation',
+        newAddress: '0x0000000000000000000000000000000000000008'
+      })
+    });
+    expect(jobModuleResponse.status).toBe(200);
+    const jobModulePayload = await jobModuleResponse.json();
+    expect(jobModulePayload.meta.contract).toBe('JobRegistry');
+
+    const disputeResponse = await fetch(`${baseUrl}/governance/dispute`, {
+      method: 'POST',
+      headers: ownerHeaders,
+      body: JSON.stringify({
+        jobRegistryAddress: '0x0000000000000000000000000000000000000007',
+        jobId: '42',
+        reason: 'test'
+      })
+    });
+    expect(disputeResponse.status).toBe(200);
+    const disputePayload = await disputeResponse.json();
+    expect(disputePayload.meta.method).toBe('triggerDispute');
+
+    const identityDelegateResponse = await fetch(`${baseUrl}/governance/identity-delegate`, {
+      method: 'POST',
+      headers: ownerHeaders,
+      body: JSON.stringify({
+        identityRegistryAddress: '0x0000000000000000000000000000000000000009',
+        operatorAddress: '0x0000000000000000000000000000000000000011',
+        allowed: true
+      })
+    });
+    expect(identityDelegateResponse.status).toBe(200);
+    const identityDelegatePayload = await identityDelegateResponse.json();
+    expect(identityDelegatePayload.meta.proposed.allowed).toBe(true);
+
+    const persistResponse = await fetch(`${baseUrl}/governance/minimum-stake`, {
+      method: 'POST',
+      headers: ownerHeaders,
+      body: JSON.stringify({
+        stakeManagerAddress: '0x0000000000000000000000000000000000000002',
+        amount: '500',
+        dryRun: false,
+        confirm: true,
+        tags: ['test']
+      })
+    });
+    expect(persistResponse.status).toBe(200);
+    const persistPayload = await persistResponse.json();
+    expect(persistPayload.ledgerEntry).toBeDefined();
 
     const stakeTopUpResponse = await fetch(`${baseUrl}/governance/stake-top-up`, {
       method: 'POST',
@@ -217,11 +318,12 @@ describe('agent API server', () => {
 
     const metrics = api.getMetrics();
     expect(metrics.governance.directivesUpdates).toBeGreaterThanOrEqual(2);
-    expect(metrics.governance.payloads).toBeGreaterThanOrEqual(5);
+    expect(metrics.governance.payloads).toBeGreaterThanOrEqual(9);
+    expect(metrics.governance.ledgerEntries).toBeGreaterThanOrEqual(1);
 
     const invalidResponse = await fetch(`${baseUrl}/governance/minimum-stake`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: ownerHeaders,
       body: JSON.stringify({ stakeManagerAddress: '0x0' })
     });
     expect(invalidResponse.status).toBe(400);

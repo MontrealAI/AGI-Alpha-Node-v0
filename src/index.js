@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import { Command } from 'commander';
 import chalk from 'chalk';
 import pino from 'pino';
+import { getAddress, parseUnits } from 'ethers';
 import { loadConfig } from './config/env.js';
 import { createProvider, createWallet } from './services/provider.js';
 import { verifyNodeOwnership, buildNodeNameFromLabel } from './services/ensVerifier.js';
@@ -23,9 +24,16 @@ import { bootstrapContainer } from './orchestrator/bootstrap.js';
 import {
   buildSystemPauseTx,
   buildMinimumStakeTx,
+  buildValidatorThresholdTx,
+  buildStakeRegistryUpgradeTx,
   buildRoleShareTx,
-  buildGlobalSharesTx
+  buildGlobalSharesTx,
+  buildJobRegistryUpgradeTx,
+  buildDisputeTriggerTx,
+  buildIdentityDelegateTx,
+  getOwnerFunctionCatalog
 } from './services/governance.js';
+import { recordGovernanceAction } from './services/governanceLedger.js';
 import { generateEnsSetupGuide, formatEnsGuide } from './services/ensGuide.js';
 import { planJobExecution, describeStrategyComparison, DEFAULT_STRATEGIES } from './intelligence/planning.js';
 import { orchestrateSwarm } from './intelligence/swarmOrchestrator.js';
@@ -229,6 +237,147 @@ function parseJsonMaybe(value) {
   } catch {
     return trimmed;
   }
+}
+
+function parseLedgerTagsOption(input) {
+  if (!input) {
+    return [];
+  }
+  return input
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter((tag) => tag.length > 0);
+}
+
+function checksumAddressOrUndefined(value, label) {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  try {
+    return getAddress(value);
+  } catch (error) {
+    throw new Error(`${label ?? 'address'} must be a valid checksum address: ${error.message}`);
+  }
+}
+
+function parseDecimalToWei(amount, label) {
+  if (amount === undefined || amount === null) {
+    return null;
+  }
+  const stringified = typeof amount === 'string' ? amount.trim() : String(amount);
+  if (!stringified) {
+    return null;
+  }
+  try {
+    return parseUnits(stringified, 18);
+  } catch (error) {
+    throw new Error(`${label ?? 'amount'} must be a numeric value with up to 18 decimals`);
+  }
+}
+
+function parseIntegerOption(value, label) {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  const parsed = Number.parseInt(String(value).trim(), 10);
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`${label ?? 'value'} must be an integer`);
+  }
+  return parsed;
+}
+
+function parseBooleanOption(value, label) {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  const normalized = String(value).trim().toLowerCase();
+  if (['true', '1', 'yes', 'on'].includes(normalized)) {
+    return true;
+  }
+  if (['false', '0', 'no', 'off'].includes(normalized)) {
+    return false;
+  }
+  throw new Error(`${label ?? 'value'} must be a boolean-like flag`);
+}
+
+function parseBigIntOption(value, label) {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  const normalized = String(value).trim();
+  if (!normalized) {
+    return undefined;
+  }
+  if (!/^-?\d+$/.test(normalized)) {
+    throw new Error(`${label ?? 'value'} must be an integer`);
+  }
+  try {
+    return BigInt(normalized);
+  } catch (error) {
+    throw new Error(`${label ?? 'value'} must be an integer: ${error.message}`);
+  }
+}
+
+function printGovernanceMeta(meta) {
+  console.log(chalk.bold(meta.description));
+  console.table({
+    contract: meta.contract,
+    method: meta.method,
+    to: meta.to,
+    signature: meta.signature
+  });
+  if (meta.args && Object.keys(meta.args).length > 0) {
+    console.log(chalk.gray('Arguments'));
+    console.table(meta.args);
+  }
+  if (meta.diff && meta.diff.length > 0) {
+    console.log(chalk.gray('Proposed diff'));
+    console.table(
+      meta.diff.map((entry) => ({
+        field: entry.field,
+        before: entry.before ?? '-',
+        after: entry.after ?? '-'
+      }))
+    );
+  } else {
+    console.log(chalk.gray('No diff detected from provided context'));
+  }
+}
+
+function emitGovernanceResult(tx, options) {
+  printGovernanceMeta(tx.meta);
+  console.log(chalk.gray(`calldata: ${tx.data}`));
+  const tags = parseLedgerTagsOption(options.tags);
+  if (!options.execute) {
+    console.log(chalk.yellow('Dry-run only. Use --execute --confirm to persist a ledger entry.'));
+    return;
+  }
+  if (!options.confirm) {
+    throw new Error('Owner confirmation required: pass --confirm along with --execute to persist the payload');
+  }
+  const operator = options.operator ? checksumAddressOrUndefined(options.operator, 'operator') : null;
+  const ledgerResult = recordGovernanceAction({
+    payload: { to: tx.to, data: tx.data },
+    meta: tx.meta,
+    signature: options.signature ?? null,
+    operator,
+    tags,
+    rootDir: options.ledgerRoot ? options.ledgerRoot : process.cwd()
+  });
+  console.log(chalk.green(`Ledger entry recorded at ${ledgerResult.filePath}`));
+}
+
+function addCommonGovernanceOptions(command) {
+  return command
+    .option('--execute', 'Persist the payload into the governance ledger')
+    .option('--confirm', 'Owner acknowledgement required with --execute')
+    .option('--signature <hex>', 'Signature captured with the ledger entry')
+    .option('--operator <address>', 'Operator/owner address recorded alongside the payload')
+    .option('--tags <tags>', 'Comma-separated ledger tags for classification')
+    .option('--ledger-root <path>', 'Custom ledger root for persisted payloads');
 }
 
 function loadFileContents(filePath) {
@@ -1350,91 +1499,261 @@ program
 const governance = program.command('governance').description('Owner supremacy governance utilities');
 
 governance
-  .command('pause')
-  .description('Build pause or resume transaction payload for the SystemPause contract')
-  .requiredOption('-c, --contract <address>', 'SystemPause contract address')
-  .option('-a, --action <action>', 'pause | resume | unpause', 'pause')
-  .action((options) => {
-    try {
-      const tx = buildSystemPauseTx({ systemPauseAddress: options.contract, action: options.action });
-      console.log('SystemPause transaction payload');
-      console.table({ to: tx.to, method: tx.method, data: tx.data });
-    } catch (error) {
-      console.error(chalk.red(error.message));
-      process.exitCode = 1;
+  .command('catalog')
+  .description('List owner-only contract functions mapped to builders')
+  .action(() => {
+    const catalog = getOwnerFunctionCatalog();
+    for (const [contract, entries] of Object.entries(catalog)) {
+      console.log(chalk.bold(contract));
+      console.table(entries.map((entry) => ({ signature: entry.signature })));
     }
   });
 
-governance
-  .command('set-min-stake')
-  .description('Encode a setMinimumStake call for the StakeManager')
-  .requiredOption('-s, --stake-manager <address>', 'StakeManager contract address')
-  .requiredOption('-m, --amount <amount>', 'Minimum stake amount (decimal)')
-  .option('-d, --decimals <decimals>', 'Token decimals', '18')
-  .action((options) => {
-    try {
-      const tx = buildMinimumStakeTx({
-        stakeManagerAddress: options.stakeManager,
-        amount: options.amount,
-        decimals: Number.parseInt(options.decimals, 10)
-      });
-      console.log('StakeManager setMinimumStake payload');
-      console.table({ to: tx.to, data: tx.data, amount: tx.amount.toString() });
-    } catch (error) {
-      console.error(chalk.red(error.message));
-      process.exitCode = 1;
-    }
-  });
+addCommonGovernanceOptions(
+  governance
+    .command('system-pause')
+    .description('Encode pause/resume directives for the SystemPause contract')
+    .requiredOption('--system-pause <address>', 'SystemPause contract address')
+    .option('--action <action>', 'Action to perform (pause, resume, unpause)', 'pause')
+).action((options) => {
+  try {
+    const tx = buildSystemPauseTx({
+      systemPauseAddress: options.systemPause,
+      action: options.action
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
 
-governance
-  .command('set-role-share')
-  .description('Encode setRoleShare for the RewardEngine contract')
-  .requiredOption('-r, --reward-engine <address>', 'RewardEngine contract address')
-  .requiredOption('-o, --role <role>', 'Role identifier or alias (e.g. node, validator, treasury)')
-  .requiredOption('-b, --bps <bps>', 'Share allocation in basis points')
-  .action((options) => {
-    try {
-      const tx = buildRoleShareTx({
-        rewardEngineAddress: options.rewardEngine,
-        role: options.role,
-        shareBps: Number.parseInt(options.bps, 10)
-      });
-      console.log('RewardEngine setRoleShare payload');
-      console.table({ to: tx.to, role: tx.role, shareBps: tx.shareBps, data: tx.data });
-    } catch (error) {
-      console.error(chalk.red(error.message));
-      process.exitCode = 1;
-    }
-  });
+addCommonGovernanceOptions(
+  governance
+    .command('minimum-stake')
+    .description('Update StakeManager minimum stake (18 decimal $AGIALPHA)')
+    .requiredOption('--stake-manager <address>', 'StakeManager contract address')
+    .requiredOption('--amount <amount>', 'New minimum stake in $AGIALPHA (decimal)')
+    .option('--current <amount>', 'Current minimum stake for diff (decimal)')
+).action((options) => {
+  try {
+    const current = parseDecimalToWei(options.current, 'current minimum stake');
+    const tx = buildMinimumStakeTx({
+      stakeManagerAddress: options.stakeManager,
+      amount: options.amount,
+      currentMinimum: current ?? undefined
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
 
-governance
-  .command('set-global-shares')
-  .description('Encode setGlobalShares for operator / validator / treasury splits')
-  .requiredOption('-r, --reward-engine <address>', 'RewardEngine contract address')
-  .requiredOption('--operator-bps <bps>', 'Operator share in basis points')
-  .requiredOption('--validator-bps <bps>', 'Validator share in basis points')
-  .requiredOption('--treasury-bps <bps>', 'Treasury share in basis points')
-  .action((options) => {
-    try {
-      const tx = buildGlobalSharesTx({
-        rewardEngineAddress: options.rewardEngine,
-        operatorShareBps: Number.parseInt(options.operatorBps, 10),
-        validatorShareBps: Number.parseInt(options.validatorBps, 10),
-        treasuryShareBps: Number.parseInt(options.treasuryBps, 10)
-      });
-      console.log('RewardEngine setGlobalShares payload');
-      console.table({
-        to: tx.to,
-        operatorShareBps: tx.shares.operatorShare,
-        validatorShareBps: tx.shares.validatorShare,
-        treasuryShareBps: tx.shares.treasuryShare,
-        data: tx.data
-      });
-    } catch (error) {
-      console.error(chalk.red(error.message));
-      process.exitCode = 1;
+addCommonGovernanceOptions(
+  governance
+    .command('validator-threshold')
+    .description('Adjust StakeManager validator quorum threshold')
+    .requiredOption('--stake-manager <address>', 'StakeManager contract address')
+    .requiredOption('--threshold <count>', 'New validator threshold (integer)')
+    .option('--current <count>', 'Current validator threshold for diff')
+).action((options) => {
+  try {
+    const threshold = parseBigIntOption(options.threshold, 'threshold');
+    if (threshold === undefined) {
+      throw new Error('threshold is required');
     }
-  });
+    if (threshold < 0n) {
+      throw new Error('threshold must be non-negative');
+    }
+    const current = parseBigIntOption(options.current, 'current threshold');
+    const tx = buildValidatorThresholdTx({
+      stakeManagerAddress: options.stakeManager,
+      threshold,
+      currentThreshold: current ?? null
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
+    .command('registry-upgrade')
+    .description('Reassign StakeManager registry dependencies')
+    .requiredOption('--stake-manager <address>', 'StakeManager contract address')
+    .requiredOption('--type <type>', 'Registry type (job | identity)')
+    .requiredOption('--address <address>', 'New registry contract address')
+    .option('--current <address>', 'Current registry address for diff')
+).action((options) => {
+  try {
+    const tx = buildStakeRegistryUpgradeTx({
+      stakeManagerAddress: options.stakeManager,
+      registryType: options.type,
+      newAddress: options.address,
+      currentAddress: options.current
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
+    .command('role-share')
+    .description('Adjust RewardEngine role share allocation')
+    .requiredOption('--reward-engine <address>', 'RewardEngine contract address')
+    .requiredOption('--role <role>', 'Role identifier or alias (e.g. node, validator, treasury)')
+    .requiredOption('--bps <bps>', 'Share allocation in basis points')
+    .option('--current-bps <bps>', 'Current share allocation for diff')
+).action((options) => {
+  try {
+    const shareBps = parseIntegerOption(options.bps, 'bps');
+    if (shareBps === undefined) {
+      throw new Error('bps is required');
+    }
+    const currentShare = parseIntegerOption(options.currentBps, 'current-bps');
+    const tx = buildRoleShareTx({
+      rewardEngineAddress: options.rewardEngine,
+      role: options.role,
+      shareBps,
+      currentShareBps: currentShare ?? null
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
+    .command('global-shares')
+    .description('Adjust RewardEngine global share split')
+    .requiredOption('--reward-engine <address>', 'RewardEngine contract address')
+    .requiredOption('--operator-bps <bps>', 'Operator share in basis points')
+    .requiredOption('--validator-bps <bps>', 'Validator share in basis points')
+    .requiredOption('--treasury-bps <bps>', 'Treasury share in basis points')
+    .option('--current-operator-bps <bps>', 'Current operator share for diff')
+    .option('--current-validator-bps <bps>', 'Current validator share for diff')
+    .option('--current-treasury-bps <bps>', 'Current treasury share for diff')
+).action((options) => {
+  try {
+    const operatorShare = parseIntegerOption(options.operatorBps, 'operator-bps');
+    const validatorShare = parseIntegerOption(options.validatorBps, 'validator-bps');
+    const treasuryShare = parseIntegerOption(options.treasuryBps, 'treasury-bps');
+    if (operatorShare === undefined || validatorShare === undefined || treasuryShare === undefined) {
+      throw new Error('operator-bps, validator-bps, and treasury-bps are required');
+    }
+    const currentShares = {};
+    let hasCurrent = false;
+    const currentOperator = parseIntegerOption(options.currentOperatorBps, 'current-operator-bps');
+    if (currentOperator !== undefined) {
+      currentShares.operatorShare = currentOperator;
+      hasCurrent = true;
+    }
+    const currentValidator = parseIntegerOption(options.currentValidatorBps, 'current-validator-bps');
+    if (currentValidator !== undefined) {
+      currentShares.validatorShare = currentValidator;
+      hasCurrent = true;
+    }
+    const currentTreasury = parseIntegerOption(options.currentTreasuryBps, 'current-treasury-bps');
+    if (currentTreasury !== undefined) {
+      currentShares.treasuryShare = currentTreasury;
+      hasCurrent = true;
+    }
+    const tx = buildGlobalSharesTx({
+      rewardEngineAddress: options.rewardEngine,
+      operatorShareBps: operatorShare,
+      validatorShareBps: validatorShare,
+      treasuryShareBps: treasuryShare,
+      currentShares: hasCurrent ? currentShares : null
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
+    .command('job-module')
+    .description('Upgrade JobRegistry modules (validation, reputation, dispute)')
+    .requiredOption('--job-registry <address>', 'JobRegistry contract address')
+    .requiredOption('--module <module>', 'Module name (validation | reputation | dispute)')
+    .requiredOption('--address <address>', 'New module contract address')
+    .option('--current <address>', 'Current module address for diff')
+).action((options) => {
+  try {
+    const tx = buildJobRegistryUpgradeTx({
+      jobRegistryAddress: options.jobRegistry,
+      module: options.module,
+      newAddress: options.address,
+      currentAddress: options.current
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
+    .command('dispute')
+    .description('Trigger JobRegistry dispute escalation for a job')
+    .requiredOption('--job-registry <address>', 'JobRegistry contract address')
+    .requiredOption('--job-id <id>', 'Job identifier (uint256)')
+    .option('--reason <text>', 'Dispute reason (hashed on-chain)')
+).action((options) => {
+  try {
+    const jobId = parseBigIntOption(options.jobId, 'job-id');
+    if (jobId === undefined) {
+      throw new Error('job-id is required');
+    }
+    const tx = buildDisputeTriggerTx({
+      jobRegistryAddress: options.jobRegistry,
+      jobId,
+      reason: options.reason
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
+    .command('identity-delegate')
+    .description('Authorize or revoke IdentityRegistry delegate operator access')
+    .requiredOption('--identity-registry <address>', 'IdentityRegistry contract address')
+    .requiredOption('--operator <address>', 'Delegate operator address')
+    .requiredOption('--allowed <boolean>', 'true/false to grant or revoke access')
+    .option('--current-allowed <boolean>', 'Current delegate status for diff')
+).action((options) => {
+  try {
+    const currentAllowed = parseBooleanOption(options.currentAllowed, 'current-allowed');
+    const tx = buildIdentityDelegateTx({
+      identityRegistryAddress: options.identityRegistry,
+      operatorAddress: options.operator,
+      allowed: options.allowed,
+      current:
+        currentAllowed === undefined
+          ? null
+          : { operator: options.operator, allowed: currentAllowed }
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
 
 const intelligence = program
   .command('intelligence')
