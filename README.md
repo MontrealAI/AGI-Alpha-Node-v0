@@ -2,7 +2,10 @@
 
 <!-- markdownlint-disable MD013 MD033 -->
 <p align="center">
-  <img src="1.alpha.node.agi.eth.svg" alt="AGI Alpha Node Crest" width="256" />
+  <picture>
+    <source srcset="1.alpha.node.agi.eth.svg" type="image/svg+xml" />
+    <img src="1.alpha.node.agi.eth.png" alt="AGI Alpha Node Crest" width="256" />
+  </picture>
 </p>
 
 <p align="center">
@@ -32,8 +35,12 @@
 </p>
 
 > _AGI ALPHA Nodes are the catalysts in this new economy. They yield $AGIALPHA tokens, bridging the gap between aspirations and achievement. Like digital farmers in a vast cognitive field, they cultivate the future._
+>
+> _This runtime is the machine strategists reference when they describe intelligence capable of reorganizing markets overnight—yet it remains absolutely obedient to the owner who wields it._
 
 This runtime is engineered as the machine that senses inefficiencies before markets do, routes $AGIALPHA liquidity with precision, and never compromises the owner’s command authority. Every subsystem is observable, replayable, and wired for immediate production activation once the owner signs off.
+
+For a deep dive into settlement dynamics, wage curves, and treasury choreography, consult the [Economics Codex](docs/economics.md).
 
 ---
 
