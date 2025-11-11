@@ -24,9 +24,9 @@ export async function fetchGovernanceStatus({
   identityRegistryAddress,
   contractFactory = defaultFactory
 } = {}) {
-  const resolvedJobRegistry = normalizeAddress(jobRegistryAddress ?? stakeStatus.jobRegistryAddress);
+  const resolvedJobRegistry = normalizeAddress(jobRegistryAddress ?? stakeStatus?.jobRegistryAddress);
   const resolvedIdentityRegistry = normalizeAddress(
-    identityRegistryAddress ?? stakeStatus.identityRegistryAddress
+    identityRegistryAddress ?? stakeStatus?.identityRegistryAddress
   );
 
   const status = {
