@@ -40,6 +40,9 @@
   <a href="https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa">
     <img src="https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-ff3366.svg?style=flat-square" alt="$AGIALPHA" />
   </a>
+  <a href=".github/required-checks.json">
+    <img src="https://img.shields.io/badge/Required%20Checks-Enforced-1f2933.svg?style=flat-square" alt="Required Checks" />
+  </a>
   <img src="https://img.shields.io/badge/Branch%20Protection-Enforced-1f2933.svg?style=flat-square" alt="Branch Protection" />
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-0e9aa7.svg?style=flat-square" alt="MIT License" />
