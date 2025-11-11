@@ -1,0 +1,8 @@
+{
+  "required_status_checks": [
+    "Lint Markdown & Links",
+    "Unit & Integration Tests",
+    "Coverage Report",
+    "Docker Build & Smoke Test"
+  ]
+}

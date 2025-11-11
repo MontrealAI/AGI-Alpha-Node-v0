@@ -68,3 +68,67 @@ jobs:
         env:
           CI: true
         run: npm test
+
+  coverage:
+    name: Coverage Report
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate coverage report
+        env:
+          CI: true
+        run: npm run coverage
+
+      - name: Upload coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage
+          retention-days: 7
+          if-no-files-found: warn
+
+  docker-smoke:
+    name: Docker Build & Smoke Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build container image
+        run: docker build --tag agi-alpha-node:${{ github.sha }} .
+
+      - name: Smoke test runtime help output
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            -e NODE_LABEL=smoke-test \
+            -e OPERATOR_ADDRESS=0x0000000000000000000000000000000000000001 \
+            -e RPC_URL=https://rpc.invalid \
+            agi-alpha-node:${{ github.sha }} \
+            --help | tee docker-smoke-help.txt
+
+      - name: Upload smoke test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-smoke-help
+          path: docker-smoke-help.txt
+          retention-days: 7
+          if-no-files-found: warn
