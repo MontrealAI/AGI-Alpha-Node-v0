@@ -43,6 +43,7 @@ import { createJobProof, buildProofSubmissionTx } from './services/jobProof.js';
 import { loadOfflineSnapshot } from './services/offlineSnapshot.js';
 import { acknowledgeStakeAndActivate } from './services/stakeActivation.js';
 import { createJobLifecycle } from './services/jobLifecycle.js';
+import { createLifecycleJournal } from './services/lifecycleJournal.js';
 
 const program = new Command();
 
@@ -412,6 +413,14 @@ function buildJobLifecycleFromConfig(config, overrides = {}, logger = pino({ lev
   const provider = createProvider(rpcUrl);
   const privateKey = overrides.privateKey ?? config.OPERATOR_PRIVATE_KEY ?? null;
   const signer = privateKey ? createWallet(privateKey, provider) : null;
+  const profile = overrides.profile ?? config.JOB_REGISTRY_PROFILE;
+  const rawProfileOverrides =
+    overrides.profileConfig !== undefined ? parseJsonMaybe(overrides.profileConfig) : config.JOB_PROFILE_SPEC ?? null;
+  if (typeof rawProfileOverrides === 'string') {
+    throw new Error('Profile configuration overrides must be valid JSON describing ABI, events, and methods.');
+  }
+  const journalDirectory = overrides.lifecycleLogDir ?? config.LIFECYCLE_LOG_DIR ?? '.agi/lifecycle';
+  const journal = createLifecycleJournal({ directory: journalDirectory });
   const lifecycle = createJobLifecycle({
     provider,
     jobRegistryAddress: registryAddress,
@@ -419,6 +428,9 @@ function buildJobLifecycleFromConfig(config, overrides = {}, logger = pino({ lev
     defaultSubdomain: overrides.subdomain ?? config.NODE_LABEL,
     defaultProof: overrides.proof ?? config.JOB_APPLICATION_PROOF ?? '0x',
     discoveryBlockRange: overrides.discoveryBlockRange ?? config.JOB_DISCOVERY_BLOCK_RANGE,
+    profile,
+    profileOverrides: rawProfileOverrides,
+    journal,
     logger
   });
   return { lifecycle, provider, signer };
@@ -1197,6 +1209,9 @@ jobs
   .option('--rpc <url>', 'RPC endpoint override')
   .option('--from-block <number>', 'Starting block height for the discovery window')
   .option('--blocks <number>', 'Override the discovery block range window')
+  .option('--profile <name>', 'JobRegistry compatibility profile (v0, v2, or custom)')
+  .option('--profile-config <json>', 'JSON overrides describing ABI/events/methods when using custom profiles')
+  .option('--lifecycle-log-dir <path>', 'Directory for append-only lifecycle journal entries')
   .action(async (options) => {
     const logger = pino({ level: 'info', name: 'jobs-discover' });
     const config = loadConfig();
@@ -1208,7 +1223,10 @@ jobs
         {
           registry: options.registry,
           rpcUrl: options.rpc,
-          discoveryBlockRange: blockRange
+          discoveryBlockRange: blockRange,
+          profile: options.profile,
+          profileConfig: options.profileConfig,
+          lifecycleLogDir: options.lifecycleLogDir
         },
         logger
       );
@@ -1255,6 +1273,9 @@ jobs
   .option('--subdomain <label>', 'ENS label override (defaults to NODE_LABEL)')
   .option('--proof <bytes>', 'Merkle proof bytes (hex string) for gated registries')
   .option('--private-key <hex>', 'Override private key used for signing the transaction')
+  .option('--profile <name>', 'JobRegistry compatibility profile (v0, v2, or custom)')
+  .option('--profile-config <json>', 'JSON overrides describing ABI/events/methods when using custom profiles')
+  .option('--lifecycle-log-dir <path>', 'Directory for append-only lifecycle journal entries')
   .action(async (jobId, options) => {
     const logger = pino({ level: 'info', name: 'jobs-apply' });
     const config = loadConfig();
@@ -1267,7 +1288,10 @@ jobs
           rpcUrl: options.rpc,
           subdomain: options.subdomain,
           proof: options.proof,
-          privateKey: options.privateKey
+          privateKey: options.privateKey,
+          profile: options.profile,
+          profileConfig: options.profileConfig,
+          lifecycleLogDir: options.lifecycleLogDir
         },
         logger
       );
@@ -1304,6 +1328,10 @@ jobs
   .option('--subdomain <label>', 'ENS label override (defaults to NODE_LABEL)')
   .option('--proof <bytes>', 'Merkle proof bytes (hex string) for gated registries')
   .option('--private-key <hex>', 'Override private key used for signing the transaction')
+  .option('--validator <address>', 'Validator address required when submitting against validation-aware registries')
+  .option('--profile <name>', 'JobRegistry compatibility profile (v0, v2, or custom)')
+  .option('--profile-config <json>', 'JSON overrides describing ABI/events/methods when using custom profiles')
+  .option('--lifecycle-log-dir <path>', 'Directory for append-only lifecycle journal entries')
   .action(async (jobId, options) => {
     const logger = pino({ level: 'info', name: 'jobs-submit' });
     const config = loadConfig();
@@ -1332,7 +1360,10 @@ jobs
           rpcUrl: options.rpc,
           subdomain: options.subdomain,
           proof: options.proof,
-          privateKey: options.privateKey
+          privateKey: options.privateKey,
+          profile: options.profile,
+          profileConfig: options.profileConfig,
+          lifecycleLogDir: options.lifecycleLogDir
         },
         logger
       );
@@ -1343,7 +1374,8 @@ jobs
         metadata: metadataPayload,
         subdomain: options.subdomain ?? config.NODE_LABEL,
         proof: options.proof,
-        timestamp
+        timestamp,
+        validator: options.validator
       });
       console.log(chalk.green(`Submitted result for job ${submission.jobId}`));
       if (submission.transactionHash) {
@@ -1371,6 +1403,10 @@ jobs
   .option('--registry <address>', 'JobRegistry contract address override')
   .option('--rpc <url>', 'RPC endpoint override')
   .option('--private-key <hex>', 'Override private key used for signing the transaction')
+  .option('--validator <address>', 'Validator address required when finalizing against validator-aware registries')
+  .option('--profile <name>', 'JobRegistry compatibility profile (v0, v2, or custom)')
+  .option('--profile-config <json>', 'JSON overrides describing ABI/events/methods when using custom profiles')
+  .option('--lifecycle-log-dir <path>', 'Directory for append-only lifecycle journal entries')
   .action(async (jobId, options) => {
     const logger = pino({ level: 'info', name: 'jobs-finalize' });
     const config = loadConfig();
@@ -1381,12 +1417,15 @@ jobs
         {
           registry: options.registry,
           rpcUrl: options.rpc,
-          privateKey: options.privateKey
+          privateKey: options.privateKey,
+          profile: options.profile,
+          profileConfig: options.profileConfig,
+          lifecycleLogDir: options.lifecycleLogDir
         },
         logger
       );
       lifecycle = jobLifecycle;
-      const result = await jobLifecycle.finalize(jobId);
+      const result = await jobLifecycle.finalize(jobId, { validator: options.validator });
       console.log(chalk.green(`Finalized job ${result.jobId}`));
       if (result.transactionHash) {
         console.log(`  tx: ${result.transactionHash}`);
@@ -1394,6 +1433,49 @@ jobs
       console.log(`  method: ${result.method}`);
     } catch (error) {
       logger.error(error, 'Job finalization failed');
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    } finally {
+      lifecycle?.stop?.();
+    }
+  });
+
+jobs
+  .command('notify-validator <jobId>')
+  .description('Signal the registry-assigned validator that results are ready for review')
+  .requiredOption('--validator <address>', 'Validator address to notify')
+  .option('--registry <address>', 'JobRegistry contract address override')
+  .option('--rpc <url>', 'RPC endpoint override')
+  .option('--private-key <hex>', 'Override private key used for signing the transaction')
+  .option('--profile <name>', 'JobRegistry compatibility profile (v0, v2, or custom)')
+  .option('--profile-config <json>', 'JSON overrides describing ABI/events/methods when using custom profiles')
+  .option('--lifecycle-log-dir <path>', 'Directory for append-only lifecycle journal entries')
+  .action(async (jobId, options) => {
+    const logger = pino({ level: 'info', name: 'jobs-notify-validator' });
+    const config = loadConfig();
+    let lifecycle;
+    try {
+      const { lifecycle: jobLifecycle } = buildJobLifecycleFromConfig(
+        config,
+        {
+          registry: options.registry,
+          rpcUrl: options.rpc,
+          privateKey: options.privateKey,
+          profile: options.profile,
+          profileConfig: options.profileConfig,
+          lifecycleLogDir: options.lifecycleLogDir
+        },
+        logger
+      );
+      lifecycle = jobLifecycle;
+      const result = await jobLifecycle.notifyValidator(jobId, options.validator);
+      console.log(chalk.green(`Notified validator for job ${result.jobId}`));
+      if (result.transactionHash) {
+        console.log(`  tx: ${result.transactionHash}`);
+      }
+      console.log(`  method: ${result.method}`);
+    } catch (error) {
+      logger.error(error, 'Validator notification failed');
       console.error(chalk.red(error.message));
       process.exitCode = 1;
     } finally {

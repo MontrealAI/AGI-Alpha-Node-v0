@@ -65,6 +65,24 @@ function coerceRoleShareTargets(value) {
   return Object.keys(normalized).length > 0 ? normalized : undefined;
 }
 
+function parseProfileSpec(value) {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (typeof value === 'object') {
+    return value;
+  }
+  const trimmed = String(value).trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  try {
+    return JSON.parse(trimmed);
+  } catch (error) {
+    throw new Error(`Unable to parse JOB_PROFILE_SPEC: ${error.message}`);
+  }
+}
+
 export const configSchema = z
   .object({
     RPC_URL: z.string().url().default('https://rpc.ankr.com/eth'),
@@ -91,6 +109,8 @@ export const configSchema = z
         const trimmed = value.trim();
         return trimmed.length ? trimmed : undefined;
       }),
+    JOB_REGISTRY_PROFILE: z.string().optional().default('v0'),
+    JOB_PROFILE_SPEC: z.any().optional().transform((value) => parseProfileSpec(value)),
     METRICS_PORT: z.coerce.number().int().min(1024).max(65535).default(9464),
     API_PORT: z.coerce.number().int().min(1024).max(65535).default(8080),
     DRY_RUN: booleanFlag.optional().default(true),
@@ -175,6 +195,16 @@ export const configSchema = z
         if (!value) return undefined;
         const trimmed = value.trim();
         return trimmed.length ? trimmed : undefined;
+      }),
+    LIFECYCLE_LOG_DIR: z
+      .string()
+      .optional()
+      .transform((value) => {
+        if (value === undefined || value === null) {
+          return '.agi/lifecycle';
+        }
+        const trimmed = value.trim();
+        return trimmed.length ? trimmed : '.agi/lifecycle';
       })
   })
   .strict();

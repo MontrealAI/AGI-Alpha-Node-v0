@@ -1,11 +1,15 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
-import { Interface, zeroPadValue, keccak256, toUtf8Bytes } from 'ethers';
-import { createJobLifecycle, JOB_REGISTRY_ABI } from '../src/services/jobLifecycle.js';
+import { zeroPadValue, keccak256, toUtf8Bytes } from 'ethers';
+import { createJobLifecycle } from '../src/services/jobLifecycle.js';
+import { resolveJobProfile, createInterfaceFromProfile } from '../src/services/jobProfiles.js';
 
 const registryAddress = '0x00000000000000000000000000000000000000aa';
-const iface = new Interface(JOB_REGISTRY_ABI);
+const v0Profile = resolveJobProfile('v0');
+const v0Interface = createInterfaceFromProfile(v0Profile);
+const v2Profile = resolveJobProfile('v2');
+const v2Interface = createInterfaceFromProfile(v2Profile);
 
-function buildLog(eventName, params) {
+function buildLog(iface, eventName, params) {
   const { data, topics } = iface.encodeEventLog(eventName, params);
   return {
     address: registryAddress,
@@ -13,6 +17,17 @@ function buildLog(eventName, params) {
     topics,
     blockNumber: 123,
     transactionHash: '0xlog'
+  };
+}
+
+function createMemoryJournal() {
+  const entries = [];
+  return {
+    entries,
+    append(entry) {
+      entries.push(entry);
+      return entry;
+    }
   };
 }
 
@@ -31,20 +46,23 @@ describe('job lifecycle service', () => {
     provider.off.mockReset();
   });
 
-  it('discovers jobs from JobCreated events', async () => {
+  it('discovers jobs from JobCreated events and records snapshots', async () => {
     const jobId = '0x' + '11'.repeat(32);
     const client = '0x0000000000000000000000000000000000000001';
     const reward = 100n;
     const deadline = 1_700_000_000n;
     const uri = 'ipfs://job';
     const tags = '["alpha"]';
-    const log = buildLog('JobCreated', [jobId, client, reward, deadline, uri, tags]);
+    const log = buildLog(v0Interface, 'JobCreated', [jobId, client, reward, deadline, uri, tags]);
     provider.getLogs.mockResolvedValue([log]);
+    const journal = createMemoryJournal();
 
     const lifecycle = createJobLifecycle({
       provider,
       jobRegistryAddress: registryAddress,
-      contractFactory: () => ({ target: registryAddress, interface: iface })
+      profile: 'v0',
+      journal,
+      contractFactory: () => ({ target: registryAddress, interface: v0Interface })
     });
 
     const jobs = await lifecycle.discover();
@@ -55,6 +73,9 @@ describe('job lifecycle service', () => {
     expect(jobs[0].reward).toBe(reward);
     expect(jobs[0].uri).toBe(uri);
     expect(jobs[0].tags).toEqual(['alpha']);
+    expect(journal.entries).toHaveLength(1);
+    expect(journal.entries[0].kind).toBe('snapshot');
+    expect(journal.entries[0].jobs[0].metadata.jobId).toBe(jobId.toLowerCase());
   });
 
   it('merges getOpenJobs results when registry exposes helper', async () => {
@@ -69,7 +90,8 @@ describe('job lifecycle service', () => {
     const lifecycle = createJobLifecycle({
       provider,
       jobRegistryAddress: registryAddress,
-      contractFactory: () => ({ target: registryAddress, interface: iface, getOpenJobs })
+      profile: 'v0',
+      contractFactory: () => ({ target: registryAddress, interface: v0Interface, getOpenJobs })
     });
 
     const jobs = await lifecycle.discover({ maxJobs: 5 });
@@ -83,7 +105,7 @@ describe('job lifecycle service', () => {
     expect(jobs[0].tags).toEqual(['ops', 'urgent']);
   });
 
-  it('applies, submits, and finalizes jobs using available contract methods', async () => {
+  it('applies, submits, and finalizes jobs using profile preferences and journals actions', async () => {
     const normalizedJobId = zeroPadValue(keccak256(toUtf8Bytes('job-7')), 32);
 
     const applyMock = vi.fn(async () => ({ hash: '0xapply' }));
@@ -92,7 +114,7 @@ describe('job lifecycle service', () => {
 
     const contractFactory = vi.fn(() => ({
       target: registryAddress,
-      interface: iface,
+      interface: v0Interface,
       applyForJob: applyMock,
       submitProof: submitMock,
       finalize: finalizeMock,
@@ -100,11 +122,14 @@ describe('job lifecycle service', () => {
         return this;
       }
     }));
+    const journal = createMemoryJournal();
 
     const lifecycle = createJobLifecycle({
       provider,
       jobRegistryAddress: registryAddress,
-      contractFactory
+      profile: 'v0',
+      contractFactory,
+      journal
     });
 
     await lifecycle.apply('job-7', { subdomain: 'node', proof: '0x1234' });
@@ -117,12 +142,66 @@ describe('job lifecycle service', () => {
     expect(submitMock).toHaveBeenCalled();
     expect(submission.commitment).toMatch(/^0x/);
     expect(submission.resultHash).toMatch(/^0x/);
+    expect(submission.validator).toBeNull();
 
     await lifecycle.finalize('job-7');
     expect(finalizeMock).toHaveBeenCalledWith(normalizedJobId);
+
+    const actionTypes = journal.entries.filter((entry) => entry.kind === 'action').map((entry) => entry.action.type);
+    expect(actionTypes).toEqual(expect.arrayContaining(['apply', 'submit', 'finalize']));
   });
 
-  it('updates job status from watched events', async () => {
+  it('runs validator-aware v2 flow including notifyValidator and records telemetry', async () => {
+    const normalizedJobId = zeroPadValue(keccak256(toUtf8Bytes('job-99')), 32);
+    const submitWithValidator = vi.fn(async () => ({ hash: '0xsubmitv2' }));
+    const finalizeWithValidator = vi.fn(async () => ({ hash: '0xfinalv2' }));
+    const notifyValidator = vi.fn(async () => ({ hash: '0xnotify' }));
+
+    const contractFactory = vi.fn(() => ({
+      target: registryAddress,
+      interface: v2Interface,
+      submitWithValidator,
+      finalizeWithValidator,
+      notifyValidator,
+      connect() {
+        return this;
+      }
+    }));
+    const journal = createMemoryJournal();
+
+    const lifecycle = createJobLifecycle({
+      provider,
+      jobRegistryAddress: registryAddress,
+      profile: 'v2',
+      contractFactory,
+      journal
+    });
+
+    await lifecycle.submit('job-99', {
+      result: { ok: true },
+      resultUri: 'ipfs://job-99',
+      validator: '0x0000000000000000000000000000000000000010'
+    });
+    expect(submitWithValidator).toHaveBeenCalledWith(
+      normalizedJobId,
+      expect.any(String),
+      expect.any(String),
+      'ipfs://job-99',
+      expect.any(String),
+      '0x0000000000000000000000000000000000000010'
+    );
+
+    await lifecycle.notifyValidator('job-99', '0x0000000000000000000000000000000000000010');
+    expect(notifyValidator).toHaveBeenCalledWith(normalizedJobId, '0x0000000000000000000000000000000000000010');
+
+    await lifecycle.finalize('job-99', { validator: '0x0000000000000000000000000000000000000010' });
+    expect(finalizeWithValidator).toHaveBeenCalledWith(normalizedJobId, '0x0000000000000000000000000000000000000010');
+
+    const types = journal.entries.filter((entry) => entry.kind === 'action').map((entry) => entry.action.type);
+    expect(types).toEqual(expect.arrayContaining(['submit', 'notifyValidator', 'finalize']));
+  });
+
+  it('updates job status from watched events and records validation actions', async () => {
     const watchers = [];
     provider.on.mockImplementation((filter, handler) => {
       watchers.push({ filter, handler });
@@ -134,10 +213,14 @@ describe('job lifecycle service', () => {
       }
     });
 
+    const journal = createMemoryJournal();
+
     const lifecycle = createJobLifecycle({
       provider,
       jobRegistryAddress: registryAddress,
-      contractFactory: () => ({ target: registryAddress, interface: iface })
+      profile: 'v2',
+      journal,
+      contractFactory: () => ({ target: registryAddress, interface: v2Interface })
     });
 
     const stop = lifecycle.watch();
@@ -145,19 +228,27 @@ describe('job lifecycle service', () => {
     expect(watchers.length).toBeGreaterThan(0);
 
     const jobId = '0x' + '22'.repeat(32);
-    const createdLog = buildLog('JobCreated', [jobId, registryAddress, 50n, 1_600_000_000n, 'ipfs://job', '[]']);
-    const jobCreatedTopic = iface.getEvent('JobCreated').topicHash;
-    const createdWatcher = watchers.find((entry) => entry.filter.topics?.[0] === jobCreatedTopic);
+    const createdLog = buildLog(v2Interface, 'JobCreated', [jobId, registryAddress, 50n, 1_600_000_000n, 'ipfs://job', '[]']);
+    const createdWatcher = watchers.find((entry) => entry.filter.topics?.[0] === v2Interface.getEvent('JobCreated').topicHash);
     createdWatcher.handler(createdLog);
 
-    const appliedLog = buildLog('JobApplied', [jobId, registryAddress]);
-    const jobAppliedTopic = iface.getEvent('JobApplied').topicHash;
-    const appliedWatcher = watchers.find((entry) => entry.filter.topics?.[0] === jobAppliedTopic);
+    const appliedLog = buildLog(v2Interface, 'JobApplied', [jobId, registryAddress]);
+    const appliedWatcher = watchers.find((entry) => entry.filter.topics?.[0] === v2Interface.getEvent('JobApplied').topicHash);
     appliedWatcher.handler(appliedLog);
 
+    const validatedLog = buildLog(v2Interface, 'JobValidated', [jobId, registryAddress, true]);
+    const validatedWatcher = watchers.find((entry) => entry.filter.topics?.[0] === v2Interface.getEvent('JobValidated').topicHash);
+    validatedWatcher.handler(validatedLog);
+
     const job = lifecycle.getJob(jobId);
-    expect(job.status).toBe('applied');
-    expect(job.worker?.toLowerCase()).toBe(registryAddress.toLowerCase());
+    expect(job.status).toBe('validated');
+
+    const metrics = lifecycle.getMetrics();
+    expect(metrics.validatorNotifications).toBeGreaterThan(0);
+
+    const validationEntries = journal.entries.filter((entry) => entry.kind === 'action' && entry.action.type === 'validation');
+    expect(validationEntries).toHaveLength(1);
+    expect(validationEntries[0].action.accepted).toBe(true);
 
     stop();
     expect(watchers.length).toBe(0);

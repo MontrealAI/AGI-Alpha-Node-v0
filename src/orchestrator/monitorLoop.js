@@ -62,6 +62,30 @@ function updateTelemetryGauges(telemetry, diagnostics) {
     const mode = performance?.jobMetrics?.lastJobProvider ?? runtimeMode;
     telemetry.providerModeGauge.set({ mode }, 1);
   }
+
+  if (telemetry.registryProfileGauge) {
+    telemetry.registryProfileGauge.reset();
+    const profileId = performance?.jobMetrics?.activeProfile ?? null;
+    if (profileId) {
+      telemetry.registryProfileGauge.set({ profile: profileId }, 1);
+    }
+  }
+
+  if (telemetry.registryCompatibilityGauge) {
+    telemetry.registryCompatibilityGauge.reset();
+    const profileId = performance?.jobMetrics?.activeProfile ?? 'unknown';
+    const warnings = Array.isArray(performance?.jobMetrics?.compatibilityWarnings)
+      ? performance.jobMetrics.compatibilityWarnings
+      : [];
+    if (!warnings.length) {
+      telemetry.registryCompatibilityGauge.set({ profile: profileId, reason: 'ok' }, 0);
+    } else {
+      warnings.forEach((warning) => {
+        const reason = warning?.reason ?? 'unknown';
+        telemetry.registryCompatibilityGauge.set({ profile: profileId, reason }, 1);
+      });
+    }
+  }
 }
 
 function buildSnapshotResolver(path, logger) {

@@ -49,6 +49,20 @@ export function startMonitoringServer({ port = 9464, logger }) {
     registers: [registry]
   });
 
+  const registryProfileGauge = new Gauge({
+    name: 'agi_alpha_node_registry_profile',
+    help: 'Active JobRegistry profile indicator',
+    labelNames: ['profile'],
+    registers: [registry]
+  });
+
+  const registryCompatibilityGauge = new Gauge({
+    name: 'agi_alpha_node_registry_compatibility_warning',
+    help: 'ABI compatibility warnings detected for the active JobRegistry profile',
+    labelNames: ['profile', 'reason'],
+    registers: [registry]
+  });
+
   const server = http.createServer(async (req, res) => {
     if (req.url === '/metrics') {
       const metrics = await registry.metrics();
@@ -73,6 +87,8 @@ export function startMonitoringServer({ port = 9464, logger }) {
     jobSuccessGauge,
     tokenEarningsGauge,
     agentUtilizationGauge,
-    providerModeGauge
+    providerModeGauge,
+    registryProfileGauge,
+    registryCompatibilityGauge
   };
 }

@@ -11,6 +11,7 @@ import { startAgentApi } from '../network/apiServer.js';
 import { hydrateOperatorPrivateKey } from '../services/secretManager.js';
 import { createProvider, createWallet } from '../services/provider.js';
 import { createJobLifecycle } from '../services/jobLifecycle.js';
+import { createLifecycleJournal } from '../services/lifecycleJournal.js';
 
 function assertConfigField(value, field) {
   if (!value) {
@@ -124,6 +125,7 @@ export async function bootstrapContainer({
   let stopJobWatchers = null;
   if (config.JOB_REGISTRY_ADDRESS) {
     try {
+      const lifecycleJournal = createLifecycleJournal({ directory: config.LIFECYCLE_LOG_DIR ?? '.agi/lifecycle' });
       jobLifecycle = createJobLifecycle({
         provider,
         jobRegistryAddress: config.JOB_REGISTRY_ADDRESS,
@@ -132,6 +134,9 @@ export async function bootstrapContainer({
         defaultProof: config.JOB_APPLICATION_PROOF ?? '0x',
         discoveryBlockRange: config.JOB_DISCOVERY_BLOCK_RANGE,
         offlineJobs: offlineSnapshot?.jobs ?? [],
+        profile: config.JOB_REGISTRY_PROFILE,
+        profileOverrides: config.JOB_PROFILE_SPEC ?? null,
+        journal: lifecycleJournal,
         logger
       });
       await jobLifecycle.discover();
