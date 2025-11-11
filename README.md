@@ -4,7 +4,13 @@
 <p align="center">
   <picture>
     <source srcset="1.alpha.node.agi.eth.svg" type="image/svg+xml" />
-    <img src="1.alpha.node.agi.eth.png" alt="AGI Alpha Node Crest" width="256" />
+    <img
+      src="1.alpha.node.agi.eth.png"
+      alt="AGI Alpha Node Crest"
+      width="256"
+      loading="lazy"
+      decoding="async"
+    />
   </picture>
 </p>
 
