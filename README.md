@@ -54,6 +54,8 @@ This runtime is engineered as the machine that senses inefficiencies before mark
    - [REST & Governance API](#rest--governance-api)
    - [Telemetry & Metrics](#telemetry--metrics)
    - [Data & Snapshots](#data--snapshots)
+   - [Agent Intelligence Core](#agent-intelligence-core)
+   - [Autopilot & Compliance Mesh](#autopilot--compliance-mesh)
 5. [Integration with AGI Jobs Protocol](#integration-with-agi-jobs-protocol)
 6. [Deployment & Operations](#deployment--operations)
    - [Local & Container Launch](#local--container-launch)
@@ -299,6 +301,60 @@ The monitor loop drives these metrics, runs deterministic health checks, and pus
 - Offline custody snapshots serialize ENS proofs, staking state, and governance directives for air-gapped review. | [`src/services/offlineSnapshot.js`](src/services/offlineSnapshot.js), [`docs/offline-snapshot.example.json`](docs/offline-snapshot.example.json)
 - Lifecycle journals capture each on-chain action for audit replay. | [`src/services/lifecycleJournal.js`](src/services/lifecycleJournal.js)
 - Compliance ledger entries notarize every governance payload. | [`src/services/governanceLedger.js`](src/services/governanceLedger.js)
+
+### Agent Intelligence Core
+
+- `evaluateJobRequest` binds planning, swarm orchestration, curriculum evolution, antifragility analysis, and local model fallbacks into a deterministic mission brief. | [`src/intelligence/agentRuntime.js`](src/intelligence/agentRuntime.js)
+- Strategic planners quantify alpha, capacity, and compound rewards across configurable strategies. | [`src/intelligence/planning.js`](src/intelligence/planning.js), [`src/services/performance.js`](src/services/performance.js)
+- Specialist swarms allocate domain experts, simulate local inference, and track assignment throughput for each mission. | [`src/intelligence/swarmOrchestrator.js`](src/intelligence/swarmOrchestrator.js), [`src/intelligence/localModels.js`](src/intelligence/localModels.js)
+- Stress harnesses and learning loops continuously update antifragility posture before the node bids on the next job. | [`src/intelligence/stressHarness.js`](src/intelligence/stressHarness.js), [`src/intelligence/learningLoop.js`](src/intelligence/learningLoop.js)
+
+```mermaid
+flowchart LR
+  subgraph IntelligenceMesh["Intelligence Mesh"]
+    PlannerCore[[Planner]]
+    SwarmCore[[Specialist Swarm]]
+    Curriculum[[Curriculum Engine]]
+    Antifragile[[Stress Harness]]
+    LocalAI[[Local Model Runtime]]
+  end
+  subgraph MissionBrief["Mission Brief"]
+    Request[[Job Profile]]
+    Metrics[[Alpha Metrics]]
+  end
+  Request --> PlannerCore
+  PlannerCore --> SwarmCore
+  PlannerCore --> Metrics
+  SwarmCore --> Curriculum
+  Curriculum --> Antifragile
+  Antifragile --> Metrics
+  SwarmCore --> LocalAI
+  LocalAI --> Metrics
+  Metrics --> MissionBrief
+```
+
+### Autopilot & Compliance Mesh
+
+- Owner directives adapt in real time using stake telemetry, governance posture, and rewards projections; every suggestion is journaled for audit. | [`src/services/controlPlane.js`](src/services/controlPlane.js)
+- Diagnostics fuse ENS proofs, stake thresholds, governance upgrades, and performance metrics into a single heartbeat for the operator. | [`src/orchestrator/nodeRuntime.js`](src/orchestrator/nodeRuntime.js)
+- Governance payloads (pause, stake rebalance, share tuning, module rotation) ship with machine-readable metadata and persist automatically. | [`src/services/governance.js`](src/services/governance.js), [`src/services/governanceLedger.js`](src/services/governanceLedger.js)
+- REST endpoints expose the same control layer for secure automation, enforced by bearer tokens and immutable ledger entries. | [`src/network/apiServer.js`](src/network/apiServer.js)
+
+```mermaid
+flowchart TD
+  Stake[Stake Status] --> Control[Control Plane Directives]
+  Governance[Governance Status] --> Control
+  Rewards[Rewards Projection] --> Control
+  Control --> Actions{Owner Actions}
+  Actions -->|pause| SystemPause
+  Actions -->|stake top-up| Incentives
+  Actions -->|share tuning| RewardEngine
+  Actions -->|module swap| Registries
+  Control --> Ledger[(Compliance Ledger)]
+  Ledger --> API[Governance API]
+  API --> OwnerDeck[Owner Deck]
+  OwnerDeck --> Actions
+```
 
 ---
 
