@@ -45,21 +45,25 @@ This runtime is engineered as the machine that senses inefficiencies before mark
    - [Autonomous Job Lifecycle](#autonomous-job-lifecycle)
    - [Owner Dominion Control Loop](#owner-dominion-control-loop)
    - [CI Signal Chain](#ci-signal-chain)
-3. [Runtime Surface](#runtime-surface)
+3. [Quickstart Activation Sequence](#quickstart-activation-sequence)
+   - [Environment Matrix](#environment-matrix)
+   - [Launch Ritual](#launch-ritual)
+   - [Verification & Safety Nets](#verification--safety-nets)
+4. [Runtime Surface](#runtime-surface)
    - [CLI Command Spine](#cli-command-spine)
    - [REST & Governance API](#rest--governance-api)
    - [Telemetry & Metrics](#telemetry--metrics)
    - [Data & Snapshots](#data--snapshots)
-4. [Integration with AGI Jobs Protocol](#integration-with-agi-jobs-protocol)
-5. [Deployment & Operations](#deployment--operations)
+5. [Integration with AGI Jobs Protocol](#integration-with-agi-jobs-protocol)
+6. [Deployment & Operations](#deployment--operations)
    - [Local & Container Launch](#local--container-launch)
    - [Helm & Kubernetes](#helm--kubernetes)
    - [Operator Runbook](#operator-runbook)
-6. [Configuration & Secrets](#configuration--secrets)
-7. [Continuous Assurance & Branch Protection](#continuous-assurance--branch-protection)
-8. [Repository Atlas](#repository-atlas)
-9. [Reference Dossiers](#reference-dossiers)
-10. [License](#license)
+7. [Configuration & Secrets](#configuration--secrets)
+8. [Continuous Assurance & Branch Protection](#continuous-assurance--branch-protection)
+9. [Repository Atlas](#repository-atlas)
+10. [Reference Dossiers](#reference-dossiers)
+11. [License](#license)
 
 ---
 
@@ -183,6 +187,66 @@ graph LR
   F --> G
   G --> H[Branch Protection (main)]
 ```
+
+---
+
+## Quickstart Activation Sequence
+
+The runtime is engineered so a single operator wallet can awaken the node, assert total dominion, and begin compounding $AGIALPHA within minutes. The following playbook keeps the experience deterministic for non-technical custodians while preserving full owner supremacy over every contract lever.
+
+### Environment Matrix
+
+| Variable | Why it matters | Reference |
+| -------- | -------------- | --------- |
+| `NODE_LABEL` | Binds the node identity to `⟨label⟩.alpha.node.agi.eth`; bootstrap refuses to start without it. | [`src/orchestrator/bootstrap.js`](src/orchestrator/bootstrap.js), [`deploy/docker/node.env.example`](deploy/docker/node.env.example) |
+| `OPERATOR_ADDRESS` | Declares the canonical owner wallet that signs governance payloads and receives rewards. | [`src/orchestrator/bootstrap.js`](src/orchestrator/bootstrap.js), [`src/config/schema.js`](src/config/schema.js) |
+| `RPC_URL` | Provides chain access for ENS proofs, staking telemetry, and job lifecycle calls; defaults to `https://rpc.ankr.com/eth`. | [`src/config/schema.js`](src/config/schema.js) |
+| `PLATFORM_INCENTIVES_ADDRESS`, `STAKE_MANAGER_ADDRESS`, `REWARD_ENGINE_ADDRESS` | Unlock staking and payout diagnostics so the owner can rebalance or slash instantly. | [`src/orchestrator/bootstrap.js`](src/orchestrator/bootstrap.js) |
+| `JOB_REGISTRY_ADDRESS`, `IDENTITY_REGISTRY_ADDRESS` | Wire job discovery, application, and validator duties to the live registry set. | [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js), [`src/orchestrator/bootstrap.js`](src/orchestrator/bootstrap.js) |
+| `SYSTEM_PAUSE_ADDRESS` | Enables instant pause/resume overrides directly from the CLI/API. | [`src/services/governance.js`](src/services/governance.js) |
+| `GOVERNANCE_API_TOKEN` | Protects the owner-only REST surface (`/governance/*`) with a bearer token. | [`src/network/apiServer.js`](src/network/apiServer.js), [`deploy/docker/node.env.example`](deploy/docker/node.env.example) |
+| `AGIALPHA_TOKEN_ADDRESS` | Locked to `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals); config validation prevents drift. | [`src/constants/token.js`](src/constants/token.js), [`src/config/schema.js`](src/config/schema.js) |
+| `OFFLINE_MODE`, `OFFLINE_SNAPSHOT_PATH` | Allow air-gapped rehearsals with notarized snapshots before touching mainnet capital. | [`src/services/offlineSnapshot.js`](src/services/offlineSnapshot.js) |
+
+### Launch Ritual
+
+```bash
+# 1. Install dependencies with deterministic lockfiles
+npm ci
+
+# 2. Materialize operator configuration (edit values before export)
+cp deploy/docker/node.env.example .env.alpha-node
+
+# 3. Export the environment for the current shell (POSIX-friendly)
+set -a && . ./.env.alpha-node && set +a
+
+# 4. Run the orchestration container locally (logs stream stake + governance directives)
+npm start
+```
+
+Once running, Prometheus metrics emit on `:${METRICS_PORT:-9464}` and the owner control plane lives on `http://localhost:${API_PORT:-8080}` guarded by `GOVERNANCE_API_TOKEN`.
+
+```mermaid
+graph TD
+  A[Clone & npm ci] --> B[Curate .env.alpha-node]
+  B --> C[Export environment variables]
+  C --> D[npm run ci:verify]
+  D --> E[npm start]
+  E --> F[/REST Governance Surface/]
+  E --> G[/Prometheus Metrics/]
+  F --> H{Owner Issues Directives}
+  H -->|pause/resume| E
+  H -->|rebalance stake| E
+  H -->|upgrade modules| E
+```
+
+### Verification & Safety Nets
+
+- **Pre-flight CI mirror:** `npm run ci:verify` executes linting, tests, and coverage exactly as the protected GitHub Actions workflow. | [`package.json`](package.json), [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
+- **Focused commands:** `npm run lint`, `npm test`, and `npm run coverage` are individually callable when triaging incidents. | [`package.json`](package.json)
+- **Container parity:** `docker build --tag agi-alpha-node:local .` followed by `docker run --rm --env-file .env.alpha-node agi-alpha-node:local --help` validates production images before deployment. | [`Dockerfile`](Dockerfile), [`deploy/docker/entrypoint.sh`](deploy/docker/entrypoint.sh)
+- **Helm dry run:** `helm template deploy/helm/agi-alpha-node --values deploy/helm/agi-alpha-node/values.yaml` previews cluster rollouts. | [`deploy/helm/agi-alpha-node`](deploy/helm/agi-alpha-node)
+- **Governance drills:** `node src/index.js governance system-pause --system-pause $SYSTEM_PAUSE_ADDRESS --action pause` confirms the owner can halt execution at will. | [`src/services/governance.js`](src/services/governance.js)
 
 ---
 
