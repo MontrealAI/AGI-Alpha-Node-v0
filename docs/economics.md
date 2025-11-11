@@ -1,235 +1,257 @@
 # AGI ALPHA NODES — Synthetic AI Labor & $AGIALPHA Token Economics
 
-**TL;DR**: **AGI ALPHA NODES** continuously mint **verifiable synthetic labor units** (*α‑Work Units*, **α‑WU**). **$AGIALPHA** is the **settlement & yield token** that represents network‑wide **AI productivity**—a *computational‑productivity token* that macro funds can model as a **synthetic labor derivative**.
+<!-- markdownlint-disable MD013 MD033 -->
+<p align="center">
+  <img src="../1.alpha.node.agi.eth.svg" alt="AGI Alpha Node Crest" width="220" />
+</p>
+
+<p align="center">
+  <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml">
+    <img src="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml/badge.svg?branch=main" alt="Continuous Integration" />
+  </a>
+  <a href="https://img.shields.io/badge/Status-Fully%20Green%20CI-06d6a0.svg?style=flat-square">
+    <img src="https://img.shields.io/badge/Status-Fully%20Green%20CI-06d6a0.svg?style=flat-square" alt="Status: Fully Green CI" />
+  </a>
+  <a href="https://img.shields.io/badge/Checks-Visible%20on%20GitHub-0b7285.svg?style=flat-square">
+    <img src="https://img.shields.io/badge/Checks-Visible%20on%20GitHub-0b7285.svg?style=flat-square" alt="Checks: Visible on GitHub" />
+  </a>
+  <a href="../.github/required-checks.json">
+    <img src="https://img.shields.io/badge/Branch%20Protection-Enforced-1f2933.svg?style=flat-square" alt="Branch Protection" />
+  </a>
+  <a href="https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa">
+    <img src="https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-ff3366.svg?style=flat-square" alt="$AGIALPHA Contract" />
+  </a>
+  <img src="https://img.shields.io/badge/Runtime-Node.js%2020.x-43853d.svg?style=flat-square" alt="Runtime: Node.js 20.x" />
+  <img src="https://img.shields.io/badge/Treasury-18%20Decimals-8b5cf6.svg?style=flat-square" alt="Treasury Precision" />
+</p>
+
+> _AGI ALPHA Nodes continuously mint verifiable synthetic labor, settle it in $AGIALPHA, and broadcast every metric through a CI-guarded command lattice under absolute owner control._
+
+This dossier narrates the economic operating system inside **AGI Alpha Node v0**—the machine capital desks reference when they speak about software that can redirect markets while staying perfectly obedient to its keyholder. Every quantity, metric, and command is wired into the repository you are holding.
 
 ---
 
-## 1) Core Economic Mapping
+## Executive Transmission
 
-Each node reports its realized workload in **α‑WU**, defined as:
+- **Synthetic labor canon** — α‑Work Units (α‑WU) are the singular currency of effort for the network; every node, regardless of hardware or workload, reports through this invariant lens.
+- **Tokenized wage rail** — $AGIALPHA (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) is simultaneously stake, settlement medium, fee fuel, and productivity index exposure.
+- **Owner dominion** — Governance builders in [`src/index.js`](../src/index.js) let the contract owner pause, retune emission surfaces, rotate registries, and redeploy incentives without downtime.
+- **Continuous assurance** — GitHub Actions, branch protection, and local mirrors (`npm run ci:verify`) hold the wage machine to production-grade rigor.
+- **Auditable intelligence** — Telemetry gauges in [`src/orchestrator/monitorLoop.js`](../src/orchestrator/monitorLoop.js) and economics optimizers in [`src/services/economics.js`](../src/services/economics.js) keep real-time wage curves observable and tunable.
+
+---
+
+## 1. Canonical α‑Work Unit Primitive
+
+### 1.1 Equation of Record
 
 \[
-\alpha\text{-WU} = \mathrm{GPU}_s \times \mathrm{gflops}_{\mathrm{norm}} \times \mathrm{ModelTier} \times \mathrm{SLO}_{\mathrm{pass}} \times \mathrm{QV}
+\alpha\text{-WU} = \mathrm{GPU}_s \times \mathrm{gflops}_{\text{norm}} \times \mathrm{ModelTier} \times \mathrm{SLO}_{\text{pass}} \times \mathrm{QV}
 \]
 
-Where:
+- **GPUₛ** — Metered seconds of accelerator time harvested by the runtime’s diagnostics loop.
+- **gflops_norm** — Governance-set normalization coefficients mapping SKU → baseline; stored on-chain for audit.
+- **ModelTier** — Difficulty multiplier aligned to capability profiles from [`src/services/jobProfiles.js`](../src/services/jobProfiles.js).
+- **SLO_pass** — Weighted uptime & latency compliance as interpreted by validator attestations.
+- **QV** — Peer-derived quality vector synthesizing validator verdicts.
 
-- **GPUₛ** — seconds of GPU compute actually consumed (metered).
-- **gflops_norm** — normalized compute capacity, **A100 = 1.0** baseline (governance‑set mapping).
-- **ModelTier** — difficulty/value multiplier for model class (e.g., *small*=0.8, *base*=1.0, *frontier*≥1.3; governance‑set).
-- **SLO_pass** — latency/uptime adherence in [0,1] (SLO score).
-- **QV** — quality‑validation score in [0,1] from peer validator audits.
+The product is dimensionless and fungible: it expresses a unit of synthetic labor independent of underlying silicon or model architecture.
 
-This product is a **dimensionless scalar** expressing *verified synthetic labor hours* (AI labor).
+### 1.2 Measurement Pipeline
 
-### Implementation notes
-- **Normalization table** (governance parameter): maps accelerator SKU → relative performance (e.g., A100=1.0, H100≈x.x, MI300≈x.x). Values live on‑chain for auditability.
-- **Model tiers** are enumerated (e.g., `SMALL`, `BASE`, `FRONTIER`, `CUSTOM`) with multipliers set via governance.
-- **SLO_pass** may combine latency and uptime using a weighted score (e.g., `wL*latency_pass + wU*uptime_pass`), both in [0,1].
-- **QV** is an aggregate of validator scores (trimmed mean or median; see §3 validators).
+```mermaid
+flowchart LR
+  subgraph Runtime["Node Runtime · deterministic loop"]
+    metrics["GPU sensors · latency traces"]
+    planner["Planner & Swarm"]
+    lifecycle["Job Lifecycle Engine"]
+    telemetry["Telemetry Exporter"]
+  end
+
+  subgraph Chain["Protocol Surface"]
+    workMeter["WorkMeter"]
+    validators["Validator Cohort"]
+    productivity["ProductivityIndex"]
+    emission["EmissionManager"]
+  end
+
+  metrics --> lifecycle
+  planner --> lifecycle
+  lifecycle -->|Usage struct| workMeter
+  workMeter --> validators
+  validators --> productivity
+  productivity --> emission
+  emission --> lifecycle
+  lifecycle --> telemetry
+  telemetry -->|Prometheus & CLI| Runtime
+```
+
+### 1.3 Factor Instrumentation Matrix
+
+| Factor | Runtime Source | Contract Surface | Repository Anchor |
+| ------ | -------------- | ---------------- | ----------------- |
+| GPUₛ & gflops_norm | Diagnostics executed via [`runNodeDiagnostics`](../src/orchestrator/nodeRuntime.js) | `WorkMeter.submitUsage` | [`src/orchestrator/nodeRuntime.js`](../src/orchestrator/nodeRuntime.js) |
+| ModelTier | Capability profiles + registry adapters | `JobRegistry` + `ValidationModule` | [`src/services/jobLifecycle.js`](../src/services/jobLifecycle.js) |
+| SLO_pass | Latency & uptime monitors piped to validators | `ValidationModule.commitReveal` | [`src/telemetry/monitoring.js`](../src/telemetry/monitoring.js) |
+| QV | Commit–reveal validator scoring | `ProductivityIndex.record` | [`src/services/governance.js`](../src/services/governance.js) (builder wiring) |
 
 ---
 
-## 2) Token Coupling ($AGIALPHA ↔ α‑WU)
+## 2. Token Supply Choreography ($AGIALPHA ↔ α‑WU)
 
-**$AGIALPHA** acts as **work‑credit** and **settlement** token.
+### 2.1 Epoch Mechanics
 
-- **Emission**: Nodes **stake** $AGIALPHA to register. Per **epoch**, new $AGIALPHA is **distributed ∝ validated α‑WU**.
-- **Redemption / Burn**: Jobs consume α‑WU **priced in $AGIALPHA**. On settlement, a protocol fraction is **burned**, linking **scarcity** to **productivity**.
-- **Indexing**: Define an **α‑Productivity Index** per epoch:
-  \[ \mathrm{AlphaGDP}_t = \sum \alpha\text{-WU}_i \ \text{in epoch } t \]
-  Its growth tracks network “**AI GDP**”. Allocators can hold $AGIALPHA as exposure to this productivity curve.
+1. **Stake ignition** — Nodes stake canonical $AGIALPHA through `PlatformIncentives.stakeAndActivate`, orchestrated via [`node src/index.js staking activate`](../src/index.js).
+2. **Usage attestation** — Sidecar submits metered α‑WU payloads to `WorkMeter`.
+3. **Validator arbitration** — Cohort performs commit–reveal scoring; fraudulent actors face slashing per governance policy.
+4. **Productivity indexing** — Validated α‑WU tallies flow into `ProductivityIndex.totalAlphaWU(epoch)`.
+5. **Emission solving** — `EmissionManager.rewardPerAlphaWU(epoch)` computes the synthetic wage curve.
+6. **Settlement & burns** — Job payouts priced in $AGIALPHA stream to nodes; protocol burns a fee slice to anchor scarcity.
+7. **Reinvestment loop** — Economics optimizer projects reinvestment targets and buffer requirements before the next epoch.
 
-**Epoch wage rate** (synthetic wage) is determined by emissions vs. output:
+### 2.2 Flow Atlas
 
-```solidity
-function rewardPerAlphaWU() public view returns (uint256) {
-    return epochEmission / totalAlphaWU; // AGIALPHA per α‑WU
-}
+```mermaid
+stateDiagram-v2
+    [*] --> Staked
+    Staked --> Metering: submitUsage()
+    Metering --> Validating: commitReveal()
+    Validating --> Indexed: recordAlphaWU()
+    Indexed --> EmissionSolved: rewardPerAlphaWU()
+    EmissionSolved --> Settlement: claimReward()
+    Settlement --> BurnCycle: feeBurn()
+    BurnCycle --> Reinvest: optimizeReinvestmentStrategy()
+    Reinvest --> Metering: stakeAndActivate()/resume()
 ```
 
-As network productivity rises, the “AI wage” (**AGIALPHA/α‑WU**) **equilibrates** endogenously.
+### 2.3 Module Ledger
+
+| Module | Function | Owner Controls | CLI Builder |
+| ------ | -------- | -------------- | ----------- |
+| `NodeRegistry` | Identity attestation, ENS binding | Owner rotates operator, updates metadata | `node src/index.js governance node-registry` |
+| `WorkMeter` | Usage submission & hashing | Owner updates validator set, pauses modules | `node src/index.js governance system-pause` |
+| `ProductivityIndex` | Epoch α‑WU totals | Owner swaps index implementation | `node src/index.js governance reward-engine` |
+| `EmissionManager` | Wage curve, emission caps | Owner retunes emission schedule, share splits | `node src/index.js governance incentives-manager` |
+| `PlatformIncentives` | Stake management, burns | Owner selects new StakeManager, share policy | `node src/index.js governance incentives-manager` |
+
+Every function above is protected by owner-only roles; builder outputs embed `Ownable` calldata to keep command authority centralized in the contract owner’s key hierarchy, as exercised in [`test/governance.integration.test.js`](../test/governance.integration.test.js).
 
 ---
 
-## 3) Node Implementation Loop
+## 3. Owner Command Authority & Safety Nets
 
-Each **AGI ALPHA NODE** runs a **metering sidecar** daemon.
+The repository guarantees that the contract owner can reconfigure every economic parameter without redeploying the runtime.
 
-**A. Metering**
-- Collect GPU metrics (NVML/DCGM or ROCm SMI), model tier, job id, latency/uptime.
-- Produce `GPU_s`, `gflops_norm`, `ModelTier`, raw SLO signals.
-- Compute a **performance hash** (hardware+driver+image digest) for audit.
-
-**B. Oracle Signing**
-- Build a `Usage` struct, **sign with node DID key**.
-- Optionally include **TEE/attestation** proofs (if available).
-
-**C. Submission**
-- `submitUsage(Usage u)` → L1/L2 contract (**WorkMeter**).
-- Validators pull artifacts, recompute SLO/QV, and **commit–reveal** votes.
-
-**D. Reward Claim**
-- After finalization, node calls `claimReward(epoch)` to receive $AGIALPHA ∝ validated α‑WU.
-
-### Usage struct (off‑chain JSON → on‑chain hash)
-```json
-{
-  "node": "0xNodeAddress",
-  "epoch": 12345,
-  "jobId": "0xJOB...",
-  "gpuSeconds": 4321.5,
-  "gflopsNorm": 1.00,
-  "modelTier": "FRONTIER",
-  "slo": {"latencyP50": 210, "latencySLO": 250, "uptime": 0.999, "sloPass": 0.98},
-  "artifacts": ["ipfs://Qm..."], 
-  "perfHash": "0xabc...",
-  "timestamp": 1712345678,
-  "signature": "0xsig..."
-}
+```mermaid
+flowchart TD
+  Owner["Owner Wallet"] --> CLI["Governance Builders (src/index.js)"]
+  CLI --> Payloads["Calldata Payloads"]
+  Payloads --> SystemPause["SystemPause.pause()/resume()"]
+  Payloads --> StakeManager["StakeManager.setParameters"]
+  Payloads --> RewardEngine["RewardEngine.setShares"]
+  Payloads --> JobRegistry["JobRegistry.migrateModule"]
+  Payloads --> IdentityRegistry["IdentityRegistry.setOperator"]
+  CLI --> Evidence["Governance Ledger"]
+  Evidence --> OperatorVault["Operator Evidence Vault"]
 ```
 
-### Solidity interfaces (sketch)
-```solidity
-interface IWorkMeter {
-    struct Usage {
-        address node;
-        uint64 epoch;
-        bytes32 jobId;
-        uint64 gpuSeconds;
-        uint32 gflopsNorm_milli;   // 1000 = 1.0
-        uint16 modelTier_bps;      // 10000 = 1.0
-        uint16 sloPass_bps;        // 0..10000
-        bytes32 perfHash;
-        bytes   usageProof;        // sig / attestation
-        string  uri;               // IPFS/HTTPS manifest
-    }
-    event UsageSubmitted(bytes32 indexed usageId, address indexed node, uint64 epoch);
-    function submitUsage(Usage calldata u) external returns (bytes32 usageId);
-}
+### Command Surfaces
 
-interface IProductivityIndex {
-    event AlphaWUAccrued(address indexed node, uint64 epoch, uint256 alphaWU);
-    function totalAlphaWU(uint64 epoch) external view returns (uint256);
-}
+| Capability | Description | Command Surface | Repository Anchor |
+| ---------- | ----------- | --------------- | ----------------- |
+| Pause / Resume | Instantly halt or relaunch jobs via `SystemPause`. | `node src/index.js governance system-pause --pause` | [`src/services/governance.js`](../src/services/governance.js) |
+| Stake share tuning | Adjust operator / validator / treasury BPS. | `node src/index.js governance incentives-manager --share ...` | [`src/index.js`](../src/index.js) |
+| Registry rotation | Swap JobRegistry, Validation, or Reputation modules. | `node src/index.js governance job-registry --set-module ...` | [`src/services/jobLifecycle.js`](../src/services/jobLifecycle.js) |
+| ENS enforcement | Verify ENS ownership before every run; abort if divergence. | `node src/index.js ens guard` | [`src/services/ensVerifier.js`](../src/services/ensVerifier.js) |
+| Evidence journaling | Persist governance payloads to immutable log. | `node src/index.js governance ledger export` | [`src/services/governanceLedger.js`](../src/services/governanceLedger.js) |
 
-interface IEmissionManager {
-    event EpochEmitted(uint64 indexed epoch, uint256 emission, uint256 wagePerAlphaWU);
-    function epochEmission(uint64 epoch) external view returns (uint256);
-    function rewardPerAlphaWU(uint64 epoch) external view returns (uint256);
-    function claimReward(uint64 epoch) external;
-}
-```
-
-### Validator flow (commit–reveal)
-1. **Commit** `keccak(usageId, verdict, qvScore, salt)`
-2. **Reveal** `(verdict, qvScore, salt)` → contract checks commitment; aggregates **QV** and **SLO_pass**.
-3. **Finalize** → write **α‑WU** to `ProductivityIndex`; enable **claimReward**.
-4. **Slash** on non‑reveal or fraudulent scoring (governance parameters).
+Owner supremacy is also validated inside the CI suite: Vitest fixtures in [`test/governance.integration.test.js`](../test/governance.integration.test.js) deploy mock `Ownable` contracts, assert that only the owner key succeeds, and guarantee calldata encoding remains correct.
 
 ---
 
-## 4) Financial Framing
+## 4. Financial Intelligence & Productivity Metrics
 
-To allocators, **$AGIALPHA** behaves like a **derivative** on **aggregate AI labor**:
-
-- **Holding the token** = exposure to **network‑wide productivity**.
-- **Yield** = emissions + fee‑funded burns − slashing.
-- **Risk** = hardware downtime, validator penalties, governance changes.
-
-Define and publish **Synthetic Labor Yield (SLY)**:
+### 4.1 Synthetic Labor Yield (SLY)
 
 \[
-\mathrm{SLY}_t = \frac{\sum \alpha\text{-WU validated in } t}{\mathrm{AGIALPHA}_{\mathrm{circulating}, t}}
+\mathrm{SLY}_t = \frac{\sum \alpha\text{-WU}_{t}}{\mathrm{AGIALPHA}_{\text{circulating}, t}}
 \]
 
-This becomes a standardized metric akin to a protocol‑level productivity yield.
+- **Input feeds** — α‑WU totals via `ProductivityIndex.totalAlphaWU(epoch)`, circulating supply via `$AGIALPHA` ERC‑20.
+- **Interpretation** — A protocol-native yield curve exposing the network’s productivity multiple.
+
+### 4.2 Treasury Autopilot
+
+The reinvestment optimizer in [`src/services/economics.js`](../src/services/economics.js) executes deterministic capital allocation:
+
+1. Normalizes reward history & obligations against 18-decimal precision.
+2. Computes mean absolute deviation to infer volatility penalties.
+3. Applies owner-selected buffer policies and risk aversion.
+4. Scores reinvestment options, returning growth/stability metrics and buffer coverage.
+
+The CLI surfaces summaries through `node src/index.js economics optimize --rewards <file> --obligations <file>`, enabling a non-technical owner to select the recommended BPS with zero manual math.
+
+### 4.3 Telemetry Dashboard
+
+Prometheus gauges enumerated in [`src/orchestrator/monitorLoop.js`](../src/orchestrator/monitorLoop.js) expose:
+
+- Operator stake & heartbeat recency.
+- Throughput per epoch, success ratios, and token earnings projections.
+- Agent utilization and job registry compatibility warnings.
+
+This telemetry feeds on-chain decisions and forms part of the compliance artifacts enforced by the CI pipeline.
 
 ---
 
-## 5) Governance & Market Optics
+## 5. Continuous Assurance & CI Enforcement
 
-- **Transparency dashboards** (on IPFS + subgraph):
-  - α‑WU/time, burn rate, emission rate, validator scores, wagePerAlphaWU.
-- **Tiered staking tranches** (e.g., *frontier* vs *consumer*) so allocators can choose exposure bands.
-- **Narrative**: “**$AGIALPHA = the world’s first AI‑labor standard**.”
-- **Parameters** (governance‑set):
-  - normalization table, model‑tier multipliers, SLO weights, validator quorum, epoch length, emission schedule, burn rate, slashing ratios.
+- **Workflow coverage** — `.github/workflows/ci.yml` executes linting, link checks, Vitest suites, coverage, and Docker smoke tests on every push and pull request.
+- **Required checks** — `.github/required-checks.json` locks `Continuous Integration`, `Unit & Integration Tests`, `Coverage Report`, and `Docker Build & Smoke Test` as mandatory on `main` and PR branches.
+- **Local mirror** — `npm run ci:verify` replicates the entire CI matrix so custodians can notarize transcripts before creating a pull request.
+- **Branch protection** — The README and operator codex document how to export GitHub branch protection rules for archival custody.
 
----
-
-## 6) Minimal Technical Stack
-
-**Smart contracts**
-- `NodeRegistry` — stake, registration, ENS/DID binding, slashing hooks.
-- `WorkMeter` — usage submissions, commit–reveal validation, α‑WU computation.
-- `ProductivityIndex` — per‑epoch α‑WU totals (AI GDP).
-- `EmissionManager` — epoch emission, wage rate, reward claims, fee burns.
-
-**Off‑chain services**
-- **Oracle aggregator** — pulls sidecar reports, forwards to chain if needed.
-- **Validator network** — stateless containers performing SLO/QV checks, commit–reveal.
-- **Sidecar** — metering (NVML/DCGM/ROCm), signing, retries, artifact upload (IPFS).
-
-**Analytics**
-- Subgraph indexing: `totalAlphaWU(epoch)`, `wagePerAlphaWU(epoch)`, node rankings.
-- IPFS‑hosted dashboard plotting α‑WU vs epoch, emissions, burns, validator health.
+CI transcripts form part of the audit package when economic parameters change, ensuring emissions and wage calculations never ship without green signals.
 
 ---
 
-## Economic Rationale (Concise)
+## 6. Risk Surfaces & Mitigations
 
-1. **AI as Labor Force** — Compute + model capacity is a new labor factor. **α‑WU** makes productivity **fungible, auditable, tradable**.
-2. **Synthetic Wage Curve** — `rewardPerAlphaWU = epochEmission / Σα‑WU`. As productivity rises, the marginal AI‑wage equilibrates.
-3. **Intrinsic Yield** — Rewards are tied to validated output and fee‑funded burns; aggregate yield reflects **real efficiency**, not speculation.
-4. **Macro Exposure** — $AGIALPHA ≈ perpetual derivative on **AI labor productivity** (protocol = AI GDP tracker).
-
-### Simple valuation sketch
-| Variable | Definition |
-|---|---|
-| **Pₐ (α‑WU Price)** | Fee per α‑WU (protocol index) |
-| **Rₙ (Node Revenue)** | `α‑WUₙ × Pₐ × NodeShare` |
-| **Eₜ (Epoch Emission)** | `f(Σ α‑WU, inflation, burn)` |
-| **Yield to Staker** | `(Eₜ + FeeFlows − Burns) / Staked $AGIALPHA` |
-| **Network Valuation** | `Σ PV(expected α‑WU × Pₐ)` discounted by **r** (validator+governance risk) |
+| Risk Vector | Mitigation | Evidence Path |
+| ----------- | ---------- | ------------- |
+| Hardware drift / misreported compute | Runtime enforces telemetry normalization; validators recompute α‑WU; mismatches trigger slashing. | [`src/orchestrator/monitorLoop.js`](../src/orchestrator/monitorLoop.js) · [`test/stakeActivation.test.js`](../test/stakeActivation.test.js) |
+| Governance misconfiguration | Owner-only builders encode calldata with ABI guards; integration tests execute against mock contracts. | [`src/services/governance.js`](../src/services/governance.js) · [`test/governance.integration.test.js`](../test/governance.integration.test.js) |
+| Treasury underfunding | Economics optimizer enforces buffer requirements and risk aversion policies. | [`src/services/economics.js`](../src/services/economics.js) |
+| Documentation drift | Markdown + link lint wired to CI; failing docs block merges. | [`package.json`](../package.json) |
+| Operational blind spots | Telemetry gauges, compliance ledger, and ENS verification loops halt runtime on anomalies. | [`src/services/ensVerifier.js`](../src/services/ensVerifier.js) · [`src/services/governanceLedger.js`](../src/services/governanceLedger.js) |
 
 ---
 
-## Appendix A — Example Governance Defaults *(illustrative)*
-- Epoch length: **1 day**.
-- Emission schedule: geometric decay **1.5% / 90 days**.
-- Burn: **5%** of job fees.
-- Validator quorum: **N=5**, majority > **60%** to pass.
-- Slashing: **2%** non‑reveal, **10%** proven fraud.
-- SLO weights: latency **60%**, uptime **40%**.
-- Model tiers: `SMALL=0.8`, `BASE=1.0`, `FRONTIER=1.3`.
+## 7. Implementation Index
 
-> These values are placeholders for testnets; mainnet parameters are set via governance and published on‑chain.
-
----
-
-## Appendix B — Events (telemetry surface)
-```solidity
-event NodeRegistered(address indexed node, string ens, uint256 stake);
-event UsageSubmitted(bytes32 indexed usageId, address indexed node, uint64 epoch);
-event ValidationCommitted(bytes32 indexed usageId, address indexed validator);
-event ValidationRevealed(bytes32 indexed usageId, address indexed validator, bool accept, uint16 qvBps);
-event AlphaWUAccrued(address indexed node, uint64 epoch, uint256 alphaWU);
-event EpochEmitted(uint64 indexed epoch, uint256 emission, uint256 wagePerAlphaWU);
-event RewardClaimed(address indexed node, uint64 epoch, uint256 amount);
-event FeeBurned(uint64 indexed epoch, uint256 amount);
-```
+| Component | Description | File(s) |
+| --------- | ----------- | ------- |
+| CLI Command Spine | All governance, staking, ENS, and economics builders. | [`src/index.js`](../src/index.js) |
+| Governance Builder Library | Encodes owner-only calldata and ledger journaling. | [`src/services/governance.js`](../src/services/governance.js) |
+| ENS Verifier | Validates ENS ownership & wrapper control before runtime activation. | [`src/services/ensVerifier.js`](../src/services/ensVerifier.js) |
+| Job Lifecycle Engine | Applies for jobs, orchestrates submissions, fetches registry metadata. | [`src/services/jobLifecycle.js`](../src/services/jobLifecycle.js) |
+| Economics Optimizer | Computes reinvestment strategies, buffers, and risk scores. | [`src/services/economics.js`](../src/services/economics.js) |
+| Telemetry Surface | Prometheus exporter and diagnostics loop. | [`src/orchestrator/monitorLoop.js`](../src/orchestrator/monitorLoop.js) |
+| Testing Harness | Vitest suites covering governance, staking, ENS, and lifecycle flows. | [`test/`](../test) |
 
 ---
 
-## Appendix C — Sidecar CLI (reference)
-```bash
-agialpha-sidecar meter --job 0xJOB --tier FRONTIER \
-  --artifacts ipfs://Qm... --submit --sign-with $NODE_KEY
-```
+## 8. Activation Checklist for Allocators
+
+1. **Clone + install** — `git clone ... && npm ci` (enables deterministic toolchain).
+2. **Run local CI** — `npm run lint:md`, `npm run lint:links`, `npm test`, `npm run coverage`.
+3. **Verify ENS binding** — `node src/index.js ens verify --label <name> --address <0x...>`.
+4. **Stake & activate** — `node src/index.js staking activate --amount <value>` (automatically checks 18-decimal precision).
+5. **Configure governance targets** — Use builder commands to set share splits, module addresses, and pause controls.
+6. **Monitor telemetry** — Expose Prometheus endpoint and wire dashboards to the compliance ledger.
+7. **Archive evidence** — Store CI transcripts, branch protection exports, ENS proofs, staking transactions, and governance payloads alongside α‑WU accounting ledgers.
+
+With these rites complete, the node operates as the synthetic labor engine macro funds reference when modeling computational productivity.
 
 ---
 
-**Positioning**: *“$AGIALPHA provides programmable exposure to verified AI‑labor productivity — a yield‑bearing synthetic labor derivative.”*
-
-**Outcome**: A coherent asset class bridging **computational infrastructure**, **AI productivity**, and **tokenized capital markets**.
+**AGI ALPHA NODES** convert raw compute into programmable labor economics, while **$AGIALPHA** captures the wage curve. Every command required to manage that economy lives in this repository, guarded by CI, telemetry, and owner supremacy.
