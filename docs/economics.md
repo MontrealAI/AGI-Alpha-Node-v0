@@ -61,10 +61,11 @@
    - [Synthetic Labor Yield](#synthetic-labor-yield)
 4. [Owner Dominion & Parameter Control](#owner-dominion--parameter-control)
 5. [Treasury Intelligence & Risk Posture](#treasury-intelligence--risk-posture)
-6. [Identity, ENS, and Registry Authority](#identity-ens-and-registry-authority)
-7. [Safety, Slashing, and Recovery](#safety-slashing-and-recovery)
-8. [Continuous Assurance & Branch Protection](#continuous-assurance--branch-protection)
-9. [Glossary of Economic Signals](#glossary-of-economic-signals)
+6. [Liquidity, Access & Vault Hydration](#liquidity-access--vault-hydration)
+7. [Identity, ENS, and Registry Authority](#identity-ens-and-registry-authority)
+8. [Safety, Slashing, and Recovery](#safety-slashing-and-recovery)
+9. [Continuous Assurance & Branch Protection](#continuous-assurance--branch-protection)
+10. [Glossary of Economic Signals](#glossary-of-economic-signals)
 
 ---
 
@@ -293,6 +294,31 @@ flowchart TD
   obligations --> optimizer
   policy --> optimizer
   optimizer --> scores --> summary --> owner
+```
+
+---
+
+## Liquidity, Access & Vault Hydration
+
+- `hydrateOperatorPrivateKey` draws operator signing keys from HashiCorp Vault (or bypasses hydration if a key already exists), guaranteeing the owner can rotate credentials on command without redeploying the runtime.【F:src/services/secretManager.js†L1-L101】
+- Container bootstrap wires Vault hydration, provider instantiation, lifecycle orchestration, and governance API exposure into a single control surface the owner can start or pause with one directive.【F:src/orchestrator/bootstrap.js†L1-L164】
+- `createProvider` and `createWallet` enforce checksum validation and signer readiness, yielding a deterministic pipeline from hydrated secrets to on-chain control.【F:src/services/provider.js†L1-L14】
+- The governance API server exposes JSON payload endpoints for building, notarizing, and cataloging owner actions while sanitizing every field to preserve checksum and decimal integrity.【F:src/network/apiServer.js†L1-L118】【F:src/network/apiServer.js†L119-L238】
+- Telemetry gauges broadcast stake, heartbeat freshness, throughput, and registry compatibility so liquidity ops can be automated against Prometheus metrics without guessing.【F:src/telemetry/monitoring.js†L1-L74】【F:src/telemetry/monitoring.js†L75-L117】
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Owner as Owner Console
+  participant Runtime as Alpha Runtime
+  participant Vault as Vault Cluster
+  participant Chain as Settlement Layer
+
+  Owner->>Runtime: Configure VAULT_* env & API token
+  Runtime->>Vault: fetchVaultSecret(addr, token, path)
+  Vault-->>Runtime: operatorPrivateKey
+  Runtime->>Runtime: hydrateOperatorPrivateKey()
+  Runtime->>Chain: Broadcast owner-authorized governance payloads
 ```
 
 ---
