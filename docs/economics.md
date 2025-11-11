@@ -247,6 +247,34 @@ Every directive receives:
 2. **Diff Journaling:** [`src/services/governanceLedger.js`](../src/services/governanceLedger.js) captures JSON payloads for each command, preserving audit trails.
 3. **Command-Line Ergonomics:** [`src/index.js`](../src/index.js) surfaces `--plan`, `--execute`, and dry-run flows safe enough for non-technical owners.
 
+Owner command posture is continuously assessed by [`deriveOwnerDirectives`](../src/services/controlPlane.js), which fuses live stake telemetry, projected reward splits, and governance preferences into actionable playbooks. Deterministic coverage in [`../test/controlPlane.test.js`](../test/controlPlane.test.js) and integration assertions in [`../test/nodeRuntime.test.js`](../test/nodeRuntime.test.js) guarantee the operator receives pause, restake, or redistribution transactions before critical thresholds are crossed.
+
+---
+
+## Command & Advisory Mesh
+
+```mermaid
+mindmap
+  root((Owner Signal))
+    ControlPlane((Control Plane · src/services/controlPlane.js))
+      Directives{{deriveOwnerDirectives}}
+      LedgerSync[[governanceLedgerJournal]]
+    GovernanceIntel((Governance Intel · src/services/governanceStatus.js))
+      RegistryScan([fetchGovernanceStatus])
+      ModuleDiffs[[validation/reputation/dispute mapping]]
+    ENSGuide((ENS Guide · src/services/ensGuide.js))
+      SubdomainBlueprint([generateEnsSetupGuide])
+      Runbook([formatEnsGuide])
+    APIConductor((API Server · src/network/apiServer.js))
+      RESTInsights([/governance/status])
+      TxRelay([/transactions/encode])
+```
+
+- **Control Plane:** [`deriveOwnerDirectives`](../src/services/controlPlane.js) synthesizes stake gaps, slashing risk, and reward drift into prioritized actions (`pause`, `stake-top-up`, `set-minimum-stake`, `retune-shares`). Coverage: [`../test/controlPlane.test.js`](../test/controlPlane.test.js), [`../test/nodeRuntime.test.js`](../test/nodeRuntime.test.js).
+- **Governance Intel:** [`fetchGovernanceStatus`](../src/services/governanceStatus.js) queries live registry modules so the owner can rotate validation, reputation, or dispute logic before adverse events. Smoke tests: [`../test/governanceStatus.test.js`](../test/governanceStatus.test.js).
+- **ENS Deployment Guide:** [`generateEnsSetupGuide`](../src/services/ensGuide.js) and [`formatEnsGuide`](../src/services/ensGuide.js) publish step-by-step ENS custody rituals with deterministic formatting in [`../test/ensGuide.test.js`](../test/ensGuide.test.js).
+- **API Orchestration:** [`src/network/apiServer.js`](../src/network/apiServer.js) exposes `/governance/status`, `/governance/directives`, and `/transactions/encode` endpoints for operators who prefer REST control surfaces. Validation lives in [`../test/apiServer.test.js`](../test/apiServer.test.js).
+
 ---
 
 ## Treasury & Liquidity Instruments
