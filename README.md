@@ -189,12 +189,12 @@ graph TD
 
    The CLI will verify ENS control, inspect stake posture, launch monitoring loops, and emit owner directives from [`src/index.js`](src/index.js).
 4. **API Surface**
-   - Start the REST console: `npm start -- api`
+   - Start the containerized runtime with REST + metrics enabled: `npm start -- container --api-port 8080 --metrics-port 9464`
    - Query status: `curl http://localhost:8080/status`
    - Inspect Prometheus feed: `curl http://localhost:9464/metrics`
 5. **Autonomous Job Execution**
-   - `npm start -- run` activates the deterministic lifecycle manager from [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js).
-   - Use `npm start -- swarm --agents orion:energy|finance:2` to experiment with alternative swarms defined in [`src/intelligence/swarmOrchestrator.js`](src/intelligence/swarmOrchestrator.js).
+   - Use the jobs lifecycle namespace, e.g. `npm start -- jobs discover` or `npm start -- jobs apply <jobId>`, powered by [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js).
+   - Explore swarm coordination via the intelligence namespace: `npm start -- intelligence swarm --agents orion:energy|finance:2` (see [`src/intelligence/swarmOrchestrator.js`](src/intelligence/swarmOrchestrator.js)).
 
 ---
 
