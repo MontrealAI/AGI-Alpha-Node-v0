@@ -1,5 +1,12 @@
 #!/bin/sh
-set -euo pipefail
+set -eu
+
+# Enable pipefail when the current shell supports it (e.g. bash); dash and other
+# POSIX shells used as /bin/sh do not recognize the option and would exit with
+# an error, preventing the container from starting.
+if (set -o pipefail 2>/dev/null); then
+  set -o pipefail
+fi
 
 CONFIG_DEFAULT="/config/node.env"
 
