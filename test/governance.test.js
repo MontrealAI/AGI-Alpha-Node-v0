@@ -9,6 +9,11 @@ import {
   buildJobRegistryUpgradeTx,
   buildDisputeTriggerTx,
   buildIdentityDelegateTx,
+  buildIncentivesStakeManagerTx,
+  buildIncentivesMinimumStakeTx,
+  buildIncentivesHeartbeatTx,
+  buildIncentivesActivationFeeTx,
+  buildIncentivesTreasuryTx,
   getOwnerFunctionCatalog,
   resolveRoleIdentifier
 } from '../src/services/governance.js';
@@ -109,9 +114,55 @@ describe('governance utilities', () => {
     expect(tx.meta.proposed.allowed).toBe(true);
   });
 
+  it('builds incentives stake manager payloads', () => {
+    const tx = buildIncentivesStakeManagerTx({
+      incentivesAddress: DEAD,
+      stakeManagerAddress: '0x0000000000000000000000000000000000000001'
+    });
+    expect(tx.meta.contract).toBe('PlatformIncentives');
+    expect(tx.meta.method).toBe('setStakeManager');
+  });
+
+  it('builds incentives minimum stake payloads', () => {
+    const tx = buildIncentivesMinimumStakeTx({
+      incentivesAddress: DEAD,
+      amount: '2.5'
+    });
+    expect(tx.amount).toBe(2500000000000000000n);
+    expect(tx.meta.method).toBe('setMinimumStake');
+  });
+
+  it('builds incentives heartbeat payloads', () => {
+    const tx = buildIncentivesHeartbeatTx({
+      incentivesAddress: DEAD,
+      graceSeconds: 3600
+    });
+    expect(tx.meta.method).toBe('setHeartbeatGrace');
+    expect(tx.meta.args.newGraceSeconds).toBe('3600');
+  });
+
+  it('builds incentives activation fee payloads', () => {
+    const tx = buildIncentivesActivationFeeTx({
+      incentivesAddress: DEAD,
+      feeAmount: '1.75'
+    });
+    expect(tx.fee).toBe(1750000000000000000n);
+    expect(tx.meta.method).toBe('setActivationFee');
+  });
+
+  it('builds incentives treasury payloads', () => {
+    const tx = buildIncentivesTreasuryTx({
+      incentivesAddress: DEAD,
+      treasuryAddress: '0x0000000000000000000000000000000000000001'
+    });
+    expect(tx.meta.method).toBe('setTreasury');
+    expect(tx.meta.proposed.treasury).toBe('0x0000000000000000000000000000000000000001');
+  });
+
   it('exposes owner function catalog', () => {
     const catalog = getOwnerFunctionCatalog();
     expect(catalog.StakeManager.some((entry) => entry.signature.includes('setMinimumStake'))).toBe(true);
     expect(catalog.JobRegistry.length).toBeGreaterThan(0);
+    expect(catalog.PlatformIncentives.some((entry) => entry.signature.includes('setTreasury'))).toBe(true);
   });
 });

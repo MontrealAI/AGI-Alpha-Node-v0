@@ -31,6 +31,11 @@ import {
   buildJobRegistryUpgradeTx,
   buildDisputeTriggerTx,
   buildIdentityDelegateTx,
+  buildIncentivesStakeManagerTx,
+  buildIncentivesMinimumStakeTx,
+  buildIncentivesHeartbeatTx,
+  buildIncentivesActivationFeeTx,
+  buildIncentivesTreasuryTx,
   getOwnerFunctionCatalog
 } from './services/governance.js';
 import { recordGovernanceAction } from './services/governanceLedger.js';
@@ -1910,6 +1915,124 @@ addCommonGovernanceOptions(
         currentAllowed === undefined
           ? null
           : { operator: options.operator, allowed: currentAllowed }
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
+    .command('incentives-manager')
+    .description('Repoint PlatformIncentives to a new StakeManager contract')
+    .requiredOption('--incentives <address>', 'PlatformIncentives contract address')
+    .requiredOption('--stake-manager <address>', 'StakeManager contract address')
+    .option('--current <address>', 'Current StakeManager contract address for diff')
+).action((options) => {
+  try {
+    const tx = buildIncentivesStakeManagerTx({
+      incentivesAddress: options.incentives,
+      stakeManagerAddress: options.stakeManager,
+      currentStakeManager: options.current ?? null
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
+    .command('incentives-minimum')
+    .description('Update PlatformIncentives minimum stake (18 decimal $AGIALPHA)')
+    .requiredOption('--incentives <address>', 'PlatformIncentives contract address')
+    .requiredOption('--amount <amount>', 'New minimum stake in $AGIALPHA (decimal)')
+    .option('--current <amount>', 'Current minimum stake for diff (decimal)')
+    .option('--decimals <decimals>', 'Token decimals (defaults to 18)', String(AGIALPHA_TOKEN_DECIMALS))
+).action((options) => {
+  try {
+    const decimals = parseIntegerOption(options.decimals, 'decimals') ?? AGIALPHA_TOKEN_DECIMALS;
+    const current = parseDecimalToWei(options.current, 'current minimum stake');
+    const tx = buildIncentivesMinimumStakeTx({
+      incentivesAddress: options.incentives,
+      amount: options.amount,
+      decimals,
+      currentMinimum: current ?? undefined
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
+    .command('incentives-heartbeat')
+    .description('Adjust PlatformIncentives heartbeat grace window (seconds)')
+    .requiredOption('--incentives <address>', 'PlatformIncentives contract address')
+    .requiredOption('--grace-seconds <seconds>', 'New heartbeat grace window (seconds)')
+    .option('--current <seconds>', 'Current heartbeat grace window for diff')
+).action((options) => {
+  try {
+    const grace = parseBigIntOption(options.graceSeconds, 'grace-seconds');
+    if (grace === undefined) {
+      throw new Error('grace-seconds is required');
+    }
+    const current = parseBigIntOption(options.current, 'current grace window');
+    const tx = buildIncentivesHeartbeatTx({
+      incentivesAddress: options.incentives,
+      graceSeconds: grace,
+      currentGraceSeconds: current ?? undefined
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
+    .command('incentives-activation-fee')
+    .description('Set PlatformIncentives activation fee (18 decimal $AGIALPHA)')
+    .requiredOption('--incentives <address>', 'PlatformIncentives contract address')
+    .requiredOption('--fee <amount>', 'Activation fee amount in $AGIALPHA (decimal)')
+    .option('--current <amount>', 'Current activation fee for diff (decimal)')
+    .option('--decimals <decimals>', 'Token decimals (defaults to 18)', String(AGIALPHA_TOKEN_DECIMALS))
+).action((options) => {
+  try {
+    const decimals = parseIntegerOption(options.decimals, 'decimals') ?? AGIALPHA_TOKEN_DECIMALS;
+    const current = parseDecimalToWei(options.current, 'current activation fee');
+    const tx = buildIncentivesActivationFeeTx({
+      incentivesAddress: options.incentives,
+      feeAmount: options.fee,
+      decimals,
+      currentFee: current ?? undefined
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
+    .command('incentives-treasury')
+    .description('Redirect PlatformIncentives treasury distribution address')
+    .requiredOption('--incentives <address>', 'PlatformIncentives contract address')
+    .requiredOption('--treasury <address>', 'Treasury recipient address')
+    .option('--current <address>', 'Current treasury address for diff')
+).action((options) => {
+  try {
+    const tx = buildIncentivesTreasuryTx({
+      incentivesAddress: options.incentives,
+      treasuryAddress: options.treasury,
+      currentTreasury: options.current ?? null
     });
     emitGovernanceResult(tx, options);
   } catch (error) {
