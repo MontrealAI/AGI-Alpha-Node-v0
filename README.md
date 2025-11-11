@@ -83,6 +83,7 @@ For a deep dive into settlement dynamics, wage curves, and treasury choreography
    - [Local & Container Launch](#local--container-launch)
    - [Helm & Kubernetes](#helm--kubernetes)
    - [Operator Runbook](#operator-runbook)
+   - [Deployment Policy Loop](#deployment-policy-loop)
 7. [Configuration & Secrets](#configuration--secrets)
 8. [Continuous Assurance & Branch Protection](#continuous-assurance--branch-protection)
 9. [Repository Atlas](#repository-atlas)
@@ -418,6 +419,23 @@ flowchart TD
 
 - Enforcement rituals covering badge verification, branch protection, CI mirroring, coverage artifact review, container smoke tests, and Helm validation are codified in the [Operator Runbook](docs/operator-runbook.md).
 - One-click deployment guidance and troubleshooting live in [`docs/deployment/one-click.md`](docs/deployment/one-click.md).
+
+### Deployment Policy Loop
+
+```mermaid
+flowchart LR
+  Source[Source Control] --> Build[Dockerfile Build]
+  Build --> Smoke[CI Smoke Test]
+  Smoke --> Badges[Status Badges]
+  Build --> HelmChart[Helm Chart Render]
+  HelmChart --> Cluster[Kubernetes Cluster]
+  Cluster --> Metrics[Prometheus Metrics]
+  Metrics --> Console[Owner Console]
+  Console --> Directives[Governance Directives]
+  Directives --> Build
+```
+
+The build-to-governance loop keeps the runtime’s deployments, metrics, and owner directives fused: containers surface only after passing smoke tests, Helm renders mirror Git revisions, and telemetry streams funnel back into the console for immediate policy decisions.
 
 ---
 
