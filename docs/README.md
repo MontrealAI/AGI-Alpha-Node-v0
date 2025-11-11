@@ -275,6 +275,7 @@ flowchart LR
 | **Validator Share** | ValidationModule commit-reveal sets verdicts; owner-defined percentages govern validator vs. worker payouts. |
 | **Reinvestment Loop** | `reinvestRewards()` cycles rewards back into stake, elevating routing priority without manual intervention. |
 | **Self-Optimization CLI** | `node src/index.js economics optimize` scores reinvestment ratios against buffer policy and upcoming obligations so treasury ops remain compliant. |
+| **Productivity Console** | `node src/index.js economics productivity --alpha 120,132,140` (or `--reports snapshot.json`) outputs α‑Productivity Index, burn/emission basis points, wage-per-α analytics, and Synthetic Labor Yield. |
 | **Emergency Liquidity** | Pause via `SystemPause.pauseAll()` before invoking `StakeManager.withdrawStake` for controlled capital recovery. |
 
 ---

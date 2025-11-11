@@ -1,5 +1,67 @@
 import { parseTokenAmount } from '../utils/formatters.js';
 
+const DEFAULT_DECIMALS = 18;
+
+function toBigIntAmount(value, decimals, field) {
+  if (typeof value === 'bigint') {
+    if (value < 0n) {
+      throw new RangeError(`${field} must be non-negative`);
+    }
+    return value;
+  }
+
+  if (value === null || value === undefined) {
+    throw new Error(`${field} is required`);
+  }
+
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) {
+      throw new Error(`${field} must be a finite number`);
+    }
+    value = value.toString();
+  }
+
+  if (typeof value !== 'string') {
+    throw new Error(`${field} must be provided as a string, number, or bigint`);
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    throw new Error(`${field} cannot be empty`);
+  }
+
+  const parsed = parseTokenAmount(trimmed, decimals);
+  if (parsed < 0n) {
+    throw new RangeError(`${field} must be non-negative`);
+  }
+  return parsed;
+}
+
+function normalizePositiveNumber(value, field) {
+  const numeric = Number.parseFloat(value);
+  if (!Number.isFinite(numeric)) {
+    throw new Error(`${field} must be a finite number`);
+  }
+  if (numeric <= 0) {
+    throw new RangeError(`${field} must be greater than zero`);
+  }
+  return numeric;
+}
+
+function normalizeRatio(value, field) {
+  if (value === null || value === undefined) {
+    return undefined;
+  }
+  const numeric = Number.parseFloat(value);
+  if (!Number.isFinite(numeric)) {
+    throw new Error(`${field} must be a finite number between 0 and 1`);
+  }
+  if (numeric < 0 || numeric > 1) {
+    throw new RangeError(`${field} must be between 0 and 1`);
+  }
+  return numeric;
+}
+
 function normalizeHistory(rewardHistory, decimals) {
   if (!Array.isArray(rewardHistory) || rewardHistory.length === 0) {
     throw new Error('rewardHistory must contain at least one entry');
@@ -119,6 +181,224 @@ function evaluateStrategy({
     obligationsShortfall,
     adjustedStability,
     score
+  };
+}
+
+export function calculateAlphaWorkUnit({
+  gpuSeconds,
+  gflopsNorm,
+  modelTier,
+  sloPass,
+  qualityValidation,
+  decimals = DEFAULT_DECIMALS
+}) {
+  const normalizedGpuSeconds = normalizePositiveNumber(gpuSeconds, 'gpuSeconds');
+  const normalizedGflops = normalizePositiveNumber(gflopsNorm, 'gflopsNorm');
+  const normalizedModelTier = normalizePositiveNumber(modelTier, 'modelTier');
+  const normalizedSlo = normalizeRatio(sloPass, 'sloPass');
+  const normalizedQuality = normalizeRatio(
+    qualityValidation,
+    'qualityValidation'
+  );
+
+  if (normalizedSlo === undefined) {
+    throw new Error('sloPass is required');
+  }
+  if (normalizedQuality === undefined) {
+    throw new Error('qualityValidation is required');
+  }
+
+  const scale = 10n ** BigInt(decimals);
+  const factors = [
+    normalizedGpuSeconds,
+    normalizedGflops,
+    normalizedModelTier,
+    normalizedSlo,
+    normalizedQuality
+  ];
+
+  const alphaWu = factors.reduce((accumulator, factor, index) => {
+    const scaledFactor = parseTokenAmount(factor.toString(), decimals);
+    if (scaledFactor === undefined) {
+      throw new Error(`Factor at position ${index} could not be parsed`);
+    }
+    return (accumulator * scaledFactor) / scale;
+  }, scale);
+
+  return {
+    alphaWu,
+    factors: {
+      gpuSeconds: normalizedGpuSeconds,
+      gflopsNorm: normalizedGflops,
+      modelTier: normalizedModelTier,
+      sloPass: normalizedSlo,
+      qualityValidation: normalizedQuality
+    },
+    decimals
+  };
+}
+
+function extractQuality(report) {
+  if (report === null || report === undefined) {
+    return undefined;
+  }
+  if (typeof report === 'object') {
+    if (report.qualityValidation !== undefined) return report.qualityValidation;
+    if (report.quality !== undefined) return report.quality;
+    if (report.qv !== undefined) return report.qv;
+  }
+  return report;
+}
+
+function extractSlo(report) {
+  if (report === null || report === undefined) {
+    return undefined;
+  }
+  if (typeof report === 'object' && report.sloPass !== undefined) {
+    return report.sloPass;
+  }
+  if (typeof report === 'object' && report.slo !== undefined) {
+    return report.slo;
+  }
+  return report;
+}
+
+export function calculateAlphaProductivityIndex({
+  reports,
+  decimals = DEFAULT_DECIMALS,
+  circulatingSupply
+}) {
+  if (!Array.isArray(reports) || reports.length === 0) {
+    throw new Error('reports must be a non-empty array');
+  }
+
+  const scale = 10n ** BigInt(decimals);
+  const contributions = [];
+  let totalAlphaWu = 0n;
+  let totalEmitted = 0n;
+  let totalBurned = 0n;
+  let sloAccumulator = 0;
+  let qualityAccumulator = 0;
+  let sloCount = 0;
+  let qualityCount = 0;
+
+  reports.forEach((entry, index) => {
+    if (!entry || typeof entry !== 'object') {
+      throw new Error(`Report at index ${index} must be an object`);
+    }
+
+    let alphaWu;
+    if (entry.alphaWu !== undefined) {
+      alphaWu = toBigIntAmount(entry.alphaWu, decimals, `reports[${index}].alphaWu`);
+    } else if (entry.alpha !== undefined) {
+      alphaWu = toBigIntAmount(entry.alpha, decimals, `reports[${index}].alpha`);
+    } else if (
+      entry.gpuSeconds !== undefined ||
+      entry.gflopsNorm !== undefined ||
+      entry.modelTier !== undefined
+    ) {
+      alphaWu = calculateAlphaWorkUnit({
+        gpuSeconds: entry.gpuSeconds,
+        gflopsNorm: entry.gflopsNorm,
+        modelTier: entry.modelTier,
+        sloPass: entry.sloPass ?? entry.slo ?? entry.metrics?.sloPass,
+        qualityValidation:
+          extractQuality(entry.qualityValidation ?? entry.metrics?.qualityValidation ?? entry.qv ?? entry.quality),
+        decimals
+      }).alphaWu;
+    } else {
+      throw new Error(
+        `reports[${index}] must include alpha, alphaWu, or workload metrics (gpuSeconds, gflopsNorm, modelTier)`
+      );
+    }
+
+    if (alphaWu < 0n) {
+      throw new RangeError(`reports[${index}] alpha value must be non-negative`);
+    }
+
+    const slo = normalizeRatio(extractSlo(entry.sloPass ?? entry.slo ?? entry.metrics?.sloPass), 'sloPass');
+    if (slo !== undefined) {
+      sloAccumulator += slo;
+      sloCount += 1;
+    }
+
+    const quality = normalizeRatio(
+      extractQuality(
+        entry.qualityValidation ?? entry.metrics?.qualityValidation ?? entry.qv ?? entry.quality
+      ),
+      'qualityValidation'
+    );
+    if (quality !== undefined) {
+      qualityAccumulator += quality;
+      qualityCount += 1;
+    }
+
+    const emittedValue = entry.tokensEmitted ?? entry.emission;
+    const burnedValue = entry.tokensBurned ?? entry.burn;
+
+    if (emittedValue !== undefined) {
+      totalEmitted += toBigIntAmount(emittedValue, decimals, `reports[${index}].tokensEmitted`);
+    }
+
+    if (burnedValue !== undefined) {
+      totalBurned += toBigIntAmount(burnedValue, decimals, `reports[${index}].tokensBurned`);
+    }
+
+    contributions.push({
+      epoch: entry.epoch ?? index + 1,
+      alphaWu,
+      sloPass: slo,
+      quality,
+      tokensEmitted:
+        emittedValue !== undefined
+          ? toBigIntAmount(emittedValue, decimals, `reports[${index}].tokensEmitted`)
+          : undefined,
+      tokensBurned:
+        burnedValue !== undefined
+          ? toBigIntAmount(burnedValue, decimals, `reports[${index}].tokensBurned`)
+          : undefined
+    });
+
+    totalAlphaWu += alphaWu;
+  });
+
+  const averageAlphaWu = totalAlphaWu / BigInt(contributions.length);
+  const first = contributions[0].alphaWu;
+  const last = contributions[contributions.length - 1].alphaWu;
+  const growthBps = first === 0n ? 0n : ((last - first) * 10_000n) / first;
+
+  const burnToEmissionBps = totalEmitted === 0n ? null : (totalBurned * 10_000n) / totalEmitted;
+  const wagePerAlpha = totalAlphaWu === 0n ? null : (totalEmitted * scale) / totalAlphaWu;
+
+  const normalizedCirculating =
+    circulatingSupply !== undefined && circulatingSupply !== null
+      ? toBigIntAmount(circulatingSupply, decimals, 'circulatingSupply')
+      : null;
+
+  const syntheticLaborYield =
+    normalizedCirculating && normalizedCirculating > 0n
+      ? (totalAlphaWu * scale) / normalizedCirculating
+      : null;
+
+  return {
+    decimals,
+    epochCount: contributions.length,
+    totalAlphaWu,
+    averageAlphaWu,
+    contributions,
+    growthBps,
+    averages: {
+      sloPass: sloCount > 0 ? sloAccumulator / sloCount : null,
+      quality: qualityCount > 0 ? qualityAccumulator / qualityCount : null
+    },
+    totals: {
+      tokensEmitted: totalEmitted,
+      tokensBurned: totalBurned,
+      netTokens: totalEmitted - totalBurned
+    },
+    burnToEmissionBps,
+    wagePerAlpha,
+    syntheticLaborYield
   };
 }
 

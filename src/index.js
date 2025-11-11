@@ -9,7 +9,11 @@ import { createProvider, createWallet } from './services/provider.js';
 import { verifyNodeOwnership, buildNodeNameFromLabel } from './services/ensVerifier.js';
 import { buildStakeAndActivateTx, validateStakeThreshold } from './services/staking.js';
 import { calculateRewardShare, splitRewardPool } from './services/rewards.js';
-import { optimizeReinvestmentStrategy, summarizeStrategy } from './services/economics.js';
+import {
+  optimizeReinvestmentStrategy,
+  summarizeStrategy,
+  calculateAlphaProductivityIndex
+} from './services/economics.js';
 import { formatTokenAmount } from './utils/formatters.js';
 import {
   AGIALPHA_TOKEN_CHECKSUM_ADDRESS,
@@ -77,6 +81,74 @@ function parseStrategiesOption(input) {
         parallelism: parsedParallelism
       };
     });
+}
+
+function parseCsv(input) {
+  if (!input) return [];
+  return input
+    .split(',')
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+}
+
+function formatBps(value) {
+  if (value === null || value === undefined) {
+    return 'n/a';
+  }
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return `${value.toString()} bps`;
+  }
+  const percent = (numeric / 100).toFixed(2);
+  return `${numeric} bps (${percent}%)`;
+}
+
+function formatOptionalRatio(value) {
+  if (value === null || value === undefined) {
+    return 'n/a';
+  }
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return 'n/a';
+  }
+  return numeric.toFixed(4);
+}
+
+function buildProductivityReports(options) {
+  if (options.reports) {
+    if (options.alpha) {
+      throw new Error('Provide either --reports or inline series options, not both');
+    }
+    const raw = fs.readFileSync(options.reports, 'utf8');
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      throw new Error('--reports file must contain an array of epoch reports');
+    }
+    return parsed;
+  }
+
+  if (!options.alpha) {
+    throw new Error('Provide either --reports or --alpha values');
+  }
+
+  const alphaValues = parseCsv(options.alpha);
+  if (alphaValues.length === 0) {
+    throw new Error('--alpha must contain at least one value');
+  }
+
+  const sloValues = parseCsv(options.slo);
+  const qualityValues = parseCsv(options.quality);
+  const emissionValues = parseCsv(options.emissions);
+  const burnValues = parseCsv(options.burns);
+
+  return alphaValues.map((alphaValue, index) => ({
+    epoch: index + 1,
+    alpha: alphaValue,
+    sloPass: sloValues[index],
+    qualityValidation: qualityValues[index],
+    tokensEmitted: emissionValues[index],
+    tokensBurned: burnValues[index]
+  }));
 }
 
 function parseTasksOption(input) {
@@ -1646,6 +1718,80 @@ economics
           score: strategy.score.toString(),
           bufferShortfall: strategy.bufferShortfall.toString(),
           obligationsShortfall: strategy.obligationsShortfall.toString()
+        }))
+      );
+    } catch (error) {
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
+  });
+
+economics
+  .command('productivity')
+  .description('Summarize α-Productivity Index, burn ratio, and wage curve for recent epochs')
+  .option('--reports <file>', 'Path to JSON file containing epoch productivity reports')
+  .option('--alpha <values>', 'Comma-separated α-WU totals per epoch (decimal values)')
+  .option('--slo <values>', 'Comma-separated SLO pass ratios (0-1) aligned with α-WU values')
+  .option('--quality <values>', 'Comma-separated validator quality scores (0-1)')
+  .option('--emissions <values>', 'Comma-separated token emission amounts per epoch (decimal)')
+  .option('--burns <values>', 'Comma-separated token burn amounts per epoch (decimal)')
+  .option('--circulating <amount>', 'Circulating $AGIALPHA supply for Synthetic Labor Yield (decimal)')
+  .option('--decimals <decimals>', 'Token decimals', '18')
+  .action((options) => {
+    try {
+      const decimals = Number.parseInt(options.decimals, 10);
+      if (!Number.isFinite(decimals) || Number.isNaN(decimals)) {
+        throw new Error('--decimals must be a valid integer');
+      }
+
+      const reports = buildProductivityReports(options);
+      const index = calculateAlphaProductivityIndex({
+        reports,
+        decimals,
+        circulatingSupply: options.circulating
+      });
+
+      console.log(
+        chalk.bold(
+          `Total α-WU: ${formatTokenAmount(index.totalAlphaWu, decimals)} · Average α-WU: ${formatTokenAmount(
+            index.averageAlphaWu,
+            decimals
+          )}`
+        )
+      );
+
+      console.table({
+        epochs: index.epochCount,
+        growth: formatBps(index.growthBps),
+        averageSLO: formatOptionalRatio(index.averages.sloPass),
+        averageQuality: formatOptionalRatio(index.averages.quality)
+      });
+
+      console.log(chalk.cyan('Token Flows'));
+      console.table({
+        emitted: formatTokenAmount(index.totals.tokensEmitted, decimals),
+        burned: formatTokenAmount(index.totals.tokensBurned, decimals),
+        net: formatTokenAmount(index.totals.netTokens, decimals),
+        burnToEmission: formatBps(index.burnToEmissionBps),
+        wagePerAlpha: index.wagePerAlpha ? formatTokenAmount(index.wagePerAlpha, decimals) : 'n/a',
+        syntheticLaborYield: index.syntheticLaborYield
+          ? formatTokenAmount(index.syntheticLaborYield, decimals)
+          : 'n/a'
+      });
+
+      console.log(chalk.gray('Epoch Contributions'));
+      console.table(
+        index.contributions.map((entry) => ({
+          epoch: entry.epoch,
+          alphaWu: formatTokenAmount(entry.alphaWu, decimals),
+          sloPass: formatOptionalRatio(entry.sloPass),
+          quality: formatOptionalRatio(entry.quality),
+          emitted: entry.tokensEmitted !== undefined
+            ? formatTokenAmount(entry.tokensEmitted, decimals)
+            : 'n/a',
+          burned: entry.tokensBurned !== undefined
+            ? formatTokenAmount(entry.tokensBurned, decimals)
+            : 'n/a'
         }))
       );
     } catch (error) {
