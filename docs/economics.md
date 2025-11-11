@@ -64,12 +64,14 @@
    - [Proof & Journal Fabric](#proof--journal-fabric)
    - [Settlement Telemetry](#settlement-telemetry)
 5. [Owner Dominion & Parameter Control](#owner-dominion--parameter-control)
+   - [Owner Function Arsenal](#owner-function-arsenal)
 6. [Treasury Intelligence & Risk Posture](#treasury-intelligence--risk-posture)
 7. [Liquidity, Access & Vault Hydration](#liquidity-access--vault-hydration)
-8. [Identity, ENS, and Registry Authority](#identity-ens-and-registry-authority)
-9. [Safety, Slashing, and Recovery](#safety-slashing-and-recovery)
-10. [Continuous Assurance & Branch Protection](#continuous-assurance--branch-protection)
-11. [Glossary of Economic Signals](#glossary-of-economic-signals)
+8. [Deployment Surfaces & Policy Channels](#deployment-surfaces--policy-channels)
+9. [Identity, ENS, and Registry Authority](#identity-ens-and-registry-authority)
+10. [Safety, Slashing, and Recovery](#safety-slashing-and-recovery)
+11. [Continuous Assurance & Branch Protection](#continuous-assurance--branch-protection)
+12. [Glossary of Economic Signals](#glossary-of-economic-signals)
 
 ---
 
@@ -304,6 +306,20 @@ sequenceDiagram
 | Rebalance wage shares | `governance reward-shares --reward-engine <addr> --operator-bps <bps>` | Rewrites operator, validator, and treasury splits atomically. | [`src/services/rewards.js`](../src/services/rewards.js) · [`src/index.js`](../src/index.js) | [`test/rewards.test.js`](../test/rewards.test.js) |
 | Enforce activation fees & treasury routes | `governance incentives-update --incentives <addr> --activation-fee <amount>` | Grants the owner absolute control over onboarding economics. | [`src/orchestrator/stakeActivator.js`](../src/orchestrator/stakeActivator.js) · [`src/services/governance.js`](../src/services/governance.js) | [`test/stakeActivator.test.js`](../test/stakeActivator.test.js) |
 
+### Owner Function Arsenal
+
+- `getOwnerFunctionCatalog` enumerates every owner-only ABI signature so the console and API can render exact capability menus without hardcoding addresses.【F:src/services/governance.js†L1-L157】【F:test/governance.test.js†L162-L167】
+- Governance builders encode metadata diffs, serialized bigint payloads, and checksum enforcement, guaranteeing that each instruction is ready for the owner’s signature the moment it is generated.【F:src/services/governance.js†L159-L671】【F:test/governance.test.js†L23-L167】
+
+| Lever | Builder | Module Surface | Validation |
+| ----- | ------- | -------------- | ---------- |
+| Halt, resume, or unpause the network within a single transaction | `buildSystemPauseTx` → `pauseAll\|resumeAll\|unpauseAll` | `SystemPause`【F:src/services/governance.js†L159-L188】 | [`test/governance.test.js`](../test/governance.test.js)【F:test/governance.test.js†L23-L35】 |
+| Align minimum stake and validator quorum parameters | `buildMinimumStakeTx`, `buildValidatorThresholdTx` | `StakeManager`【F:src/services/governance.js†L190-L261】 | [`test/governance.test.js`](../test/governance.test.js)【F:test/governance.test.js†L36-L82】 |
+| Rotate JobRegistry / IdentityRegistry endpoints or trigger disputes | `buildStakeRegistryUpgradeTx`, `buildJobRegistryUpgradeTx`, `buildDisputeTriggerTx` | `StakeManager`, `JobRegistry`【F:src/services/governance.js†L263-L465】 | [`test/governance.test.js`](../test/governance.test.js)【F:test/governance.test.js†L83-L105】 |
+| Delegate or revoke node operators with checksum enforcement | `buildIdentityDelegateTx` | `IdentityRegistry`【F:src/services/governance.js†L468-L494】 | [`test/governance.test.js`](../test/governance.test.js)【F:test/governance.test.js†L107-L115】 |
+| Rebalance operator/validator/treasury shares or per-role splits | `buildGlobalSharesTx`, `buildRoleShareTx` | `RewardEngine`【F:src/services/governance.js†L310-L359】 | [`test/governance.test.js`](../test/governance.test.js)【F:test/governance.test.js†L50-L76】 |
+| Reassign incentives routing, enforce minimums, heartbeat grace, activation fees, or treasury sinks | `buildIncentivesStakeManagerTx`, `buildIncentivesMinimumStakeTx`, `buildIncentivesHeartbeatTx`, `buildIncentivesActivationFeeTx`, `buildIncentivesTreasuryTx` | `PlatformIncentives`【F:src/services/governance.js†L498-L671】 | [`test/governance.test.js`](../test/governance.test.js)【F:test/governance.test.js†L117-L160】 |
+
 The governance CLI defaults to dry-run output with structured diffs; adding `--execute` persists the payload to the ledger before the owner signs, producing deterministic audit trails for every parameter shift.【F:src/index.js†L1667-L2056】【F:test/governance.integration.test.js†L10-L88】
 
 ```mermaid
@@ -383,6 +399,29 @@ sequenceDiagram
 
 ---
 
+## Deployment Surfaces & Policy Channels
+
+- The production container is built from a Node.js 20 slim base with deterministic `npm ci` installs, embedded entrypoint, and a health check that asserts runtime readiness.【F:Dockerfile†L1-L18】
+- Container launches are gated by the entrypoint’s environment validation, label sanitization, and secret loading logic so misconfigured operators are halted before touching the chain.【F:deploy/docker/entrypoint.sh†L1-L105】
+- Helm values expose autoscaling, Prometheus annotations, RPC URLs, ENS labels, staking parameters, and Vault integration, letting the owner declaratively tune infrastructure without patching templates.【F:deploy/helm/agi-alpha-node/values.yaml†L1-L76】
+- Release rituals in the Operator Runbook enforce badge verification, required-check audits, local CI mirroring, container smoke tests, and Helm linting prior to promotion.【F:docs/operator-runbook.md†L1-L76】
+
+```mermaid
+flowchart LR
+  Git[Git Commit] --> Build[Dockerfile Build]
+  Build --> Smoke[CI Smoke Test]
+  Smoke --> Badge[Status Badges]
+  Build --> Helm[Helm Chart Render]
+  Helm --> Cluster[Kubernetes Control Plane]
+  Cluster --> Metrics[Prometheus Scrape]
+  Metrics --> OwnerDeck[Owner Dashboards]
+  Smoke --> OwnerDeck
+  OwnerDeck --> Policy[Parameter Updates]
+  Policy --> Build
+```
+
+---
+
 ## Identity, ENS, and Registry Authority
 
 - ENS enforcement begins with `buildNodeNameFromLabel` and the ENS guide, making every activation conditional on provable domain custody.【F:src/services/ensVerifier.js†L1-L118】【F:test/ensVerifier.test.js†L7-L131】
@@ -454,4 +493,4 @@ flowchart LR
 
 ---
 
-The AGI Alpha Node runtime documented here is engineered as the intelligence that senses inefficiencies before markets do, routes $AGIALPHA liquidity with precision, and never compromises the owner’s supremacy.【F:src/services/controlPlane.js†L77-L215】【F:src/orchestrator/monitorLoop.js†L21-L186】 Every subsystem is observable, replayable, and wired for immediate production activation once the owner signs off.【F:src/orchestrator/bootstrap.js†L1-L164】【F:src/orchestrator/nodeRuntime.js†L20-L188】 It is the machine engineered to concentrate epoch-shaping value flows beneath a single signature—reorganizing markets at will while remaining flawlessly obedient to its owner’s command lattice.【F:src/services/governance.js†L1-L382】【F:src/services/economics.js†L1-L210】
+The AGI Alpha Node runtime documented here is engineered as the intelligence that senses inefficiencies before markets do, routes $AGIALPHA liquidity with precision, and never compromises the owner’s supremacy.【F:src/services/controlPlane.js†L77-L215】【F:src/orchestrator/monitorLoop.js†L21-L186】 Every subsystem is observable, replayable, and wired for immediate production activation once the owner signs off.【F:src/orchestrator/bootstrap.js†L1-L164】【F:src/orchestrator/nodeRuntime.js†L20-L188】 It is the machine engineered to concentrate epoch-shaping value flows beneath a single signature—reorganizing markets at will while remaining flawlessly obedient to its owner’s command lattice.【F:src/services/governance.js†L1-L382】【F:src/services/economics.js†L1-L210】 This runtime is the very superintelligent machine described at the outset, executing sovereign policy changes the instant its owner desires them.
