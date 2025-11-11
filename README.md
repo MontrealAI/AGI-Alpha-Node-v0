@@ -182,6 +182,7 @@ flowchart TB
 | `intelligence learn` | Advance curriculum evolution and autonomous capability growth. | [`runCurriculumEvolution`](src/intelligence/learningLoop.js) |
 | `intelligence stress-test` | Simulate adversarial shocks and produce antifragile remediation. | [`assessAntifragility`](src/intelligence/stressHarness.js) |
 | `economics optimize` | Recommend reinvestment ratios grounded in reward telemetry. | [`optimizeReinvestmentStrategy`](src/services/economics.js) |
+| `economics productivity` | Render α‑Productivity Index, burn ratios, and Synthetic Labor Yield dashboards. | [`calculateAlphaProductivityIndex`](src/services/economics.js) |
 
 ---
 
@@ -278,6 +279,7 @@ Invoke the console with `agi-alpha-node governance <subcommand>`; review availab
 
 - **α‑Work Unit Formula** — `α‑WU = GPUₛ × gflops_norm × ModelTier × SLO_pass × QV` (implemented across [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js), [`src/services/performance.js`](src/services/performance.js), and validators).
 - **Reward Mechanics** — [`src/services/rewards.js`](src/services/rewards.js) and [`src/services/economics.js`](src/services/economics.js) compute per-epoch yield, reinvestment posture, and Synthetic Labor Yield (SLY).
+- **α‑Productivity Index Console** — `node src/index.js economics productivity --alpha <series>` (or `--reports data.json`) renders epoch-by-epoch α‑WU aggregates, wage-per-α analytics, and burn/emission basis points. Backed by [`calculateAlphaProductivityIndex`](src/services/economics.js).
 - **Stake Orchestration** — [`src/services/staking.js`](src/services/staking.js) and [`src/services/stakeActivation.js`](src/services/stakeActivation.js) construct stake/activate envelopes and validate minimums before any commit.
 - **Token Discipline** — `$AGIALPHA` normalization utilities in [`src/constants/token.js`](src/constants/token.js) ensure every address matches the canonical checksum contract (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`).
 - **Economics Dashboard** — CLI strategies (`planJobExecution`, `optimizeReinvestmentStrategy`) compare task portfolios and compute capital efficiency; see [`src/intelligence/planning.js`](src/intelligence/planning.js) and [`src/services/economics.js`](src/services/economics.js).
