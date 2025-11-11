@@ -96,8 +96,8 @@
 | 2 | Execute local quality gates and notarize outputs. | `npm run lint` · `npm test` · `npm run coverage` |
 | 3 | Generate ENS custody brief before any on-chain calls. | `node src/index.js ens-guide --label <label> --address <0xOwner>` |
 | 4 | Validate live ENS binding, staking posture, and RPC liveness. | `node src/index.js status --label <label> --address <0xOwner> --rpc <https://...>` |
-| 5 | Dry-run synthetic labor cycle offline. | `node src/index.js snapshot --input docs/offline-snapshot.example.json` |
-| 6 | Activate runtime orchestrator with telemetry. | `node src/index.js orchestrate --monitor --metrics` |
+| 5 | Dry-run synthetic labor cycle offline. | `node src/index.js status --label <label> --address <0xOwner> --offline-snapshot docs/offline-snapshot.example.json` |
+| 6 | Activate runtime orchestrator with telemetry. | `node src/index.js monitor --label <label> --address <0xOwner> --rpc <https://...> --metrics-port 9464` |
 | 7 | Export governance transaction envelopes for multisig execution. | `node src/index.js governance --help` |
 | 8 | Build runtime container for immutable deployment. | `docker build -t agi-alpha-node:sovereign .` |
 | 9 | Apply branch protection and required checks. | GitHub → Settings → Branches → `main` |
