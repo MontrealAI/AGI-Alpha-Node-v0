@@ -5,7 +5,9 @@ export const STAKE_MANAGER_ABI = [
   'function minimumStake() view returns (uint256)',
   'function getStake(address operator) view returns (uint256)',
   'function slashingPenalty(address operator) view returns (uint256)',
-  'function isOperatorHealthy(address operator) view returns (bool)'
+  'function isOperatorHealthy(address operator) view returns (bool)',
+  'function jobRegistry() view returns (address)',
+  'function identityRegistry() view returns (address)'
 ];
 
 export const PLATFORM_INCENTIVES_ABI = [
@@ -35,7 +37,9 @@ export async function getStakeStatus({
     active: null,
     lastHeartbeat: null,
     healthy: null,
-    slashingPenalty: null
+    slashingPenalty: null,
+    jobRegistryAddress: null,
+    identityRegistryAddress: null
   };
 
   if (stakeManagerAddress) {
@@ -63,6 +67,20 @@ export async function getStakeStatus({
     } catch (error) {
       status.healthy = null;
       status.healthError = error;
+    }
+    try {
+      const registry = await stakeManager.jobRegistry();
+      status.jobRegistryAddress = registry ? getAddress(registry) : null;
+    } catch (error) {
+      status.jobRegistryAddress = null;
+      status.jobRegistryError = error;
+    }
+    try {
+      const registry = await stakeManager.identityRegistry();
+      status.identityRegistryAddress = registry ? getAddress(registry) : null;
+    } catch (error) {
+      status.identityRegistryAddress = null;
+      status.identityRegistryError = error;
     }
   }
 

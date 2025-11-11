@@ -93,6 +93,12 @@ export const configSchema = z
     STAKE_MANAGER_ADDRESS: z.string().regex(addressRegex).optional(),
     REWARD_ENGINE_ADDRESS: z.string().regex(addressRegex).optional(),
     JOB_REGISTRY_ADDRESS: z.string().regex(addressRegex).optional(),
+    IDENTITY_REGISTRY_ADDRESS: z.string().regex(addressRegex).optional(),
+    DESIRED_JOB_REGISTRY_ADDRESS: z.string().regex(addressRegex).optional(),
+    DESIRED_IDENTITY_REGISTRY_ADDRESS: z.string().regex(addressRegex).optional(),
+    DESIRED_VALIDATION_MODULE_ADDRESS: z.string().regex(addressRegex).optional(),
+    DESIRED_REPUTATION_MODULE_ADDRESS: z.string().regex(addressRegex).optional(),
+    DESIRED_DISPUTE_MODULE_ADDRESS: z.string().regex(addressRegex).optional(),
     JOB_DISCOVERY_BLOCK_RANGE: z
       .coerce.number()
       .int()

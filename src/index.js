@@ -552,12 +552,19 @@ program
   .option('--stake-manager <address>', 'StakeManager contract address')
   .option('--incentives <address>', 'PlatformIncentives contract address')
   .option('--reward-engine <address>', 'RewardEngine contract address for share governance')
+  .option('--job-registry <address>', 'JobRegistry contract address')
+  .option('--identity-registry <address>', 'IdentityRegistry contract address')
   .option('--system-pause <address>', 'System pause contract address for owner overrides')
   .option('--desired-minimum <amount>', 'Desired minimum stake floor in $AGIALPHA (decimal)')
   .option('--auto-resume', 'Generate resume transaction when the stake posture is healthy')
   .option('--operator-share-bps <bps>', 'Desired operator global share (basis points)')
   .option('--validator-share-bps <bps>', 'Desired validator global share (basis points)')
   .option('--treasury-share-bps <bps>', 'Desired treasury global share (basis points)')
+  .option('--desired-job-registry <address>', 'Desired StakeManager job registry target address')
+  .option('--desired-identity-registry <address>', 'Desired StakeManager identity registry target address')
+  .option('--desired-validation-module <address>', 'Desired JobRegistry validation module address')
+  .option('--desired-reputation-module <address>', 'Desired JobRegistry reputation module address')
+  .option('--desired-dispute-module <address>', 'Desired JobRegistry dispute module address')
   .option(
     '--role-share <role=bps>',
     'Role share target definition (repeatable). Example: guardian=250',
@@ -591,6 +598,8 @@ program
         STAKE_MANAGER_ADDRESS: options.stakeManager,
         PLATFORM_INCENTIVES_ADDRESS: options.incentives,
         REWARD_ENGINE_ADDRESS: options.rewardEngine,
+        JOB_REGISTRY_ADDRESS: options.jobRegistry,
+        IDENTITY_REGISTRY_ADDRESS: options.identityRegistry,
         SYSTEM_PAUSE_ADDRESS: options.systemPause,
         DESIRED_MINIMUM_STAKE: options.desiredMinimum,
         AUTO_RESUME: options.autoResume,
@@ -598,6 +607,11 @@ program
         DESIRED_OPERATOR_SHARE_BPS: options.operatorShareBps,
         DESIRED_VALIDATOR_SHARE_BPS: options.validatorShareBps,
         DESIRED_TREASURY_SHARE_BPS: options.treasuryShareBps,
+        DESIRED_JOB_REGISTRY_ADDRESS: options.desiredJobRegistry,
+        DESIRED_IDENTITY_REGISTRY_ADDRESS: options.desiredIdentityRegistry,
+        DESIRED_VALIDATION_MODULE_ADDRESS: options.desiredValidationModule,
+        DESIRED_REPUTATION_MODULE_ADDRESS: options.desiredReputationModule,
+        DESIRED_DISPUTE_MODULE_ADDRESS: options.desiredDisputeModule,
         ROLE_SHARE_TARGETS:
           options.roleShare && Object.keys(options.roleShare).length > 0 ? options.roleShare : undefined
       };
@@ -622,6 +636,13 @@ program
         desiredValidatorShareBps: config.DESIRED_VALIDATOR_SHARE_BPS,
         desiredTreasuryShareBps: config.DESIRED_TREASURY_SHARE_BPS,
         roleShareTargets: config.ROLE_SHARE_TARGETS,
+        jobRegistryAddress: config.JOB_REGISTRY_ADDRESS,
+        identityRegistryAddress: config.IDENTITY_REGISTRY_ADDRESS,
+        desiredJobRegistryAddress: config.DESIRED_JOB_REGISTRY_ADDRESS,
+        desiredIdentityRegistryAddress: config.DESIRED_IDENTITY_REGISTRY_ADDRESS,
+        desiredValidationModuleAddress: config.DESIRED_VALIDATION_MODULE_ADDRESS,
+        desiredReputationModuleAddress: config.DESIRED_REPUTATION_MODULE_ADDRESS,
+        desiredDisputeModuleAddress: config.DESIRED_DISPUTE_MODULE_ADDRESS,
         projectedRewards: options.projectedRewards,
         offlineSnapshot,
         logger
@@ -753,9 +774,26 @@ program
   .option('--rpc <url>', 'RPC endpoint URL')
   .option('--stake-manager <address>', 'StakeManager contract address')
   .option('--incentives <address>', 'PlatformIncentives contract address')
+  .option('--reward-engine <address>', 'RewardEngine contract address for share governance')
+  .option('--job-registry <address>', 'JobRegistry contract address')
+  .option('--identity-registry <address>', 'IdentityRegistry contract address')
   .option('--system-pause <address>', 'System pause contract address for owner overrides')
   .option('--desired-minimum <amount>', 'Desired minimum stake floor in $AGIALPHA (decimal)')
   .option('--auto-resume', 'Generate resume transaction when the stake posture is healthy')
+  .option('--operator-share-bps <bps>', 'Desired operator global share (basis points)')
+  .option('--validator-share-bps <bps>', 'Desired validator global share (basis points)')
+  .option('--treasury-share-bps <bps>', 'Desired treasury global share (basis points)')
+  .option('--desired-job-registry <address>', 'Desired StakeManager job registry target address')
+  .option('--desired-identity-registry <address>', 'Desired StakeManager identity registry target address')
+  .option('--desired-validation-module <address>', 'Desired JobRegistry validation module address')
+  .option('--desired-reputation-module <address>', 'Desired JobRegistry reputation module address')
+  .option('--desired-dispute-module <address>', 'Desired JobRegistry dispute module address')
+  .option(
+    '--role-share <role=bps>',
+    'Role share target definition (repeatable). Example: guardian=250',
+    collectRoleShareTargets,
+    {}
+  )
   .option('--projected-rewards <amount>', 'Projected reward pool for the next epoch (decimal)')
   .option('--metrics-port <port>', 'Expose Prometheus metrics on the specified port')
   .option('--offline-snapshot <path>', 'Use offline snapshot JSON when RPC connectivity is unavailable')
@@ -774,10 +812,23 @@ program
         OPERATOR_ADDRESS: options.address,
         STAKE_MANAGER_ADDRESS: options.stakeManager,
         PLATFORM_INCENTIVES_ADDRESS: options.incentives,
+        REWARD_ENGINE_ADDRESS: options.rewardEngine,
+        JOB_REGISTRY_ADDRESS: options.jobRegistry,
+        IDENTITY_REGISTRY_ADDRESS: options.identityRegistry,
         SYSTEM_PAUSE_ADDRESS: options.systemPause,
         DESIRED_MINIMUM_STAKE: options.desiredMinimum,
         AUTO_RESUME: options.autoResume,
-        METRICS_PORT: options.metricsPort
+        METRICS_PORT: options.metricsPort,
+        DESIRED_OPERATOR_SHARE_BPS: options.operatorShareBps,
+        DESIRED_VALIDATOR_SHARE_BPS: options.validatorShareBps,
+        DESIRED_TREASURY_SHARE_BPS: options.treasuryShareBps,
+        DESIRED_JOB_REGISTRY_ADDRESS: options.desiredJobRegistry,
+        DESIRED_IDENTITY_REGISTRY_ADDRESS: options.desiredIdentityRegistry,
+        DESIRED_VALIDATION_MODULE_ADDRESS: options.desiredValidationModule,
+        DESIRED_REPUTATION_MODULE_ADDRESS: options.desiredReputationModule,
+        DESIRED_DISPUTE_MODULE_ADDRESS: options.desiredDisputeModule,
+        ROLE_SHARE_TARGETS:
+          options.roleShare && Object.keys(options.roleShare).length > 0 ? options.roleShare : undefined
       };
 
       const config = loadConfig(
@@ -825,9 +876,26 @@ program
   .option('-a, --address <address>', 'Operator address override')
   .option('--stake-manager <address>', 'StakeManager contract address override')
   .option('--incentives <address>', 'PlatformIncentives contract address override')
+  .option('--reward-engine <address>', 'RewardEngine contract address override')
+  .option('--job-registry <address>', 'JobRegistry contract address override')
+  .option('--identity-registry <address>', 'IdentityRegistry contract address override')
   .option('--system-pause <address>', 'System pause contract address override')
   .option('--desired-minimum <amount>', 'Desired minimum stake floor in $AGIALPHA (decimal)')
   .option('--auto-resume', 'Generate resume transaction when the stake posture is healthy')
+  .option('--operator-share-bps <bps>', 'Desired operator global share (basis points) override')
+  .option('--validator-share-bps <bps>', 'Desired validator global share (basis points) override')
+  .option('--treasury-share-bps <bps>', 'Desired treasury global share (basis points) override')
+  .option('--desired-job-registry <address>', 'Desired StakeManager job registry target override')
+  .option('--desired-identity-registry <address>', 'Desired StakeManager identity registry target override')
+  .option('--desired-validation-module <address>', 'Desired JobRegistry validation module override')
+  .option('--desired-reputation-module <address>', 'Desired JobRegistry reputation module override')
+  .option('--desired-dispute-module <address>', 'Desired JobRegistry dispute module override')
+  .option(
+    '--role-share <role=bps>',
+    'Role share target definition (repeatable). Example: guardian=250',
+    collectRoleShareTargets,
+    {}
+  )
   .option('--metrics-port <port>', 'Expose Prometheus metrics on the specified port')
   .option('--api-port <port>', 'Expose the agent REST API on the specified port')
   .option('--projected-rewards <amount>', 'Projected reward pool for the next epoch (decimal)')
@@ -851,16 +919,29 @@ program
         OPERATOR_ADDRESS: options.address,
         STAKE_MANAGER_ADDRESS: options.stakeManager,
         PLATFORM_INCENTIVES_ADDRESS: options.incentives,
+        REWARD_ENGINE_ADDRESS: options.rewardEngine,
+        JOB_REGISTRY_ADDRESS: options.jobRegistry,
+        IDENTITY_REGISTRY_ADDRESS: options.identityRegistry,
         SYSTEM_PAUSE_ADDRESS: options.systemPause,
         DESIRED_MINIMUM_STAKE: options.desiredMinimum,
         AUTO_RESUME: options.autoResume,
+        DESIRED_OPERATOR_SHARE_BPS: options.operatorShareBps,
+        DESIRED_VALIDATOR_SHARE_BPS: options.validatorShareBps,
+        DESIRED_TREASURY_SHARE_BPS: options.treasuryShareBps,
+        DESIRED_JOB_REGISTRY_ADDRESS: options.desiredJobRegistry,
+        DESIRED_IDENTITY_REGISTRY_ADDRESS: options.desiredIdentityRegistry,
+        DESIRED_VALIDATION_MODULE_ADDRESS: options.desiredValidationModule,
+        DESIRED_REPUTATION_MODULE_ADDRESS: options.desiredReputationModule,
+        DESIRED_DISPUTE_MODULE_ADDRESS: options.desiredDisputeModule,
         METRICS_PORT: options.metricsPort,
         API_PORT: options.apiPort,
         AUTO_STAKE: options.autoStake,
         STAKE_AMOUNT: options.stakeAmount,
         INTERACTIVE_STAKE: options.interactiveStake,
         OPERATOR_PRIVATE_KEY: options.privateKey,
-        OFFLINE_MODE: options.offlineMode
+        OFFLINE_MODE: options.offlineMode,
+        ROLE_SHARE_TARGETS:
+          options.roleShare && Object.keys(options.roleShare).length > 0 ? options.roleShare : undefined
       };
 
       const projectedRewards = options.projectedRewards ?? process.env.PROJECTED_REWARDS ?? null;

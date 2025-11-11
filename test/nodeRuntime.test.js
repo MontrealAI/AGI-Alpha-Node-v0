@@ -26,12 +26,17 @@ vi.mock('../src/services/performance.js', () => ({
   derivePerformanceProfile: vi.fn()
 }));
 
+vi.mock('../src/services/governanceStatus.js', () => ({
+  fetchGovernanceStatus: vi.fn()
+}));
+
 import { verifyNodeOwnership } from '../src/services/ensVerifier.js';
 import { getStakeStatus, validateStakeThreshold, evaluateStakeConditions } from '../src/services/staking.js';
 import { projectEpochRewards } from '../src/services/rewards.js';
 import { deriveOwnerDirectives } from '../src/services/controlPlane.js';
 import { derivePerformanceProfile } from '../src/services/performance.js';
 import { runNodeDiagnostics } from '../src/orchestrator/nodeRuntime.js';
+import { fetchGovernanceStatus } from '../src/services/governanceStatus.js';
 
 describe('runNodeDiagnostics', () => {
 const logger = {
@@ -44,6 +49,7 @@ const tempDirs = new Set();
 
 beforeEach(() => {
   vi.clearAllMocks();
+  fetchGovernanceStatus.mockResolvedValue(null);
 });
 
 afterEach(() => {
@@ -118,6 +124,14 @@ afterEach(() => {
       roleShares: undefined,
       decimals: undefined
     });
+    expect(fetchGovernanceStatus).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider: expect.any(Object),
+        stakeStatus: { minimumStake: 1000n, operatorStake: 1500n },
+        jobRegistryAddress: undefined,
+        identityRegistryAddress: undefined
+      })
+    );
     expect(evaluateStakeConditions).toHaveBeenCalledWith({
       minimumStake: 1000n,
       operatorStake: 1500n,
@@ -125,23 +139,33 @@ afterEach(() => {
       lastHeartbeat: undefined,
       currentTimestamp: expect.any(Number)
     });
-    expect(deriveOwnerDirectives).toHaveBeenCalledWith({
-      stakeStatus: { minimumStake: 1000n, operatorStake: 1500n },
-      stakeEvaluation: expect.objectContaining({ recommendedAction: 'maintain' }),
-      rewardsProjection: { pool: 1500n, operatorPortion: 225n, operatorShareBps: 1500 },
-      config: {
-        systemPauseAddress: undefined,
-        incentivesAddress: '0x0000000000000000000000000000000000000002',
-        stakeManagerAddress: '0x0000000000000000000000000000000000000001',
-        desiredMinimumStake: undefined,
-        autoResume: false,
-        rewardEngineAddress: undefined,
-        desiredOperatorShareBps: undefined,
-        desiredValidatorShareBps: undefined,
-        desiredTreasuryShareBps: undefined,
-        roleShareTargets: undefined
-      }
-    });
+    expect(deriveOwnerDirectives).toHaveBeenCalledWith(
+      expect.objectContaining({
+        stakeStatus: { minimumStake: 1000n, operatorStake: 1500n },
+        stakeEvaluation: expect.objectContaining({ recommendedAction: 'maintain' }),
+        rewardsProjection: { pool: 1500n, operatorPortion: 225n, operatorShareBps: 1500 },
+        governanceStatus: null,
+        config: expect.objectContaining({
+          systemPauseAddress: undefined,
+          incentivesAddress: '0x0000000000000000000000000000000000000002',
+          stakeManagerAddress: '0x0000000000000000000000000000000000000001',
+          desiredMinimumStake: undefined,
+          autoResume: false,
+          rewardEngineAddress: undefined,
+          desiredOperatorShareBps: undefined,
+          desiredValidatorShareBps: undefined,
+          desiredTreasuryShareBps: undefined,
+          roleShareTargets: undefined,
+          jobRegistryAddress: null,
+          identityRegistryAddress: null,
+          desiredJobRegistryAddress: undefined,
+          desiredIdentityRegistryAddress: undefined,
+          desiredValidationModuleAddress: undefined,
+          desiredReputationModuleAddress: undefined,
+          desiredDisputeModuleAddress: undefined
+        })
+      })
+    );
     expect(diagnostics.ownerDirectives).toEqual(
       expect.objectContaining({ priority: 'nominal', notices: expect.arrayContaining([expect.any(String)]) })
     );
@@ -191,6 +215,7 @@ afterEach(() => {
     );
     expect(getStakeStatus).not.toHaveBeenCalled();
     expect(projectEpochRewards).not.toHaveBeenCalled();
+    expect(fetchGovernanceStatus).not.toHaveBeenCalled();
     expect(deriveOwnerDirectives).not.toHaveBeenCalled();
   });
 
@@ -277,6 +302,13 @@ afterEach(() => {
         treasuryShareBps: undefined,
         roleShares: undefined,
         decimals: undefined
+      })
+    );
+    expect(fetchGovernanceStatus).not.toHaveBeenCalled();
+    expect(deriveOwnerDirectives).toHaveBeenCalledWith(
+      expect.objectContaining({
+        governanceStatus: null,
+        config: expect.objectContaining({ autoResume: false })
       })
     );
     expect(diagnostics.ownerDirectives.priority).toBe('warning');

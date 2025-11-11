@@ -42,12 +42,13 @@
 5. [Operator Activation](#operator-activation)
 6. [Configuration Matrix](#configuration-matrix)
 7. [Owner Dominion](#owner-dominion)
-8. [API & Telemetry Surface](#api--telemetry-surface)
-9. [Deployment Continuum](#deployment-continuum)
-10. [Observability & Assurance](#observability--assurance)
-11. [Repository Atlas](#repository-atlas)
-12. [Contributing](#contributing)
-13. [License](#license)
+8. [Governance Command Surface](#governance-command-surface)
+9. [API & Telemetry Surface](#api--telemetry-surface)
+10. [Deployment Continuum](#deployment-continuum)
+11. [Observability & Assurance](#observability--assurance)
+12. [Repository Atlas](#repository-atlas)
+13. [Contributing](#contributing)
+14. [License](#license)
 
 ---
 
@@ -73,6 +74,7 @@
 - **Lifecycle Orchestrator** – [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js) pairs with [`src/services/jobProof.js`](src/services/jobProof.js) and [`src/services/lifecycleJournal.js`](src/services/lifecycleJournal.js) to handle discovery, application, submission, and journaling.
 - **Stake & Rewards Intelligence** – [`src/services/staking.js`](src/services/staking.js), [`src/services/rewards.js`](src/services/rewards.js), and [`src/services/economics.js`](src/services/economics.js) model thresholds, penalties, reinvestment, and share splits with BigInt precision.
 - **Owner Control Plane** – [`src/services/controlPlane.js`](src/services/controlPlane.js) and [`src/services/governance.js`](src/services/governance.js) synthesize directives, craft governance payloads, and keep the operator in command.
+- **Governance Introspection** – [`src/services/governanceStatus.js`](src/services/governanceStatus.js) continuously reconciles StakeManager, JobRegistry, and IdentityRegistry bindings so governance payloads always align with reality.
 - **Telemetry & Monitoring** – [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js), [`src/network/apiServer.js`](src/network/apiServer.js), and [`src/orchestrator/monitorLoop.js`](src/orchestrator/monitorLoop.js) export Prometheus metrics, REST status, and compliance reporting.
 
 ---
@@ -188,6 +190,7 @@ graph TD
    ```
 
    The CLI will verify ENS control, inspect stake posture, launch monitoring loops, and emit owner directives from [`src/index.js`](src/index.js).
+   Add governance alignment in the same command, e.g. `npm start -- monitor --job-registry 0x... --desired-validation-module 0x... --operator-share-bps 1500`.
 4. **API Surface**
    - Start the containerized runtime with REST + metrics enabled: `npm start -- container --api-port 8080 --metrics-port 9464`
    - Query status: `curl http://localhost:8080/status`
@@ -212,12 +215,15 @@ All environment switches are validated through [`src/config/schema.js`](src/conf
 | `STAKE_MANAGER_ADDRESS` | StakeManager authority for governance controls. | _Optional_ |
 | `REWARD_ENGINE_ADDRESS` | RewardEngine contract for share tuning. | _Optional_ |
 | `JOB_REGISTRY_ADDRESS` | JobRegistry to engage with AGI Jobs v0/v2. | _Optional_ |
+| `IDENTITY_REGISTRY_ADDRESS` | Identity registry powering operator whitelists. | _Optional_ |
 | `JOB_DISCOVERY_BLOCK_RANGE` | Log window for discovery sweeps. | `4800` |
 | `DRY_RUN` | Non-destructive mode for simulation. | `true` |
 | `AUTO_STAKE` | Enable automatic stake top-ups. | `false` |
 | `DESIRED_MINIMUM_STAKE` | Governance target for minimum stake. | _Optional_ |
 | `DESIRED_OPERATOR_SHARE_BPS`/`DESIRED_VALIDATOR_SHARE_BPS`/`DESIRED_TREASURY_SHARE_BPS` | Reward distribution targets in basis points. | _Optional_ |
 | `ROLE_SHARE_TARGETS` | Fine-grained share overrides per role. | _Optional_ |
+| `DESIRED_JOB_REGISTRY_ADDRESS` / `DESIRED_IDENTITY_REGISTRY_ADDRESS` | StakeManager retargeting objectives for registry contracts. | _Optional_ |
+| `DESIRED_VALIDATION_MODULE_ADDRESS` / `DESIRED_REPUTATION_MODULE_ADDRESS` / `DESIRED_DISPUTE_MODULE_ADDRESS` | JobRegistry module upgrade goals surfaced in owner directives. | _Optional_ |
 | `SYSTEM_PAUSE_ADDRESS` | System-wide pause contract for failsafe directives. | _Optional_ |
 | `OFFLINE_SNAPSHOT_PATH` | Signed offline telemetry snapshots. | `.agi/lifecycle` |
 | `METRICS_PORT` / `API_PORT` | Ports for Prometheus & REST. | `9464` / `8080` |
@@ -231,11 +237,51 @@ Additional toggles such as Vault integration, governance ledger storage, and lif
 The operator retains absolute control through deterministic payload builders and directive synthesis:
 
 - [`src/services/governance.js`](src/services/governance.js) crafts transactions for pausing, adjusting minimum stake, updating validator thresholds, re-pointing registries, tuning role shares, swapping validation modules, and delegating operators. Every payload includes metadata for ledgering and on-chain audit trails.
+- [`src/services/governanceStatus.js`](src/services/governanceStatus.js) inspects StakeManager, JobRegistry, and IdentityRegistry addresses to expose live module bindings, ensuring owner directives always act on the precise on-chain configuration.
 - [`src/services/controlPlane.js`](src/services/controlPlane.js) fuses live stake telemetry, reward projections, and operator preferences to recommend or auto-generate governance actions (pause, stake top-up, share realignment) while keeping `$AGIALPHA` math precise.
 - [`src/network/apiServer.js`](src/network/apiServer.js) exposes REST endpoints so secured dashboards can trigger owner directives, stake activations, or dispute escalations without touching raw ABIs.
 - [`src/services/staking.js`](src/services/staking.js) and [`src/services/stakeActivation.js`](src/services/stakeActivation.js) ensure the owner can authorize, activate, or reclaim stake in a single flow, preserving 18-decimal discipline at each step.
 
 Every directive can be paused, simulated, or replayed through the governance ledger in [`src/services/governanceLedger.js`](src/services/governanceLedger.js), guaranteeing traceability.
+
+---
+
+## Governance Command Surface
+
+The CLI now mirrors the owner cockpit: every command can align contracts, modules, and share policies without manually crafting calldata.
+
+```mermaid
+flowchart TD
+  subgraph OnChain
+    SM[StakeManager]
+    JR[JobRegistry]
+    IR[IdentityRegistry]
+  end
+  subgraph Runtime
+    GS[governanceStatus]
+    CP[controlPlane]
+    GOV[governance builders]
+  end
+  CLI[[CLI Flags]]
+  Telemetry[(Stake Telemetry)]
+
+  SM -->|jobRegistry/identity| GS
+  JR -->|module endpoints| GS
+  IR -->|delegate map| GS
+  GS --> CP
+  Telemetry --> CP
+  CLI --> CP
+  CP --> GOV
+  GOV -->|owner tx payloads| CLI
+```
+
+| Command | Key Flags | Effect |
+| ------- | --------- | ------ |
+| `node src/index.js status` | `--job-registry`, `--identity-registry`, `--desired-*` module targets, `--operator-share-bps`, `--role-share` | One-shot diagnostics with governance diffing and ready-to-sign payloads. |
+| `node src/index.js monitor` | Same flags as `status` plus `--interval` & telemetry ports | Continuous ENS/stake verification with Prometheus metrics, keeping governance drift visible. |
+| `node src/index.js container` | Same governance flags plus `--auto-stake`, `--offline-mode`, `--once` | Container bootstrap with enforced governance policy, REST API, and monitor loop wiring. |
+
+Flags map one-to-one with the configuration schema, so environment variables or CLI overrides stay in lockstep. Governance outputs always include metadata (`diff`, `current`, `proposed`) to ease ledgering or multisig review.
 
 ---
 
@@ -275,6 +321,7 @@ The Agent Gateway binds intelligence modules, lifecycle orchestration, and owner
 | [`src/index.js`](src/index.js) | CLI entrypoint combining ENS verification, stake analytics, intelligence planning, and orchestration. |
 | [`src/intelligence`](src/intelligence) | Planning, swarm coordination, antifragility stress testing, and curriculum evolution modules. |
 | [`src/services`](src/services) | On-chain services: governance, staking, rewards, token, lifecycle, proofs, snapshots, control plane. |
+| [`src/services/governanceStatus.js`](src/services/governanceStatus.js) | Canonicalizes on-chain registry/module addresses for directive diffing. |
 | [`src/network`](src/network) | REST and governance API server bridging intelligence and owner controls. |
 | [`src/orchestrator`](src/orchestrator) | Bootstrap, runtime diagnostics, and monitor loop logic. |
 | [`src/telemetry`](src/telemetry) | Prometheus instrumentation and monitoring exports. |
