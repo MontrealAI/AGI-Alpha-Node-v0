@@ -4,7 +4,13 @@
 <p align="center">
   <picture>
     <source srcset="../1.alpha.node.agi.eth.svg" type="image/svg+xml" />
-    <img src="../1.alpha.node.agi.eth.png" alt="AGI Alpha Node Crest" width="228" />
+    <img
+      src="../1.alpha.node.agi.eth.png"
+      alt="AGI Alpha Node Crest"
+      width="228"
+      loading="lazy"
+      decoding="async"
+    />
   </picture>
 </p>
 
@@ -47,23 +53,27 @@
    - [Synthetic Labor Field](#synthetic-labor-field)
    - [Observability Anchors](#observability-anchors)
    - [Governance Telemetry](#governance-telemetry)
-2. [Canonical α-Work Canon](#canonical-%CE%B1-work-canon)
+1. [Canonical α-Work Canon](#canonical-%CE%B1-work-canon)
    - [Equation of Record](#equation-of-record)
    - [Normalization & Instrumentation](#normalization--instrumentation)
    - [Validation Lattice](#validation-lattice)
-3. [Token Engine & Wage Dynamics](#token-engine--wage-dynamics)
+1. [Alpha Productivity Index & Data Spine](#alpha-productivity-index--data-spine)
+   - [Alpha-Productivity Data Flow](#alpha-productivity-data-flow)
+   - [Metrics & Observability Surfaces](#metrics--observability-surfaces)
+   - [Data Integrity Protocols](#data-integrity-protocols)
+1. [Token Engine & Wage Dynamics](#token-engine--wage-dynamics)
    - [Emission & Wage Circuit](#emission--wage-circuit)
    - [Reward Split Mathematics](#reward-split-mathematics)
    - [Synthetic Labor Yield](#synthetic-labor-yield)
-4. [Job Market & Settlement Logistics](#job-market--settlement-logistics)
-5. [Owner Dominion & Parameter Control](#owner-dominion--parameter-control)
-6. [Treasury Intelligence & Risk Posture](#treasury-intelligence--risk-posture)
-7. [Liquidity, Access & Vault Hydration](#liquidity-access--vault-hydration)
-8. [Deployment Surfaces & Policy Channels](#deployment-surfaces--policy-channels)
-9. [Identity, ENS & Registry Authority](#identity-ens--registry-authority)
-10. [Safety, Slashing & Recovery](#safety-slashing--recovery)
-11. [Continuous Assurance & Branch Protection](#continuous-assurance--branch-protection)
-12. [Glossary of Economic Signals](#glossary-of-economic-signals)
+1. [Job Market & Settlement Logistics](#job-market--settlement-logistics)
+1. [Owner Dominion & Parameter Control](#owner-dominion--parameter-control)
+1. [Treasury Intelligence & Risk Posture](#treasury-intelligence--risk-posture)
+1. [Liquidity, Access & Vault Hydration](#liquidity-access--vault-hydration)
+1. [Deployment Surfaces & Policy Channels](#deployment-surfaces--policy-channels)
+1. [Identity, ENS & Registry Authority](#identity-ens--registry-authority)
+1. [Safety, Slashing & Recovery](#safety-slashing--recovery)
+1. [Continuous Assurance & Branch Protection](#continuous-assurance--branch-protection)
+1. [Glossary of Economic Signals](#glossary-of-economic-signals)
 
 ---
 
@@ -159,6 +169,52 @@ Every multiplier is observable inside the runtime:
 
 ---
 
+## Alpha Productivity Index & Data Spine
+
+### Alpha-Productivity Data Flow
+
+```mermaid
+flowchart LR
+  Telemetry[Prometheus Exporter · src/telemetry/monitoring.js]
+  Performance[src/services/performance.js]
+  ControlPlane[src/services/controlPlane.js]
+  Journal[src/services/lifecycleJournal.js]
+  Snapshot[docs/offline-snapshot.example.json]
+  Runbook[docs/operator-runbook.md]
+  CI[.github/workflows/ci.yml]
+  Badges[README.md · docs/economics.md]
+
+  Telemetry --> Performance
+  Performance --> ControlPlane
+  ControlPlane --> Journal
+  Journal --> Snapshot
+  Snapshot --> Runbook
+  ControlPlane --> Runbook
+  Performance --> CI
+  CI --> Badges
+  Badges --> Runbook
+```
+
+Every diagnostic loop feeds the owner’s situational awareness. Metrics exported from [`startMonitoringServer`](../src/telemetry/monitoring.js) hydrate the performance model ([`derivePerformanceProfile`](../src/services/performance.js)), which in turn guides governance directives ([`src/services/controlPlane.js`](../src/services/controlPlane.js)) and persistent journals ([`src/services/lifecycleJournal.js`](../src/services/lifecycleJournal.js)). Offline dossiers ([`docs/offline-snapshot.example.json`](./offline-snapshot.example.json)) and the [operator runbook](./operator-runbook.md) keep this state portable even when RPC connectivity is compromised. CI wiring in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) reflects the same telemetry in public badges across this document and the root README.
+
+### Metrics & Observability Surfaces
+
+| Stream | Module | Surface | Test Coverage |
+| ------ | ------ | ------- | ------------- |
+| **Diagnostics & α-WU posture** | [`runNodeDiagnostics`](../src/orchestrator/nodeRuntime.js) | `npx agi-alpha-node status` | [`nodeRuntime.test.js`](../test/nodeRuntime.test.js) |
+| **Prometheus metrics & heartbeat** | [`startMonitorLoop`](../src/orchestrator/monitorLoop.js) + [`startMonitoringServer`](../src/telemetry/monitoring.js) | `/metrics` endpoint | [`monitorLoop.test.js`](../test/monitorLoop.test.js) |
+| **Reward & reinvestment intelligence** | [`optimizeReinvestmentStrategy`](../src/services/economics.js) | `npx agi-alpha-node economics optimize` | [`economics.test.js`](../test/economics.test.js) |
+| **Governance directives feed** | [`deriveOwnerDirectives`](../src/services/controlPlane.js) | Diagnostics output + governance console | [`controlPlane.test.js`](../test/controlPlane.test.js) |
+| **Offline parity** | [`loadOfflineSnapshot`](../src/services/offlineSnapshot.js) | `--offline-snapshot` flag & [snapshot template](./offline-snapshot.example.json) | [`offlineSnapshot.test.js`](../test/offlineSnapshot.test.js) |
+
+### Data Integrity Protocols
+
+- **Deterministic Journaling** — [`createLifecycleJournal`](../src/services/lifecycleJournal.js) appends signed job events; [`bootstrap.test.js`](../test/bootstrap.test.js) and [`jobLifecycle.test.js`](../test/jobLifecycle.test.js) assert entries remain replayable when diagnostics run with `--lifecycle-log-dir`.
+- **Stake Activation Guardrails** — [`handleStakeActivation`](../src/orchestrator/stakeActivator.js) coordinates interactive or automated top-ups before runtime launch, validated in [`stakeActivator.test.js`](../test/stakeActivator.test.js) and [`stakeActivation.test.js`](../test/stakeActivation.test.js).
+- **CI as Compliance Backstop** — Husky preparation ([`scripts/prepare-husky.cjs`](../scripts/prepare-husky.cjs)) and branch protections ([`.github/required-checks.json`](../.github/required-checks.json)) guarantee that the telemetry reflected in badges cannot regress unnoticed.
+
+---
+
 ## Token Engine & Wage Dynamics
 
 ### Emission & Wage Circuit
@@ -178,6 +234,7 @@ graph LR
 - [`projectEpochRewards`](../src/services/rewards.js) and [`splitRewardPool`](../src/services/rewards.js) codify how emissions split between operator, validators, and treasury. Assertions live in [`rewards.test.js`](../test/rewards.test.js).
 - [`stakeActivation.js`](../src/services/stakeActivation.js) takes those splits and encodes the precise allowance + activation call so the owner can compounding stake without manual ABI work (verified by [`stakeActivation.test.js`](../test/stakeActivation.test.js)).
 - [`staking.js`](../src/services/staking.js) watches minimums, deficits, and penalties, surfacing them to the control plane with coverage in [`staking.test.js`](../test/staking.test.js).
+- [`handleStakeActivation`](../src/orchestrator/stakeActivator.js) wraps diagnostics output with interactive or automated staking flows, ensuring emissions are captured immediately when deficits surface (covered in [`stakeActivator.test.js`](../test/stakeActivator.test.js)).
 
 ### Reward Split Mathematics
 
