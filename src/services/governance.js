@@ -16,6 +16,12 @@ const OWNER_ONLY_ABIS = {
     'function setRoleShare(bytes32 role, uint16 shareBps)',
     'function setGlobalShares(uint16 operatorShareBps, uint16 validatorShareBps, uint16 treasuryShareBps)'
   ],
+  EmissionManager: [
+    'function setEpochEmission(uint256 newEmissionPerEpoch)',
+    'function setEpochLength(uint256 newEpochLength)',
+    'function setEmissionCap(uint256 newEmissionCap)',
+    'function setRewardRateMultiplier(uint256 numerator, uint256 denominator)'
+  ],
   JobRegistry: [
     'function setValidationModule(address newModule)',
     'function setReputationModule(address newModule)',
@@ -74,6 +80,22 @@ function normalizeBoolean(input, field) {
     if (['false', '0', 'no', 'off'].includes(normalized)) return false;
   }
   throw new Error(`${field} must be a boolean-like value`);
+}
+
+function normalizeUint(value, field) {
+  if (value === null || value === undefined) {
+    throw new Error(`${field} is required`);
+  }
+  let numeric;
+  try {
+    numeric = BigInt(value);
+  } catch (error) {
+    throw new Error(`${field} must be coercible to a uint256`);
+  }
+  if (numeric < 0n) {
+    throw new Error(`${field} must be non-negative`);
+  }
+  return numeric;
 }
 
 function resolveRoleIdentifier(role) {
@@ -385,6 +407,161 @@ export function buildGlobalSharesTx({
         operatorShareBps: operatorShare,
         validatorShareBps: validatorShare,
         treasuryShareBps: treasuryShare
+      },
+      current,
+      proposed
+    })
+  };
+}
+
+export function buildEmissionPerEpochTx({
+  emissionManagerAddress,
+  emissionPerEpoch,
+  decimals = 18,
+  currentEmissionPerEpoch = null
+}) {
+  if (!emissionManagerAddress) {
+    throw new Error('emissionManagerAddress is required');
+  }
+  if (decimals !== 18) {
+    throw new Error('EmissionManager uses 18 decimal precision for epoch emissions');
+  }
+  const to = getAddress(emissionManagerAddress);
+  const parsedEmission = parseUnits(String(emissionPerEpoch), decimals);
+  const current =
+    currentEmissionPerEpoch === null || currentEmissionPerEpoch === undefined
+      ? null
+      : { emissionPerEpoch: BigInt(currentEmissionPerEpoch) };
+  const proposed = { emissionPerEpoch: parsedEmission };
+  const data = interfaces.EmissionManager.encodeFunctionData('setEpochEmission', [parsedEmission]);
+  return {
+    to,
+    data,
+    emissionPerEpoch: parsedEmission,
+    meta: createMetadata({
+      contract: 'EmissionManager',
+      method: 'setEpochEmission',
+      to,
+      description: 'Update base emission released each epoch',
+      args: { newEmissionPerEpoch: parsedEmission.toString() },
+      current,
+      proposed
+    })
+  };
+}
+
+export function buildEmissionEpochLengthTx({
+  emissionManagerAddress,
+  epochLengthSeconds,
+  currentEpochLengthSeconds = null
+}) {
+  if (!emissionManagerAddress) {
+    throw new Error('emissionManagerAddress is required');
+  }
+  const to = getAddress(emissionManagerAddress);
+  const normalizedLength = normalizeUint(epochLengthSeconds, 'epochLengthSeconds');
+  if (normalizedLength === 0n) {
+    throw new Error('epochLengthSeconds must be greater than zero');
+  }
+  const current =
+    currentEpochLengthSeconds === null || currentEpochLengthSeconds === undefined
+      ? null
+      : { epochLengthSeconds: normalizeUint(currentEpochLengthSeconds, 'currentEpochLengthSeconds') };
+  const proposed = { epochLengthSeconds: normalizedLength };
+  const data = interfaces.EmissionManager.encodeFunctionData('setEpochLength', [normalizedLength]);
+  return {
+    to,
+    data,
+    epochLengthSeconds: normalizedLength,
+    meta: createMetadata({
+      contract: 'EmissionManager',
+      method: 'setEpochLength',
+      to,
+      description: 'Re-time emission epoch length in seconds',
+      args: { newEpochLength: normalizedLength.toString() },
+      current,
+      proposed
+    })
+  };
+}
+
+export function buildEmissionCapTx({
+  emissionManagerAddress,
+  emissionCap,
+  decimals = 18,
+  currentEmissionCap = null
+}) {
+  if (!emissionManagerAddress) {
+    throw new Error('emissionManagerAddress is required');
+  }
+  if (decimals !== 18) {
+    throw new Error('EmissionManager cap uses canonical 18 decimals');
+  }
+  const to = getAddress(emissionManagerAddress);
+  const parsedCap = parseUnits(String(emissionCap), decimals);
+  const current =
+    currentEmissionCap === null || currentEmissionCap === undefined
+      ? null
+      : { emissionCap: BigInt(currentEmissionCap) };
+  const proposed = { emissionCap: parsedCap };
+  const data = interfaces.EmissionManager.encodeFunctionData('setEmissionCap', [parsedCap]);
+  return {
+    to,
+    data,
+    emissionCap: parsedCap,
+    meta: createMetadata({
+      contract: 'EmissionManager',
+      method: 'setEmissionCap',
+      to,
+      description: 'Define maximum cumulative emissions',
+      args: { newEmissionCap: parsedCap.toString() },
+      current,
+      proposed
+    })
+  };
+}
+
+export function buildEmissionRateMultiplierTx({
+  emissionManagerAddress,
+  numerator,
+  denominator,
+  currentMultiplier = null
+}) {
+  if (!emissionManagerAddress) {
+    throw new Error('emissionManagerAddress is required');
+  }
+  const to = getAddress(emissionManagerAddress);
+  const normalizedNumerator = normalizeUint(numerator, 'numerator');
+  const normalizedDenominator = normalizeUint(denominator, 'denominator');
+  if (normalizedDenominator === 0n) {
+    throw new Error('denominator must be greater than zero');
+  }
+  const current = currentMultiplier
+    ? {
+        numerator: normalizeUint(currentMultiplier.numerator, 'currentMultiplier.numerator'),
+        denominator: normalizeUint(currentMultiplier.denominator, 'currentMultiplier.denominator')
+      }
+    : null;
+  const proposed = {
+    numerator: normalizedNumerator,
+    denominator: normalizedDenominator
+  };
+  const data = interfaces.EmissionManager.encodeFunctionData('setRewardRateMultiplier', [
+    normalizedNumerator,
+    normalizedDenominator
+  ]);
+  return {
+    to,
+    data,
+    multiplier: proposed,
+    meta: createMetadata({
+      contract: 'EmissionManager',
+      method: 'setRewardRateMultiplier',
+      to,
+      description: 'Adjust emission reward rate multiplier',
+      args: {
+        numerator: normalizedNumerator.toString(),
+        denominator: normalizedDenominator.toString()
       },
       current,
       proposed

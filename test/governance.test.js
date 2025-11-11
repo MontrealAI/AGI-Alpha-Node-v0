@@ -6,6 +6,10 @@ import {
   buildStakeRegistryUpgradeTx,
   buildRoleShareTx,
   buildGlobalSharesTx,
+  buildEmissionPerEpochTx,
+  buildEmissionEpochLengthTx,
+  buildEmissionCapTx,
+  buildEmissionRateMultiplierTx,
   buildJobRegistryUpgradeTx,
   buildDisputeTriggerTx,
   buildIdentityDelegateTx,
@@ -73,6 +77,47 @@ describe('governance utilities', () => {
       validatorShareBps: 5000,
       treasuryShareBps: 10
     })).toThrow(/sum/);
+  });
+
+  it('builds emission per epoch payloads', () => {
+    const tx = buildEmissionPerEpochTx({
+      emissionManagerAddress: DEAD,
+      emissionPerEpoch: '12500.5'
+    });
+    expect(tx.emissionPerEpoch).toBe(12500500000000000000000n);
+    expect(tx.meta.method).toBe('setEpochEmission');
+    expect(tx.meta.contract).toBe('EmissionManager');
+  });
+
+  it('builds epoch length payloads with validation', () => {
+    const tx = buildEmissionEpochLengthTx({
+      emissionManagerAddress: DEAD,
+      epochLengthSeconds: 3600
+    });
+    expect(tx.epochLengthSeconds).toBe(3600n);
+    expect(tx.meta.method).toBe('setEpochLength');
+    expect(() => buildEmissionEpochLengthTx({ emissionManagerAddress: DEAD, epochLengthSeconds: 0 })).toThrow(
+      /greater than zero/
+    );
+  });
+
+  it('builds emission cap payloads', () => {
+    const tx = buildEmissionCapTx({ emissionManagerAddress: DEAD, emissionCap: '1000000' });
+    expect(tx.emissionCap).toBe(1000000000000000000000000n);
+    expect(tx.meta.method).toBe('setEmissionCap');
+  });
+
+  it('builds emission multiplier payloads', () => {
+    const tx = buildEmissionRateMultiplierTx({
+      emissionManagerAddress: DEAD,
+      numerator: 3,
+      denominator: 2
+    });
+    expect(tx.multiplier).toEqual({ numerator: 3n, denominator: 2n });
+    expect(tx.meta.method).toBe('setRewardRateMultiplier');
+    expect(() => buildEmissionRateMultiplierTx({ emissionManagerAddress: DEAD, numerator: 1, denominator: 0 })).toThrow(
+      /greater than zero/
+    );
   });
 
   it('builds validator threshold payloads', () => {
