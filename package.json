@@ -20,7 +20,7 @@
     "ci:test": "npm run test",
     "ci:coverage": "npm run coverage",
     "ci:verify": "npm run ci:lint && npm run ci:test && npm run ci:coverage",
-    "prepare": "node ./scripts/prepare-husky.cjs"
+    "prepare": "node -e \"const { existsSync } = require('node:fs'); const { join } = require('node:path'); const script = join(process.cwd(), 'scripts/prepare-husky.cjs'); if (!existsSync(script)) { console.log('husky prepare script missing; skipping'); process.exit(0); } require(script);\""
   },
   "engines": {
     "node": ">=20.18.1",
