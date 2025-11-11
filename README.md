@@ -462,6 +462,7 @@ flowchart TD
 - [Operator Codex](docs/README.md) — Executive beacon, architectural atlases, and launch protocol.
 - [Manifesto](docs/manifesto.md) — Strategic doctrine anchoring the node’s mission.
 - [Operator Runbook](docs/operator-runbook.md) — Day-two operations and enforcement rituals.
+- [Economics Codex](docs/economics.md) — Token wage markets, α‑WU accounting, and treasury choreography.
 - [One-Click Deployment Playbook](docs/deployment/one-click.md) — Container and Helm shortcuts for rapid activation.
 
 ---
