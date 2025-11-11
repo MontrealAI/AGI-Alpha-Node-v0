@@ -237,7 +237,8 @@ The owner controls every consequential lever. [`src/services/governance.js`](../
 - **System Halt & Resume:** `buildSystemPauseTx` emits payloads for `pauseAll`, `resumeAll`, or `unpauseAll`.
 - **Staking Policy:** `buildMinimumStakeTx`, `buildValidatorThresholdTx`, and registry swap utilities rewrite `StakeManager` requirements instantly.
 - **Reward Schedules:** `buildRoleShareTx` and `buildGlobalShareTx` reconfigure validator, operator, and treasury basis points.
-- **Job Registry Control:** `buildJobRegistryModuleTx` rotates validation, reputation, and dispute modules; `buildTriggerDisputeTx` escalates arbitrations.
+- **Emission Envelope:** `buildEmissionPerEpochTx`, `buildEmissionEpochLengthTx`, `buildEmissionCapTx`, and `buildEmissionRateMultiplierTx` let the owner retune epoch emissions, pacing, and caps without redeployments.
+- **Job Registry Control:** `buildJobRegistryUpgradeTx` rotates validation, reputation, and dispute modules; `buildDisputeTriggerTx` escalates arbitrations.
 - **Identity Delegation:** `buildIdentityRegistryTx` adds or removes node operators.
 - **Platform Incentives:** Activation fees, heartbeat grace periods, and treasury endpoints mutate through `buildPlatformIncentivesTx` helpers.
 
