@@ -1,0 +1,8 @@
+# Global defaults
+* @AGI-Labs/alpha-node-core
+
+# Documentation updates require operator review
+/docs/ @AGI-Labs/operator-success
+
+# Deployment manifests require platform engineering oversight
+/deploy/ @AGI-Labs/platform-engineering

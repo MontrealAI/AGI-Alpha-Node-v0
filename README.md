@@ -469,20 +469,25 @@ src/
 
 ## CI & Branch Hardening
 
-- **CI Pipeline:** [`Continuous Integration`](https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml) runs lint + tests on `main` and every PR. Branch protection requires a green pipeline before merge.
+- **CI Pipeline:** [`Continuous Integration`](https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml) now executes four required jobs: `Lint Markdown & Links`, `Unit & Integration Tests`, `Coverage Report`, and `Docker Build & Smoke Test`. Branch protection is configured to block merges until each status is green.
+- **Required Checks Manifest:** See [`.github/required-checks.json`](.github/required-checks.json) for the canonical list of status checks enforced on `main`. GitHub branch protection rules should mirror this file.
 - **Local Checks:**
 
   ```bash
-  npm test          # Vitest suite (job lifecycle, governance, staking, intelligence)
-  npm run lint      # Markdown lint + link validation for docs
+  npm run ci:lint      # Markdown lint + link validation for docs
+  npm run ci:test      # Vitest suite (job lifecycle, governance, staking, intelligence)
+  npm run ci:coverage  # c8 + Vitest coverage (text + lcov)
+  npm run ci:verify    # Runs the full pipeline locally before pushing
   ```
 
-- **Coverage:** `npm run coverage` emits text + lcov reports for integration into third-party dashboards.
-- **Branch Enforcement Ritual:** Require the "Continuous Integration" workflow and at least one approving review on `main`. Confirm enforcement via GitHub CLI or API, archive the JSON with CI logs, and attach to the owner’s compliance vault.
+- **Coverage Artifacts:** CI publishes the `coverage-report` artifact containing `lcov.info` and HTML assets. Operators can download it from the workflow run summary for ingestion into dashboards.
+- **Branch Enforcement Ritual:** Require every status from the required checks manifest and at least one approving review on `main`. Confirm enforcement via GitHub CLI or API, archive the JSON with CI logs, and attach to the owner’s compliance vault.
 
   ```bash
   gh api repos/MontrealAI/AGI-Alpha-Node-v0/branches/main/protection --method GET
   ```
+
+- **Operator Runbook:** See [`docs/operator-runbook.md`](docs/operator-runbook.md) for badge verification, required check validation, and container/Helm deployment rituals.
 
 ---
 

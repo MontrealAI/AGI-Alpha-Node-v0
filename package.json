@@ -15,7 +15,12 @@
     "lint": "npm run lint:md && npm run lint:links",
     "test": "vitest run",
     "test:watch": "vitest",
-    "coverage": "c8 --reporter=text --reporter=lcov vitest run"
+    "coverage": "c8 --reporter=text --reporter=lcov vitest run",
+    "ci:lint": "npm run lint",
+    "ci:test": "npm run test",
+    "ci:coverage": "npm run coverage",
+    "ci:verify": "npm run ci:lint && npm run ci:test && npm run ci:coverage",
+    "prepare": "husky install"
   },
   "engines": {
     "node": ">=20.18.1",
@@ -36,6 +41,7 @@
     "markdown-link-check": "^3.10.3",
     "markdownlint-cli2": "^0.8.1",
     "markdownlint-cli2-formatter-pretty": "^0.0.9",
+    "husky": "^9.1.6",
     "solc": "^0.8.26",
     "vitest": "^1.6.0"
   }
