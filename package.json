@@ -20,7 +20,7 @@
     "ci:test": "npm run test",
     "ci:coverage": "npm run coverage",
     "ci:verify": "npm run ci:lint && npm run ci:test && npm run ci:coverage",
-    "prepare": "husky install"
+    "prepare": "node ./scripts/prepare-husky.cjs"
   },
   "engines": {
     "node": ">=20.18.1",
