@@ -638,11 +638,27 @@ export function startAgentApi({
       }
 
       if (req.method === 'GET' && req.url === '/governance/directives') {
+        try {
+          ensureOwnerAuthorization(req, ownerToken);
+        } catch (authError) {
+          logger.warn(authError, 'Unauthorized directives fetch attempt');
+          jsonResponse(res, authError.statusCode ?? 401, { error: authError.message });
+          return;
+        }
+
         jsonResponse(res, 200, { directives: exportOwnerDirectives() });
         return;
       }
 
       if (req.method === 'POST' && req.url === '/governance/directives') {
+        try {
+          ensureOwnerAuthorization(req, ownerToken);
+        } catch (authError) {
+          logger.warn(authError, 'Unauthorized directives update attempt');
+          jsonResponse(res, authError.statusCode ?? 401, { error: authError.message });
+          return;
+        }
+
         try {
           const body = await parseRequestBody(req);
           if (!body || typeof body !== 'object' || Array.isArray(body)) {
