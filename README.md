@@ -78,6 +78,9 @@
 | Container Health | Docker healthcheck hits `/metrics`; Helm liveness/readiness probes baked in. | [`src/healthcheck.js`](src/healthcheck.js), [`deploy/helm/agi-alpha-node/templates/deployment.yaml`](deploy/helm/agi-alpha-node/templates/deployment.yaml) |
 | Offline Snapshots | Signed JSON snapshots for air-gapped continuity; auto-loaded by CLI & monitor. | [`src/services/offlineSnapshot.js`](src/services/offlineSnapshot.js) |
 | Owner Commands | Transaction builders for pause/resume, stake thresholds, and share tuning. | [`src/services/governance.js`](src/services/governance.js), [`src/services/controlPlane.js`](src/services/controlPlane.js) |
+| Local Model Fallbacks | Deterministic heuristic models keep missions running when remote providers falter. | [`src/intelligence/localModels.js`](src/intelligence/localModels.js) |
+| Vault & Entry Guard | Container entrypoint validates ENS identity, warns on staking config gaps, and hydrates secrets. | [`deploy/docker/entrypoint.sh`](deploy/docker/entrypoint.sh) |
+| Health Sentinel | Standalone healthcheck asserts `/metrics` availability for Docker and orchestrators. | [`src/healthcheck.js`](src/healthcheck.js) |
 
 ---
 
@@ -192,6 +195,48 @@ stateDiagram-v2
 
 ---
 
+## Intelligence Mesh & Reinvestment
+
+```mermaid
+flowchart LR
+  subgraph IntelligenceCore[Hyperoperator Intelligence Core]
+    Planner[[World-Model Planner]]
+    Curriculum[[Curriculum Evolution]]
+    LocalModels[[Local Model Mesh]]
+    Reinvestment[[Reinvestment Optimizer]]
+  end
+  subgraph ControlPlane[Owner Control Plane]
+    Directives[[Owner Directives]]
+    Telemetry[[Performance Telemetry]]
+  end
+  Planner --> Curriculum
+  Planner --> Telemetry
+  Curriculum --> Planner
+  Curriculum --> LocalModels
+  LocalModels --> Telemetry
+  LocalModels --> Reinvestment
+  Reinvestment --> Directives
+  Directives --> ControlPlane
+  Telemetry --> Directives
+```
+
+### Local & Offline Autonomy
+
+- `loadLocalModels` and `simulateLocalInference` supply deterministic heuristics when remote AI providers fail, mapping job tasks onto curated offline models so throughput never collapses.【F:src/intelligence/localModels.js†L1-L121】
+- The container entrypoint enforces ENS identity, RPC credentials, and stake prerequisites before launching intelligence loops, emitting explicit warnings when auto-stake or snapshot policies are misconfigured.【F:deploy/docker/entrypoint.sh†L1-L98】
+
+### Curriculum & Performance Evolution
+
+- `runCurriculumEvolution` continuously evolves challenge difficulty, success floors, and exploration bias so specialist swarms train ahead of the job curve.【F:src/intelligence/learningLoop.js†L30-L72】
+- `derivePerformanceProfile` fuses planning output with swarm assignments, surfacing throughput, utilization, and projected earnings for the telemetry bus.【F:src/services/performance.js†L59-L88】
+
+### Financial Flywheel
+
+- `optimizeReinvestmentStrategy` simulates buffer policies, reinvestment basis points, and risk aversion to recommend staking strategies that keep $AGIALPHA compounding.【F:src/services/economics.js†L125-L185】
+- `runNodeDiagnostics` funnels ENS proofs, stake posture, and performance into `deriveOwnerDirectives`, generating actionable pause, stake, and revenue-share payloads for the owner console.【F:src/orchestrator/nodeRuntime.js†L16-L215】【F:src/services/controlPlane.js†L55-L220】
+
+---
+
 ## Operator Activation Sequence
 
 1. **Clone & Install**
@@ -279,7 +324,7 @@ stateDiagram-v2
      ghcr.io/montrealai/agi-alpha-node:latest
    ```
 
-   *Docker entrypoint validates ENS, hydrates Vault secrets (when configured), mounts offline snapshots, and surfaces job metrics at `/metrics`.*
+  *Docker entrypoint enforces label/address prerequisites, hydrates configuration, and the container surfaces `/metrics` for orchestrator health probes.【F:deploy/docker/entrypoint.sh†L29-L95】【F:src/healthcheck.js†L1-L34】*
 
 ---
 
@@ -394,10 +439,10 @@ docker run -it --rm \
 
 #### Entrypoint Summary
 
-- Validates ENS custody before booting.
-- Hydrates secrets from Vault when configured.
-- Mounts offline snapshots and local model palettes.
-- Fails fast if registry wrapper owner mismatches `OPERATOR_ADDRESS`.
+- Loads `/config/node.env` automatically and exports every variable into the runtime environment.【F:deploy/docker/entrypoint.sh†L4-L21】
+- Enforces `NODE_LABEL`, `OPERATOR_ADDRESS`, and `RPC_URL` presence plus label/hex formatting before launch.【F:deploy/docker/entrypoint.sh†L29-L56】
+- Emits warnings when auto-stake keys, incentives addresses, or offline snapshots are missing so owners can correct custody posture.【F:deploy/docker/entrypoint.sh†L85-L95】
+- Surfaces a sanitized configuration summary before chaining into the runtime so operators can notarize launch parameters.【F:deploy/docker/entrypoint.sh†L61-L98】
 
 ### Kubernetes / Helm
 
