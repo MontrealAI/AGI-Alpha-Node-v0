@@ -131,7 +131,17 @@ describe('agent API server', () => {
       context: { meetsMinimum: false }
     });
 
-    const directivesResponse = await fetch(`${baseUrl}/governance/directives`);
+    const ownerHeaders = {
+      Authorization: `Bearer ${OWNER_TOKEN}`
+    };
+    const ownerJsonHeaders = {
+      ...ownerHeaders,
+      'Content-Type': 'application/json'
+    };
+
+    const directivesResponse = await fetch(`${baseUrl}/governance/directives`, {
+      headers: ownerHeaders
+    });
     expect(directivesResponse.status).toBe(200);
     const directivesPayload = await directivesResponse.json();
     expect(directivesPayload.directives.priority).toBe('critical');
@@ -139,14 +149,9 @@ describe('agent API server', () => {
     expect(directivesPayload.directives.actions[0].type).toBe('pause');
     expect(directivesPayload.directives.context.meetsMinimum).toBe(false);
 
-    const ownerHeaders = {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${OWNER_TOKEN}`
-    };
-
     const pauseResponse = await fetch(`${baseUrl}/governance/pause`, {
       method: 'POST',
-      headers: ownerHeaders,
+      headers: ownerJsonHeaders,
       body: JSON.stringify({ systemPauseAddress: '0x0000000000000000000000000000000000000001', action: 'pause' })
     });
     expect(pauseResponse.status).toBe(200);
@@ -157,7 +162,7 @@ describe('agent API server', () => {
 
     const minStakeResponse = await fetch(`${baseUrl}/governance/minimum-stake`, {
       method: 'POST',
-      headers: ownerHeaders,
+      headers: ownerJsonHeaders,
       body: JSON.stringify({
         stakeManagerAddress: '0x0000000000000000000000000000000000000002',
         amount: '1000.5'
@@ -170,7 +175,7 @@ describe('agent API server', () => {
 
     const roleShareResponse = await fetch(`${baseUrl}/governance/role-share`, {
       method: 'POST',
-      headers: ownerHeaders,
+      headers: ownerJsonHeaders,
       body: JSON.stringify({
         rewardEngineAddress: '0x0000000000000000000000000000000000000003',
         role: 'node',
@@ -184,7 +189,7 @@ describe('agent API server', () => {
 
     const globalSharesResponse = await fetch(`${baseUrl}/governance/global-shares`, {
       method: 'POST',
-      headers: ownerHeaders,
+      headers: ownerJsonHeaders,
       body: JSON.stringify({
         rewardEngineAddress: '0x0000000000000000000000000000000000000004',
         operatorShareBps: 6000,
@@ -198,7 +203,7 @@ describe('agent API server', () => {
 
     const validatorThresholdResponse = await fetch(`${baseUrl}/governance/validator-threshold`, {
       method: 'POST',
-      headers: ownerHeaders,
+      headers: ownerJsonHeaders,
       body: JSON.stringify({
         stakeManagerAddress: '0x0000000000000000000000000000000000000002',
         threshold: '7'
@@ -210,7 +215,7 @@ describe('agent API server', () => {
 
     const registryUpgradeResponse = await fetch(`${baseUrl}/governance/registry-upgrade`, {
       method: 'POST',
-      headers: ownerHeaders,
+      headers: ownerJsonHeaders,
       body: JSON.stringify({
         stakeManagerAddress: '0x0000000000000000000000000000000000000002',
         registryType: 'job',
@@ -223,7 +228,7 @@ describe('agent API server', () => {
 
     const jobModuleResponse = await fetch(`${baseUrl}/governance/job-module`, {
       method: 'POST',
-      headers: ownerHeaders,
+      headers: ownerJsonHeaders,
       body: JSON.stringify({
         jobRegistryAddress: '0x0000000000000000000000000000000000000007',
         module: 'validation',
@@ -236,7 +241,7 @@ describe('agent API server', () => {
 
     const disputeResponse = await fetch(`${baseUrl}/governance/dispute`, {
       method: 'POST',
-      headers: ownerHeaders,
+      headers: ownerJsonHeaders,
       body: JSON.stringify({
         jobRegistryAddress: '0x0000000000000000000000000000000000000007',
         jobId: '42',
@@ -249,7 +254,7 @@ describe('agent API server', () => {
 
     const identityDelegateResponse = await fetch(`${baseUrl}/governance/identity-delegate`, {
       method: 'POST',
-      headers: ownerHeaders,
+      headers: ownerJsonHeaders,
       body: JSON.stringify({
         identityRegistryAddress: '0x0000000000000000000000000000000000000009',
         operatorAddress: '0x0000000000000000000000000000000000000011',
@@ -262,7 +267,7 @@ describe('agent API server', () => {
 
     const persistResponse = await fetch(`${baseUrl}/governance/minimum-stake`, {
       method: 'POST',
-      headers: ownerHeaders,
+      headers: ownerJsonHeaders,
       body: JSON.stringify({
         stakeManagerAddress: '0x0000000000000000000000000000000000000002',
         amount: '500',
@@ -277,7 +282,7 @@ describe('agent API server', () => {
 
     const stakeTopUpResponse = await fetch(`${baseUrl}/governance/stake-top-up`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: ownerJsonHeaders,
       body: JSON.stringify({
         incentivesAddress: '0x0000000000000000000000000000000000000005',
         amount: '250.75'
@@ -289,7 +294,7 @@ describe('agent API server', () => {
 
     const updateDirectivesResponse = await fetch(`${baseUrl}/governance/directives`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: ownerJsonHeaders,
       body: JSON.stringify({
         priority: 'warning',
         actions: [
@@ -311,7 +316,9 @@ describe('agent API server', () => {
     expect(updateDirectivesPayload.directives.actions[0].level).toBe('warning');
     expect(updateDirectivesPayload.directives.context.meetsMinimum).toBe(true);
 
-    const confirmDirectives = await fetch(`${baseUrl}/governance/directives`);
+    const confirmDirectives = await fetch(`${baseUrl}/governance/directives`, {
+      headers: ownerHeaders
+    });
     const confirmPayload = await confirmDirectives.json();
     expect(confirmPayload.directives.priority).toBe('warning');
     expect(confirmPayload.directives.context.meetsMinimum).toBe(true);
@@ -323,14 +330,14 @@ describe('agent API server', () => {
 
     const invalidResponse = await fetch(`${baseUrl}/governance/minimum-stake`, {
       method: 'POST',
-      headers: ownerHeaders,
+      headers: ownerJsonHeaders,
       body: JSON.stringify({ stakeManagerAddress: '0x0' })
     });
     expect(invalidResponse.status).toBe(400);
 
     const invalidDirectives = await fetch(`${baseUrl}/governance/directives`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: ownerJsonHeaders,
       body: JSON.stringify({ actions: { type: 'pause' } })
     });
     expect(invalidDirectives.status).toBe(400);
