@@ -163,7 +163,19 @@ export const configSchema = z
     VAULT_ADDR: z.string().optional(),
     VAULT_TOKEN: z.string().optional(),
     VAULT_SECRET_PATH: z.string().optional(),
-    VAULT_SECRET_KEY: z.string().optional()
+    VAULT_SECRET_KEY: z.string().optional(),
+    GOVERNANCE_API_TOKEN: z
+      .string()
+      .min(8)
+      .optional(),
+    GOVERNANCE_LEDGER_ROOT: z
+      .string()
+      .optional()
+      .transform((value) => {
+        if (!value) return undefined;
+        const trimmed = value.trim();
+        return trimmed.length ? trimmed : undefined;
+      })
   })
   .strict();
 

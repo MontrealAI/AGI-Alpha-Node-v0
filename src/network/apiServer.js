@@ -1,15 +1,23 @@
 import http from 'node:http';
 import { randomUUID } from 'node:crypto';
 import pino from 'pino';
-import { getAddress } from 'ethers';
+import { getAddress, parseUnits } from 'ethers';
+import { z } from 'zod';
 import { evaluateJobRequest } from '../intelligence/agentRuntime.js';
 import {
   buildSystemPauseTx,
   buildMinimumStakeTx,
+  buildValidatorThresholdTx,
+  buildStakeRegistryUpgradeTx,
   buildRoleShareTx,
-  buildGlobalSharesTx
+  buildGlobalSharesTx,
+  buildJobRegistryUpgradeTx,
+  buildDisputeTriggerTx,
+  buildIdentityDelegateTx,
+  getOwnerFunctionCatalog
 } from '../services/governance.js';
 import { buildStakeAndActivateTx } from '../services/staking.js';
+import { recordGovernanceAction } from '../services/governanceLedger.js';
 
 function jsonResponse(res, statusCode, payload) {
   const body = JSON.stringify(payload, (_, value) => (typeof value === 'bigint' ? value.toString() : value));
@@ -129,11 +137,269 @@ function sanitizeContext(context) {
   return cloneValue(context);
 }
 
+const checksumAddressSchema = z
+  .string()
+  .min(1)
+  .transform((value, ctx) => {
+    try {
+      return getAddress(value);
+    } catch (error) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Invalid address: ${error instanceof Error ? error.message : String(error)}`
+      });
+      return z.NEVER;
+    }
+  });
+
+const decimalAmountSchema = z
+  .union([z.string(), z.number(), z.bigint()])
+  .transform((value, ctx) => {
+    const asString = typeof value === 'string' ? value.trim() : value.toString();
+    if (!/^\d+(\.\d{0,18})?$/.test(asString)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'amount must be numeric with up to 18 decimals'
+      });
+      return z.NEVER;
+    }
+    try {
+      parseUnits(asString, 18);
+    } catch (error) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: error instanceof Error ? error.message : String(error)
+      });
+      return z.NEVER;
+    }
+    return asString;
+  });
+
+const basisPointsSchema = z.coerce.number().int().min(0).max(10_000);
+
+const bigIntSchema = z
+  .union([z.string(), z.number(), z.bigint()])
+  .transform((value, ctx) => {
+    const asString = typeof value === 'string' ? value.trim() : value.toString();
+    if (!/^-?\d+$/.test(asString)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'value must be an integer'
+      });
+      return z.NEVER;
+    }
+    try {
+      return BigInt(asString);
+    } catch (error) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: error instanceof Error ? error.message : String(error)
+      });
+      return z.NEVER;
+    }
+  });
+
+const booleanFlagSchema = z
+  .union([
+    z.boolean(),
+    z.string().transform((value) => {
+      const normalized = value.trim().toLowerCase();
+      if (['true', '1', 'yes', 'on'].includes(normalized)) return true;
+      if (['false', '0', 'no', 'off'].includes(normalized)) return false;
+      throw new Error('value must be a boolean-like flag');
+    })
+  ])
+  .transform((value) => Boolean(value));
+
+const tagsSchema = z
+  .union([
+    z.array(z.string()),
+    z.string()
+  ])
+  .optional()
+  .transform((value) => {
+    if (!value) {
+      return [];
+    }
+    if (Array.isArray(value)) {
+      return value.map((tag) => tag.trim()).filter((tag) => tag.length > 0);
+    }
+    return value
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter((tag) => tag.length > 0);
+  });
+
+const governanceCommonSchema = z.object({
+  dryRun: z.boolean().optional().default(true),
+  confirm: z.boolean().optional().default(false),
+  signature: z.string().optional(),
+  operator: checksumAddressSchema.optional(),
+  tags: tagsSchema.default([])
+});
+
+function extractAuthToken(req) {
+  const header = req.headers['authorization'];
+  if (typeof header === 'string' && header.toLowerCase().startsWith('bearer ')) {
+    return header.slice(7).trim();
+  }
+  const alt = req.headers['x-owner-token'];
+  if (typeof alt === 'string') {
+    return alt.trim();
+  }
+  if (Array.isArray(alt) && alt.length > 0) {
+    return String(alt[0]).trim();
+  }
+  return null;
+}
+
+function ensureOwnerAuthorization(req, ownerToken) {
+  if (!ownerToken) {
+    const error = new Error('Governance API token is not configured');
+    error.statusCode = 500;
+    throw error;
+  }
+  const provided = extractAuthToken(req);
+  if (!provided || provided !== ownerToken) {
+    const error = new Error('Owner authorization required');
+    error.statusCode = 401;
+    throw error;
+  }
+}
+
+const systemPauseSchema = governanceCommonSchema
+  .extend({
+    systemPauseAddress: checksumAddressSchema.optional(),
+    contract: checksumAddressSchema.optional(),
+    action: z.string().optional()
+  })
+  .transform((value) => {
+    const { contract, systemPauseAddress, ...rest } = value;
+    const resolved = systemPauseAddress ?? contract;
+    if (!resolved) {
+      throw new Error('systemPauseAddress is required');
+    }
+    return { ...rest, systemPauseAddress: resolved };
+  });
+
+const minimumStakeSchema = governanceCommonSchema
+  .extend({
+    stakeManagerAddress: checksumAddressSchema,
+    amount: decimalAmountSchema,
+    currentAmount: decimalAmountSchema.optional(),
+    current: decimalAmountSchema.optional()
+  })
+  .transform((value) => {
+    const { currentAmount, current, ...rest } = value;
+    return { ...rest, currentAmount: currentAmount ?? current ?? null };
+  });
+
+const validatorThresholdSchema = governanceCommonSchema
+  .extend({
+    stakeManagerAddress: checksumAddressSchema,
+    threshold: bigIntSchema,
+    currentThreshold: bigIntSchema.optional(),
+    current: bigIntSchema.optional()
+  })
+  .transform((value) => {
+    const { currentThreshold, current, ...rest } = value;
+    return { ...rest, currentThreshold: currentThreshold ?? current ?? null };
+  });
+
+const registryUpgradeSchema = governanceCommonSchema.extend({
+  stakeManagerAddress: checksumAddressSchema,
+  registryType: z.string().min(2),
+  newAddress: checksumAddressSchema,
+  currentAddress: checksumAddressSchema.optional()
+});
+
+const roleShareSchema = governanceCommonSchema.extend({
+  rewardEngineAddress: checksumAddressSchema,
+  role: z.string().min(1),
+  shareBps: basisPointsSchema,
+  currentShareBps: basisPointsSchema.optional()
+});
+
+const globalSharesSchema = governanceCommonSchema
+  .extend({
+    rewardEngineAddress: checksumAddressSchema,
+    operatorShareBps: basisPointsSchema,
+    validatorShareBps: basisPointsSchema,
+    treasuryShareBps: basisPointsSchema,
+    operatorBps: basisPointsSchema.optional(),
+    validatorBps: basisPointsSchema.optional(),
+    treasuryBps: basisPointsSchema.optional(),
+    currentOperatorShareBps: basisPointsSchema.optional(),
+    currentValidatorShareBps: basisPointsSchema.optional(),
+    currentTreasuryShareBps: basisPointsSchema.optional(),
+    currentOperatorBps: basisPointsSchema.optional(),
+    currentValidatorBps: basisPointsSchema.optional(),
+    currentTreasuryBps: basisPointsSchema.optional()
+  })
+  .transform((value) => {
+    const operatorShare = value.operatorShareBps ?? value.operatorBps;
+    const validatorShare = value.validatorShareBps ?? value.validatorBps;
+    const treasuryShare = value.treasuryShareBps ?? value.treasuryBps;
+    if (
+      operatorShare === undefined ||
+      validatorShare === undefined ||
+      treasuryShare === undefined
+    ) {
+      throw new Error('operatorShareBps, validatorShareBps, and treasuryShareBps are required');
+    }
+    const currentShares = {};
+    let hasCurrent = false;
+    const currentOperator = value.currentOperatorShareBps ?? value.currentOperatorBps;
+    if (currentOperator !== undefined) {
+      currentShares.operatorShare = currentOperator;
+      hasCurrent = true;
+    }
+    const currentValidator = value.currentValidatorShareBps ?? value.currentValidatorBps;
+    if (currentValidator !== undefined) {
+      currentShares.validatorShare = currentValidator;
+      hasCurrent = true;
+    }
+    const currentTreasury = value.currentTreasuryShareBps ?? value.currentTreasuryBps;
+    if (currentTreasury !== undefined) {
+      currentShares.treasuryShare = currentTreasury;
+      hasCurrent = true;
+    }
+    return {
+      ...value,
+      operatorShareBps: operatorShare,
+      validatorShareBps: validatorShare,
+      treasuryShareBps: treasuryShare,
+      currentShares: hasCurrent ? currentShares : null
+    };
+  });
+
+const jobModuleSchema = governanceCommonSchema.extend({
+  jobRegistryAddress: checksumAddressSchema,
+  module: z.string().min(2),
+  newAddress: checksumAddressSchema,
+  currentAddress: checksumAddressSchema.optional()
+});
+
+const disputeSchema = governanceCommonSchema.extend({
+  jobRegistryAddress: checksumAddressSchema,
+  jobId: bigIntSchema,
+  reason: z.string().optional()
+});
+
+const identityDelegateSchema = governanceCommonSchema.extend({
+  identityRegistryAddress: checksumAddressSchema,
+  operatorAddress: checksumAddressSchema,
+  allowed: booleanFlagSchema,
+  currentAllowed: booleanFlagSchema.optional()
+});
+
 export function startAgentApi({
   port = 8080,
   offlineMode = false,
   jobLifecycle = null,
-  logger = pino({ level: 'info', name: 'agent-api' })
+  logger = pino({ level: 'info', name: 'agent-api' }),
+  ownerToken = null,
+  ledgerRoot = process.cwd()
 } = {}) {
   const jobs = new Map();
   const lifecycleJobs = new Map();
@@ -151,7 +417,8 @@ export function startAgentApi({
     },
     governance: {
       directivesUpdates: 0,
-      payloads: 0
+      payloads: 0,
+      ledgerEntries: 0
     }
   };
 
@@ -178,6 +445,63 @@ export function startAgentApi({
           ? cloneValue(ownerDirectives.context)
           : {}
     };
+  }
+
+  async function handleGovernanceRequest(req, res, schema, builder) {
+    try {
+      ensureOwnerAuthorization(req, ownerToken);
+    } catch (authError) {
+      logger.warn(authError, 'Unauthorized governance request');
+      jsonResponse(res, authError.statusCode ?? 401, { error: authError.message });
+      return;
+    }
+
+    let parsed;
+    try {
+      const body = await parseRequestBody(req);
+      parsed = schema.parse(body ?? {});
+    } catch (error) {
+      logger.error(error, 'Invalid governance payload');
+      jsonResponse(res, 400, { error: error.message });
+      return;
+    }
+
+    try {
+      const built = builder(parsed);
+      const { meta, to, data, ...details } = built;
+      const dryRun = parsed.dryRun !== false;
+      const response = {
+        dryRun,
+        tx: { to, data },
+        meta,
+        details
+      };
+      if (!dryRun) {
+        if (!parsed.confirm) {
+          throw new Error('Owner confirmation required to persist payload');
+        }
+        const ledgerResult = recordGovernanceAction({
+          payload: { to, data },
+          meta,
+          signature: parsed.signature ?? null,
+          operator: parsed.operator ?? null,
+          tags: parsed.tags ?? [],
+          rootDir: ledgerRoot
+        });
+        metrics.governance.ledgerEntries += 1;
+        response.ledgerEntry = {
+          id: ledgerResult.entry.id,
+          recordedAt: ledgerResult.entry.recordedAt,
+          path: ledgerResult.filePath
+        };
+      }
+      metrics.governance.payloads += 1;
+      jsonResponse(res, 200, response);
+    } catch (error) {
+      logger.error(error, 'Failed to construct governance payload');
+      const status = error.statusCode ?? (error.message?.includes('confirmation') ? 409 : 400);
+      jsonResponse(res, status, { error: error.message });
+    }
   }
 
   if (jobLifecycle) {
@@ -308,12 +632,33 @@ export function startAgentApi({
         return;
       }
 
+      if (req.method === 'GET' && req.url === '/governance/catalog') {
+        jsonResponse(res, 200, { catalog: getOwnerFunctionCatalog() });
+        return;
+      }
+
       if (req.method === 'GET' && req.url === '/governance/directives') {
+        try {
+          ensureOwnerAuthorization(req, ownerToken);
+        } catch (authError) {
+          logger.warn(authError, 'Unauthorized directives fetch attempt');
+          jsonResponse(res, authError.statusCode ?? 401, { error: authError.message });
+          return;
+        }
+
         jsonResponse(res, 200, { directives: exportOwnerDirectives() });
         return;
       }
 
       if (req.method === 'POST' && req.url === '/governance/directives') {
+        try {
+          ensureOwnerAuthorization(req, ownerToken);
+        } catch (authError) {
+          logger.warn(authError, 'Unauthorized directives update attempt');
+          jsonResponse(res, authError.statusCode ?? 401, { error: authError.message });
+          return;
+        }
+
         try {
           const body = await parseRequestBody(req);
           if (!body || typeof body !== 'object' || Array.isArray(body)) {
@@ -346,113 +691,109 @@ export function startAgentApi({
       }
 
       if (req.method === 'POST' && req.url === '/governance/pause') {
-        try {
-          const body = await parseRequestBody(req);
-          if (!body?.systemPauseAddress) {
-            jsonResponse(res, 400, { error: 'systemPauseAddress is required' });
-            return;
-          }
-          const tx = buildSystemPauseTx({
-            systemPauseAddress: body.systemPauseAddress,
-            action: body.action
-          });
-          metrics.governance.payloads += 1;
-          jsonResponse(res, 200, { tx });
-        } catch (error) {
-          logger.error(error, 'Failed to build system pause payload');
-          jsonResponse(res, 400, { error: error.message });
-        }
+        await handleGovernanceRequest(req, res, systemPauseSchema, (input) =>
+          buildSystemPauseTx({
+            systemPauseAddress: input.systemPauseAddress,
+            action: input.action
+          })
+        );
         return;
       }
 
       if (req.method === 'POST' && req.url === '/governance/minimum-stake') {
-        try {
-          const body = await parseRequestBody(req);
-          if (!body?.stakeManagerAddress) {
-            jsonResponse(res, 400, { error: 'stakeManagerAddress is required' });
-            return;
-          }
-          if (body.amount === undefined || body.amount === null) {
-            jsonResponse(res, 400, { error: 'amount is required' });
-            return;
-          }
-          const decimals = body.decimals === undefined ? undefined : Number.parseInt(body.decimals, 10);
-          if (decimals !== undefined && (!Number.isFinite(decimals) || decimals < 0)) {
-            jsonResponse(res, 400, { error: 'decimals must be a non-negative integer' });
-            return;
-          }
-          const stakeArgs = {
-            stakeManagerAddress: body.stakeManagerAddress,
-            amount: body.amount
-          };
-          if (decimals !== undefined) {
-            stakeArgs.decimals = decimals;
-          }
-          const tx = buildMinimumStakeTx(stakeArgs);
-          metrics.governance.payloads += 1;
-          jsonResponse(res, 200, { tx });
-        } catch (error) {
-          logger.error(error, 'Failed to build minimum stake payload');
-          jsonResponse(res, 400, { error: error.message });
-        }
+        await handleGovernanceRequest(req, res, minimumStakeSchema, (input) =>
+          buildMinimumStakeTx({
+            stakeManagerAddress: input.stakeManagerAddress,
+            amount: input.amount,
+            currentMinimum: input.currentAmount ? parseUnits(input.currentAmount, 18) : null
+          })
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/validator-threshold') {
+        await handleGovernanceRequest(req, res, validatorThresholdSchema, (input) =>
+          buildValidatorThresholdTx({
+            stakeManagerAddress: input.stakeManagerAddress,
+            threshold: input.threshold,
+            currentThreshold: input.currentThreshold ?? null
+          })
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/registry-upgrade') {
+        await handleGovernanceRequest(req, res, registryUpgradeSchema, (input) =>
+          buildStakeRegistryUpgradeTx({
+            stakeManagerAddress: input.stakeManagerAddress,
+            registryType: input.registryType,
+            newAddress: input.newAddress,
+            currentAddress: input.currentAddress ?? null
+          })
+        );
         return;
       }
 
       if (req.method === 'POST' && req.url === '/governance/role-share') {
-        try {
-          const body = await parseRequestBody(req);
-          if (!body?.rewardEngineAddress) {
-            jsonResponse(res, 400, { error: 'rewardEngineAddress is required' });
-            return;
-          }
-          if (!body?.role) {
-            jsonResponse(res, 400, { error: 'role is required' });
-            return;
-          }
-          if (body.shareBps === undefined || body.shareBps === null) {
-            jsonResponse(res, 400, { error: 'shareBps is required' });
-            return;
-          }
-          const tx = buildRoleShareTx({
-            rewardEngineAddress: body.rewardEngineAddress,
-            role: body.role,
-            shareBps: Number(body.shareBps)
-          });
-          metrics.governance.payloads += 1;
-          jsonResponse(res, 200, { tx });
-        } catch (error) {
-          logger.error(error, 'Failed to build role share payload');
-          jsonResponse(res, 400, { error: error.message });
-        }
+        await handleGovernanceRequest(req, res, roleShareSchema, (input) =>
+          buildRoleShareTx({
+            rewardEngineAddress: input.rewardEngineAddress,
+            role: input.role,
+            shareBps: input.shareBps,
+            currentShareBps: input.currentShareBps ?? null
+          })
+        );
         return;
       }
 
       if (req.method === 'POST' && req.url === '/governance/global-shares') {
-        try {
-          const body = await parseRequestBody(req);
-          if (!body?.rewardEngineAddress) {
-            jsonResponse(res, 400, { error: 'rewardEngineAddress is required' });
-            return;
-          }
-          const operator = Number(body?.operatorShareBps ?? body?.operatorBps);
-          const validator = Number(body?.validatorShareBps ?? body?.validatorBps);
-          const treasury = Number(body?.treasuryShareBps ?? body?.treasuryBps);
-          if (!Number.isFinite(operator) || !Number.isFinite(validator) || !Number.isFinite(treasury)) {
-            jsonResponse(res, 400, { error: 'operatorShareBps, validatorShareBps, and treasuryShareBps are required' });
-            return;
-          }
-          const tx = buildGlobalSharesTx({
-            rewardEngineAddress: body.rewardEngineAddress,
-            operatorShareBps: operator,
-            validatorShareBps: validator,
-            treasuryShareBps: treasury
-          });
-          metrics.governance.payloads += 1;
-          jsonResponse(res, 200, { tx });
-        } catch (error) {
-          logger.error(error, 'Failed to build global shares payload');
-          jsonResponse(res, 400, { error: error.message });
-        }
+        await handleGovernanceRequest(req, res, globalSharesSchema, (input) =>
+          buildGlobalSharesTx({
+            rewardEngineAddress: input.rewardEngineAddress,
+            operatorShareBps: input.operatorShareBps,
+            validatorShareBps: input.validatorShareBps,
+            treasuryShareBps: input.treasuryShareBps,
+            currentShares: input.currentShares
+          })
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/job-module') {
+        await handleGovernanceRequest(req, res, jobModuleSchema, (input) =>
+          buildJobRegistryUpgradeTx({
+            jobRegistryAddress: input.jobRegistryAddress,
+            module: input.module,
+            newAddress: input.newAddress,
+            currentAddress: input.currentAddress ?? null
+          })
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/dispute') {
+        await handleGovernanceRequest(req, res, disputeSchema, (input) =>
+          buildDisputeTriggerTx({
+            jobRegistryAddress: input.jobRegistryAddress,
+            jobId: input.jobId,
+            reason: input.reason
+          })
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/identity-delegate') {
+        await handleGovernanceRequest(req, res, identityDelegateSchema, (input) =>
+          buildIdentityDelegateTx({
+            identityRegistryAddress: input.identityRegistryAddress,
+            operatorAddress: input.operatorAddress,
+            allowed: input.allowed,
+            current:
+              input.currentAllowed === undefined
+                ? null
+                : { operator: input.operatorAddress, allowed: input.currentAllowed }
+          })
+        );
         return;
       }
 

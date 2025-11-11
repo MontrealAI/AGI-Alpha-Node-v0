@@ -148,7 +148,9 @@ export async function bootstrapContainer({
       port: config.API_PORT,
       offlineMode: config.OFFLINE_MODE,
       jobLifecycle,
-      logger
+      logger,
+      ownerToken: config.GOVERNANCE_API_TOKEN,
+      ledgerRoot: config.GOVERNANCE_LEDGER_ROOT ?? process.cwd()
     });
   } catch (error) {
     logger.error(error, 'Failed to start agent API server');
