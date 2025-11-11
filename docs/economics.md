@@ -2,75 +2,84 @@
 
 <!-- markdownlint-disable MD013 MD033 -->
 <p align="center">
-  <img src="../1.alpha.node.agi.eth.svg" alt="AGI Alpha Node Crest" width="220" />
+  <picture>
+    <source srcset="../1.alpha.node.agi.eth.svg" type="image/svg+xml" />
+    <img src="../1.alpha.node.agi.eth.png" alt="AGI Alpha Node Crest" width="220" />
+  </picture>
 </p>
 
 <p align="center">
   <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml">
     <img src="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml/badge.svg?branch=main" alt="Continuous Integration" />
   </a>
-  <a href="https://img.shields.io/badge/Status-Fully%20Green%20CI-06d6a0.svg?style=flat-square">
-    <img src="https://img.shields.io/badge/Status-Fully%20Green%20CI-06d6a0.svg?style=flat-square" alt="Status: Fully Green CI" />
-  </a>
-  <a href="https://img.shields.io/badge/Checks-Visible%20on%20GitHub-0b7285.svg?style=flat-square">
-    <img src="https://img.shields.io/badge/Checks-Visible%20on%20GitHub-0b7285.svg?style=flat-square" alt="Checks: Visible on GitHub" />
-  </a>
+  <img src="https://img.shields.io/badge/Status-Fully%20Green%20CI-06d6a0.svg?style=flat-square" alt="Status: Fully Green CI" />
   <a href="../.github/required-checks.json">
-    <img src="https://img.shields.io/badge/Branch%20Protection-Enforced-1f2933.svg?style=flat-square" alt="Branch Protection" />
+    <img src="https://img.shields.io/badge/Checks-Enforced%20on%20main-1f2933.svg?style=flat-square" alt="Required Checks" />
   </a>
+  <img src="https://img.shields.io/badge/Runtime-Node.js%2020.x-43853d.svg?style=flat-square" alt="Runtime: Node.js 20.x" />
   <a href="https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa">
     <img src="https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-ff3366.svg?style=flat-square" alt="$AGIALPHA Contract" />
   </a>
-  <img src="https://img.shields.io/badge/Runtime-Node.js%2020.x-43853d.svg?style=flat-square" alt="Runtime: Node.js 20.x" />
   <img src="https://img.shields.io/badge/Treasury-18%20Decimals-8b5cf6.svg?style=flat-square" alt="Treasury Precision" />
 </p>
 
-> _AGI ALPHA Nodes continuously mint verifiable synthetic labor, settle it in $AGIALPHA, and broadcast every metric through a CI-guarded lattice under absolute owner control._
-
-This dossier documents the live economic firmware of **AGI Alpha Node v0**—the machine allocators model when they price programmable AI labor. Each metric maps to executable code in this repository, every badge is enforced in CI, and every lever is retainable by the contract owner.
+> _AGI ALPHA Nodes continuously mint verifiable synthetic labor, settle it in $AGIALPHA, and broadcast every decision through an auditable CI lattice._
+>
+> _This dossier describes the machine allocators cite when they discuss intelligence powerful enough to reorder markets; every lever remains under the contract owner's fingertips._
 
 ---
 
-## 1. Economic Field Overview
+## 1. Economic Telemetry Schematic
 
 ```mermaid
 graph LR
-  subgraph Executors["Alpha Node Executors"]
-    runtime["Node Runtime (src/orchestrator/nodeRuntime.js)"]
-    monitor["Monitor Loop (src/orchestrator/monitorLoop.js)"]
-    telemetry["Telemetry Exporter (src/telemetry/monitoring.js)"]
+  subgraph Runtime["Alpha Runtime Core"]
+    diagnostics["Diagnostics · runNodeDiagnostics\n(src/orchestrator/nodeRuntime.js)"]
+    monitor["Monitor Loop\n(src/orchestrator/monitorLoop.js)"]
+    telemetry["Prometheus Exporter\n(src/telemetry/monitoring.js)"]
   end
   subgraph Intelligence["Intelligence Mesh"]
-    planner["Planner (src/intelligence/planning.js)"]
-    swarm["Swarm Orchestrator (src/intelligence/swarmOrchestrator.js)"]
-    learning["Learning Loop (src/intelligence/learningLoop.js)"]
+    planner["World-Model Planner\n(src/intelligence/planning.js)"]
+    swarm["Specialist Swarm\n(src/intelligence/swarmOrchestrator.js)"]
+    sentinel["Stress Harness\n(test/stressHarness.test.js)"]
   end
-  subgraph Chain["Protocol Surface"]
-    workMeter["WorkMeter"]
-    incentives["PlatformIncentives"]
-    rewards["RewardEngine"]
-    pause["SystemPause"]
+  subgraph Treasury["Treasury & Rewards"]
+    economics["Economics Optimizer\n(src/services/economics.js)"]
+    rewards["Reward Engine Helpers\n(src/services/rewards.js)"]
+    performance["Performance Profile\n(src/services/performance.js)"]
   end
-  subgraph OwnerDeck["Owner Command Deck"]
-    cli["CLI Spine (src/index.js)"]
-    ledger["Governance Ledger (src/services/governanceLedger.js)"]
-    control["Control Plane (src/services/controlPlane.js)"]
+  subgraph Governance["Owner Control Deck"]
+    controlPlane["deriveOwnerDirectives\n(src/services/controlPlane.js)"]
+    stakeActivator["Stake Activation\n(src/orchestrator/stakeActivator.js)"]
+    governance["Owner Calldata Builders\n(src/services/governance.js)"]
+    ledger["Governance Ledger\n(src/services/governanceLedger.js)"]
   end
-  Executors --> Intelligence
-  Intelligence --> Executors
-  Executors -->|α-WU payloads| workMeter
-  workMeter --> rewards
-  rewards --> Executors
-  rewards --> OwnerDeck
-  incentives --> Executors
-  pause -. overrides .-> Executors
-  cli --> OwnerDeck
-  cli --> Chain
-  ledger --> OwnerDeck
-  control --> Executors
+  subgraph ChainSurface["Protocol Surface"]
+    ens["ENS Verification\n(src/services/ensVerifier.js)"]
+    staking["Stake Telemetry\n(src/services/staking.js)"]
+    activation["Stake Activation RPC\n(src/services/stakeActivation.js)"]
+    governanceStatus["Governance Status\n(src/services/governanceStatus.js)"]
+  end
+
+  diagnostics --> ens
+  diagnostics --> staking
+  diagnostics --> performance
+  diagnostics --> rewards
+  diagnostics --> governanceStatus
+  planner --> swarm
+  swarm --> performance
+  monitor --> telemetry
+  telemetry --> diagnostics
+  performance --> economics
+  economics --> controlPlane
+  controlPlane --> governance
+  controlPlane --> stakeActivator
+  governance --> ledger
+  stakeActivator --> activation
+  activation --> staking
 ```
 
-The runtime senses workloads, the intelligence mesh plans execution, and protocol modules settle rewards. Owner directives route through the CLI spine to reconfigure any surface in real time.
+Every arrow corresponds to runtime code executed by the CLI (`src/index.js`) and validated by Vitest suites such as [`nodeRuntime.test.js`](../test/nodeRuntime.test.js), [`governance.integration.test.js`](../test/governance.integration.test.js), and [`stakeActivation.test.js`](../test/stakeActivation.test.js).
 
 ---
 
@@ -82,181 +91,196 @@ The runtime senses workloads, the intelligence mesh plans execution, and protoco
 \alpha\text{-WU} = \mathrm{GPU}_s \times \mathrm{gflops}_{\text{norm}} \times \mathrm{ModelTier} \times \mathrm{SLO}_{\text{pass}} \times \mathrm{QV}
 \]
 
-- **GPUₛ** — Metered accelerator seconds captured by `runNodeDiagnostics`.
-- **gflops_norm** — Owner-tunable silicon normalization factors.
-- **ModelTier** — Difficulty multipliers sourced from capability catalogues.
-- **SLO_pass** — Latency and heartbeat adherence measured by the monitor loop.
-- **QV** — Validator quality verdicts fused into governance status feeds.
+| Factor | Runtime Source | Verification & Tests |
+| ------ | -------------- | -------------------- |
+| **GPUₛ** | Metered by `runNodeDiagnostics` using provider telemetry hooks. | [`src/orchestrator/nodeRuntime.js`](../src/orchestrator/nodeRuntime.js) · [`test/nodeRuntime.test.js`](../test/nodeRuntime.test.js) |
+| **gflops_norm** | Owner-supplied normalization coefficients recorded in diagnostics output. | [`src/orchestrator/nodeRuntime.js`](../src/orchestrator/nodeRuntime.js) |
+| **ModelTier** | Derived from planner and swarm capability profiles. | [`src/intelligence/planning.js`](../src/intelligence/planning.js) · [`src/intelligence/swarmOrchestrator.js`](../src/intelligence/swarmOrchestrator.js) · [`test/planning.test.js`](../test/planning.test.js) |
+| **SLO_pass** | Monitor loop evaluates heartbeat, latency, and penalty posture. | [`src/orchestrator/monitorLoop.js`](../src/orchestrator/monitorLoop.js) · [`test/monitorLoop.test.js`](../test/monitorLoop.test.js) |
+| **QV** | Specialist mesh quality factors plus validator heuristics surface in performance profiles. | [`src/services/performance.js`](../src/services/performance.js) · [`test/performance.test.js`](../test/performance.test.js) |
 
-Every multiplier originates from deterministic modules within this repository. The resulting scalar is the singular measure of synthetic labor across heterogeneous hardware and model tiers.
+`runNodeDiagnostics` fuses the factors above with stake telemetry (`getStakeStatus`) and governance readings (`fetchGovernanceStatus`). The resulting α‑WU payloads are journalled through the diagnostics logger and exported via Prometheus.
 
-### 2.2 Measurement Ledger
-
-| Factor | Runtime Source | Contract Surface | Repository Anchor |
-| ------ | -------------- | ---------------- | ----------------- |
-| GPUₛ & gflops_norm | Diagnostics via [`runNodeDiagnostics`](../src/orchestrator/nodeRuntime.js) | Usage payload hashed for WorkMeter | [`src/orchestrator/nodeRuntime.js`](../src/orchestrator/nodeRuntime.js) |
-| ModelTier | Capability profiles & planner | `JobRegistry` + validator pipeline | [`src/services/jobLifecycle.js`](../src/services/jobLifecycle.js), [`src/intelligence/planning.js`](../src/intelligence/planning.js) |
-| SLO_pass | Latency & heartbeat monitors | `ValidationModule.commitReveal` | [`src/orchestrator/monitorLoop.js`](../src/orchestrator/monitorLoop.js), [`src/telemetry/monitoring.js`](../src/telemetry/monitoring.js) |
-| QV | Validator scoring & governance status | `ProductivityIndex.record` | [`src/services/governanceStatus.js`](../src/services/governanceStatus.js), [`test/governance.integration.test.js`](../test/governance.integration.test.js) |
-
-### 2.3 Runtime Observation Loop
-
-```mermaid
-flowchart LR
-  metrics["GPU sensors · latency traces"] --> lifecycle["Lifecycle Engine"]
-  planner["Planner"] --> lifecycle
-  lifecycle --> work["submitUsage()"]
-  work --> validators["Validator Cohort"]
-  validators --> indexer["ProductivityIndex"]
-  indexer --> emission["EmissionManager"]
-  emission --> lifecycle
-  lifecycle --> telemetry["Telemetry Exporter"]
-  telemetry -->|Prometheus + CLI| metrics
-```
-
-The loop binds real-time hardware telemetry, planning intelligence, and validator feedback into a closed control system that continuously updates α‑WU outputs.
-
----
-
-## 3. $AGIALPHA Coupling & Flow Mechanics
-
-The native token is immutable within this runtime:
-
-- **Contract** — `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` with 18 decimals enforced by [`src/constants/token.js`](../src/constants/token.js).
-- **Normalization** — CLI utilities refuse non-canonical addresses via [`assertCanonicalAgialphaAddress`](../src/constants/token.js).
-- **Reward Solving** — [`projectEpochRewards`](../src/services/rewards.js) and [`splitRewardPool`](../src/services/rewards.js) compute deterministic wage curves.
-
-### 3.1 Epoch Choreography
-
-1. **Stake ignition** — Operators stake `$AGIALPHA` through `node src/index.js stake-tx` (`StakeManager.setMinimumStake` & friends).
-2. **Usage attestation** — `runNodeDiagnostics` packages α‑WU payloads for `WorkMeter.submitUsage`.
-3. **Validator arbitration** — Commit–reveal loops in [`test/swarmOrchestrator.test.js`](../test/swarmOrchestrator.test.js) enforce SLO/QV scoring.
-4. **Productivity indexing** — `ProductivityIndex.totalAlphaWU(epoch)` powers the α-GDP ledger.
-5. **Emission solving** — [`EmissionManager.rewardPerAlphaWU`](../src/services/rewards.js) exposes wage rates to the CLI governance builders.
-6. **Settlement & burns** — Jobs settle in `$AGIALPHA`; treasury routing is orchestrated by [`PlatformIncentives` builders](../src/services/governance.js).
-7. **Reinvestment loop** — [`optimizeReinvestmentStrategy`](../src/services/economics.js) computes owner-grade reinvestment directives.
-
-### 3.2 Flow Atlas
-
-```mermaid
-stateDiagram-v2
-    [*] --> Registered
-    Registered --> Metering: submitUsage()
-    Metering --> Validating: commitReveal()
-    Validating --> Indexed: recordAlphaWU()
-    Indexed --> WageSolved: rewardPerAlphaWU()
-    WageSolved --> Settlement: claimReward()
-    Settlement --> BurnCycle: feeBurn()
-    BurnCycle --> Reinvest: optimizeReinvestmentStrategy()
-    Reinvest --> Metering: stake-tx / resume()
-```
-
-### 3.3 Owner Command Authority
-
-| Module | Core Function | Owner Control Vector | CLI Surface |
-| ------ | ------------- | -------------------- | ----------- |
-| `SystemPause` | Network-wide halt/resume | Pause, resume, unpause all subsystems | `node src/index.js governance system-pause ...` |
-| `StakeManager` | Minimum stake & validator quorum | Tune floors, registry routing | `... governance minimum-stake` · `... validator-threshold` |
-| `RewardEngine` | Role share allocation | Adjust operator/validator/treasury shares | `... governance role-share` · `... global-shares` |
-| `JobRegistry` | Module upgrades & disputes | Swap validation/reputation/dispute modules | `... governance job-module` · `... dispute` |
-| `IdentityRegistry` | Delegate operators | Add or revoke operators instantly | `... governance identity-delegate` |
-| `PlatformIncentives` | Stake routing, buffers, fees, treasury | Repoint managers, heartbeat grace, activation fee | `... governance incentives-*` |
-
-Vitest integration suites enforce that only the owner key can execute these payloads, and [`recordGovernanceAction`](../src/services/governanceLedger.js) journals every signed transaction.
+### 2.2 Telemetry Feedback Loop
 
 ```mermaid
 flowchart TD
-  Owner["Owner Wallet"] --> CLI["CLI Builders"]
-  CLI --> Catalog["governance catalog"]
-  Catalog --> Payloads["Encoded calldata"]
-  Payloads --> Pause["system-pause"]
-  Payloads --> Stake["minimum-stake / validator-threshold"]
-  Payloads --> Shares["role-share / global-shares"]
-  Payloads --> Incentives["incentives-* suite"]
-  Payloads --> Registry["job-module / dispute"]
-  Payloads --> Identity["identity-delegate"]
-  Payloads --> Ledger["--execute --confirm"]
-  Ledger --> Evidence["Governance Ledger"]
+  sensors["GPU · Latency Sensors"] --> diagnostics
+  diagnostics["runNodeDiagnostics"] --> monitor
+  monitor["Monitor Loop"] --> evaluation["evaluateStakeConditions"]
+  evaluation --> directives["deriveOwnerDirectives"]
+  directives --> governance["Owner Governance Payloads"]
+  directives --> activation["Stake Top-Up Helpers"]
+  diagnostics --> performance["derivePerformanceProfile"]
+  performance --> economics["optimizeReinvestmentStrategy"]
+  economics --> directives
+  diagnostics --> telemetry["Prometheus Metrics"]
+  telemetry --> sensors
+```
+
+The closed loop above is deterministic and re-runnable. Offline snapshots can replay an epoch without a live RPC via [`src/services/offlineSnapshot.js`](../src/services/offlineSnapshot.js) and are exercised in [`test/offlineSnapshot.test.js`](../test/offlineSnapshot.test.js).
+
+### 2.3 Validator-Aware Timeline
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Node as Alpha Node Runtime
+  participant Mesh as Specialist Mesh
+  participant Validators as Validator Cohort (conceptual)
+  participant Owner as Owner Console
+
+  Node->>Mesh: planJob(capabilityProfile)
+  Mesh-->>Node: produceQualityVector()
+  Node->>Node: computeAlphaWU(gpuSeconds, gflops, slo, qv)
+  Node->>Owner: emitDiagnostics()
+  Node->>Validators: publishUsageHash()
+  Validators-->>Owner: attestQuality()
+  Owner->>Owner: archive ledger + CI artifacts
 ```
 
 ---
 
-## 4. Financial Intelligence Stack
+## 3. $AGIALPHA Token Mechanics
 
-### 4.1 Synthetic Labor Yield (SLY)
+### 3.1 Contract Invariants
+
+- **Canonical address** — `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` with 18 decimals defined in [`src/constants/token.js`](../src/constants/token.js); all helpers use the checksum variant via `getAddress`.
+- **Normalization guard** — `assertCanonicalAgialphaAddress` rejects mismatched token addresses at CLI boundaries, preventing operator misconfiguration. [`test/token.test.js`](../test/token.test.js) exercises both positive and negative cases.
+- **Treasury math** — Reward projections and pool splits occur through [`src/services/rewards.js`](../src/services/rewards.js) with 18-decimal precision, validated by [`test/rewards.test.js`](../test/rewards.test.js).
+- **Stake evaluation** — [`src/services/staking.js`](../src/services/staking.js) and [`test/staking.test.js`](../test/staking.test.js) ensure minimum stake, penalties, and heartbeats translate directly to governance directives.
+
+### 3.2 Emission & Settlement Cycle
+
+```mermaid
+stateDiagram-v2
+  [*] --> StakePrimed: stakeAndActivate()
+  StakePrimed --> Metering: runNodeDiagnostics()
+  Metering --> WageProjection: projectEpochRewards()
+  WageProjection --> Directives: deriveOwnerDirectives()
+  Directives --> Settlement: handleStakeActivation()
+  Settlement --> Treasury: optimizeReinvestmentStrategy()
+  Treasury --> StakePrimed: reinvest + resume()
+  Directives --> Governance: build*Tx()
+  Governance --> StakePrimed: owner signs & broadcasts
+```
+
+`handleStakeActivation` (see [`src/orchestrator/stakeActivator.js`](../src/orchestrator/stakeActivator.js)) gives the owner full control over pauses, stake top-ups, and activation flows. Transactions are built but never broadcast without explicit owner confirmation or configured keys.
+
+### 3.3 Wage Curve Ledger
+
+```mermaid
+gantt
+  title Epoch Wage & Treasury Cadence
+  dateFormat  X
+  axisFormat  %L
+  section Metering
+  GPU seconds captured :done, 0, 1
+  Normalization applied :done, 1, 1
+  section Wage Solving
+  Reward projection      :active, 2, 1
+  Stake evaluation       : 3, 1
+  section Owner Execution
+  Governance review      :crit, 4, 1
+  Stake activation tx    :crit, 5, 1
+  Reinvestment strategy  : 6, 1
+```
+
+Each segment corresponds to deterministic functions within the repository. `optimizeReinvestmentStrategy` and `summarizeStrategy` (tested in [`test/economics.test.js`](../test/economics.test.js)) map past reward history, obligations, and owner-defined buffers into auditable treasury recommendations.
+
+---
+
+## 4. Owner Command Authority
+
+The contract owner commands every parameter across staking, rewards, module routing, and emergency controls.
+
+| Surface | Capability | CLI Entry Point | Verification |
+| ------- | ---------- | --------------- | ------------ |
+| **SystemPause** | Pause, resume, or unpause all workloads instantly. | `node src/index.js governance system-pause --action <pause|resume|unpause>` | [`src/services/governance.js`](../src/services/governance.js) · [`test/governance.test.js`](../test/governance.test.js) |
+| **StakeManager** | Set minimum stake, validator threshold, registry routing. | `node src/index.js governance minimum-stake ...` / `validator-threshold` | [`src/services/governance.js`](../src/services/governance.js) |
+| **RewardEngine** | Adjust operator / validator / treasury shares; tune role splits. | `node src/index.js governance global-shares` / `role-share` | [`src/services/governance.js`](../src/services/governance.js) · [`test/controlPlane.test.js`](../test/controlPlane.test.js) |
+| **PlatformIncentives** | Repoint stake manager, minimum stake, heartbeat grace, activation fee, treasury address. | `node src/index.js governance incentives-*` | [`src/services/controlPlane.js`](../src/services/controlPlane.js) · [`test/controlPlane.test.js`](../test/controlPlane.test.js) |
+| **JobRegistry** | Swap validation/reputation/dispute modules; trigger disputes. | `node src/index.js governance job-module ...` / `dispute` | [`src/services/governance.js`](../src/services/governance.js) |
+| **IdentityRegistry** | Delegate or revoke additional operators instantly. | `node src/index.js governance identity-delegate ...` | [`src/services/governance.js`](../src/services/governance.js) |
+| **Stake Activation** | Automate acknowledgeStakeAndActivate with explicit owner approval. | `node src/index.js stake-activate` or AUTO_STAKE runtime flag. | [`src/orchestrator/stakeActivator.js`](../src/orchestrator/stakeActivator.js) · [`test/stakeActivator.test.js`](../test/stakeActivator.test.js) |
+
+```mermaid
+flowchart TD
+  OwnerWallet[[Owner Wallet]] --> CLI["CLI (src/index.js)"]
+  CLI --> ControlPlane
+  ControlPlane["deriveOwnerDirectives"] --> Catalog["Owner Function Catalog"]
+  Catalog --> GovernanceTx["build*Tx() helpers"]
+  GovernanceTx --> Ledger["recordGovernanceAction"]
+  Ledger --> Evidence[[Immutable Evidence Vault]]
+  ControlPlane --> StakeHelper["handleStakeActivation"]
+  StakeHelper --> IncentivesContract["acknowledgeStakeAndActivate"]
+```
+
+`recordGovernanceAction` (see [`src/services/governanceLedger.js`](../src/services/governanceLedger.js)) stores signed payloads and metadata so every owner directive is replayable.
+
+---
+
+## 5. Financial Intelligence Stack
+
+### 5.1 Synthetic Labor Yield
 
 \[
-\mathrm{SLY}_t = \frac{\sum \alpha\text{-WU}_{t}}{\mathrm{AGIALPHA}_{\text{circulating}, t}}
+\mathrm{SLY}_t = \frac{\text{Validated } \alpha\text{-WU}_t}{\text{Circulating } \$AGIALPHA_t}
 \]
 
-- **Inputs** — `ProductivityIndex.totalAlphaWU(epoch)` and on-chain `$AGIALPHA` supply.
-- **Interpretation** — Exposure to network productivity growth, akin to an AI GDP tracker.
+- Numerator sourced from diagnostics projections (`runNodeDiagnostics` + `derivePerformanceProfile`).
+- Denominator obtained from on-chain supply queries recorded alongside ledger exports.
+- `summarizeStrategy` supplies buffer coverage metrics so owners can correlate SLY against reinvestment posture. Tests in [`test/economics.test.js`](../test/economics.test.js) assert edge cases for zero-history, large obligations, and buffer violations.
 
-### 4.2 Reinvestment Autopilot
+### 5.2 Treasury Control Metrics
 
-[`optimizeReinvestmentStrategy`](../src/services/economics.js) operates with 18-decimal precision:
+| Metric | Source | Purpose |
+| ------ | ------ | ------- |
+| **Stake Health** | `evaluateStakeConditions` output captured by `runNodeDiagnostics`. | Flags deficits, stale heartbeats, and penalty activation before SLO breaches. |
+| **Reward Gradient** | `projectEpochRewards` and `splitRewardPool`. | Projects wage curve at basis-point resolution for operator/validator/treasury shares. |
+| **Reinvestment Score** | `optimizeReinvestmentStrategy` + `summarizeStrategy`. | Recommends reinvestment percentages satisfying buffer requirements. |
+| **Governance Drift** | `fetchGovernanceStatus`. | Detects mismatched registry modules; diffs surface in CLI before execution. |
+| **Performance Envelope** | `derivePerformanceProfile`. | Blends swarm throughput, quality, and job metrics to adjust ModelTier multipliers. |
 
-1. Normalizes reward history, obligations, and reinvest options via [`parseTokenAmount`](../src/utils/formatters.js).
-2. Calculates total, average, min/max, and mean absolute deviation for deterministic risk scoring.
-3. Applies owner-tuned buffer policies (`minimumBufferBps`) and risk aversion weights.
-4. Scores strategies and exposes summaries through [`summarizeStrategy`](../src/services/economics.js).
+### 5.3 Intelligence Calibration
 
-Vitest coverage in [`test/economics.test.js`](../test/economics.test.js) validates every branch, including malformed histories and edge-case buffers.
-
-### 4.3 Rewards & Performance Telemetry
-
-- [`projectEpochRewards`](../src/services/rewards.js) enforces basis-point integrity across operator, validator, treasury, and role shares.
-- [`derivePerformanceProfile`](../src/services/performance.js) fuses execution stats with optional job metrics.
-- Prometheus gauges defined in [`src/orchestrator/monitorLoop.js`](../src/orchestrator/monitorLoop.js) & [`src/telemetry/monitoring.js`](../src/telemetry/monitoring.js) export stake posture, α‑WU throughput, and projected token flows for dashboards.
+The specialist mesh can be retuned at runtime using CLI flags such as `--agents`, `--model-tier`, and `--reward-share`. [`src/intelligence/swarmOrchestrator.js`](../src/intelligence/swarmOrchestrator.js) and [`test/swarmOrchestrator.test.js`](../test/swarmOrchestrator.test.js) confirm deterministic agent selection, while [`test/learningLoop.test.js`](../test/learningLoop.test.js) validates curriculum adjustments.
 
 ---
 
-## 5. Continuous Assurance & CI Enforcement
+## 6. Continuous Assurance & CI Hardening
 
-- **Workflow coverage** — [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs linting, unit/integration tests, coverage, and Docker smoke tests on every push, PR, or manual trigger.
-- **Required checks** — [`.github/required-checks.json`](../.github/required-checks.json) enforces `Lint Markdown & Links`, `Unit & Integration Tests`, `Coverage Report`, and `Docker Build & Smoke Test` on `main` and protected PRs.
-- **Local parity** — `npm run ci:verify` mirrors the GitHub Actions matrix prior to merge, ensuring local state aligns with the protected badge.
-- **Evidence trail** — CI transcripts, governance ledgers, ENS proofs, and telemetry snapshots are archived for allocators and auditors.
-
----
-
-## 6. Risk Surfaces & Mitigations
-
-| Risk Vector | Mitigation | Evidence Path |
-| ----------- | ---------- | ------------- |
-| Hardware drift / misreported compute | Diagnostics normalization + validator recomputation trigger slashing | [`src/orchestrator/monitorLoop.js`](../src/orchestrator/monitorLoop.js), [`test/monitorLoop.test.js`](../test/monitorLoop.test.js) |
-| Governance misconfiguration | Diff-aware calldata builders gated by owner key | [`src/services/governance.js`](../src/services/governance.js), [`test/governance.integration.test.js`](../test/governance.integration.test.js) |
-| Treasury underfunding | Economics optimizer enforces buffer floors and risk aversion | [`src/services/economics.js`](../src/services/economics.js), [`test/economics.test.js`](../test/economics.test.js) |
-| Documentation drift | Markdown + link lint wired to CI; failures block merges | [`package.json`](../package.json) |
-| Operational blind spots | Telemetry gauges, ENS verification, and governance ledger halt runtime on anomaly | [`src/services/ensVerifier.js`](../src/services/ensVerifier.js), [`src/services/governanceLedger.js`](../src/services/governanceLedger.js) |
+- **Workflow** — [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) executes Markdown lint, link validation, tests, coverage, and Docker smoke tests on every push, PR, and manual trigger.
+- **Required checks** — [`.github/required-checks.json`](../.github/required-checks.json) enforces `Lint Markdown & Links`, `Unit & Integration Tests`, `Coverage Report`, and `Docker Build & Smoke Test` on protected branches.
+- **Local parity** — `npm run ci:verify` (see [`package.json`](../package.json)) reproduces the CI matrix locally. `lint:links` now validates `docs/economics.md` alongside the rest of the corpus.
+- **Artifacts** — Coverage reports and Docker smoke logs are uploaded via `actions/upload-artifact` for forensic retention.
 
 ---
 
-## 7. Implementation Atlas
+## 7. Risk Surfaces & Mitigations
 
-| Component | Description | File(s) |
-| --------- | ----------- | ------- |
-| CLI Command Spine | Sovereign runtime, governance, ENS, economics, and intelligence entry points | [`src/index.js`](../src/index.js) |
-| Governance Builder Library | Encodes owner-only calldata, diffs, and ledger metadata | [`src/services/governance.js`](../src/services/governance.js) |
-| ENS & Identity Guard | Validates ENS custody and identity delegates | [`src/services/ensVerifier.js`](../src/services/ensVerifier.js), [`src/services/ensGuide.js`](../src/services/ensGuide.js) |
-| Job Lifecycle Engine | Discovery → apply → execute → submit → finalize pipeline | [`src/services/jobLifecycle.js`](../src/services/jobLifecycle.js), [`test/jobLifecycle.test.js`](../test/jobLifecycle.test.js) |
-| Intelligence Mesh | Planner, swarm orchestrator, learning loop, stress harness | [`src/intelligence/`](../src/intelligence), [`test/swarmOrchestrator.test.js`](../test/swarmOrchestrator.test.js) |
-| Economics Optimizer | Reinvestment scoring, buffer enforcement, reporting | [`src/services/economics.js`](../src/services/economics.js) |
-| Telemetry Surface | Prometheus exporter and diagnostics loop | [`src/orchestrator/nodeRuntime.js`](../src/orchestrator/nodeRuntime.js), [`src/telemetry/monitoring.js`](../src/telemetry/monitoring.js) |
-| Offline Snapshot Engine | Deterministic replay of ENS, stake, and reward data | [`src/services/offlineSnapshot.js`](../src/services/offlineSnapshot.js), [`test/offlineSnapshot.test.js`](../test/offlineSnapshot.test.js) |
+| Risk Vector | Mitigation | Evidence |
+| ----------- | ---------- | -------- |
+| **Hardware or telemetry drift** | Monitor loop + stake evaluation halt workloads and surface recommended actions. | [`src/orchestrator/monitorLoop.js`](../src/orchestrator/monitorLoop.js) · [`test/monitorLoop.test.js`](../test/monitorLoop.test.js) |
+| **Governance misfire** | Calldata builders compute diffs and metadata before signing; ledger stores immutable proof. | [`src/services/governance.js`](../src/services/governance.js) · [`src/services/governanceLedger.js`](../src/services/governanceLedger.js) |
+| **Treasury underfunding** | Economics optimizer enforces buffer floors and risk aversion policies. | [`src/services/economics.js`](../src/services/economics.js) · [`test/economics.test.js`](../test/economics.test.js) |
+| **Stake penalties** | `handleStakeActivation` automates remediation with explicit owner consent. | [`src/orchestrator/stakeActivator.js`](../src/orchestrator/stakeActivator.js) |
+| **Documentation drift** | Markdown lint + link check wired into CI block merges on broken docs. | [`package.json`](../package.json) |
+| **Secret leakage** | [`src/services/secretManager.js`](../src/services/secretManager.js) normalizes environment loading and is exercised in [`test/config.test.js`](../test/config.test.js). |
 
 ---
 
 ## 8. Activation Checklist for Allocators
 
 1. **Clone & install** — `git clone … && npm ci` for deterministic dependencies.
-2. **Run local CI** — `npm run lint:md`, `npm run lint:links`, `npm test`, `npm run coverage`, or `npm run ci:verify` for the full matrix.
-3. **Verify ENS custody** — `node src/index.js verify-ens --label <id> --address <0x…>` to ensure the runtime retains domain control.
-4. **Generate stake payload** — `node src/index.js stake-tx --amount <value> --incentives <0x…>`; 18-decimal precision is enforced by [`assertCanonicalAgialphaAddress`](../src/constants/token.js).
-5. **Activate runtime** — `node src/index.js status --label <id> --address <0x…> --auto-resume` to validate stake posture and emit telemetry.
-6. **Govern parameters** — `node src/index.js governance catalog` to inspect owner-only functions, then execute directives with `--execute --confirm --ledger-root <dir>` for journaling.
-7. **Monitor telemetry** — Scrape the Prometheus endpoint, archive CI transcripts, ledger entries, ENS proofs, staking transactions, and α‑WU ledgers as compliance artifacts.
+2. **Run local CI** — `npm run lint:md`, `npm run lint:links`, `npm test`, `npm run coverage`, or the aggregate `npm run ci:verify`.
+3. **Verify ENS custody** — `node src/index.js verify-ens --label <id> --address <0x…>` ensures ownership of `⟨label⟩.alpha.node.agi.eth`.
+4. **Snapshot readiness** — Generate offline snapshots via `node src/index.js offline-snapshot --label <id>` before major upgrades.
+5. **Stake posture** — `node src/index.js status --label <id> --operator <0x…> --rpc <https://...>` prints stake health, wage projections, and reinvestment directives.
+6. **Governance adjustments** — Review `node src/index.js governance catalog` then execute directives with `--execute --confirm --ledger-root ./ledger` for automatic journaling.
+7. **Emergency drills** — Rehearse `system-pause`, stake top-ups, and governance updates on a forked network before mainnet execution.
+8. **Evidence archiving** — Store CI run logs, ledger entries, ENS proofs, branch-protection exports, and stake receipts in your compliance vault.
 
 ---
 
-**AGI ALPHA NODES** convert raw compute into programmable labor economics, while **$AGIALPHA** captures the wage curve. The machine described here is tuned for immediate execution, exhaustive observability, and unambiguous owner supremacy.
+AGI Alpha Node v0 is production-ready, aggressively observable, and completely owner-directed. Its economics stack translates synthetic labor into verifiable $AGIALPHA wage flows while keeping every override in the owner's hands.
