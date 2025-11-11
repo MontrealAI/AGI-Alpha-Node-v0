@@ -12,7 +12,18 @@
   <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml">
     <img src="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml/badge.svg?branch=main" alt="Continuous Integration" />
   </a>
-  <img src="https://img.shields.io/badge/Status-Fully%20Green%20CI-06d6a0.svg?style=flat-square" alt="Status: Fully Green CI" />
+  <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml?query=branch%3Amain">
+    <img src="https://img.shields.io/github/actions/workflow/status/MontrealAI/AGI-Alpha-Node-v0/ci.yml?branch=main&job=Lint%20Markdown%20%26%20Links&label=Lint%20%E2%9C%85&logo=markdown&style=flat-square" alt="Lint Markdown &amp; Links" />
+  </a>
+  <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml?query=branch%3Amain">
+    <img src="https://img.shields.io/github/actions/workflow/status/MontrealAI/AGI-Alpha-Node-v0/ci.yml?branch=main&job=Unit%20%26%20Integration%20Tests&label=Tests%20%E2%9A%A1&logo=vitest&logoColor=white&style=flat-square" alt="Unit &amp; Integration Tests" />
+  </a>
+  <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml?query=branch%3Amain">
+    <img src="https://img.shields.io/github/actions/workflow/status/MontrealAI/AGI-Alpha-Node-v0/ci.yml?branch=main&job=Coverage%20Report&label=Coverage%20%E2%9C%85&logo=c8&logoColor=white&style=flat-square" alt="Coverage Report" />
+  </a>
+  <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml?query=branch%3Amain">
+    <img src="https://img.shields.io/github/actions/workflow/status/MontrealAI/AGI-Alpha-Node-v0/ci.yml?branch=main&job=Docker%20Build%20%26%20Smoke%20Test&label=Docker%20%E2%9A%A1&logo=docker&logoColor=white&style=flat-square" alt="Docker Build &amp; Smoke Test" />
+  </a>
   <a href="../.github/required-checks.json">
     <img src="https://img.shields.io/badge/Checks-Enforced%20on%20main-1f2933.svg?style=flat-square" alt="Required Checks" />
   </a>
@@ -248,16 +259,45 @@ The specialist mesh can be retuned at runtime using CLI flags such as `--agents`
 
 ---
 
-## 6. Continuous Assurance & CI Hardening
+## 6. Evidence & Compliance Instruments
 
-- **Workflow** — [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) executes Markdown lint, link validation, tests, coverage, and Docker smoke tests on every push, PR, and manual trigger.
+| Instrument | Purpose | Implementation | Validation |
+| ---------- | ------- | -------------- | ---------- |
+| **Lifecycle Journal** | Appends deterministic JSONL entries for every job action and governance directive so auditors can replay history. | [`src/services/lifecycleJournal.js`](../src/services/lifecycleJournal.js) · [`src/orchestrator/bootstrap.js`](../src/orchestrator/bootstrap.js) | [`test/bootstrap.test.js`](../test/bootstrap.test.js) ensures journals are initialized and appended on boot. |
+| **Snapshot Ledger** | Produces immutable job snapshots with keccak hashes to notarize α‑WU proofs. | [`buildSnapshotEntry`](../src/services/lifecycleJournal.js) · [`src/services/jobLifecycle.js`](../src/services/jobLifecycle.js) | [`test/jobLifecycle.test.js`](../test/jobLifecycle.test.js) validates snapshot capture. |
+| **ENS Command Guide** | Generates step-by-step ENS activation scripts for each operator label. | [`src/services/ensGuide.js`](../src/services/ensGuide.js) | [`test/ensGuide.test.js`](../test/ensGuide.test.js) covers normalization, formatting, and link composition. |
+| **Governance Ledger** | Records every signed payload with timestamps and metadata. | [`src/services/governanceLedger.js`](../src/services/governanceLedger.js) | [`test/governance.test.js`](../test/governance.test.js) verifies append-only guarantees. |
+| **Evidence Vault Structure** | Boot sequence binds lifecycle + governance logs inside `.agi/` for cold storage replication. | [`src/index.js`](../src/index.js) | [`test/bootstrap.test.js`](../test/bootstrap.test.js) covers directory creation and permission guards. |
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Owner as Owner Console
+  participant CLI as Sovereign CLI
+  participant Journal as Lifecycle Journal
+  participant Ledger as Governance Ledger
+  participant Vault as Evidence Vault
+
+  Owner->>CLI: Execute directive (stake, reward, pause)
+  CLI->>Journal: append(buildActionEntry(...))
+  CLI->>Ledger: recordGovernanceAction(metadata)
+  Journal-->>Vault: stream JSONL artefacts
+  Ledger-->>Vault: sync signed payloads
+  Vault->>Owner: Provide replay bundle (.agi/)
+```
+
+The `.agi/` evidence tree created during bootstrap unifies runtime diagnostics, governance directives, and lifecycle snapshots. Each file path is deterministic, enabling cold-storage replication without brittle tooling.
+
+## 7. Continuous Assurance & CI Hardening
+
+- **Workflow** — [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) executes Markdown lint, link validation, tests, coverage, and Docker smoke tests on every push, PR, and manual trigger; each job exposes a live status badge surfaced in this dossier and the root README.
 - **Required checks** — [`.github/required-checks.json`](../.github/required-checks.json) enforces `Lint Markdown & Links`, `Unit & Integration Tests`, `Coverage Report`, and `Docker Build & Smoke Test` on protected branches.
 - **Local parity** — `npm run ci:verify` (see [`package.json`](../package.json)) reproduces the CI matrix locally. `lint:links` now validates `docs/economics.md` alongside the rest of the corpus.
 - **Artifacts** — Coverage reports and Docker smoke logs are uploaded via `actions/upload-artifact` for forensic retention.
 
 ---
 
-## 7. Risk Surfaces & Mitigations
+## 8. Risk Surfaces & Mitigations
 
 | Risk Vector | Mitigation | Evidence |
 | ----------- | ---------- | -------- |
@@ -270,7 +310,7 @@ The specialist mesh can be retuned at runtime using CLI flags such as `--agents`
 
 ---
 
-## 8. Activation Checklist for Allocators
+## 9. Activation Checklist for Allocators
 
 1. **Clone & install** — `git clone … && npm ci` for deterministic dependencies.
 2. **Run local CI** — `npm run lint:md`, `npm run lint:links`, `npm test`, `npm run coverage`, or the aggregate `npm run ci:verify`.
