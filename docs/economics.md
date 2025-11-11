@@ -96,12 +96,18 @@ settlement asset for the network.
 
 ```solidity
 function rewardPerAlphaWU(uint64 epoch) public view returns (uint256) {
+    if (totalAlphaWU[epoch] == 0) {
+        return 0;
+    }
     return epochEmission[epoch] / totalAlphaWU[epoch];
 }
 ```
 
 As productivity scales, the market-driven AI wage (`AGIALPHA/α‑WU`) self-adjusts
-through emissions and burn schedules.
+through emissions and burn schedules. Returning `0` for empty epochs avoids
+division-by-zero faults for dashboards and contracts while signalling that no
+α‑WU cleared during the period. Deployments that enforce minimum output can
+replace the guard with policy-compliant handling.
 
 ---
 
