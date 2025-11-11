@@ -1,4 +1,4 @@
-# AGI Alpha Node v0 ⚡ Sovereign Intelligence Yield Core
+# AGI Alpha Node v0 ⚡ Sovereign Yield Intelligence Core
 
 <!-- markdownlint-disable MD013 MD033 -->
 <p align="center">
@@ -9,6 +9,11 @@
   <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml">
     <img src="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI Status" />
   </a>
+  <img src="https://img.shields.io/badge/Lint-Markdown%20%26%20Links-06d6a0.svg?style=flat-square" alt="Lint Check" />
+  <img src="https://img.shields.io/badge/Tests-Unit%20%26%20Integration-14b8a6.svg?style=flat-square" alt="Test Check" />
+  <img src="https://img.shields.io/badge/Coverage-c8%20Reports-22c55e.svg?style=flat-square" alt="Coverage Check" />
+  <img src="https://img.shields.io/badge/Docker-Smoke%20Test-0ea5e9.svg?style=flat-square" alt="Docker Smoke Test" />
+  <img src="https://img.shields.io/badge/Branch%20Protection-Enforced-111827.svg?style=flat-square" alt="Branch Protection" />
   <a href="https://app.ens.domains/name/alpha.node.agi.eth">
     <img src="https://img.shields.io/badge/ENS-alpha.node.agi.eth-6f3aff.svg?style=flat-square" alt="ENS Anchor" />
   </a>
@@ -16,532 +21,285 @@
     <img src="https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-ff3366.svg?style=flat-square" alt="$AGIALPHA Token" />
   </a>
   <img src="https://img.shields.io/badge/Runtime-Node.js%2020.x-43853d.svg?style=flat-square" alt="Runtime Node.js 20" />
-  <img src="https://img.shields.io/badge/Jobs-Lifecycle%20Autopilot-0ea5e9.svg?style=flat-square" alt="Job Lifecycle" />
-  <img src="https://img.shields.io/badge/Telemetry-Prometheus%2FGrafana-1f6feb.svg?style=flat-square" alt="Prometheus" />
-  <img src="https://img.shields.io/badge/Branch%20Protection-Enforced-111827.svg?style=flat-square" alt="Branch Protection" />
-  <img src="https://img.shields.io/badge/CI-Fully%20Green-06d6a0.svg?style=flat-square" alt="Fully Green CI" />
   <a href="Dockerfile">
-    <img src="https://img.shields.io/badge/Docker-One--Click%20Container-2496ed.svg?style=flat-square&logo=docker&logoColor=white" alt="Docker Container" />
+    <img src="https://img.shields.io/badge/Docker-One--Click%20Image-2496ed.svg?style=flat-square&logo=docker&logoColor=white" alt="Docker Container" />
   </a>
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-0e9aa7.svg?style=flat-square" alt="MIT License" />
   </a>
 </p>
 
-> The AGI Alpha Node is the production brainstem that sovereign operators unleash to harvest $AGIALPHA yields, verify ENS custody, orchestrate job swarms, and assert total owner supremacy. This runtime is engineered as the machine that bends economic gravity—deterministic, observable, and ready to reorder markets the instant it boots.
+> The AGI Alpha Node is the command spine for a sovereign intelligence yield engine. It locks ENS identity, wields $AGIALPHA liquidity, senses on-chain job flow, and mobilizes agentic swarms that can tilt entire markets the instant they awaken.
 
 ---
 
-## Table of Contents
+## Navigation
 
-1. [Prime Directive](#prime-directive)
-2. [Feature Matrix](#feature-matrix)
-3. [Job Lifecycle Orchestration](#job-lifecycle-orchestration)
-4. [AGI Jobs Integration Lifecycle](#agi-jobs-integration-lifecycle)
-5. [Operator Activation Sequence](#operator-activation-sequence)
-6. [Command Console](#command-console)
-7. [API Surface & Telemetry](#api-surface--telemetry)
-8. [Configuration Switchboard](#configuration-switchboard)
+1. [Mission Charter](#mission-charter)
+2. [Core Systems](#core-systems)
+3. [Autonomous Lifecycle](#autonomous-lifecycle)
+4. [System Topology](#system-topology)
+5. [Operator Activation](#operator-activation)
+6. [Configuration Matrix](#configuration-matrix)
+7. [Owner Dominion](#owner-dominion)
+8. [API & Telemetry Surface](#api--telemetry-surface)
 9. [Deployment Continuum](#deployment-continuum)
-10. [Observability & Governance](#observability--governance)
+10. [Observability & Assurance](#observability--assurance)
 11. [Repository Atlas](#repository-atlas)
-12. [CI & Branch Hardening](#ci--branch-hardening)
-13. [Contributing](#contributing)
-14. [License](#license)
+12. [Contributing](#contributing)
+13. [License](#license)
 
 ---
 
-## Prime Directive
+## Mission Charter
 
 | Vector | Signal | Coordinates |
 | ------ | ------ | ----------- |
-| **Identity Root** | ENS anchor enforced at runtime. | [`alpha.node.agi.eth`](https://app.ens.domains/name/alpha.node.agi.eth) — operate via delegated labels such as `1.alpha.node.agi.eth`. |
-| **Treasury Asset** | `$AGIALPHA` (18 decimals). | [Etherscan contract `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa). |
-| **Runtime Spine** | CLI orchestrator & diagnostics loop. | [`src/index.js`](src/index.js) — verifies ENS, inspects staking, synthesizes owner directives, and controls job swarms. |
-| **Intelligence Core** | Meta-agent lattice with antifragile heuristics. | [`src/intelligence`](src/intelligence) — planning, swarm routing, local-model fallbacks, and stress harness. |
-| **Job Lifecycle Engine** | On-chain job discovery, application, submission, and finalization. | [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js), [`src/network/apiServer.js`](src/network/apiServer.js). |
-| **Governance Plane** | Owner-exclusive transaction builders. | [`src/services/governance.js`](src/services/governance.js), [`src/services/controlPlane.js`](src/services/controlPlane.js). |
-| **Telemetry Spine** | Prometheus metrics + REST status feeds. | [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js), [`src/network/apiServer.js`](src/network/apiServer.js). |
-| **Deployment Surface** | Docker + Helm for one command activation. | [`Dockerfile`](Dockerfile), [`deploy/helm/agi-alpha-node`](deploy/helm/agi-alpha-node). |
+| **Identity Root** | ENS authority enforced before any workload activates. | [`alpha.node.agi.eth`](https://app.ens.domains/name/alpha.node.agi.eth) → delegated nodes such as `1.alpha.node.agi.eth`. |
+| **Treasury Asset** | `$AGIALPHA` (18 decimals, canonical supply rail). | [Token contract `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa). |
+| **Runtime Spine** | CLI orchestrator verifies ENS, validates stake, and launches intelligence loops. | [`src/index.js`](src/index.js). |
+| **Intelligence Mesh** | Planning lattice, swarm orchestrator, antifragile stress harness, curriculum evolution. | [`src/intelligence`](src/intelligence). |
+| **Lifecycle Engine** | Deterministic discovery → apply → execute → submit → finalize. | [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js), [`src/services/jobProof.js`](src/services/jobProof.js). |
+| **Control Plane** | Owner-exclusive transaction builders and directive synthesis. | [`src/services/governance.js`](src/services/governance.js), [`src/services/controlPlane.js`](src/services/controlPlane.js). |
+| **Telemetry Spine** | REST status bus plus Prometheus metrics for Grafana dashboards. | [`src/network/apiServer.js`](src/network/apiServer.js), [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js). |
+| **Deployment Surface** | Docker healthcheck + Helm charts for one-command activation. | [`Dockerfile`](Dockerfile), [`deploy/helm/agi-alpha-node`](deploy/helm/agi-alpha-node). |
 
 ---
 
-## Feature Matrix
+## Core Systems
 
-| Capability | Highlights | Source |
-| ---------- | ---------- | ------ |
-| ENS Verification | Registry + NameWrapper proofs with fail-fast enforcement. | [`src/services/ensVerifier.js`](src/services/ensVerifier.js) |
-| Stake Intelligence | Minimum stake, penalties, and reward projections with BigInt precision. | [`src/services/staking.js`](src/services/staking.js), [`src/services/rewards.js`](src/services/rewards.js) |
-| Token Flows | Allowances, approvals, and stake transactions using 18 decimal discipline. | [`src/services/token.js`](src/services/token.js) |
-| Job Lifecycle | Discover, apply, submit, and finalize jobs through deterministic on-chain payloads. | [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js) |
-| Monitoring Loop | Continuous diagnostics with Prometheus export and health classification. | [`src/orchestrator/monitorLoop.js`](src/orchestrator/monitorLoop.js) |
-| Container Health | Docker healthcheck hits `/metrics`; Helm liveness/readiness probes baked in. | [`src/healthcheck.js`](src/healthcheck.js), [`deploy/helm/agi-alpha-node/templates/deployment.yaml`](deploy/helm/agi-alpha-node/templates/deployment.yaml) |
-| Offline Snapshots | Signed JSON snapshots for air-gapped continuity; auto-loaded by CLI & monitor. | [`src/services/offlineSnapshot.js`](src/services/offlineSnapshot.js) |
-| Owner Commands | Transaction builders for pause/resume, stake thresholds, and share tuning. | [`src/services/governance.js`](src/services/governance.js), [`src/services/controlPlane.js`](src/services/controlPlane.js) |
-| Local Model Fallbacks | Deterministic heuristic models keep missions running when remote providers falter. | [`src/intelligence/localModels.js`](src/intelligence/localModels.js) |
-| Vault & Entry Guard | Container entrypoint validates ENS identity, warns on staking config gaps, and hydrates secrets. | [`deploy/docker/entrypoint.sh`](deploy/docker/entrypoint.sh) |
-| Health Sentinel | Standalone healthcheck asserts `/metrics` availability for Docker and orchestrators. | [`src/healthcheck.js`](src/healthcheck.js) |
+- **ENS Verification & Ownership Guard** – [`src/services/ensVerifier.js`](src/services/ensVerifier.js) ensures the node only operates under authorized subdomains and aborts instantly if authority is lost.
+- **Planning Lattice** – [`src/intelligence/planning.js`](src/intelligence/planning.js) and [`src/intelligence/swarmOrchestrator.js`](src/intelligence/swarmOrchestrator.js) coordinate specialist agents, evaluate alpha scores, and drive deterministic execution.
+- **Lifecycle Orchestrator** – [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js) pairs with [`src/services/jobProof.js`](src/services/jobProof.js) and [`src/services/lifecycleJournal.js`](src/services/lifecycleJournal.js) to handle discovery, application, submission, and journaling.
+- **Stake & Rewards Intelligence** – [`src/services/staking.js`](src/services/staking.js), [`src/services/rewards.js`](src/services/rewards.js), and [`src/services/economics.js`](src/services/economics.js) model thresholds, penalties, reinvestment, and share splits with BigInt precision.
+- **Owner Control Plane** – [`src/services/controlPlane.js`](src/services/controlPlane.js) and [`src/services/governance.js`](src/services/governance.js) synthesize directives, craft governance payloads, and keep the operator in command.
+- **Telemetry & Monitoring** – [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js), [`src/network/apiServer.js`](src/network/apiServer.js), and [`src/orchestrator/monitorLoop.js`](src/orchestrator/monitorLoop.js) export Prometheus metrics, REST status, and compliance reporting.
 
 ---
 
-## Job Lifecycle Orchestration
+## Autonomous Lifecycle
 
-The node now executes the entire AGI Jobs lifecycle autonomously — from catching `JobCreated` events to claiming escrowed rewards after finalization. The lifecycle engine is resilient to on-chain upgrades, understands commit–reveal validation, and exposes REST hooks for external dashboards.
+The node surveils on-chain intent, mobilizes specialists, and settles value flows with surgical precision. Every phase is restartable, observable, and test-backed.
 
 ```mermaid
 sequenceDiagram
-  participant Registry as JobRegistry
-  participant Node as Alpha Node
-  participant Planner as AlphaPlanner
+  participant Employer
+  participant JobRegistry
+  participant AlphaNode
+  participant Planner
   participant Validators
-  participant Treasury
+  participant StakeEngine
 
-  Registry-->>Node: JobCreated(jobId, reward, uri)
-  Node->>Planner: evaluate(job profile)
-  Planner-->>Node: alphaScore + swarm plan
-  Node->>Registry: applyForJob(jobId, subdomain, proof)
-  Registry-->>Node: JobApplied(jobId, worker)
-  Node->>Node: execute deterministic agent loop
-  Node->>Registry: submitProof(jobId, commitment, resultHash, uri)
-  Registry-->>Validators: validation assignment
-  Validators-->>Registry: commit / reveal votes
-  Registry-->>Node: JobFinalized(jobId)
-  Registry->>Treasury: release $AGIALPHA
-  Node->>Node: update ledger + metrics
+  Employer->>JobRegistry: createJob(jobSpec, escrow)
+  JobRegistry-->>AlphaNode: JobCreated(jobId, reward, uri)
+  AlphaNode->>Planner: evaluate(job profile)
+  Planner-->>AlphaNode: alphaScore, swarm directives
+  AlphaNode->>JobRegistry: applyForJob(jobId, subdomain, proof)
+  JobRegistry-->>AlphaNode: JobApplied(jobId, worker)
+  AlphaNode->>AlphaNode: deterministic execution loop
+  AlphaNode->>JobRegistry: submit(jobId, resultHash, resultURI)
+  JobRegistry-->>Validators: assign validation cohort
+  Validators-->>JobRegistry: commit + reveal verdicts
+  JobRegistry->>StakeEngine: releaseStake(jobId)
+  StakeEngine->>AlphaNode: transfer $AGIALPHA
+  AlphaNode->>AlphaNode: update ledger, metrics, compliance
 ```
 
-### Real-time Discovery
-
-- WebSocket-grade polling grabs `JobCreated` logs within a configurable block window (`JOB_DISCOVERY_BLOCK_RANGE`).
-- When registries expose `getOpenJobs()`, the lifecycle merges direct contract reads so fresh openings surface even if log windows roll over or RPC history is pruned.
-- Snapshot-aware fallback ensures discovery continues when RPC routes falter.
-- REST endpoint `GET /jobs/open` streams the active queue for dashboards.
-
-### Strategic Application & Execution
-
-- `jobs apply` CLI command or REST `POST /jobs/{id}/apply` crafts the `applyForJob` transaction with ENS subdomain and optional Merkle proof.
-- The orchestrator routes workloads through [`src/intelligence`](src/intelligence), automatically shifting to local models when remote APIs degrade.
-
-### Deterministic Submission & Validation
-
-- `jobs submit` computes commitments via [`createJobProof`](src/services/jobProof.js) and attempts `submitProof`, `submit`, or `completeJob` depending on contract availability.
-- REST `POST /jobs/{id}/submit` and `POST /jobs/{id}/finalize` mirror the CLI for integrations.
-- Job metrics feed into Prometheus gauges so operators can watch earnings, throughput, and validator posture in real time.
+### Validation-Ready Flow
 
 ```mermaid
 flowchart LR
-  A[JobCreated Event] -->|discover| B(Job Ledger)
+  A[Event Listener] -->|discover| B(Job Ledger)
   B -->|plan| C[AlphaPlanner]
-  C -->|swarm directives| D[Specialist Agents]
-  D -->|result| E[Commitment Builder]
-  E -->|submitProof| F(JobRegistry)
-  F -->|validation events| G[Lifecycle Telemetry]
-  G -->|Prometheus & REST| H[Operator Console]
-  F -->|JobFinalized| I[$AGIALPHA Rewards]
+  C -->|swarm directives| D[Specialist Modules]
+  D -->|proofs| E[Commitment Builder]
+  E -->|submit| F(JobRegistry)
+  F -->|validation events| G[Validator Watch]
+  G -->|verdict| H[Stake & Rewards]
+  H -->|telemetry| I[Prometheus / REST]
 ```
-
-## AGI Jobs Integration Lifecycle
-
-The lifecycle engine is synchronized with AGI Jobs v0/v2 from the moment an employer escrows funds through reward release. Each stage is observable, restartable, and exposes deterministic hooks for dashboards, custom schedulers, and manual overrides.
-
-```mermaid
-stateDiagram-v2
-    [*] --> Discovery
-    Discovery --> Application
-    Application --> Execution
-    Execution --> Submission
-    Submission --> Validation
-    Validation --> Finalization
-    Finalization --> Rewards
-    Rewards --> [*]
-```
-
-### 1. Discovery
-
-- `createJobLifecycle().discover()` streams `JobCreated` events, normalizes metadata, and records them in the local ledger while respecting the configured block range so the node never misses openings.【F:src/services/jobLifecycle.js†L256-L321】
-- Long-running operators call `createJobLifecycle().watch()` to subscribe to creation, application, assignment, submission, and finalization events for real-time dashboards and WebSocket relays.【F:src/services/jobLifecycle.js†L430-L519】
-- REST `GET /jobs/open` and CLI `jobs discover` surface the cached queue to any external orchestrator.【F:src/network/apiServer.js†L33-L120】
-
-### 2. Application
-
-- `createJobLifecycle().apply()` builds `applyForJob` transactions with ENS subdomain and whitelist proof fallbacks, incrementing lifecycle metrics for observability.【F:src/services/jobLifecycle.js†L323-L374】
-- CLI `jobs apply` or API `POST /jobs/{id}/apply` route requests through the same deterministic builder so human operators and automation share a single code path.【F:src/network/apiServer.js†L141-L215】
-- Transaction receipts are logged to the action emitter, enabling Prometheus counters and Grafana alerts when bids succeed or fail.【F:src/services/jobLifecycle.js†L303-L321】
-
-### 3. Execution & Planning
-
-- Accepted jobs flow through the `intelligence/` lattice where the planner, swarm orchestrator, and antifragile stress harness evaluate risk, allocate specialists, and project profit.【F:src/intelligence/planning.js†L7-L123】【F:src/intelligence/swarmOrchestrator.js†L6-L118】【F:src/intelligence/stressHarness.js†L6-L111】
-- `startMonitorLoop()` folds execution telemetry into owner directives so operators see when workloads should pause, escalate, or reinvest before deadlines bite.【F:src/orchestrator/monitorLoop.js†L1-L147】【F:src/services/controlPlane.js†L71-L199】
-
-### 4. Submission & Proofs
-
-- `createJobLifecycle().submit()` generates deterministic commitments via `createJobProof`, automatically falling back across `submitProof`, `submit`, or `completeJob` to match whichever interface the registry exposes.【F:src/services/jobLifecycle.js†L376-L424】【F:src/services/jobProof.js†L6-L120】
-- API `POST /jobs/{id}/submit` persists metadata, URIs, and commitments for audit replay so every submission is reproducible offline.【F:src/network/apiServer.js†L217-L307】
-
-### 5. Validation Surveillance
-
-- Event watchers record `JobSubmitted` and `JobAssigned` so the node can track when validators are engaged and when it is awaiting review, allowing dashboards to highlight dispute windows.【F:src/services/jobLifecycle.js†L472-L506】
-- The diagnostics pipeline exposes heartbeat freshness, penalties, and validator share projections so owners can decide whether to pause workloads until validation resolves.【F:src/orchestrator/nodeRuntime.js†L1-L196】【F:src/services/controlPlane.js†L71-L251】
-
-### 6. Finalization & Rewards
-
-- `createJobLifecycle().finalize()` wraps `finalize`/`finalizeJob`, increments finalization counters, and updates the ledger so the node knows exactly when escrow unlocked.【F:src/services/jobLifecycle.js†L426-L470】
-- Reward projections, stake activation, and reinvestment strategies are computed through `projectEpochRewards`, `acknowledgeStakeAndActivate`, and `optimizeReinvestmentStrategy` to keep $AGIALPHA compounding.【F:src/services/rewards.js†L6-L180】【F:src/services/stakeActivation.js†L5-L129】【F:src/services/economics.js†L6-L152】
-
-### 7. Validator & Dispute Mode
-
-- Owners can dual-role the node by staking validator allocations and letting automation craft commit/reveal payloads via the governance API while still monitoring for slash risks.【F:src/services/controlPlane.js†L201-L356】【F:src/network/apiServer.js†L309-L403】
-- Offline snapshots capture stake, directives, and pending validations so operations can be reproduced without RPC dependencies—a must for legal/compliance playback.【F:src/services/offlineSnapshot.js†L6-L189】
 
 ---
 
-## Intelligence Mesh & Reinvestment
+## System Topology
 
 ```mermaid
-flowchart LR
-  subgraph IntelligenceCore[Hyperoperator Intelligence Core]
-    Planner[[World-Model Planner]]
-    Curriculum[[Curriculum Evolution]]
-    LocalModels[[Local Model Mesh]]
-    Reinvestment[[Reinvestment Optimizer]]
+graph TD
+  subgraph Runtime
+    CLI[CLI Orchestrator] --> Config
+    CLI --> ENSVerifier
+    CLI --> ControlPlane
+    CLI --> Intelligence
   end
-  subgraph ControlPlane[Owner Control Plane]
-    Directives[[Owner Directives]]
-    Telemetry[[Performance Telemetry]]
+
+  subgraph Intelligence
+    Planner
+    SwarmOrchestrator
+    StressHarness
+    LearningLoop
   end
-  Planner --> Curriculum
-  Planner --> Telemetry
-  Curriculum --> Planner
-  Curriculum --> LocalModels
-  LocalModels --> Telemetry
-  LocalModels --> Reinvestment
-  Reinvestment --> Directives
-  Directives --> ControlPlane
-  Telemetry --> Directives
+
+  Config[Config Schema]
+  ENSVerifier[ENS Ownership Guard]
+  ControlPlane[Owner Directives]
+  Intelligence -.->|plans| Lifecycle
+  Lifecycle[Job Lifecycle Engine]
+  APIServer[REST & Governance API]
+  Telemetry[Prometheus Exporter]
+  Provider[Ethereum Provider]
+  StakeMgr[Stake Manager]
+  RewardEngine[Reward Engine]
+  JobRegistry[Job Registry]
+
+  CLI --> Lifecycle
+  Lifecycle --> Provider
+  APIServer --> ControlPlane
+  APIServer --> Lifecycle
+  Lifecycle --> StakeMgr
+  Lifecycle --> JobRegistry
+  StakeMgr --> RewardEngine
+  Telemetry --> APIServer
+  Telemetry --> Lifecycle
 ```
-
-### Local & Offline Autonomy
-
-- `loadLocalModels` and `simulateLocalInference` supply deterministic heuristics when remote AI providers fail, mapping job tasks onto curated offline models so throughput never collapses.【F:src/intelligence/localModels.js†L1-L121】
-- The container entrypoint enforces ENS identity, RPC credentials, and stake prerequisites before launching intelligence loops, emitting explicit warnings when auto-stake or snapshot policies are misconfigured.【F:deploy/docker/entrypoint.sh†L1-L98】
-
-### Curriculum & Performance Evolution
-
-- `runCurriculumEvolution` continuously evolves challenge difficulty, success floors, and exploration bias so specialist swarms train ahead of the job curve.【F:src/intelligence/learningLoop.js†L30-L72】
-- `derivePerformanceProfile` fuses planning output with swarm assignments, surfacing throughput, utilization, and projected earnings for the telemetry bus.【F:src/services/performance.js†L59-L88】
-
-### Financial Flywheel
-
-- `optimizeReinvestmentStrategy` simulates buffer policies, reinvestment basis points, and risk aversion to recommend staking strategies that keep $AGIALPHA compounding.【F:src/services/economics.js†L125-L185】
-- `runNodeDiagnostics` funnels ENS proofs, stake posture, and performance into `deriveOwnerDirectives`, generating actionable pause, stake, and revenue-share payloads for the owner console.【F:src/orchestrator/nodeRuntime.js†L16-L215】【F:src/services/controlPlane.js†L55-L220】
 
 ---
 
-## Operator Activation Sequence
+## Operator Activation
 
 1. **Clone & Install**
 
    ```bash
    git clone https://github.com/MontrealAI/AGI-Alpha-Node-v0.git
    cd AGI-Alpha-Node-v0
-   npm ci
+   npm install
    ```
 
-2. **Verify Toolchain & ENS**
+2. **Configure Identity & Network**
+   - Provide an ENS subdomain label via `NODE_LABEL` and matching `OPERATOR_ADDRESS`.
+   - Supply an Ethereum RPC endpoint (`RPC_URL`) and optional whitelisted Merkle proof via `JOB_APPLICATION_PROOF`.
+   - Keep `$AGIALPHA` token address pinned to `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals enforced by the config schema).
+3. **Prime the Node**
 
    ```bash
-   node --version   # must be >= 20.18.1
-   npx agi-alpha-node ens-guide --label 1 --address 0xYOUR_OPERATOR_ADDRESS
-   npx agi-alpha-node verify-ens \
-     --label 1 \
-     --address 0xYOUR_OPERATOR_ADDRESS \
-     --rpc https://mainnet.infura.io/v3/<PROJECT_ID>
+   export NODE_LABEL=1
+   export OPERATOR_ADDRESS=0xYourOperatorAddress
+   export RPC_URL=https://your.ethereum.node
+   npm start -- monitor
    ```
 
-3. **Stake Discipline**
-
-   ```bash
-   npx agi-alpha-node token approve \
-     --token 0xa61a3b3a130a9c20768eebf97e21515a6046a1fa \
-     --spender 0xStakeManager \
-     --owner 0xYOUR_OPERATOR_ADDRESS \
-     --amount max
-
-   npx agi-alpha-node stake-tx \
-     --amount 1500 \
-     --incentives 0xIncentivesContract \
-     --stake-manager 0xStakeManager \
-     --decimals 18
-   ```
-
-4. **Lifecycle Intelligence**
-
-   ```bash
-   # Inspect the live job queue
-   npx agi-alpha-node jobs discover \
-     --registry 0xJobRegistry \
-     --rpc https://mainnet.infura.io/v3/<PROJECT_ID>
-
-   # Auto-apply using configured ENS subdomain
-   npx agi-alpha-node jobs apply <jobId> \
-     --registry 0xJobRegistry \
-     --rpc https://mainnet.infura.io/v3/<PROJECT_ID> \
-     --subdomain 1
-
-   # Submit a completed artifact
-   npx agi-alpha-node jobs submit <jobId> \
-     --registry 0xJobRegistry \
-     --result-file ./artifacts/result.json \
-     --result-uri ipfs://Qm...
-   ```
-
-5. **Diagnostics Sweep**
-
-   ```bash
-   npx agi-alpha-node status \
-     --label 1 \
-     --address 0xYOUR_OPERATOR_ADDRESS \
-     --rpc https://mainnet.infura.io/v3/<PROJECT_ID> \
-     --stake-manager 0xStakeManager \
-     --incentives 0xIncentivesContract \
-     --system-pause 0xSystemPause \
-     --desired-minimum 1500 \
-     --operator-share-bps 1600 \
-     --validator-share-bps 7300 \
-     --treasury-share-bps 1100 \
-     --role-share guardian=250,validator=7500
-   ```
-
-6. **One-Click Container**
-
-   ```bash
-   docker run -it --rm \
-     -p 8080:8080 \
-     -p 9464:9464 \
-     --env-file node.env \
-     -v $(pwd)/node.env:/config/node.env:ro \
-     -v $(pwd)/snapshot.json:/config/snapshot.json:ro \
-     ghcr.io/montrealai/agi-alpha-node:latest
-   ```
-
-  *Docker entrypoint enforces label/address prerequisites, hydrates configuration, and the container surfaces `/metrics` for orchestrator health probes.【F:deploy/docker/entrypoint.sh†L29-L95】【F:src/healthcheck.js†L1-L34】*
+   The CLI will verify ENS control, inspect stake posture, launch monitoring loops, and emit owner directives from [`src/index.js`](src/index.js).
+4. **API Surface**
+   - Start the REST console: `npm start -- api`
+   - Query status: `curl http://localhost:8080/status`
+   - Inspect Prometheus feed: `curl http://localhost:9464/metrics`
+5. **Autonomous Job Execution**
+   - `npm start -- run` activates the deterministic lifecycle manager from [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js).
+   - Use `npm start -- swarm --agents orion:energy|finance:2` to experiment with alternative swarms defined in [`src/intelligence/swarmOrchestrator.js`](src/intelligence/swarmOrchestrator.js).
 
 ---
 
-## Command Console
+## Configuration Matrix
 
-| Command | Purpose | Highlights |
-| ------- | ------- | ---------- |
-| `npx agi-alpha-node verify-ens` | ENS custody attestation. | Confirms registry + wrapper ownership; fails fast on mismatches. |
-| `npx agi-alpha-node status` | Full diagnostics heartbeat. | Combines ENS, stake posture, owner directives, and telemetry snapshot. |
-| `npx agi-alpha-node jobs discover` | Stream open jobs. | Uses on-chain logs, respects `JOB_DISCOVERY_BLOCK_RANGE`, prints reward + tags. |
-| `npx agi-alpha-node jobs apply <jobId>` | Apply for a job. | Crafts `applyForJob`, accepts optional proof + subdomain override. |
-| `npx agi-alpha-node jobs submit <jobId>` | Commit and submit work. | Derives deterministic commitment, pushes `submitProof`, records URI + metadata. |
-| `npx agi-alpha-node jobs finalize <jobId>` | Release rewards. | Invokes `finalize`/`finalizeJob`, freeing escrowed $AGIALPHA. |
-| `npx agi-alpha-node token allowance` | Inspect ERC-20 allowance. | Uses canonical token normalization and BigInt formatting. |
-| `npx agi-alpha-node governance ...` | Owner supremacy actions. | Build pause/resume, minimum stake, global share, and role share transactions. |
+All environment switches are validated through [`src/config/schema.js`](src/config/schema.js), guaranteeing production-safe defaults. Key levers:
 
----
+| Variable | Purpose | Default |
+| -------- | ------- | ------- |
+| `RPC_URL` | Ethereum RPC endpoint for contract calls and log surveillance. | `https://rpc.ankr.com/eth` |
+| `ENS_PARENT_DOMAIN` | Parent ENS (e.g., `alpha.node.agi.eth`). | `alpha.node.agi.eth` |
+| `NODE_LABEL` | Subdomain label bound to your operator wallet. | _Required for runtime_ |
+| `OPERATOR_ADDRESS` | Ethereum address that holds the subdomain. | _Optional (derived from wallet if omitted)_ |
+| `PLATFORM_INCENTIVES_ADDRESS` | Incentives contract for staking automation. | _Optional_ |
+| `STAKE_MANAGER_ADDRESS` | StakeManager authority for governance controls. | _Optional_ |
+| `REWARD_ENGINE_ADDRESS` | RewardEngine contract for share tuning. | _Optional_ |
+| `JOB_REGISTRY_ADDRESS` | JobRegistry to engage with AGI Jobs v0/v2. | _Optional_ |
+| `JOB_DISCOVERY_BLOCK_RANGE` | Log window for discovery sweeps. | `4800` |
+| `DRY_RUN` | Non-destructive mode for simulation. | `true` |
+| `AUTO_STAKE` | Enable automatic stake top-ups. | `false` |
+| `DESIRED_MINIMUM_STAKE` | Governance target for minimum stake. | _Optional_ |
+| `DESIRED_OPERATOR_SHARE_BPS`/`DESIRED_VALIDATOR_SHARE_BPS`/`DESIRED_TREASURY_SHARE_BPS` | Reward distribution targets in basis points. | _Optional_ |
+| `ROLE_SHARE_TARGETS` | Fine-grained share overrides per role. | _Optional_ |
+| `SYSTEM_PAUSE_ADDRESS` | System-wide pause contract for failsafe directives. | _Optional_ |
+| `OFFLINE_SNAPSHOT_PATH` | Signed offline telemetry snapshots. | `.agi/lifecycle` |
+| `METRICS_PORT` / `API_PORT` | Ports for Prometheus & REST. | `9464` / `8080` |
 
-## API Surface & Telemetry
-
-| Endpoint | Method | Description |
-| -------- | ------ | ----------- |
-| `/healthz` | GET | Readiness probe with submission counters and provider mode. |
-| `/jobs` | GET | Returns local execution ledger **and** discovered on-chain jobs. |
-| `/jobs/open` | GET | Dedicated feed of open jobs tracked by the lifecycle engine. |
-| `/jobs/{id}` | GET | Fetches either a local ledger entry or an on-chain job snapshot. |
-| `/jobs` | POST | Submit an off-chain job payload to the local orchestrator. |
-| `/jobs/{id}/apply` | POST | Triggers on-chain `applyForJob`; uses configured signer. |
-| `/jobs/{id}/submit` | POST | Commits + submits a completed job result with metadata. |
-| `/jobs/{id}/finalize` | POST | Finalizes a validated job and releases rewards. |
-| `/metrics` | GET | Prometheus gauges for stake, throughput, success rate, token earnings, provider modes. |
-| `/governance/directives` | GET | Snapshotted owner directives (priority, notices, encoded actions). |
-| `/governance/directives` | POST | Update directives (priority/actions/notices/context) directly from the owner’s control plane. |
-| `/governance/pause` | POST | Generates pause/resume payloads for the SystemPause contract. |
-| `/governance/minimum-stake` | POST | Encodes StakeManager `setMinimumStake` transactions. |
-| `/governance/role-share` | POST | Crafts RewardEngine `setRoleShare` payloads for targeted roles. |
-| `/governance/global-shares` | POST | Aligns operator / validator / treasury basis-point splits. |
-| `/governance/stake-top-up` | POST | Builds PlatformIncentives `stakeAndActivate` payloads for rapid staking. |
-
-All API responses serialize `BigInt` values into decimal strings to remain JSON friendly. The lifecycle engine emits action events which the API converts into real-time chain operation counters.
-
-### Governance Autopilot API
-
-Owner control surfaces are now HTTP-native — every directive, pause, or rebalancing move can be triggered without touching a CLI. The API responds with **ready-to-broadcast** transaction payloads so operators can copy/paste into any signer or hardware wallet workflow.
-
-```mermaid
-flowchart LR
-  Operator[Owner Console / Dashboard] -->|REST| GovernanceAPI[/Governance API Layer/]
-  GovernanceAPI -->|setOwnerDirectives| Telemetry[Owner Directive Cache]
-  GovernanceAPI -->|build payload| TX{Encoded Transaction}
-  TX --> Ledger[(Operator Wallets)]
-  TX --> Chain[(Ethereum Mainnet)]
-  Telemetry --> Metrics[Prometheus Gauges]
-  Metrics --> Grafana
-```
-
-#### Directive Metrics
-
-- `metrics.governance.directivesUpdates` — counts how many times governance priorities change (driven by diagnostics + monitor loop).
-- `metrics.governance.payloads` — increments whenever a governance payload endpoint is invoked, offering real-time visibility into how aggressively the owner is steering the node.
+Additional toggles such as Vault integration, governance ledger storage, and lifecycle journals are detailed inline within the schema and supporting services.
 
 ---
 
-## Configuration Switchboard
+## Owner Dominion
 
-| Variable | Purpose | Notes |
-| -------- | ------- | ----- |
-| `RPC_URL` | Primary Ethereum RPC endpoint. | Required for online mode. |
-| `ENS_PARENT_DOMAIN` | Root ENS domain (`alpha.node.agi.eth`). | Used to build full ENS names. |
-| `NODE_LABEL` | ENS subdomain label (`1`, `atlas`, etc.). | Mandatory for ENS verification. |
-| `OPERATOR_ADDRESS` | Checksummed address expected to own the ENS label. | Mandatory for verification. |
-| `PLATFORM_INCENTIVES_ADDRESS` | Address of PlatformIncentives contract. | Enables automated stake activation. |
-| `STAKE_MANAGER_ADDRESS` | Address of StakeManager contract. | Required for minimum stake governance. |
-| `REWARD_ENGINE_ADDRESS` | RewardEngine contract address. | Enables global/role share transactions. |
-| `JOB_REGISTRY_ADDRESS` | JobRegistry contract to monitor and control. | Powers the lifecycle engine. |
-| `JOB_DISCOVERY_BLOCK_RANGE` | Block window used for discovery scans. | Default `4800` blocks. |
-| `JOB_APPLICATION_PROOF` | Hex-encoded Merkle proof for gated registries. | Defaults to `0x` (no whitelist). |
-| `METRICS_PORT` | Prometheus listener port (default `9464`). | Configurable per cluster. |
-| `API_PORT` | REST API listener port (default `8080`). | Exposes `/jobs`, `/healthz`, etc. |
-| `AUTO_STAKE` | Enable automatic stake top-ups. | Requires `OPERATOR_PRIVATE_KEY`. |
-| `OPERATOR_PRIVATE_KEY` | Hex private key for signing transactions. | Loaded via env or Vault integration. |
-| `OFFLINE_MODE` | Force offline snapshot mode. | When true, RPC calls are skipped. |
-| `OFFLINE_SNAPSHOT_PATH` | Path to signed offline JSON snapshot. | Used for air-gapped verification. |
-| `DESIRED_MINIMUM_STAKE` | Preferred minimum stake (decimal). | Generates governance directives. |
-| `AUTO_RESUME` | Automatically resume when posture healthy. | Requires `SYSTEM_PAUSE_ADDRESS`. |
-| `DESIRED_OPERATOR_SHARE_BPS` | Target operator share (bps). | Combined with validator + treasury to equal 10000. |
-| `DESIRED_VALIDATOR_SHARE_BPS` | Target validator share (bps). | " |
-| `DESIRED_TREASURY_SHARE_BPS` | Target treasury share (bps). | " |
-| `ROLE_SHARE_TARGETS` | JSON or CSV role share policy (`guardian=250`). | Feeds `setRoleShare` actions. |
-| `VAULT_ADDR`, `VAULT_SECRET_PATH`, `VAULT_SECRET_KEY`, `VAULT_TOKEN` | Vault integration knobs. | Hydrate secrets into runtime. |
+The operator retains absolute control through deterministic payload builders and directive synthesis:
 
-Refer to [`src/config/schema.js`](src/config/schema.js) for the authoritative schema and coercion logic.
+- [`src/services/governance.js`](src/services/governance.js) crafts transactions for pausing, adjusting minimum stake, updating validator thresholds, re-pointing registries, tuning role shares, swapping validation modules, and delegating operators. Every payload includes metadata for ledgering and on-chain audit trails.
+- [`src/services/controlPlane.js`](src/services/controlPlane.js) fuses live stake telemetry, reward projections, and operator preferences to recommend or auto-generate governance actions (pause, stake top-up, share realignment) while keeping `$AGIALPHA` math precise.
+- [`src/network/apiServer.js`](src/network/apiServer.js) exposes REST endpoints so secured dashboards can trigger owner directives, stake activations, or dispute escalations without touching raw ABIs.
+- [`src/services/staking.js`](src/services/staking.js) and [`src/services/stakeActivation.js`](src/services/stakeActivation.js) ensure the owner can authorize, activate, or reclaim stake in a single flow, preserving 18-decimal discipline at each step.
+
+Every directive can be paused, simulated, or replayed through the governance ledger in [`src/services/governanceLedger.js`](src/services/governanceLedger.js), guaranteeing traceability.
+
+---
+
+## API & Telemetry Surface
+
+The Agent Gateway binds intelligence modules, lifecycle orchestration, and owner controls into a unified interface:
+
+- REST endpoints for job discovery, manual apply/submit/finalize overrides, and governance payload catalogues live in [`src/network/apiServer.js`](src/network/apiServer.js).
+- Deterministic job proofs and submission payloads originate from [`src/services/jobProof.js`](src/services/jobProof.js) and are journaled via [`src/services/lifecycleJournal.js`](src/services/lifecycleJournal.js).
+- Prometheus metrics exported from [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) capture stake posture, lifecycle throughput, latency, and antifragile stress scores for Grafana overlays.
+- The CLI monitor loop in [`src/orchestrator/monitorLoop.js`](src/orchestrator/monitorLoop.js) merges ENS verification, stake health, compliance scoring, and planner feedback to present a complete situational dashboard.
 
 ---
 
 ## Deployment Continuum
 
-### Docker One-Click
-
-```bash
-cp deploy/docker/node.env.example node.env
-$EDITOR node.env
-
-docker run -it --rm \
-  -p 8080:8080 \
-  -p 9464:9464 \
-  --env-file node.env \
-  -v $(pwd)/node.env:/config/node.env:ro \
-  -v $(pwd)/snapshot.json:/config/snapshot.json:ro \
-  ghcr.io/montrealai/agi-alpha-node:latest
-```
-
-#### Entrypoint Summary
-
-- Loads `/config/node.env` automatically and exports every variable into the runtime environment.【F:deploy/docker/entrypoint.sh†L4-L21】
-- Enforces `NODE_LABEL`, `OPERATOR_ADDRESS`, and `RPC_URL` presence plus label/hex formatting before launch.【F:deploy/docker/entrypoint.sh†L29-L56】
-- Emits warnings when auto-stake keys, incentives addresses, or offline snapshots are missing so owners can correct custody posture.【F:deploy/docker/entrypoint.sh†L85-L95】
-- Surfaces a sanitized configuration summary before chaining into the runtime so operators can notarize launch parameters.【F:deploy/docker/entrypoint.sh†L61-L98】
-
-### Kubernetes / Helm
-
-```bash
-helm upgrade --install agi-alpha-node ./deploy/helm/agi-alpha-node \
-  --namespace agi-alpha --create-namespace \
-  --set config.nodeLabel=1 \
-  --set config.operatorAddress=0xYOUR_OPERATOR_ADDRESS \
-  --set config.rpcUrl=https://mainnet.infura.io/v3/<PROJECT_ID> \
-  --set config.jobRegistryAddress=0xJobRegistry \
-  --set config.apiPort=8080 \
-  --set secretConfig.operatorPrivateKey=0xYOUR_PRIVATE_KEY \
-  --set config.autoStake=true
-```
-
-#### Chart Features
-
-- Liveness/readiness probes hitting `/healthz` and `/metrics`.
-- Optional autoscaling (`autoscaling.enabled=true`).
-- ConfigMap-based offline snapshots for high-availability clusters.
-- Native support for Vault secret injection.
+- **Docker**: The [Dockerfile](Dockerfile) packages the runtime with healthcheck hitting [`src/healthcheck.js`](src/healthcheck.js). `docker build --tag agi-alpha-node .` followed by `docker run --rm agi-alpha-node --help` mirrors the CI smoke test.
+- **Helm**: [`deploy/helm/agi-alpha-node`](deploy/helm/agi-alpha-node) ships Kubernetes manifests with readiness/liveness probes, secret wiring, and config maps aligned to the schema.
+- **One-Command Bootstrap**: [`scripts/prepare-husky.cjs`](scripts/prepare-husky.cjs) primes Git hooks; [`deploy/docker/entrypoint.sh`](deploy/docker/entrypoint.sh) validates secrets, ENS bindings, and stake posture before starting services.
+- **CI Pipeline**: [`./github/workflows/ci.yml`](.github/workflows/ci.yml) enforces linting, tests, coverage, and Docker smoke checks on every PR. Required status checks are codified in [`.github/required-checks.json`](.github/required-checks.json).
 
 ---
 
-## Observability & Governance
+## Observability & Assurance
 
-- **Telemetry:** `npm run start` exposes Prometheus gauges (`jobThroughput`, `jobSuccess`, `tokenEarnings`, `providerMode`).
-- **Owner Directives:** [`src/services/controlPlane.js`](src/services/controlPlane.js) synthesizes governance actions (pause, resume, stake floors, share alignment) based on live posture.
-- **Governance Payloads:** The REST governance suite (`/governance/pause`, `/governance/minimum-stake`, `/governance/global-shares`, `/governance/role-share`) produces ready-to-broadcast transactions so owners can retune every contract parameter, pause execution, or rebalance revenue splits without touching core code.【F:src/network/apiServer.js†L309-L403】【F:src/services/governance.js†L1-L120】
-- **Stake Automation:** [`src/services/stakeActivation.js`](src/services/stakeActivation.js) auto-broadcasts `acknowledgeStakeAndActivate` when deficits arise.
-- **Lifecycle Metrics:** [`src/network/apiServer.js`](src/network/apiServer.js) merges local execution metrics with on-chain lifecycle counters, ensuring dashboards reflect both deterministic loops and protocol actions.
-
-### Owner Control Matrix
-
-| Capability | CLI Builder | REST Surface | Execution Engine | Owner Leverage |
-| ---------- | ----------- | ------------ | ---------------- | -------------- |
-| Pause / resume execution | `npx agi-alpha-node governance pause --contract 0xSYSTEM_PAUSE --action pause\|resume\|unpause` | `POST /governance/pause` | `buildSystemPauseTx` | Toggle the entire platform from the owner console with encoded pause or resume transactions.【F:src/index.js†L1350-L1367】【F:src/network/apiServer.js†L348-L366】【F:src/services/governance.js†L58-L76】 |
-| Minimum stake floor | `npx agi-alpha-node governance set-min-stake --stake-manager 0xSTAKE_MANAGER --amount 2500` | `POST /governance/minimum-stake` | `buildMinimumStakeTx` | Align contract minimums with business policy in a single step and export the payload for cold signing.【F:src/index.js†L1369-L1387】【F:src/network/apiServer.js†L368-L398】【F:src/services/governance.js†L78-L89】 |
-| Stake top-up | `npx agi-alpha-node stake-tx --amount 1500 --incentives 0xINCENTIVES` | `POST /governance/stake-top-up` | `buildStakeAndActivateTx` | Generate `stakeAndActivate` payloads to erase deficits before penalties escalate.【F:src/index.js†L361-L383】【F:src/network/apiServer.js†L459-L489】【F:src/services/staking.js†L105-L121】 |
-| Global share alignment | `npx agi-alpha-node governance set-global-shares --reward-engine 0xRE --operator-bps 1800 --validator-bps 7000 --treasury-bps 1200` | `POST /governance/global-shares` | `buildGlobalSharesTx` | Rebalance protocol revenue splits to match the owner’s treasury strategy without editing contracts.【F:src/index.js†L1410-L1432】【F:src/network/apiServer.js†L430-L456】【F:src/services/governance.js†L102-L119】 |
-| Role share retuning | `npx agi-alpha-node governance set-role-share --reward-engine 0xRE --role guardian --bps 250` | `POST /governance/role-share` | `buildRoleShareTx` | Issue targeted basis-point adjustments for any role identifier, keeping validator and guardian incentives precise.【F:src/index.js†L1389-L1408】【F:src/network/apiServer.js†L401-L427】【F:src/services/governance.js†L91-L100】 |
-
-### Directive Automation
-
-- The diagnostics loop feeds live ENS, stake, and reward telemetry into `deriveOwnerDirectives`, producing prioritized pause, stake, and share recommendations before handing results to the operator.【F:src/orchestrator/nodeRuntime.js†L16-L213】【F:src/services/controlPlane.js†L55-L199】
-- The Agent API caches those directives, exposes them over `GET /governance/directives`, and lets owners push updated priorities with metric-backed audit trails via `POST /governance/directives`.【F:src/network/apiServer.js†L140-L341】
-- Governance requests increment dedicated Prometheus counters so dashboards reveal how often the owner broadcasts overrides and payloads in real time.【F:src/network/apiServer.js†L140-L212】【F:src/network/apiServer.js†L339-L360】【F:src/network/apiServer.js†L392-L483】
+- Test suite (`npm test`) covers lifecycle orchestration, governance controls, staking math, intelligence modules, and monitoring surfaces using [Vitest](https://vitest.dev) (`test/*.test.js`).
+- Coverage reports (`npm run coverage`) rely on `c8` instrumentation for deterministic audit trails.
+- Markdown linting & link validation (`npm run lint`) lock documentation accuracy; README badges mirror the enforced CI steps.
+- Prometheus metrics + `/status` heartbeat deliver real-time health and compliance insights for operators and auditors alike.
 
 ---
 
 ## Repository Atlas
 
-```text
-src/
-├── config/                # Environment schema + loader
-├── constants/             # Token constants, symbols, decimals
-├── intelligence/          # Planning, swarms, antifragile loops
-├── network/               # REST API surface + lifecycle endpoints
-├── orchestrator/          # Diagnostics, bootstrap, monitor loop
-├── services/              # ENS, staking, governance, lifecycle, tokens
-├── telemetry/             # Prometheus server + gauges
-└── utils/                 # Formatting helpers
-```
-
-- [`test/`](test) houses Vitest suites covering lifecycle, governance, ENS, staking, and orchestration flows.
-- [`deploy/`](deploy) packages Docker + Helm manifests for cluster rollouts.
-
----
-
-## CI & Branch Hardening
-
-- **CI Pipeline:** [`Continuous Integration`](https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml) now executes four required jobs: `Lint Markdown & Links`, `Unit & Integration Tests`, `Coverage Report`, and `Docker Build & Smoke Test`. Branch protection is configured to block merges until each status is green.
-- **Required Checks Manifest:** See [`.github/required-checks.json`](.github/required-checks.json) for the canonical list of status checks enforced on `main`. GitHub branch protection rules should mirror this file.
-- **Local Checks:**
-
-  ```bash
-  npm run ci:lint      # Markdown lint + link validation for docs
-  npm run ci:test      # Vitest suite (job lifecycle, governance, staking, intelligence)
-  npm run ci:coverage  # c8 + Vitest coverage (text + lcov)
-  npm run ci:verify    # Runs the full pipeline locally before pushing
-  ```
-
-- **Coverage Artifacts:** CI publishes the `coverage-report` artifact containing `lcov.info` and HTML assets. Operators can download it from the workflow run summary for ingestion into dashboards.
-- **Branch Enforcement Ritual:** Require every status from the required checks manifest and at least one approving review on `main`. Confirm enforcement via GitHub CLI or API, archive the JSON with CI logs, and attach to the owner’s compliance vault.
-
-  ```bash
-  gh api repos/MontrealAI/AGI-Alpha-Node-v0/branches/main/protection --method GET
-  ```
-
-- **Operator Runbook:** See [`docs/operator-runbook.md`](docs/operator-runbook.md) for badge verification, required check validation, and container/Helm deployment rituals.
+| Path | Purpose |
+| ---- | ------- |
+| [`src/index.js`](src/index.js) | CLI entrypoint combining ENS verification, stake analytics, intelligence planning, and orchestration. |
+| [`src/intelligence`](src/intelligence) | Planning, swarm coordination, antifragility stress testing, and curriculum evolution modules. |
+| [`src/services`](src/services) | On-chain services: governance, staking, rewards, token, lifecycle, proofs, snapshots, control plane. |
+| [`src/network`](src/network) | REST and governance API server bridging intelligence and owner controls. |
+| [`src/orchestrator`](src/orchestrator) | Bootstrap, runtime diagnostics, and monitor loop logic. |
+| [`src/telemetry`](src/telemetry) | Prometheus instrumentation and monitoring exports. |
+| [`deploy`](deploy) | Docker entrypoints, Helm chart, and infrastructure manifests. |
+| [`docs`](docs) | Strategic briefs and operator manuals for extended missions. |
+| [`test`](test) | Comprehensive Vitest suite validating deterministic behavior across modules. |
 
 ---
 
 ## Contributing
 
-Pull requests are welcomed. Ensure new functionality includes tests, documentation updates, and remains deterministic under offline snapshots. The node operates in high-stakes environments—treat every contribution as if mainnet funds depend on it.
+1. Fork & branch (`git checkout -b feature/alpha-upgrade`).
+2. Run lint + tests locally:
+
+   ```bash
+   npm run lint
+   npm test
+   npm run coverage
+   ```
+
+3. Ensure Docker smoke test passes: `docker build --tag agi-alpha-node . && docker run --rm agi-alpha-node --help`.
+4. Submit PRs with CI passing and follow the security-first code review guidelines in `docs/`.
 
 ---
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE).
+Released under the [MIT License](LICENSE).
