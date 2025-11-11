@@ -48,6 +48,12 @@ vi.mock('../src/network/apiServer.js', () => ({
   startAgentApi: vi.fn(() => apiInstanceFactory())
 }));
 
+const lifecycleJournalMock = { append: vi.fn(), filePath: '/tmp/journal.ndjson' };
+
+vi.mock('../src/services/lifecycleJournal.js', () => ({
+  createLifecycleJournal: vi.fn(() => lifecycleJournalMock)
+}));
+
 import { bootstrapContainer } from '../src/orchestrator/bootstrap.js';
 import { loadConfig } from '../src/config/env.js';
 import { runNodeDiagnostics } from '../src/orchestrator/nodeRuntime.js';
@@ -68,7 +74,10 @@ const baseConfig = {
   SYSTEM_PAUSE_ADDRESS: undefined,
   DESIRED_MINIMUM_STAKE: undefined,
   AUTO_RESUME: false,
-  METRICS_PORT: 9464
+  METRICS_PORT: 9464,
+  JOB_REGISTRY_PROFILE: 'v0',
+  JOB_PROFILE_SPEC: null,
+  LIFECYCLE_LOG_DIR: '.agi/lifecycle'
 };
 
 const diagnosticsMock = {
@@ -118,6 +127,7 @@ describe('bootstrapContainer', () => {
     createWallet.mockClear();
     createJobLifecycle.mockReset();
     startAgentApi.mockClear();
+    lifecycleJournalMock.append.mockClear();
     lifecycleInstance = lifecycleMockFactory();
     createJobLifecycle.mockReturnValue(lifecycleInstance);
     apiInstance = apiInstanceFactory();

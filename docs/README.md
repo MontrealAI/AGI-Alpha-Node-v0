@@ -290,6 +290,18 @@ flowchart LR
 7. **Settlement** — `StakeManager.release(jobId, worker, validators[], validatorShare)` streams `$AGIALPHA` to workers/validators; epoch claims run via `FeePool.claimRewards`.
 8. **Reinforcement** — `stressTest()` tunes antifragility; `reinvestRewards()` adjusts stake; compliance ledgers notarize hashes to custody vaults.
 
+### Registry Compatibility Profiles
+
+- **Profile switchboard** — Set `JOB_REGISTRY_PROFILE` (or pass `--profile`) to `v0`, `v2`, or `custom` to align with the active JobRegistry surface. `v0` mirrors the launch ABI, while `v2` activates validator-aware methods such as `submitWithValidator`, `notifyValidator`, and `finalizeWithValidator` with deadline guardrails.
+- **Custom spec ingestion** — Provide overrides via `JOB_PROFILE_SPEC` or `--profile-config` (JSON) to describe alternate ABIs, event signatures, or method preferences when onboarding to a forked registry. The CLI validates the payload before wiring the lifecycle.
+- **Zero-downtime upgrades** — Operators can stage migrations by preloading `JOB_PROFILE_SPEC` for the new network, running `node src/index.js jobs notify-validator --validator <addr>` to warm the validator channel, and then flipping `JOB_REGISTRY_PROFILE` during a lull. The lifecycle journal and compatibility gauges confirm the switchover without stopping the node.
+
+### Lifecycle Journaling & Telemetry
+
+- **Append-only action log** — Every discovery snapshot, application, submission, validation event, and finalization is persisted under `LIFECYCLE_LOG_DIR` as JSONL entries with deterministic metadata hashes for replay suites and auditor cross-checks.
+- **Telemetry awareness** — Prometheus now exports `agi_alpha_node_registry_profile{profile="…"}` and `agi_alpha_node_registry_compatibility_warning{profile="…",reason="…"}` so operators can alert when ABIs drift or when a custom spec deviates from expectations.
+- **Compatibility warnings** — The lifecycle emits structured `compatibility-warning` events whenever expected events or methods are missing. Dashboard operators should surface these warnings alongside the journal path to triage upgrades quickly.
+
 ### Mission Execution Sequence
 
 ```mermaid

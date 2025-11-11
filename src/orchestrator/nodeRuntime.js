@@ -233,6 +233,12 @@ export async function launchMonitoring({
     telemetry.providerModeGauge.reset();
     telemetry.providerModeGauge.set({ mode: runtimeMode }, 1);
   }
+  if (telemetry.registryProfileGauge) {
+    telemetry.registryProfileGauge.reset();
+  }
+  if (telemetry.registryCompatibilityGauge) {
+    telemetry.registryCompatibilityGauge.reset();
+  }
   if (performance) {
     if (telemetry.jobThroughputGauge && performance.throughputPerEpoch !== undefined) {
       telemetry.jobThroughputGauge.set(Number(performance.throughputPerEpoch ?? 0));
@@ -256,6 +262,28 @@ export async function launchMonitoring({
     if (telemetry.providerModeGauge && performance.jobMetrics?.lastJobProvider) {
       telemetry.providerModeGauge.reset();
       telemetry.providerModeGauge.set({ mode: performance.jobMetrics.lastJobProvider }, 1);
+    }
+    if (telemetry.registryProfileGauge) {
+      telemetry.registryProfileGauge.reset();
+      const profileId = performance.jobMetrics?.activeProfile ?? null;
+      if (profileId) {
+        telemetry.registryProfileGauge.set({ profile: profileId }, 1);
+      }
+    }
+    if (telemetry.registryCompatibilityGauge) {
+      telemetry.registryCompatibilityGauge.reset();
+      const profileId = performance.jobMetrics?.activeProfile ?? 'unknown';
+      const warnings = Array.isArray(performance.jobMetrics?.compatibilityWarnings)
+        ? performance.jobMetrics.compatibilityWarnings
+        : [];
+      if (!warnings.length) {
+        telemetry.registryCompatibilityGauge.set({ profile: profileId, reason: 'ok' }, 0);
+      } else {
+        warnings.forEach((warning) => {
+          const reason = warning?.reason ?? 'unknown';
+          telemetry.registryCompatibilityGauge.set({ profile: profileId, reason }, 1);
+        });
+      }
     }
   }
   return telemetry;

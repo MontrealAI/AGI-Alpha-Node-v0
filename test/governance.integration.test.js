@@ -2,7 +2,6 @@ import { beforeAll, afterAll, describe, it, expect } from 'vitest';
 import { spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
 import { JsonRpcProvider, Wallet, ContractFactory } from 'ethers';
-import solc from 'solc';
 import {
   buildSystemPauseTx,
   buildMinimumStakeTx,
@@ -25,6 +24,15 @@ let owner = null;
 let deployments = {};
 const anvilCheck = spawnSync('anvil', ['--version']);
 const anvilAvailable = !anvilCheck.error;
+
+let solc;
+let solcAvailable = true;
+try {
+  const solcModule = await import('solc');
+  solc = solcModule.default ?? solcModule;
+} catch (error) {
+  solcAvailable = false;
+}
 
 const SOURCE = `// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
@@ -91,7 +99,10 @@ contract MockIdentityRegistry is Ownable {
 `;
 
 function compileContracts() {
-    const input = {
+  if (!solcAvailable) {
+    throw new Error('solc compiler not available');
+  }
+  const input = {
       language: 'Solidity',
       sources: {
         'Mock.sol': {
@@ -137,7 +148,7 @@ async function waitForAnvil() {
 }
 
 beforeAll(async () => {
-  if (!anvilAvailable) {
+  if (!anvilAvailable || !solcAvailable) {
     return;
   }
   anvilProcess = spawn('anvil', ['--port', String(ANVIL_PORT), '--silent']);
@@ -154,7 +165,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  if (!anvilAvailable) {
+  if (!anvilAvailable || !solcAvailable) {
     return;
   }
   if (anvilProcess) {
@@ -164,8 +175,10 @@ afterAll(async () => {
   }
 });
 
-describe('governance builders integration', () => {
-  const testCase = anvilAvailable ? it : it.skip;
+const describeCase = anvilAvailable && solcAvailable ? describe : describe.skip;
+
+describeCase('governance builders integration', () => {
+  const testCase = anvilAvailable && solcAvailable ? it : it.skip;
   testCase('executes owner-only builders against anvil contracts', async () => {
     const systemPauseAddress = await deployments.SystemPause.getAddress();
     const stakeManagerAddress = await deployments.StakeManager.getAddress();

@@ -1,25 +1,9 @@
-import { Contract, Interface, getAddress, hexlify, isHexString, toUtf8Bytes } from 'ethers';
+import { Contract, getAddress, hexlify, isHexString, toUtf8Bytes } from 'ethers';
 import { EventEmitter } from 'node:events';
 import pino from 'pino';
 import { normalizeJobId, createJobProof } from './jobProof.js';
-
-const JOB_REGISTRY_ABI = [
-  'event JobCreated(bytes32 indexed jobId, address indexed client, uint256 reward, uint256 deadline, string uri, string tags)',
-  'event JobApplied(bytes32 indexed jobId, address indexed worker)',
-  'event JobAssigned(bytes32 indexed jobId, address indexed worker)',
-  'event JobSubmitted(bytes32 indexed jobId, address indexed client, address indexed worker, bytes32 resultHash, string resultURI)',
-  'event JobFinalized(bytes32 indexed jobId, address indexed client, address indexed worker)',
-  'function getOpenJobs() view returns (tuple(bytes32 jobId,address client,uint256 reward,uint256 deadline,string uri,string tags)[])',
-  'function jobCount() view returns (uint256)',
-  'function jobs(bytes32 jobId) view returns (tuple(address client,address worker,uint8 status,uint256 reward,uint256 deadline,string uri,string tags))',
-  'function applyForJob(bytes32 jobId,string subdomain,bytes proof)',
-  'function apply(bytes32 jobId,string subdomain,bytes proof)',
-  'function submit(bytes32 jobId,bytes32 resultHash,string resultURI,string subdomain,bytes proof)',
-  'function submitProof(bytes32 jobId,bytes32 commitment,bytes32 resultHash,string resultURI,bytes metadata)',
-  'function completeJob(bytes32 jobId,bytes32 resultHash,string resultURI)',
-  'function finalize(bytes32 jobId)',
-  'function finalizeJob(bytes32 jobId)'
-];
+import { resolveJobProfile, createInterfaceFromProfile } from './jobProfiles.js';
+import { buildActionEntry, buildSnapshotEntry } from './lifecycleJournal.js';
 
 const JOB_STATUS_MAP = {
   0: 'open',
@@ -136,17 +120,27 @@ function buildEventFilter(address, iface, eventName) {
   }
 }
 
-async function callFirstAvailable(contract, candidates) {
+async function callFirstAvailable(contract, candidates, { operation = 'operation', onUnavailable } = {}) {
   for (const candidate of candidates) {
     if (!candidate) continue;
     const { method, args, overrides } = candidate;
     const fn = contract?.[method];
     if (typeof fn === 'function') {
-      const response = await fn.apply(contract, [...(args ?? []), ...(overrides ? [overrides] : [])]);
+      const invocationArgs = [...(args ?? [])];
+      if (overrides !== undefined && overrides !== null) {
+        invocationArgs.push(overrides);
+      }
+      const response = await fn.apply(contract, invocationArgs);
       return { method, response };
     }
   }
-  throw new Error('No supported contract method available for this operation');
+  if (onUnavailable) {
+    onUnavailable({
+      operation,
+      candidates: candidates.map((candidate) => candidate?.method).filter(Boolean)
+    });
+  }
+  throw new Error(`No supported contract method available for ${operation}`);
 }
 
 function decodeOpenJobEntry(entry) {
@@ -173,6 +167,23 @@ function decodeOpenJobEntry(entry) {
     };
   }
   return null;
+}
+
+function buildMethodCandidates(methodSpecs = [], context = {}) {
+  return methodSpecs
+    .map((spec) => {
+      if (!spec) return null;
+      const args = typeof spec.buildArgs === 'function' ? spec.buildArgs(context) ?? [] : [];
+      const candidate = {
+        method: spec.name,
+        args: Array.isArray(args) ? args : []
+      };
+      if (spec.includeOverrides !== false && context.overrides !== undefined && context.overrides !== null) {
+        candidate.overrides = context.overrides;
+      }
+      return candidate;
+    })
+    .filter(Boolean);
 }
 
 function normalizeJobMetadata(job) {
@@ -205,9 +216,14 @@ export function createJobLifecycle({
   defaultProof = '0x',
   discoveryBlockRange = 4_800,
   offlineJobs = [],
+  profile: profileInput = 'v0',
+  profileOverrides = null,
+  journal = null,
   logger = pino({ level: 'info', name: 'job-lifecycle' }),
   contractFactory = defaultContractFactory
 } = {}) {
+  const profile = resolveJobProfile(profileInput, profileOverrides);
+  const iface = createInterfaceFromProfile(profile);
   const emitter = new EventEmitter({ captureRejections: true });
   const jobs = new Map();
   const metrics = {
@@ -215,15 +231,30 @@ export function createJobLifecycle({
     applied: 0,
     submissions: 0,
     finalizations: 0,
+    validatorNotifications: 0,
     lastAction: null,
-    lastJobProvider: 'agi-jobs'
+    lastJobProvider: 'agi-jobs',
+    activeProfile: profile.id,
+    compatibilityWarnings: []
   };
 
   let registryAddress = jobRegistryAddress ? getAddress(jobRegistryAddress) : null;
   let contract = null;
   let watchers = [];
 
-  const iface = new Interface(JOB_REGISTRY_ABI);
+  const compatibilityWarnings = new Map();
+
+  function emitCompatibilityWarning(reason, details = {}) {
+    const key = `${reason}:${JSON.stringify(details)}`;
+    if (compatibilityWarnings.has(key)) {
+      return;
+    }
+    const warning = { reason, details, at: new Date().toISOString() };
+    compatibilityWarnings.set(key, warning);
+    metrics.compatibilityWarnings = Array.from(compatibilityWarnings.values());
+    emitter.emit('compatibility-warning', { profileId: profile.id, ...warning });
+    logger?.warn?.({ profile: profile.id, reason, details }, 'Job registry compatibility warning detected');
+  }
 
   function resetContract() {
     if (!registryAddress || (!provider && !defaultSigner)) {
@@ -231,7 +262,7 @@ export function createJobLifecycle({
       return;
     }
     const connection = defaultSigner ?? provider;
-    contract = contractFactory(registryAddress, JOB_REGISTRY_ABI, connection);
+    contract = contractFactory(registryAddress, profile.abi, connection);
   }
 
   function setContract(newAddress) {
@@ -275,9 +306,17 @@ export function createJobLifecycle({
     return merged;
   }
 
-  function recordAction(action) {
+  function recordAction(action, jobState = null) {
     metrics.lastAction = action?.type ?? null;
     emitter.emit('action', action);
+    if (journal?.append) {
+      const normalizedJob = jobState ? normalizeJobMetadata(jobState) : null;
+      try {
+        journal.append(buildActionEntry(profile.id, action, normalizedJob));
+      } catch (error) {
+        logger?.warn?.(error, 'Failed to append lifecycle action entry');
+      }
+    }
   }
 
   function ingestOfflineJobs(entries) {
@@ -310,10 +349,11 @@ export function createJobLifecycle({
     const latestBlock = toBlock ?? (await provider.getBlockNumber());
     const range = Number.isFinite(discoveryBlockRange) ? discoveryBlockRange : 4_800;
     const startBlock = fromBlock ?? Math.max(latestBlock - range + 1, 0);
-    const filter = buildEventFilter(registryAddress, iface, 'JobCreated');
+    const createdEvent = profile.events?.created ?? 'JobCreated';
+    const filter = createdEvent ? buildEventFilter(registryAddress, iface, createdEvent) : null;
     let logs = [];
     if (!filter) {
-      logger?.warn?.('JobCreated event not available on registry interface');
+      emitCompatibilityWarning('missing-event', { event: createdEvent, phase: 'discover' });
     } else {
       logs = await provider.getLogs({
         ...filter,
@@ -322,7 +362,7 @@ export function createJobLifecycle({
       });
       logs.slice(-maxJobs).forEach((log) => {
         try {
-          const decoded = iface.decodeEventLog('JobCreated', log.data, log.topics);
+          const decoded = iface.decodeEventLog(createdEvent, log.data, log.topics);
           const [jobId, client, rewardRaw, deadlineRaw, uri, tags] = decoded;
           recordJob(jobId, {
             client: client ?? null,
@@ -332,13 +372,13 @@ export function createJobLifecycle({
             tags: parseTags(tags),
             status: 'open',
             lastEvent: {
-              type: 'JobCreated',
+              type: createdEvent,
               blockNumber: log.blockNumber ?? null,
               transactionHash: log.transactionHash ?? null
             }
           });
         } catch (error) {
-          logger?.warn?.(error, 'Failed to decode JobCreated log');
+          logger?.warn?.(error, `Failed to decode ${createdEvent} log`);
         }
       });
     }
@@ -390,7 +430,15 @@ export function createJobLifecycle({
     }
 
     metrics.discovered = jobs.size;
-    return Array.from(jobs.values()).map((job) => normalizeJobMetadata(job));
+    const normalizedJobs = Array.from(jobs.values()).map((job) => normalizeJobMetadata(job));
+    if (journal?.append) {
+      try {
+        journal.append(buildSnapshotEntry(profile.id, normalizedJobs));
+      } catch (error) {
+        logger?.warn?.(error, 'Failed to append discovery snapshot');
+      }
+    }
+    return normalizedJobs;
   }
 
   async function refreshJob(jobId) {
@@ -419,6 +467,10 @@ export function createJobLifecycle({
     }
   }
 
+  const methodUnavailable = ({ operation, candidates }) => {
+    emitCompatibilityWarning('missing-method', { operation, candidates });
+  };
+
   async function apply(jobId, { subdomain = defaultSubdomain, proof = defaultProof, signer = null, overrides = null } = {}) {
     if (!subdomain) {
       throw new Error('subdomain is required to apply for a job');
@@ -427,12 +479,19 @@ export function createJobLifecycle({
     const registry = getContract();
     const connection = signer ? registry.connect(signer) : registry;
     const proofBytes = normalizeBytes(proof);
-    const { method, response } = await callFirstAvailable(connection, [
-      { method: 'applyForJob', args: [normalizedJobId, subdomain, proofBytes] },
-      { method: 'apply', args: [normalizedJobId, subdomain, proofBytes] }
-    ]);
+    const context = {
+      jobId: normalizedJobId,
+      subdomain: subdomain ?? '',
+      proof: proofBytes,
+      overrides
+    };
+    const candidates = buildMethodCandidates(profile.methods.apply ?? [], context);
+    const { method, response } = await callFirstAvailable(connection, candidates, {
+      operation: 'apply',
+      onUnavailable: methodUnavailable
+    });
 
-    recordJob(normalizedJobId, {
+    const updated = recordJob(normalizedJobId, {
       status: 'applied',
       subdomain,
       proof: proofBytes,
@@ -442,7 +501,7 @@ export function createJobLifecycle({
       }
     });
     metrics.applied += 1;
-    recordAction({ type: 'apply', method, jobId: normalizedJobId, transactionHash: response.hash ?? null });
+    recordAction({ type: 'apply', method, jobId: normalizedJobId, transactionHash: response.hash ?? null }, updated);
     return { jobId: normalizedJobId, method, transactionHash: response.hash ?? null, response };
   }
 
@@ -454,7 +513,8 @@ export function createJobLifecycle({
     proof = defaultProof,
     signer = null,
     timestamp,
-    overrides = null
+    overrides = null,
+    validator = null
   } = {}) {
     if (result === undefined || result === null) {
       throw new Error('result is required to submit a job');
@@ -471,27 +531,29 @@ export function createJobLifecycle({
       metadata
     });
 
-    const candidates = [
-      {
-        method: 'submitProof',
-        args: [normalizedJobId, proofPayload.commitment, proofPayload.resultHash, resultUri ?? '', proofPayload.metadata],
-        overrides
-      },
-      {
-        method: 'submit',
-        args: [normalizedJobId, proofPayload.resultHash, resultUri ?? '', subdomain ?? '', proofBytes],
-        overrides
-      },
-      {
-        method: 'completeJob',
-        args: [normalizedJobId, proofPayload.resultHash, resultUri ?? ''],
-        overrides
-      }
-    ];
+    const context = {
+      jobId: normalizedJobId,
+      subdomain: subdomain ?? '',
+      proof: proofBytes,
+      resultUri: resultUri ?? '',
+      overrides,
+      commitment: proofPayload.commitment,
+      resultHash: proofPayload.resultHash,
+      metadata: proofPayload.metadata,
+      validator: validator ?? null,
+      result,
+      timestamp,
+      operator: connection?.signer?.address ?? defaultSigner?.address ?? null
+    };
 
-    const { method, response } = await callFirstAvailable(connection, candidates);
+    const candidates = buildMethodCandidates(profile.methods.submit ?? [], context);
 
-    recordJob(normalizedJobId, {
+    const { method, response } = await callFirstAvailable(connection, candidates, {
+      operation: 'submit',
+      onUnavailable: methodUnavailable
+    });
+
+    const updated = recordJob(normalizedJobId, {
       status: 'submitted',
       resultHash: proofPayload.resultHash,
       resultUri: resultUri ?? '',
@@ -509,28 +571,36 @@ export function createJobLifecycle({
       jobId: normalizedJobId,
       transactionHash: response.hash ?? null,
       commitment: proofPayload.commitment,
-      resultHash: proofPayload.resultHash
-    });
+      resultHash: proofPayload.resultHash,
+      validator: context.validator ?? null
+    }, updated);
     return {
       jobId: normalizedJobId,
       method,
       transactionHash: response.hash ?? null,
       commitment: proofPayload.commitment,
       resultHash: proofPayload.resultHash,
+      validator: context.validator ?? null,
       response
     };
   }
 
-  async function finalize(jobId, { signer = null, overrides = null } = {}) {
+  async function finalize(jobId, { signer = null, overrides = null, validator = null } = {}) {
     const normalizedJobId = normalizeJobId(jobId);
     const registry = getContract();
     const connection = signer ? registry.connect(signer) : registry;
-    const { method, response } = await callFirstAvailable(connection, [
-      { method: 'finalize', args: [normalizedJobId], overrides },
-      { method: 'finalizeJob', args: [normalizedJobId], overrides }
-    ]);
+    const context = {
+      jobId: normalizedJobId,
+      overrides,
+      validator: validator ?? null
+    };
+    const candidates = buildMethodCandidates(profile.methods.finalize ?? [], context);
+    const { method, response } = await callFirstAvailable(connection, candidates, {
+      operation: 'finalize',
+      onUnavailable: methodUnavailable
+    });
 
-    recordJob(normalizedJobId, {
+    const updated = recordJob(normalizedJobId, {
       status: 'finalized',
       lastEvent: {
         type: method,
@@ -538,8 +608,75 @@ export function createJobLifecycle({
       }
     });
     metrics.finalizations += 1;
-    recordAction({ type: 'finalize', method, jobId: normalizedJobId, transactionHash: response.hash ?? null });
-    return { jobId: normalizedJobId, method, transactionHash: response.hash ?? null, response };
+    recordAction(
+      {
+        type: 'finalize',
+        method,
+        jobId: normalizedJobId,
+        transactionHash: response.hash ?? null,
+        validator: context.validator ?? null
+      },
+      updated
+    );
+    return {
+      jobId: normalizedJobId,
+      method,
+      transactionHash: response.hash ?? null,
+      validator: context.validator ?? null,
+      response
+    };
+  }
+
+  async function notifyValidator(jobId, validatorAddress, { signer = null, overrides = null } = {}) {
+    if (!profile.methods?.notifyValidator?.length) {
+      throw new Error('Validator notification not supported by active job registry profile');
+    }
+    if (!validatorAddress) {
+      throw new Error('validator address is required to notify validator');
+    }
+    let normalizedValidator;
+    try {
+      normalizedValidator = getAddress(validatorAddress);
+    } catch (error) {
+      throw new Error(`Invalid validator address: ${error.message}`);
+    }
+    const normalizedJobId = normalizeJobId(jobId);
+    const registry = getContract();
+    const connection = signer ? registry.connect(signer) : registry;
+    const context = {
+      jobId: normalizedJobId,
+      validator: normalizedValidator,
+      overrides
+    };
+    const candidates = buildMethodCandidates(profile.methods.notifyValidator ?? [], context);
+    const { method, response } = await callFirstAvailable(connection, candidates, {
+      operation: 'notifyValidator',
+      onUnavailable: methodUnavailable
+    });
+    metrics.validatorNotifications += 1;
+    const updated = recordJob(normalizedJobId, {
+      lastEvent: {
+        type: method,
+        transactionHash: response.hash ?? null
+      }
+    });
+    recordAction(
+      {
+        type: 'notifyValidator',
+        method,
+        jobId: normalizedJobId,
+        validator: normalizedValidator,
+        transactionHash: response.hash ?? null
+      },
+      updated
+    );
+    return {
+      jobId: normalizedJobId,
+      method,
+      transactionHash: response.hash ?? null,
+      validator: normalizedValidator,
+      response
+    };
   }
 
   function listJobs() {
@@ -570,15 +707,30 @@ export function createJobLifecycle({
       return () => {};
     }
     detachWatchers();
-    const createdFilter = buildEventFilter(registryAddress, iface, 'JobCreated');
-    const appliedFilter = buildEventFilter(registryAddress, iface, 'JobApplied');
-    const assignedFilter = buildEventFilter(registryAddress, iface, 'JobAssigned');
-    const submittedFilter = buildEventFilter(registryAddress, iface, 'JobSubmitted');
-    const finalizedFilter = buildEventFilter(registryAddress, iface, 'JobFinalized');
+    const createdEvent = profile.events?.created ?? 'JobCreated';
+    const appliedEvent = profile.events?.applied ?? 'JobApplied';
+    const assignedEvent = profile.events?.assigned ?? 'JobAssigned';
+    const submittedEvent = profile.events?.submitted ?? 'JobSubmitted';
+    const finalizedEvent = profile.events?.finalized ?? 'JobFinalized';
+    const validatedEvent = profile.events?.validated ?? null;
+
+    const createdFilter = createdEvent ? buildEventFilter(registryAddress, iface, createdEvent) : null;
+    const appliedFilter = appliedEvent ? buildEventFilter(registryAddress, iface, appliedEvent) : null;
+    const assignedFilter = assignedEvent ? buildEventFilter(registryAddress, iface, assignedEvent) : null;
+    const submittedFilter = submittedEvent ? buildEventFilter(registryAddress, iface, submittedEvent) : null;
+    const finalizedFilter = finalizedEvent ? buildEventFilter(registryAddress, iface, finalizedEvent) : null;
+    const validatedFilter = validatedEvent ? buildEventFilter(registryAddress, iface, validatedEvent) : null;
+
+    if (createdEvent && !createdFilter) emitCompatibilityWarning('missing-event', { event: createdEvent, phase: 'watch' });
+    if (appliedEvent && !appliedFilter) emitCompatibilityWarning('missing-event', { event: appliedEvent, phase: 'watch' });
+    if (assignedEvent && !assignedFilter) emitCompatibilityWarning('missing-event', { event: assignedEvent, phase: 'watch' });
+    if (submittedEvent && !submittedFilter) emitCompatibilityWarning('missing-event', { event: submittedEvent, phase: 'watch' });
+    if (finalizedEvent && !finalizedFilter) emitCompatibilityWarning('missing-event', { event: finalizedEvent, phase: 'watch' });
+    if (validatedEvent && !validatedFilter) emitCompatibilityWarning('missing-event', { event: validatedEvent, phase: 'watch' });
 
     attachWatcher(createdFilter, async (log) => {
       try {
-        const decoded = iface.decodeEventLog('JobCreated', log.data, log.topics);
+        const decoded = iface.decodeEventLog(createdEvent, log.data, log.topics);
         const [jobId, client, rewardRaw, deadlineRaw, uri, tags] = decoded;
         recordJob(jobId, {
           client: client ?? null,
@@ -588,55 +740,55 @@ export function createJobLifecycle({
           tags: parseTags(tags),
           status: 'open',
           lastEvent: {
-            type: 'JobCreated',
+            type: createdEvent,
             blockNumber: log.blockNumber ?? null,
             transactionHash: log.transactionHash ?? null
           }
         });
       } catch (error) {
-        logger?.warn?.(error, 'Failed to process JobCreated event');
+        logger?.warn?.(error, `Failed to process ${createdEvent} event`);
       }
     });
 
     attachWatcher(appliedFilter, async (log) => {
       try {
-        const decoded = iface.decodeEventLog('JobApplied', log.data, log.topics);
+        const decoded = iface.decodeEventLog(appliedEvent, log.data, log.topics);
         const [jobId, worker] = decoded;
         recordJob(jobId, {
           worker: worker ?? null,
           status: 'applied',
           lastEvent: {
-            type: 'JobApplied',
+            type: appliedEvent,
             blockNumber: log.blockNumber ?? null,
             transactionHash: log.transactionHash ?? null
           }
         });
       } catch (error) {
-        logger?.warn?.(error, 'Failed to process JobApplied event');
+        logger?.warn?.(error, `Failed to process ${appliedEvent} event`);
       }
     });
 
     attachWatcher(assignedFilter, async (log) => {
       try {
-        const decoded = iface.decodeEventLog('JobAssigned', log.data, log.topics);
+        const decoded = iface.decodeEventLog(assignedEvent, log.data, log.topics);
         const [jobId, worker] = decoded;
         recordJob(jobId, {
           worker: worker ?? null,
           status: 'assigned',
           lastEvent: {
-            type: 'JobAssigned',
+            type: assignedEvent,
             blockNumber: log.blockNumber ?? null,
             transactionHash: log.transactionHash ?? null
           }
         });
       } catch (error) {
-        logger?.warn?.(error, 'Failed to process JobAssigned event');
+        logger?.warn?.(error, `Failed to process ${assignedEvent} event`);
       }
     });
 
     attachWatcher(submittedFilter, async (log) => {
       try {
-        const decoded = iface.decodeEventLog('JobSubmitted', log.data, log.topics);
+        const decoded = iface.decodeEventLog(submittedEvent, log.data, log.topics);
         const [jobId, client, worker, resultHash, resultUri] = decoded;
         recordJob(jobId, {
           client: client ?? null,
@@ -645,33 +797,78 @@ export function createJobLifecycle({
           resultHash,
           resultUri,
           lastEvent: {
-            type: 'JobSubmitted',
+            type: submittedEvent,
             blockNumber: log.blockNumber ?? null,
             transactionHash: log.transactionHash ?? null
           }
         });
       } catch (error) {
-        logger?.warn?.(error, 'Failed to process JobSubmitted event');
+        logger?.warn?.(error, `Failed to process ${submittedEvent} event`);
       }
     });
 
     attachWatcher(finalizedFilter, async (log) => {
       try {
-        const decoded = iface.decodeEventLog('JobFinalized', log.data, log.topics);
+        const decoded = iface.decodeEventLog(finalizedEvent, log.data, log.topics);
         const [jobId, client, worker] = decoded;
-        recordJob(jobId, {
+        const updated = recordJob(jobId, {
           client: client ?? null,
           worker: worker ?? null,
           status: 'finalized',
           lastEvent: {
-            type: 'JobFinalized',
+            type: finalizedEvent,
             blockNumber: log.blockNumber ?? null,
             transactionHash: log.transactionHash ?? null
           }
         });
         metrics.finalizations += 1;
+        if (journal?.append) {
+          try {
+            journal.append(
+              buildActionEntry(profile.id, {
+                type: 'finalized-event',
+                jobId: updated?.jobId ?? null,
+                event: finalizedEvent,
+                blockNumber: log.blockNumber ?? null,
+                transactionHash: log.transactionHash ?? null
+              }, normalizeJobMetadata(updated))
+            );
+          } catch (error) {
+            logger?.warn?.(error, 'Failed to append finalized event entry');
+          }
+        }
       } catch (error) {
-        logger?.warn?.(error, 'Failed to process JobFinalized event');
+        logger?.warn?.(error, `Failed to process ${finalizedEvent} event`);
+      }
+    });
+
+    attachWatcher(validatedFilter, async (log) => {
+      try {
+        const decoded = iface.decodeEventLog(validatedEvent, log.data, log.topics);
+        const [jobId, validator, accepted] = decoded;
+        const updated = recordJob(jobId, {
+          status: accepted ? 'validated' : 'submitted',
+          lastEvent: {
+            type: validatedEvent,
+            blockNumber: log.blockNumber ?? null,
+            transactionHash: log.transactionHash ?? null
+          }
+        });
+        metrics.validatorNotifications += 1;
+        recordAction(
+          {
+            type: 'validation',
+            jobId: updated?.jobId ?? null,
+            validator: validator ?? null,
+            accepted: Boolean(accepted),
+            event: validatedEvent,
+            blockNumber: log.blockNumber ?? null,
+            transactionHash: log.transactionHash ?? null
+          },
+          updated
+        );
+      } catch (error) {
+        logger?.warn?.(error, `Failed to process ${validatedEvent} event`);
       }
     });
 
@@ -715,6 +912,7 @@ export function createJobLifecycle({
     apply,
     submit,
     finalize,
+    notifyValidator,
     listJobs,
     getJob,
     getMetrics,
@@ -726,5 +924,3 @@ export function createJobLifecycle({
     __getInternalState: () => ({ jobs, metrics })
   };
 }
-
-export { JOB_REGISTRY_ABI };
