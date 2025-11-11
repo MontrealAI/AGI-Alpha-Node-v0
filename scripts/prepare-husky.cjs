@@ -1,25 +1,35 @@
 #!/usr/bin/env node
 
 const { spawnSync } = require('node:child_process');
+const { existsSync } = require('node:fs');
+const path = require('node:path');
 
-function hasHusky() {
+function resolveHuskyBin() {
   try {
-    require.resolve('husky/package.json');
-    return true;
+    const huskyEntry = require.resolve('husky');
+    const huskyDir = path.dirname(huskyEntry);
+    const huskyBin = path.join(huskyDir, 'bin.js');
+
+    if (!existsSync(huskyBin)) {
+      return null;
+    }
+
+    return huskyBin;
   } catch (error) {
     if (error && (error.code === 'MODULE_NOT_FOUND' || error.code === 'ERR_MODULE_NOT_FOUND')) {
-      return false;
+      return null;
     }
     throw error;
   }
 }
 
-if (!hasHusky()) {
+const huskyBin = resolveHuskyBin();
+
+if (!huskyBin) {
   console.log('husky not installed; skipping prepare step.');
   process.exit(0);
 }
 
-const huskyBin = require.resolve('husky/bin.js');
 const result = spawnSync(process.execPath, [huskyBin, 'install'], {
   stdio: 'inherit',
 });
