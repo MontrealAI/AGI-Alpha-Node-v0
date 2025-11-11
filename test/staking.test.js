@@ -38,7 +38,9 @@ describe('staking helpers', () => {
           minimumStake: vi.fn().mockResolvedValue(1000n),
           getStake: vi.fn().mockResolvedValue(1500n),
           isOperatorHealthy: vi.fn().mockResolvedValue(true),
-          slashingPenalty: vi.fn().mockResolvedValue(50n)
+          slashingPenalty: vi.fn().mockResolvedValue(50n),
+          jobRegistry: vi.fn().mockResolvedValue('0x00000000000000000000000000000000000000aa'),
+          identityRegistry: vi.fn().mockResolvedValue('0x00000000000000000000000000000000000000bb')
         });
       }
       return createMockContract({
@@ -61,6 +63,8 @@ describe('staking helpers', () => {
     expect(status.lastHeartbeat).toBe(123n);
     expect(status.healthy).toBe(true);
     expect(status.slashingPenalty).toBe(50n);
+    expect(status.jobRegistryAddress).toBe('0x00000000000000000000000000000000000000AA');
+    expect(status.identityRegistryAddress).toBe('0x00000000000000000000000000000000000000bb');
   });
 
   it('evaluates stake conditions with penalties and stale heartbeat', () => {

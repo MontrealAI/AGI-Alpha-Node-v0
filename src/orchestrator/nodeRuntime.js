@@ -6,6 +6,7 @@ import { projectEpochRewards } from '../services/rewards.js';
 import { startMonitoringServer } from '../telemetry/monitoring.js';
 import { formatTokenAmount } from '../utils/formatters.js';
 import { deriveOwnerDirectives } from '../services/controlPlane.js';
+import { fetchGovernanceStatus } from '../services/governanceStatus.js';
 import {
   buildOfflineVerification,
   buildOfflineStakeStatus,
@@ -28,6 +29,13 @@ export async function runNodeDiagnostics({
   desiredValidatorShareBps,
   desiredTreasuryShareBps,
   roleShareTargets,
+  jobRegistryAddress,
+  identityRegistryAddress,
+  desiredJobRegistryAddress,
+  desiredIdentityRegistryAddress,
+  desiredValidationModuleAddress,
+  desiredReputationModuleAddress,
+  desiredDisputeModuleAddress,
   projectedRewards,
   offlineSnapshot,
   jobMetricsProvider = null,
@@ -102,6 +110,21 @@ export async function runNodeDiagnostics({
       })
     : null;
 
+  let governanceStatus = offlineSnapshot?.governance ?? null;
+  if (!offlineMode) {
+    try {
+      governanceStatus = await fetchGovernanceStatus({
+        provider,
+        stakeStatus,
+        jobRegistryAddress,
+        identityRegistryAddress
+      });
+    } catch (governanceError) {
+      logger.warn(governanceError, 'Failed to retrieve governance status');
+      governanceStatus = null;
+    }
+  }
+
   let stakeEvaluation = null;
   if (stakeStatus) {
     stakeEvaluation = evaluateStakeConditions({
@@ -175,10 +198,16 @@ export async function runNodeDiagnostics({
     }
   }
 
+  const resolvedJobRegistryAddress =
+    jobRegistryAddress ?? governanceStatus?.jobRegistry?.address ?? stakeStatus?.jobRegistryAddress ?? null;
+  const resolvedIdentityRegistryAddress =
+    identityRegistryAddress ?? governanceStatus?.identityRegistry?.address ?? stakeStatus?.identityRegistryAddress ?? null;
+
   const ownerDirectives = deriveOwnerDirectives({
     stakeStatus,
     stakeEvaluation,
     rewardsProjection,
+    governanceStatus,
     config: {
       systemPauseAddress,
       incentivesAddress,
@@ -189,7 +218,14 @@ export async function runNodeDiagnostics({
       desiredOperatorShareBps,
       desiredValidatorShareBps,
       desiredTreasuryShareBps,
-      roleShareTargets
+      roleShareTargets,
+      jobRegistryAddress: resolvedJobRegistryAddress,
+      identityRegistryAddress: resolvedIdentityRegistryAddress,
+      desiredJobRegistryAddress,
+      desiredIdentityRegistryAddress,
+      desiredValidationModuleAddress,
+      desiredReputationModuleAddress,
+      desiredDisputeModuleAddress
     }
   });
 
@@ -209,6 +245,7 @@ export async function runNodeDiagnostics({
     stakeStatus,
     rewardsProjection,
     stakeEvaluation,
+    governanceStatus,
     ownerDirectives,
     performance,
     runtimeMode

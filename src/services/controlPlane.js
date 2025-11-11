@@ -1,3 +1,4 @@
+import { getAddress } from 'ethers';
 import {
   AGIALPHA_TOKEN_DECIMALS,
   AGIALPHA_TOKEN_SYMBOL
@@ -9,6 +10,8 @@ import {
   buildMinimumStakeTx,
   buildGlobalSharesTx,
   buildRoleShareTx,
+  buildStakeRegistryUpgradeTx,
+  buildJobRegistryUpgradeTx,
   resolveRoleIdentifier
 } from './governance.js';
 
@@ -52,10 +55,30 @@ function findCurrentRoleShare(role, roleShares = {}) {
   return undefined;
 }
 
+function normalizeAddress(value) {
+  if (!value) return null;
+  try {
+    return getAddress(typeof value === 'string' ? value : String(value));
+  } catch {
+    const asString = String(value).trim();
+    return asString.length ? asString.toLowerCase() : null;
+  }
+}
+
+function addressesEqual(a, b) {
+  const normalizedA = normalizeAddress(a);
+  const normalizedB = normalizeAddress(b);
+  if (normalizedA === null || normalizedB === null) {
+    return normalizedA === normalizedB;
+  }
+  return normalizedA === normalizedB;
+}
+
 export function deriveOwnerDirectives({
   stakeStatus,
   stakeEvaluation,
   rewardsProjection = null,
+  governanceStatus = null,
   config = {},
   decimals = AGIALPHA_TOKEN_DECIMALS
 } = {}) {
@@ -87,7 +110,14 @@ export function deriveOwnerDirectives({
     desiredOperatorShareBps,
     desiredValidatorShareBps,
     desiredTreasuryShareBps,
-    roleShareTargets
+    roleShareTargets,
+    jobRegistryAddress,
+    identityRegistryAddress,
+    desiredJobRegistryAddress,
+    desiredIdentityRegistryAddress,
+    desiredValidationModuleAddress,
+    desiredReputationModuleAddress,
+    desiredDisputeModuleAddress
   } = config;
 
   const currentShares = {
@@ -266,6 +296,124 @@ export function deriveOwnerDirectives({
     directives.priority = directives.priority === 'critical' ? 'critical' : 'warning';
     directives.notices.push(
       'Heartbeat appears stale – submit heartbeat to PlatformIncentives to avoid inactivity slashing.'
+    );
+  }
+
+  const governance = governanceStatus ?? {};
+  const actualJobRegistry = normalizeAddress(jobRegistryAddress ?? governance.jobRegistry?.address);
+  const actualIdentityRegistry = normalizeAddress(
+    identityRegistryAddress ?? governance.identityRegistry?.address
+  );
+
+  if (desiredJobRegistryAddress) {
+    const desiredAddress = normalizeAddress(desiredJobRegistryAddress);
+    if (!stakeManagerAddress) {
+      directives.notices.push(
+        'Desired JobRegistry alignment provided – configure STAKE_MANAGER_ADDRESS to craft governance payload.'
+      );
+    } else if (!actualJobRegistry) {
+      directives.notices.push('Unable to resolve current JobRegistry – governance transaction not generated.');
+    } else if (!addressesEqual(desiredAddress, actualJobRegistry)) {
+      directives.priority = directives.priority === 'critical' ? 'critical' : 'warning';
+      const tx = buildStakeRegistryUpgradeTx({
+        stakeManagerAddress,
+        registryType: 'job',
+        newAddress: desiredAddress,
+        currentAddress: actualJobRegistry
+      });
+      directives.actions.push({
+        type: 'set-job-registry',
+        level: 'warning',
+        reason: `Repoint StakeManager job registry to ${desiredAddress}.`,
+        tx,
+        currentAddress: actualJobRegistry,
+        targetAddress: desiredAddress
+      });
+    }
+  }
+
+  if (desiredIdentityRegistryAddress) {
+    const desiredAddress = normalizeAddress(desiredIdentityRegistryAddress);
+    if (!stakeManagerAddress) {
+      directives.notices.push(
+        'Desired IdentityRegistry alignment provided – configure STAKE_MANAGER_ADDRESS to craft governance payload.'
+      );
+    } else if (!actualIdentityRegistry) {
+      directives.notices.push('Unable to resolve current IdentityRegistry – governance transaction not generated.');
+    } else if (!addressesEqual(desiredAddress, actualIdentityRegistry)) {
+      directives.priority = directives.priority === 'critical' ? 'critical' : 'warning';
+      const tx = buildStakeRegistryUpgradeTx({
+        stakeManagerAddress,
+        registryType: 'identity',
+        newAddress: desiredAddress,
+        currentAddress: actualIdentityRegistry
+      });
+      directives.actions.push({
+        type: 'set-identity-registry',
+        level: 'warning',
+        reason: `Repoint StakeManager identity registry to ${desiredAddress}.`,
+        tx,
+        currentAddress: actualIdentityRegistry,
+        targetAddress: desiredAddress
+      });
+    }
+  }
+
+  const governanceModules = governance.jobRegistry ?? {};
+  const modules = {
+    validation: {
+      desired: normalizeAddress(desiredValidationModuleAddress),
+      actual: normalizeAddress(governanceModules.validationModule),
+      type: 'set-validation-module'
+    },
+    reputation: {
+      desired: normalizeAddress(desiredReputationModuleAddress),
+      actual: normalizeAddress(governanceModules.reputationModule),
+      type: 'set-reputation-module'
+    },
+    dispute: {
+      desired: normalizeAddress(desiredDisputeModuleAddress),
+      actual: normalizeAddress(governanceModules.disputeModule),
+      type: 'set-dispute-module'
+    }
+  };
+
+  if (jobRegistryAddress || governanceModules.address) {
+    const registryTarget = normalizeAddress(jobRegistryAddress ?? governanceModules.address);
+    for (const [moduleKey, spec] of Object.entries(modules)) {
+      if (!spec.desired) continue;
+      if (!registryTarget) {
+        directives.notices.push(
+          `Desired ${moduleKey} module alignment provided – unable to resolve JobRegistry contract address.`
+        );
+        continue;
+      }
+      if (spec.actual && addressesEqual(spec.desired, spec.actual)) {
+        continue;
+      }
+      directives.priority = directives.priority === 'critical' ? 'critical' : 'warning';
+      const tx = buildJobRegistryUpgradeTx({
+        jobRegistryAddress: registryTarget,
+        module: moduleKey,
+        newAddress: spec.desired,
+        currentAddress: spec.actual ?? undefined
+      });
+      directives.actions.push({
+        type: spec.type,
+        level: 'warning',
+        reason: `Upgrade JobRegistry ${moduleKey} module to ${spec.desired}.`,
+        tx,
+        currentAddress: spec.actual ?? null,
+        targetAddress: spec.desired
+      });
+    }
+  } else if (
+    desiredValidationModuleAddress ||
+    desiredReputationModuleAddress ||
+    desiredDisputeModuleAddress
+  ) {
+    directives.notices.push(
+      'Desired JobRegistry module targets provided – configure JOB_REGISTRY_ADDRESS to craft governance payloads.'
     );
   }
 
