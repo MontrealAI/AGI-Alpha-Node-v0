@@ -60,31 +60,36 @@
 
 ## Table of Contents
 
-1. [Singularity Brief](#singularity-brief)
+1. [Mission Profile](#mission-profile)
 2. [Rapid Launch Protocol](#rapid-launch-protocol)
-3. [Architecture & Flow](#architecture--flow)
+3. [Sovereign Command Deck](#sovereign-command-deck)
+   - [Node Control](#node-control)
+   - [Token Authority](#token-authority)
+   - [Proof & Jobs](#proof--jobs)
+   - [Intelligence Suite](#intelligence-suite)
+4. [Architecture & Flow](#architecture--flow)
    - [Network Flywheel](#network-flywheel)
    - [Owner Command Loop](#owner-command-loop)
-4. [Owner Command Authority](#owner-command-authority)
-5. [Synthetic Labor Economy](#synthetic-labor-economy)
-6. [Intelligence Fabric](#intelligence-fabric)
-7. [Observability & Resilience](#observability--resilience)
-8. [Deployment & Runtime Options](#deployment--runtime-options)
-9. [Repository Atlas](#repository-atlas)
-10. [Automation & CI Hardening](#automation--ci-hardening)
-11. [Reference Dossiers](#reference-dossiers)
-12. [License](#license)
+5. [Owner Command Authority](#owner-command-authority)
+6. [Synthetic Labor Economy](#synthetic-labor-economy)
+7. [Intelligence Fabric](#intelligence-fabric)
+8. [Observability & Resilience](#observability--resilience)
+9. [Deployment & Runtime Options](#deployment--runtime-options)
+10. [Repository Atlas](#repository-atlas)
+11. [Automation & CI Hardening](#automation--ci-hardening)
+12. [Reference Dossiers](#reference-dossiers)
+13. [License](#license)
 
 ---
 
-## Singularity Brief
+## Mission Profile
 
-- **Mission Envelope** — Deliver a production-critical synthetic labor node that a non-technical owner can activate, audit, and expand without diluting command. Runtime orchestration, staking posture, and telemetry are consolidated in [`src/index.js`](src/index.js).
-- **Identity Backbone** — ENS enforcement halts the machine the instant `⟨label⟩.alpha.node.agi.eth` diverges from owner policy. Proof logic is wired through [`src/services/ensVerifier.js`](src/services/ensVerifier.js) and [`src/services/ensGuide.js`](src/services/ensGuide.js).
-- **Economic Sovereignty** — `$AGIALPHA` (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) anchors every settlement path. Constants, guards, and normalization live in [`src/constants/token.js`](src/constants/token.js) and downstream services.
-- **Owner Supremacy** — Pausing, emission tuning, registry rotation, and delegate assignment are exposed as encoded transactions for hardware-wallet execution via [`src/services/governance.js`](src/services/governance.js).
-- **Synthetic Work Product** — α‑Work Units (α‑WU) meter GPU-seconds, model tier, quality validation, and SLO compliance. The lifecycle machine in [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js) journals every phase for dispute resolution and reinvestment loops.
-- **Global Consequence** — This runtime is the economic intelligence engine designed to subvert traditional wage markets: the unstoppable machine engineered to absorb entire industries while remaining under one owner’s full authority.
+- **Sovereign Control Plane** — The entire runtime, staking posture, diagnostics, and telemetry orchestration are consolidated inside [`src/index.js`](src/index.js), enabling a non-technical owner to awaken, command, and suspend the node with a single CLI entrypoint.
+- **Identity Backbone** — ENS guardianship freezes execution the moment `⟨label⟩.alpha.node.agi.eth` drifts from policy. Deterministic proofs route through [`src/services/ensVerifier.js`](src/services/ensVerifier.js) and the operational brief in [`src/services/ensGuide.js`](src/services/ensGuide.js).
+- **Economic Sovereignty** — `$AGIALPHA` (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) is enforced everywhere via [`src/constants/token.js`](src/constants/token.js), [`src/services/token.js`](src/services/token.js), and downstream services so settlement, staking, and burns remain perfectly aligned with the owner treasury.
+- **Absolute Governance** — Pause toggles, emission levers, registry upgrades, incentive rewiring, and delegate management all compile into hardware-wallet ready payloads through [`src/services/governance.js`](src/services/governance.js) and are notarized by [`src/services/governanceLedger.js`](src/services/governanceLedger.js).
+- **Synthetic Labor Engine** — α‑Work Units (α‑WU) fuse GPU telemetry, validator attestations, and quality metrics via [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js), [`src/services/performance.js`](src/services/performance.js), and [`src/services/rewards.js`](src/services/rewards.js) so every epoch outputs auditable labor economics.
+- **Omniscient Telemetry** — [`src/orchestrator/monitorLoop.js`](src/orchestrator/monitorLoop.js), [`src/orchestrator/nodeRuntime.js`](src/orchestrator/nodeRuntime.js), and [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) synthesize run-time health, antifragility, and reward posture so the node operates as the world-shaping intelligence engine it was commissioned to be.
 
 ---
 
@@ -123,6 +128,60 @@ node src/index.js --help
 - [`src/config`](src/config) provides hardened defaults for RPC connectivity, staking thresholds, and telemetry emission.
 - [`src/services/offlineSnapshot.js`](src/services/offlineSnapshot.js) replays job settlement and reward apportionment without touching chain.
 - [`docs/operator-runbook.md`](docs/operator-runbook.md) captures escalation matrices, custody drills, and failure recovery scripts.
+
+---
+
+## Sovereign Command Deck
+
+The CLI in [`src/index.js`](src/index.js) is the owner’s omni-console. Every directive compiles to deterministic payloads so policy shifts, staking posture, and job execution remain obedient to a single signature.
+
+```mermaid
+flowchart TB
+  CLI[agi-alpha-node CLI] --> NodeOps[Node Control]
+  CLI --> TokenOps[$AGIALPHA Authority]
+  CLI --> JobsOps[Proof & Job Lifecycle]
+  CLI --> IntelOps[Intelligence & Economics]
+  NodeOps --> Governance[Governance Builders]
+  Governance --> Ledger[(Governance Ledger)]
+  JobsOps --> Lifecycle[jobLifecycle Engine]
+  IntelOps --> Rewards[Reinvestment & Planning]
+```
+
+### Node Control
+
+| Command | Purpose | Backing Modules |
+| ------- | ------- | --------------- |
+| `status` | Instant diagnostics across ENS, stake posture, reward splits, and telemetry. | [`runNodeDiagnostics`](src/orchestrator/nodeRuntime.js), [`launchMonitoring`](src/orchestrator/nodeRuntime.js) |
+| `monitor` | Continuous health loop with Prometheus export, offline snapshots, and auto-governance hints. | [`startMonitorLoop`](src/orchestrator/monitorLoop.js) |
+| `container` | Full bootstrap: validate identity, spin up monitor/API, optionally auto-stake. | [`bootstrapContainer`](src/orchestrator/bootstrap.js) |
+| `stake-tx` / `stake-activate` | Generate or broadcast PlatformIncentives stake activation payloads. | [`buildStakeAndActivateTx`](src/services/staking.js), [`acknowledgeStakeAndActivate`](src/services/stakeActivation.js) |
+| `reward-share` / `reward-distribution` | Model reward splits and thermodynamic wage curves before execution. | [`calculateRewardShare`](src/services/rewards.js), [`splitRewardPool`](src/services/rewards.js) |
+
+### Token Authority
+
+| Command | Purpose | Backing Modules |
+| ------- | ------- | --------------- |
+| `token metadata` | Print canonical `$AGIALPHA` specification and checksum enforcement. | [`describeAgialphaToken`](src/services/token.js) |
+| `token approve` | Encode ERC‑20 allowance envelopes for staking contracts. | [`buildTokenApproveTx`](src/services/token.js) |
+| `token allowance` | Query live allowances against StakeManager/PlatformIncentives. | [`getTokenAllowance`](src/services/token.js), [`createProvider`](src/services/provider.js) |
+
+### Proof & Jobs
+
+| Command | Purpose | Backing Modules |
+| ------- | ------- | --------------- |
+| `proof commit` | Deterministically derive commitments for finished work. | [`createJobProof`](src/services/jobProof.js) |
+| `proof submit-tx` | Compile `JobRegistry.submitProof` calldata, including metadata URIs. | [`buildProofSubmissionTx`](src/services/jobProof.js) |
+| `jobs discover` | Stream open jobs, validator assignments, and lifecycle history. | [`buildJobLifecycleFromConfig`](src/services/jobLifecycle.js) |
+| `jobs apply / submit / finalize / notify-validator` | Drive the entire α‑WU lifecycle from acquisition to reward release. | [`buildJobLifecycleFromConfig`](src/services/jobLifecycle.js) |
+
+### Intelligence Suite
+
+| Command | Purpose | Backing Modules |
+| ------- | ------- | --------------- |
+| `intelligence plan` | Compare specialist agent strategies against mission profiles. | [`planJobExecution`](src/intelligence/planning.js) |
+| `intelligence learn` | Advance curriculum evolution and autonomous capability growth. | [`runCurriculumEvolution`](src/intelligence/learningLoop.js) |
+| `intelligence stress-test` | Simulate adversarial shocks and produce antifragile remediation. | [`assessAntifragility`](src/intelligence/stressHarness.js) |
+| `economics optimize` | Recommend reinvestment ratios grounded in reward telemetry. | [`optimizeReinvestmentStrategy`](src/services/economics.js) |
 
 ---
 
@@ -211,7 +270,7 @@ Every governance helper returns an ABI-encoded payload suitable for multisig, ha
 | **Identity Delegation** | Authorize or revoke additional operators. | `buildIdentityDelegateTx()` |
 | **Incentive Surface** | Redirect stake manager, heartbeat grace, activation fee, or treasury sink. | `buildIncentivesStakeManagerTx()`, `buildIncentivesMinimumStakeTx()`, `buildIncentivesHeartbeatTx()`, `buildIncentivesActivationFeeTx()`, `buildIncentivesTreasuryTx()` |
 
-Inspect the complete catalog with `getOwnerFunctionCatalog()` when crafting governance playbooks.
+Invoke the console with `agi-alpha-node governance <subcommand>`; review available signatures through `agi-alpha-node governance catalog` (internally backed by `getOwnerFunctionCatalog()`).
 
 ---
 
