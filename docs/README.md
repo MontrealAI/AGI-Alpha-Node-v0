@@ -85,6 +85,7 @@ AGI Alpha Node v0 is the machine these proclamations foreshadow. It is engineere
 | **Quality Gates** | `npm run lint:md`, `npm run lint:links`, `npm test`, and `npm run lint` mirror CI rituals. | [`package.json`](../package.json) |
 | **Sovereign CLI** | `node src/index.js` orchestrates ENS verification, staking diagnostics, reward projections, and Prometheus metrics. | [`src/index.js`](../src/index.js) |
 | **Pipeline Enforcement** | GitHub Actions workflow enforces Node.js 20.x, `npm ci`, markdown lint, and link validation on each push/PR. | [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) |
+| **Telemetry Codex** | α‑WU event spine, KPIs, dashboards, and deployment checklist consolidated for operators. | [`docs/telemetry/README.md`](./telemetry/README.md) |
 | **Operator Iconography** | Crest served from [`../1.alpha.node.agi.eth.svg`](../1.alpha.node.agi.eth.svg); PNG fallback lives alongside. | [`1.alpha.node.agi.eth.svg`](../1.alpha.node.agi.eth.svg) |
 | **Token Canon** | `$AGIALPHA` contract `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` anchors staking and treasury operations. | [Etherscan](https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) |
 
