@@ -71,6 +71,7 @@ contract AlphaNodeManager is Ownable, IAlphaWorkUnitEvents {
     error NotValidator();
     error InvalidAmount();
     error ValidatorUnknown();
+    error InsufficientStake();
 
     event Paused(address indexed account);
     event Unpaused(address indexed account);
@@ -262,6 +263,10 @@ contract AlphaNodeManager is Ownable, IAlphaWorkUnitEvents {
         }
         if (stakeAmount == 0) {
             revert InvalidAmount();
+        }
+        uint256 recordedStake = stakedBalance[msg.sender];
+        if (stakeAmount > recordedStake) {
+            revert InsufficientStake();
         }
         emit AlphaWUValidated(id, msg.sender, stakeAmount, score, block.timestamp);
     }

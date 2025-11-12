@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
-import { ContractFactory, JsonRpcProvider, ZeroAddress } from 'ethers';
+import { AbiCoder, ContractFactory, JsonRpcProvider, ZeroAddress, keccak256, toBeHex } from 'ethers';
 
 const ANVIL_PORT = 8550;
 const ANVIL_URL = `http://127.0.0.1:${ANVIL_PORT}`;
@@ -91,6 +91,15 @@ describeIf('AlphaNodeManager contract', () => {
     return manager;
   }
 
+  async function setValidatorStake(manager, validatorAddress, amount) {
+    const managerAddress = await manager.getAddress();
+    const slotIndex = 4n;
+    const coder = AbiCoder.defaultAbiCoder();
+    const encoded = coder.encode(['address', 'uint256'], [validatorAddress, slotIndex]);
+    const storageSlot = keccak256(encoded);
+    await provider.send('anvil_setStorageAt', [managerAddress, storageSlot, toBeHex(amount, 32)]);
+  }
+
   it('deploys with canonical $AGIALPHA token configured', async () => {
     const manager = await deployManager();
     const stakingToken = await manager.stakingToken();
@@ -168,6 +177,9 @@ describeIf('AlphaNodeManager contract', () => {
 
     const validationId = '0x' + 'bb'.repeat(32);
     await expect(manager.connect(agent).recordAlphaWUValidation(validationId, 100n, 9000n)).rejects.toThrow(/NotValidator/);
+    await expect(manager.connect(validator).recordAlphaWUValidation(validationId, 100n, 9000n)).rejects.toThrow(/InsufficientStake/);
+
+    await setValidatorStake(manager, validatorAddress, 200n);
 
     const validationTx = await manager.connect(validator).recordAlphaWUValidation(validationId, 100n, 9000n);
     const validationReceipt = await validationTx.wait();
@@ -176,6 +188,9 @@ describeIf('AlphaNodeManager contract', () => {
     expect(validationEvent.args.validator).toBe(validatorAddress);
     expect(validationEvent.args.stake).toBe(100n);
     expect(validationEvent.args.score).toBe(9000n);
+
+    const excessiveStakeId = '0x' + 'bd'.repeat(32);
+    await expect(manager.connect(validator).recordAlphaWUValidation(excessiveStakeId, 250n, 8100n)).rejects.toThrow(/InsufficientStake/);
   });
 
   it('acceptance requires validator or owner authorization', async () => {
