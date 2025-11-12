@@ -47,8 +47,9 @@
 5. [Dashboards](#dashboards)
 6. [Deployment](#deployment)
 7. [Continuous Integration](#continuous-integration)
-8. [Governance](#governance)
-9. [Quickstart](#quickstart)
+8. [Testing & Validation](#testing--validation)
+9. [Governance](#governance)
+10. [Quickstart](#quickstart)
 
 ---
 
@@ -224,6 +225,19 @@ Quality gates live in [`./.github/workflows/ci.yml`](.github/workflows/ci.yml) a
 | `docker-smoke` | Build the container image and run CLI smoke tests. |
 
 **Badges** for build and coverage are pinned above, both sourced from the same workflow.
+
+---
+
+## Testing & Validation
+
+The full testing playbook—including Solidity, TypeScript, script, and subgraph simulations—is captured in [`docs/testing.md`](docs/testing.md). Highlights:
+
+* **Unit & Integration:** `npm test` exercises orchestrator services, telemetry modules, and ENS gating smoke scenarios.
+* **Solidity:** `npx vitest run test/alphaNodeManager.contract.test.js` compiles against Anvil and verifies owner-only flows plus identity helpers.
+* **Script Guardrails:** `npx vitest run test/scripts.*.test.js` ensures manifest rendering and ENS policy scripts will pass in CI.
+* **Subgraph Simulation:** `npm run simulate:subgraph` deploys `AlphaNodeManager`, emits KPI events, and validates that Graph metrics respond as expected.
+
+Use the guide to interpret Vitest output, solc diagnostics, and guardrail failures before opening PRs.
 
 ---
 

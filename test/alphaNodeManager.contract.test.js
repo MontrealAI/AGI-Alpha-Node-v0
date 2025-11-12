@@ -252,6 +252,27 @@ describeIf('AlphaNodeManager contract', () => {
     await expect(manager.connect(observer).recordAlphaWUMint('0x' + '22'.repeat(32), observerAddress, agentAddress)).rejects.toThrow(/IdentityInactive/);
   });
 
+  it('exposes identity metadata through view helpers', async () => {
+    const manager = await deployManager();
+    const agentAddress = await agent.getAddress();
+    const ensNode = '0x' + '55'.repeat(32);
+
+    await manager.connect(owner).registerIdentity(ensNode, agentAddress);
+
+    const identity = await manager.getIdentity(agentAddress);
+    expect(identity[0]).toBe(ensNode);
+    expect(identity[1]).toBe(true);
+
+    const controller = await manager.ensNodeController(ensNode);
+    expect(controller).toBe(agentAddress);
+    expect(await manager.isIdentityActive(agentAddress)).toBe(true);
+
+    await manager.connect(owner).setIdentityStatus(ensNode, false);
+    const updated = await manager.getIdentity(agentAddress);
+    expect(updated[1]).toBe(false);
+    expect(await manager.isIdentityActive(agentAddress)).toBe(false);
+  });
+
   it('halts work unit pipeline when paused', async () => {
     const manager = await deployManager();
     const agentAddress = await agent.getAddress();
