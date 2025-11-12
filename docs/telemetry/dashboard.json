@@ -16,7 +16,7 @@
     },
     {
       "type": "timeseries",
-      "title": "α-WU Acceptance Rate",
+      "title": "α-WU Acceptance Rate · 7d",
       "metric": "agi_alpha_node_alpha_wu_acceptance_rate",
       "labels": { "window": "7d" },
       "yAxis": {
@@ -27,7 +27,38 @@
     },
     {
       "type": "timeseries",
-      "title": "α-WU On-Time p95",
+      "title": "α-WU Acceptance Rate · 30d",
+      "metric": "agi_alpha_node_alpha_wu_acceptance_rate",
+      "labels": { "window": "30d" },
+      "yAxis": {
+        "unit": "ratio",
+        "min": 0,
+        "max": 1
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Slash Adjusted Yield · 7d",
+      "metric": "agi_alpha_node_alpha_wu_slash_adjusted_yield",
+      "labels": { "window": "7d" },
+      "yAxis": {
+        "unit": "ratio",
+        "min": 0
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Slash Adjusted Yield · 30d",
+      "metric": "agi_alpha_node_alpha_wu_slash_adjusted_yield",
+      "labels": { "window": "30d" },
+      "yAxis": {
+        "unit": "ratio",
+        "min": 0
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "α-WU On-Time p95 · 7d",
       "metric": "agi_alpha_node_alpha_wu_on_time_p95_seconds",
       "labels": { "window": "7d" },
       "yAxis": {
@@ -36,19 +67,66 @@
       }
     },
     {
+      "type": "timeseries",
+      "title": "α-WU On-Time p95 · 30d",
+      "metric": "agi_alpha_node_alpha_wu_on_time_p95_seconds",
+      "labels": { "window": "30d" },
+      "yAxis": {
+        "unit": "seconds",
+        "min": 0
+      }
+    },
+    {
       "type": "bar",
-      "title": "Validator Weighted Quality",
+      "title": "Validator Weighted Quality · 7d",
       "metric": "agi_alpha_node_alpha_wu_quality",
       "labels": { "window": "7d", "dimension": "validator" },
       "groupBy": "key"
     },
     {
+      "type": "bar",
+      "title": "Validator Weighted Quality · 30d",
+      "metric": "agi_alpha_node_alpha_wu_quality",
+      "labels": { "window": "30d", "dimension": "validator" },
+      "groupBy": "key"
+    },
+    {
       "type": "table",
-      "title": "Slash Adjusted Yield by Node",
+      "title": "Slash Adjusted Yield by Node · 7d",
       "metric": "agi_alpha_node_alpha_wu_breakdown",
       "labels": {
         "window": "7d",
         "dimension": "node",
+        "metric": "slashingAdjustedYield"
+      }
+    },
+    {
+      "type": "table",
+      "title": "Slash Adjusted Yield by Node · 30d",
+      "metric": "agi_alpha_node_alpha_wu_breakdown",
+      "labels": {
+        "window": "30d",
+        "dimension": "node",
+        "metric": "slashingAdjustedYield"
+      }
+    },
+    {
+      "type": "table",
+      "title": "Slash Adjusted Yield by Agent · 7d",
+      "metric": "agi_alpha_node_alpha_wu_breakdown",
+      "labels": {
+        "window": "7d",
+        "dimension": "agent",
+        "metric": "slashingAdjustedYield"
+      }
+    },
+    {
+      "type": "table",
+      "title": "Slash Adjusted Yield by Agent · 30d",
+      "metric": "agi_alpha_node_alpha_wu_breakdown",
+      "labels": {
+        "window": "30d",
+        "dimension": "agent",
         "metric": "slashingAdjustedYield"
       }
     }
