@@ -1,0 +1,36 @@
+specVersion: 1.0.0
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: AlphaNodeManager
+    network: mainnet
+    source:
+      address: "{{alphaNodeManagerAddress}}"
+      abi: AlphaNodeManager
+      startBlock: {{alphaNodeManagerStartBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Agent
+        - Node
+        - WorkUnit
+        - AgentDailyMetric
+        - NodeDailyMetric
+        - AgentMetricWindow
+        - NodeMetricWindow
+      abis:
+        - name: AlphaNodeManager
+          file: ./abis/AlphaNodeManager.json
+      eventHandlers:
+        - event: AlphaWUMinted(indexed bytes32,indexed address,indexed address,uint256)
+          handler: handleAlphaWUMinted
+        - event: AlphaWUValidated(indexed bytes32,indexed address,uint256,uint256,uint256)
+          handler: handleAlphaWUValidated
+        - event: AlphaWUAccepted(indexed bytes32,uint256)
+          handler: handleAlphaWUAccepted
+        - event: SlashApplied(indexed bytes32,indexed address,uint256,uint256)
+          handler: handleSlashApplied
+      file: ./src/mapping.ts

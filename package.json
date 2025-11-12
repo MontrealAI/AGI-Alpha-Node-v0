@@ -21,6 +21,7 @@
     "ci:coverage": "npm run coverage",
     "ci:policy": "node scripts/verify-health-gate.mjs",
     "ci:verify": "npm run ci:lint && npm run ci:test && npm run ci:coverage && npm run ci:policy",
+    "simulate:subgraph": "node scripts/subgraph-simulation.js",
     "prepare": "node -e \"const { existsSync } = require('node:fs'); const { join } = require('node:path'); const script = join(process.cwd(), 'scripts/prepare-husky.cjs'); if (!existsSync(script)) { console.log('husky prepare script missing; skipping'); process.exit(0); } require(script);\""
   },
   "engines": {

@@ -1,0 +1,15 @@
+{
+  "name": "agi-alpha-node-subgraph",
+  "version": "0.1.0",
+  "license": "MIT",
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build"
+  },
+  "dependencies": {
+    "@graphprotocol/graph-ts": "^0.34.1"
+  },
+  "devDependencies": {
+    "@graphprotocol/graph-cli": "^0.64.1"
+  }
+}
