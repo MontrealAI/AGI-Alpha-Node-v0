@@ -284,7 +284,10 @@ export async function launchMonitoring({
   if (telemetry.healthGateGauge) {
     telemetry.healthGateGauge.reset();
     const gateHealthy = healthGate?.isHealthy?.() ?? true;
-    telemetry.healthGateGauge.set({ state: gateHealthy ? 'ready' : 'sealed' }, gateHealthy ? 1 : 0);
+    const readyValue = gateHealthy ? 1 : 0;
+    const sealedValue = gateHealthy ? 0 : 1;
+    telemetry.healthGateGauge.set({ state: 'ready' }, readyValue);
+    telemetry.healthGateGauge.set({ state: 'sealed' }, sealedValue);
   }
   if (performance) {
     if (telemetry.jobThroughputGauge && performance.throughputPerEpoch !== undefined) {
@@ -333,6 +336,12 @@ export async function launchMonitoring({
       }
     }
     const gateHealthy = healthGate?.isHealthy?.() ?? true;
+    const readyValue = gateHealthy ? 1 : 0;
+    const sealedValue = gateHealthy ? 0 : 1;
+    if (telemetry.healthGateGauge) {
+      telemetry.healthGateGauge.set({ state: 'ready' }, readyValue);
+      telemetry.healthGateGauge.set({ state: 'sealed' }, sealedValue);
+    }
     const alphaMetrics = performance.alphaWorkUnits ?? performance.jobMetrics?.alphaWorkUnits ?? null;
     if (gateHealthy && alphaMetrics) {
       applyAlphaWorkUnitMetricsToTelemetry(telemetry, alphaMetrics);

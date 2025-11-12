@@ -111,7 +111,10 @@ function updateTelemetryGauges(telemetry, diagnostics, healthGate) {
   }
 
   if (telemetry.healthGateGauge) {
-    telemetry.healthGateGauge.set({ state: gateHealthy ? 'ready' : 'sealed' }, gateHealthy ? 1 : 0);
+    const readyValue = gateHealthy ? 1 : 0;
+    const sealedValue = gateHealthy ? 0 : 1;
+    telemetry.healthGateGauge.set({ state: 'ready' }, readyValue);
+    telemetry.healthGateGauge.set({ state: 'sealed' }, sealedValue);
   }
 }
 
