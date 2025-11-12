@@ -50,13 +50,14 @@
 2. [Alpha-WU Telemetry Fabric](#alpha-wu-telemetry-fabric)
 3. [Governance Dominance](#governance-dominance)
 4. [Identity & Health Gate](#identity--health-gate)
-5. [Operational Flight Plan](#operational-flight-plan)
-6. [CI & Quality Lattice](#ci--quality-lattice)
-7. [Repository Atlas](#repository-atlas)
-8. [Telemetry Blueprints](#telemetry-blueprints)
-9. [Deployment & Observability](#deployment--observability)
-10. [Token, ENS & Identity](#token-ens--identity)
-11. [License](#license)
+5. [Treasury & Token Spine](#treasury--token-spine)
+6. [Operational Flight Plan](#operational-flight-plan)
+7. [CI & Quality Lattice](#ci--quality-lattice)
+8. [Repository Atlas](#repository-atlas)
+9. [Telemetry Blueprints](#telemetry-blueprints)
+10. [Deployment & Observability](#deployment--observability)
+11. [Token, ENS & Identity](#token-ens--identity)
+12. [License](#license)
 
 ---
 
@@ -228,6 +229,46 @@ stateDiagram-v2
 - Allowlist patterns enforced: `*.agent.agi.eth`, `*.alpha.agent.agi.eth`, `*.node.agi.eth`, `*.alpha.node.agi.eth`, `*.alpha.club.agi.eth`, `*.club.agi.eth` (see [`src/services/healthGate.js`](src/services/healthGate.js)).
 - CI policy guardrail: [`scripts/verify-health-gate.mjs`](scripts/verify-health-gate.mjs) runs in every workflow and fails if the allowlist drifts.
 - Health state surfaces: Prometheus gauge `agi_alpha_node_health_gate_state`, REST `/metrics`, CLI `status` and `monitor` commands, plus append-only journals in [`src/services/lifecycleJournal.js`](src/services/lifecycleJournal.js).
+
+---
+
+## Treasury & Token Spine
+
+The $AGIALPHA rail is locked to the canonical contract (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`) with checksum safety, so ev
+ery approval, transfer, and balance probe defaults to the immutable treasury locus unless the owner deliberately opts out. [`src
+/constants/token.js`](src/constants/token.js) exposes the normalized address, decimal precision, and guard rails. [`src/services/
+token.js`](src/services/token.js) wraps ERC‑20 flows with owner-centric builders so delegation is always explicit and reversible.
+
+```mermaid
+flowchart LR
+  classDef contract fill:#0f172a,stroke:#facc15,stroke-width:2px,color:#f8fafc;
+  classDef control fill:#111827,stroke:#38bdf8,stroke-width:2px,color:#f8fafc;
+  classDef ledger fill:#1f2937,stroke:#9333ea,stroke-width:2px,color:#f8fafc;
+
+  Owner["Owner Console"]:::control --> CLI["CLI · token commands"]:::control
+  CLI --> Builder["buildTokenApproveTx"]:::control
+  Builder --> Ledger[(AGIALPHA Treasury)]:::ledger
+  Ledger --> Allowance[["allowance()"]]:::contract
+  Ledger --> Balance[["balanceOf()"]]:::contract
+  Allowance --> Monitor["CI Policy Gate"]:::control
+  Monitor --> Owner
+  Balance --> Rewards["RewardEngine"]:::ledger
+```
+
+- **Approvals & allowances**: `buildTokenApproveTx` never emits a payload unless the spender and amount survive checksum and deci
+mal validation, preventing accidental approvals to adversarial addresses by default.【F:src/services/token.js†L35-L79】
+- **Read-models**: `getTokenAllowance` and `getTokenBalance` coerce every response to `bigint`, making it safe for downstream econ
+omic projections without losing precision.【F:src/services/token.js†L81-L118】
+- **Canonical asserts**: `assertCanonicalAgialphaAddress` rejects drift from the published `$AGIALPHA` contract, keeping every dep
+loyment anchored to the treasury contract with 18 decimals.【F:src/constants/token.js†L3-L26】
+- **CI enforcement**: The policy hook [`scripts/verify-health-gate.mjs`](scripts/verify-health-gate.mjs) runs on every workflow to verify the ENS allowlist before merges land, so treasury toggles cannot drift without owner review.【F:scripts/verify-health-gate.mjs†L1-L71】
+- **Runtime proof**: Tests such as [`test/token.test.js`](test/token.test.js) and [`test/rewards.test.js`](test/rewards.test.js) c
+over allowance, balance probes, and reward flows so CI prevents regressions before they reach the chain.【F:test/token.test.js†L1
+-L164】【F:test/rewards.test.js†L1-L192】
+
+The reward logic consumes these token guards when projecting validator, agent, and node earnings. The owner can therefore retune
+stake incentives, payouts, or emergency clamps with the same CLI that already manages governance payloads, guaranteeing a single
+pane of command for treasury and emissions.
 
 ---
 
