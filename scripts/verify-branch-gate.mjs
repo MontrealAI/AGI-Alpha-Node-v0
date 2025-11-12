@@ -1,15 +1,17 @@
 import process from 'node:process';
+import { pathToFileURL } from 'node:url';
+import { resolve as pathResolve } from 'node:path';
 import { configSchema, coerceConfig } from '../src/config/schema.js';
 import { createHealthGate } from '../src/services/healthGate.js';
 
-const CRITICAL_PREFIXES = ['deploy/', 'release/', 'hotfix/'];
+export const CRITICAL_PREFIXES = ['deploy/', 'release/', 'hotfix/'];
 
-function resolveBranchName() {
+export function resolveBranchName(env = process.env) {
   const candidates = [
-    process.env.GITHUB_HEAD_REF,
-    process.env.GITHUB_REF_NAME,
-    process.env.BRANCH_NAME,
-    process.env.GITHUB_REF
+    env.GITHUB_HEAD_REF,
+    env.GITHUB_REF_NAME,
+    env.BRANCH_NAME,
+    env.GITHUB_REF
   ].filter(Boolean);
 
   if (!candidates.length) {
@@ -26,7 +28,10 @@ function resolveBranchName() {
   return ref;
 }
 
-function extractEnsFromBranch(branchName) {
+export function extractEnsFromBranch(branchName) {
+  if (!branchName) {
+    return null;
+  }
   const match = CRITICAL_PREFIXES.find((prefix) => branchName.startsWith(prefix));
   if (!match) {
     return null;
@@ -44,40 +49,52 @@ function extractEnsFromBranch(branchName) {
   return candidate;
 }
 
-async function main() {
-  const branchName = resolveBranchName();
+export function verifyBranchGate({ env = process.env, logger = console } = {}) {
+  const branchName = resolveBranchName(env);
   if (!branchName) {
-    console.log('Branch name not detected; skipping branch gate verification.');
-    return;
+    logger?.log?.('Branch name not detected; skipping branch gate verification.');
+    return { authorized: true, branchName: null, reason: 'no-branch' };
   }
 
   const ensCandidate = extractEnsFromBranch(branchName);
   if (!ensCandidate) {
-    console.log(`Branch "${branchName}" is not marked as merge-critical; no ENS gate enforcement required.`);
-    return;
+    logger?.log?.(
+      `Branch "${branchName}" is not marked as merge-critical; no ENS gate enforcement required.`
+    );
+    return { authorized: true, branchName, reason: 'non-critical' };
   }
 
   const allowedKeys = new Set(Object.keys(configSchema.shape));
   const envSubset = Object.fromEntries(
-    Object.entries(process.env).filter(([key]) => allowedKeys.has(key))
+    Object.entries(env).filter(([key]) => allowedKeys.has(key))
   );
   const config = coerceConfig(envSubset);
   const healthGate = createHealthGate({ allowlist: config.HEALTH_GATE_ALLOWLIST });
 
   if (!healthGate.matchesAllowlist(ensCandidate)) {
-    console.error(
-      `Branch "${branchName}" is tagged as merge-critical but ENS handle "${ensCandidate}" is not allowlisted.`
-    );
-    console.error('Allowed ENS patterns:', healthGate.getAllowlist().join(', '));
-    process.exit(1);
+    const message =
+      `Branch "${branchName}" is tagged as merge-critical but ENS handle "${ensCandidate}" is not allowlisted.`;
+    logger?.error?.(message);
+    logger?.error?.('Allowed ENS patterns:', healthGate.getAllowlist().join(', '));
+    const error = new Error(message);
+    error.code = 'ENS_NOT_ALLOWLISTED';
+    throw error;
   }
 
-  console.log(
-    `Branch "${branchName}" authorized via ENS handle "${ensCandidate}".`
-  );
+  logger?.log?.(`Branch "${branchName}" authorized via ENS handle "${ensCandidate}".`);
+  return { authorized: true, branchName, ens: ensCandidate };
 }
 
-main().catch((error) => {
-  console.error('Branch gate verification failed:', error);
-  process.exit(1);
-});
+async function runCli() {
+  verifyBranchGate();
+}
+
+const isDirectExecution = Boolean(process.argv[1]) &&
+  import.meta.url === pathToFileURL(pathResolve(process.argv[1])).href;
+
+if (isDirectExecution) {
+  runCli().catch((error) => {
+    console.error('Branch gate verification failed:', error);
+    process.exit(1);
+  });
+}

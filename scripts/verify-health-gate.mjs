@@ -1,7 +1,10 @@
+import process from 'node:process';
+import { pathToFileURL } from 'node:url';
+import { resolve as pathResolve } from 'node:path';
 import { configSchema, coerceConfig } from '../src/config/schema.js';
 import { createHealthGate } from '../src/services/healthGate.js';
 
-const REQUIRED_PATTERNS = [
+export const REQUIRED_PATTERNS = [
   '*.agent.agi.eth',
   '*.alpha.agent.agi.eth',
   '*.node.agi.eth',
@@ -10,10 +13,10 @@ const REQUIRED_PATTERNS = [
   '*.club.agi.eth'
 ];
 
-async function main() {
+export function verifyHealthGate({ env = process.env, logger = console } = {}) {
   const allowedKeys = new Set(Object.keys(configSchema.shape));
   const filtered = Object.fromEntries(
-    Object.entries(process.env).filter(([key]) => allowedKeys.has(key))
+    Object.entries(env).filter(([key]) => allowedKeys.has(key))
   );
   const config = coerceConfig(filtered);
   const gate = createHealthGate({ allowlist: config.HEALTH_GATE_ALLOWLIST });
@@ -21,8 +24,11 @@ async function main() {
 
   const missingPatterns = REQUIRED_PATTERNS.filter((pattern) => !allowlist.includes(pattern));
   if (missingPatterns.length) {
-    console.error('Health gate allowlist missing required ENS patterns:', missingPatterns.join(', '));
-    process.exit(1);
+    const message = `Health gate allowlist missing required ENS patterns: ${missingPatterns.join(', ')}`;
+    logger?.error?.(message);
+    const error = new Error(message);
+    error.code = 'ENS_PATTERNS_MISSING';
+    throw error;
   }
 
   const nodeName = config.NODE_LABEL && config.ENS_PARENT_DOMAIN
@@ -30,21 +36,36 @@ async function main() {
     : null;
 
   if (nodeName && !gate.matchesAllowlist(nodeName)) {
-    console.error(`Configured node name ${nodeName} is not permitted by the health gate allowlist.`);
-    process.exit(1);
+    const message = `Configured node name ${nodeName} is not permitted by the health gate allowlist.`;
+    logger?.error?.(message);
+    const error = new Error(message);
+    error.code = 'NODE_NOT_ALLOWLISTED';
+    throw error;
   }
 
   if (config.HEALTH_GATE_OVERRIDE_ENS && !gate.matchesAllowlist(config.HEALTH_GATE_OVERRIDE_ENS)) {
-    console.error(
-      `HEALTH_GATE_OVERRIDE_ENS ${config.HEALTH_GATE_OVERRIDE_ENS} is not covered by the active allowlist.`
-    );
-    process.exit(1);
+    const message =
+      `HEALTH_GATE_OVERRIDE_ENS ${config.HEALTH_GATE_OVERRIDE_ENS} is not covered by the active allowlist.`;
+    logger?.error?.(message);
+    const error = new Error(message);
+    error.code = 'OVERRIDE_NOT_ALLOWLISTED';
+    throw error;
   }
 
-  console.log('Health gate allowlist verified. Active patterns:', allowlist.join(', '));
+  logger?.log?.('Health gate allowlist verified. Active patterns:', allowlist.join(', '));
+  return { allowlist, nodeName, override: config.HEALTH_GATE_OVERRIDE_ENS ?? null };
 }
 
-main().catch((error) => {
-  console.error('Health gate verification failed:', error);
-  process.exit(1);
-});
+async function runCli() {
+  verifyHealthGate();
+}
+
+const isDirectExecution = Boolean(process.argv[1]) &&
+  import.meta.url === pathToFileURL(pathResolve(process.argv[1])).href;
+
+if (isDirectExecution) {
+  runCli().catch((error) => {
+    console.error('Health gate verification failed:', error);
+    process.exit(1);
+  });
+}
