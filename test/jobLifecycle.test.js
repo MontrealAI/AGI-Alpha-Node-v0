@@ -151,6 +151,44 @@ describe('job lifecycle service', () => {
     expect(actionTypes).toEqual(expect.arrayContaining(['apply', 'submit', 'finalize']));
   });
 
+  it('records alpha work unit events manually and surfaces metrics', () => {
+    const lifecycle = createJobLifecycle({});
+    const events = [];
+    lifecycle.on('alpha-wu:event', (event) => events.push(event));
+
+    const unitId = '0x' + 'aa'.repeat(32);
+    lifecycle.recordAlphaWorkUnitEvent('minted', {
+      id: unitId,
+      agent: '0x0000000000000000000000000000000000000011',
+      node: '0x0000000000000000000000000000000000000022',
+      timestamp: 1_700_000_000
+    });
+    lifecycle.recordAlphaWorkUnitEvent('validated', {
+      id: unitId,
+      validator: '0x0000000000000000000000000000000000000033',
+      stake: 100,
+      score: 0.95,
+      timestamp: 1_700_000_100
+    });
+    lifecycle.recordAlphaWorkUnitEvent('accepted', {
+      id: unitId,
+      timestamp: 1_700_000_180
+    });
+    lifecycle.recordAlphaWorkUnitEvent('slashed', {
+      id: unitId,
+      validator: '0x0000000000000000000000000000000000000033',
+      amount: 0.5,
+      timestamp: 1_700_000_200
+    });
+
+    const alphaMetrics = lifecycle.getAlphaWorkUnitMetrics();
+    expect(alphaMetrics.overall.totals.minted).toBe(1);
+    expect(alphaMetrics.overall.totals.accepted).toBe(1);
+    expect(alphaMetrics.overall.acceptanceRate).toBeCloseTo(1);
+    expect(events).toHaveLength(4);
+    expect(events[0].type).toBe('minted');
+  });
+
   it('runs validator-aware v2 flow including notifyValidator and records telemetry', async () => {
     const normalizedJobId = zeroPadValue(keccak256(toUtf8Bytes('job-99')), 32);
     const submitWithValidator = vi.fn(async () => ({ hash: '0xsubmitv2' }));
@@ -240,11 +278,42 @@ describe('job lifecycle service', () => {
     const validatedWatcher = watchers.find((entry) => entry.filter.topics?.[0] === v2Interface.getEvent('JobValidated').topicHash);
     validatedWatcher.handler(validatedLog);
 
+    const alphaMintedLog = buildLog(v2Interface, 'AlphaWUMinted', [jobId, registryAddress, registryAddress, 1_600_000_010n]);
+    const alphaMintedWatcher = watchers.find(
+      (entry) => entry.filter?.topics?.[0] === v2Interface.getEvent('AlphaWUMinted').topicHash
+    );
+    expect(alphaMintedWatcher).toBeDefined();
+    alphaMintedWatcher.handler(alphaMintedLog);
+
+    const alphaValidatedLog = buildLog(v2Interface, 'AlphaWUValidated', [
+      jobId,
+      registryAddress,
+      100n,
+      90,
+      1_600_000_020n
+    ]);
+    const alphaValidatedWatcher = watchers.find(
+      (entry) => entry.filter?.topics?.[0] === v2Interface.getEvent('AlphaWUValidated').topicHash
+    );
+    expect(alphaValidatedWatcher).toBeDefined();
+    alphaValidatedWatcher.handler(alphaValidatedLog);
+
+    const alphaAcceptedLog = buildLog(v2Interface, 'AlphaWUAccepted', [jobId, 1_600_000_030n]);
+    const alphaAcceptedWatcher = watchers.find(
+      (entry) => entry.filter?.topics?.[0] === v2Interface.getEvent('AlphaWUAccepted').topicHash
+    );
+    expect(alphaAcceptedWatcher).toBeDefined();
+    alphaAcceptedWatcher.handler(alphaAcceptedLog);
+
     const job = lifecycle.getJob(jobId);
     expect(job.status).toBe('validated');
 
     const metrics = lifecycle.getMetrics();
     expect(metrics.validatorNotifications).toBeGreaterThan(0);
+
+    const alphaMetrics = lifecycle.getAlphaWorkUnitMetrics();
+    expect(alphaMetrics.overall.totals.minted).toBeGreaterThanOrEqual(1);
+    expect(alphaMetrics.overall.acceptanceRate).toBeGreaterThan(0);
 
     const validationEntries = journal.entries.filter((entry) => entry.kind === 'action' && entry.action.type === 'validation');
     expect(validationEntries).toHaveLength(1);

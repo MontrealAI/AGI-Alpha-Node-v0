@@ -1,0 +1,71 @@
+{
+  "version": "1.0.0",
+  "title": "AGI Alpha Work Unit Observatory",
+  "description": "Read-only dashboard blueprint for visualising alpha work unit KPIs across agents, nodes, and validators.",
+  "datasources": [
+    {
+      "type": "prometheus",
+      "name": "alpha-node-telemetry",
+      "endpoint": "http://alpha-node.local:9464/metrics"
+    },
+    {
+      "type": "subgraph",
+      "name": "alpha-wu-subgraph",
+      "endpoint": "https://api.thegraph.com/subgraphs/name/agi/alpha-work-units"
+    }
+  ],
+  "widgets": [
+    {
+      "type": "stat",
+      "title": "Acceptance Rate",
+      "source": "alpha-node-telemetry",
+      "query": "agi_alpha_node_alpha_wu_acceptance_rate{window=\"7d\"}",
+      "format": "percent",
+      "thresholds": {
+        "good": 0.8,
+        "warn": 0.6
+      }
+    },
+    {
+      "type": "stat",
+      "title": "p95 Completion Latency",
+      "source": "alpha-node-telemetry",
+      "query": "agi_alpha_node_alpha_wu_on_time_p95_seconds{window=\"7d\"}",
+      "format": "duration"
+    },
+    {
+      "type": "stat",
+      "title": "Slashing-Adjusted Yield",
+      "source": "alpha-node-telemetry",
+      "query": "agi_alpha_node_alpha_wu_slash_adjusted_yield{window=\"7d\"}",
+      "format": "percent"
+    },
+    {
+      "type": "table",
+      "title": "Validator Weighted Quality",
+      "source": "alpha-node-telemetry",
+      "query": "agi_alpha_node_alpha_wu_quality{window=\"7d\",dimension=\"validator\"}",
+      "columns": [
+        { "header": "Validator", "field": "key" },
+        { "header": "Score", "field": "value", "format": "decimal" }
+      ]
+    },
+    {
+      "type": "bar",
+      "title": "Top Agents by Slashing Adjusted Yield",
+      "source": "alpha-wu-subgraph",
+      "query": "{ aggregates(first:10, where:{entityType:\"agent\", windowSeconds:604800}, orderBy: slashingAdjustedYield, orderDirection:desc) { entityId slashingAdjustedYield } }",
+      "xField": "entityId",
+      "yField": "slashingAdjustedYield"
+    },
+    {
+      "type": "line",
+      "title": "Acceptance Rate Trend (30d)",
+      "source": "alpha-wu-subgraph",
+      "query": "{ aggregates(where:{entityType:\"node\", windowSeconds:2592000}) { entityId acceptanceRate updatedAt } }",
+      "xField": "updatedAt",
+      "yField": "acceptanceRate",
+      "groupField": "entityId"
+    }
+  ]
+}

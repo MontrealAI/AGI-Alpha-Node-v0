@@ -4,6 +4,7 @@ import { verifyNodeOwnership } from '../services/ensVerifier.js';
 import { getStakeStatus, validateStakeThreshold, evaluateStakeConditions } from '../services/staking.js';
 import { projectEpochRewards } from '../services/rewards.js';
 import { startMonitoringServer } from '../telemetry/monitoring.js';
+import { applyAlphaWorkUnitMetricsToTelemetry } from '../telemetry/alphaMetrics.js';
 import { formatTokenAmount } from '../utils/formatters.js';
 import { deriveOwnerDirectives } from '../services/controlPlane.js';
 import { fetchGovernanceStatus } from '../services/governanceStatus.js';
@@ -191,6 +192,9 @@ export async function runNodeDiagnostics({
           merged.tokenEarningsProjection = projected;
         }
         merged.jobMetrics = jobMetrics;
+        if (jobMetrics.alphaWorkUnits) {
+          merged.alphaWorkUnits = jobMetrics.alphaWorkUnits;
+        }
         performance = merged;
       }
     } catch (metricsError) {
@@ -321,6 +325,27 @@ export async function launchMonitoring({
           telemetry.registryCompatibilityGauge.set({ profile: profileId, reason }, 1);
         });
       }
+    }
+    const alphaMetrics = performance.alphaWorkUnits ?? performance.jobMetrics?.alphaWorkUnits ?? null;
+    if (alphaMetrics) {
+      applyAlphaWorkUnitMetricsToTelemetry(telemetry, alphaMetrics);
+    } else if (
+      telemetry.alphaAcceptanceGauge ||
+      telemetry.alphaOnTimeGauge ||
+      telemetry.alphaYieldGauge ||
+      telemetry.alphaQualityGauge ||
+      telemetry.alphaBreakdownGauge
+    ) {
+      applyAlphaWorkUnitMetricsToTelemetry(telemetry, {
+        overall: {
+          window: 'all',
+          acceptanceRate: 0,
+          onTimeP95Seconds: 0,
+          slashingAdjustedYield: 0,
+          quality: {}
+        },
+        windows: []
+      });
     }
   }
   return telemetry;

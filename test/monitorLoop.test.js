@@ -16,7 +16,72 @@ const mockDiagnostics = {
       { agent: 'orion', utilization: 0.9 },
       { agent: 'helix', utilization: 0.75 }
     ],
-    jobMetrics: { lastJobProvider: 'remote' }
+    jobMetrics: { lastJobProvider: 'remote' },
+    alphaWorkUnits: {
+      overall: {
+        window: 'all',
+        acceptanceRate: 0.8,
+        onTimeP95Seconds: 120,
+        slashingAdjustedYield: 0.05,
+        quality: {
+          global: 0.91,
+          perAgent: { orion: 0.9 },
+          perNode: { '1.alpha.node.agi.eth': 0.88 },
+          perValidator: { '0x00000000000000000000000000000000000000aa': 0.87 }
+        },
+        breakdowns: {
+          agents: {
+            orion: {
+              minted: 2,
+              accepted: 2,
+              acceptanceRate: 1,
+              onTimeP95Seconds: 120,
+              stake: 300,
+              slashes: 0,
+              slashingAdjustedYield: 0.006
+            }
+          },
+          nodes: {
+            '1.alpha.node.agi.eth': {
+              minted: 2,
+              accepted: 2,
+              acceptanceRate: 1,
+              onTimeP95Seconds: 120,
+              stake: 300,
+              slashes: 0,
+              slashingAdjustedYield: 0.006
+            }
+          },
+          validators: {
+            '0x00000000000000000000000000000000000000aa': {
+              minted: 2,
+              validated: 2,
+              validations: 2,
+              accepted: 2,
+              acceptanceRate: 1,
+              onTimeP95Seconds: 120,
+              stake: 200,
+              slashes: 0,
+              slashingAdjustedYield: 0.01
+            }
+          }
+        }
+      },
+      windows: [
+        {
+          window: '7d',
+          acceptanceRate: 0.75,
+          onTimeP95Seconds: 140,
+          slashingAdjustedYield: 0.045,
+          quality: { global: 0.85 },
+          breakdowns: {
+            agents: {},
+            nodes: {},
+            validators: {}
+          }
+        }
+      ]
+    }
   }
 };
 
@@ -28,7 +93,14 @@ const telemetryMock = {
   jobSuccessGauge: { set: vi.fn() },
   tokenEarningsGauge: { set: vi.fn() },
   agentUtilizationGauge: { set: vi.fn(), reset: vi.fn() },
-  providerModeGauge: { set: vi.fn(), reset: vi.fn() }
+  providerModeGauge: { set: vi.fn(), reset: vi.fn() },
+  registryProfileGauge: { set: vi.fn(), reset: vi.fn() },
+  registryCompatibilityGauge: { set: vi.fn(), reset: vi.fn() },
+  alphaAcceptanceGauge: { set: vi.fn(), reset: vi.fn() },
+  alphaOnTimeGauge: { set: vi.fn(), reset: vi.fn() },
+  alphaYieldGauge: { set: vi.fn(), reset: vi.fn() },
+  alphaQualityGauge: { set: vi.fn(), reset: vi.fn() },
+  alphaBreakdownGauge: { set: vi.fn(), reset: vi.fn() }
 };
 
 vi.mock('../src/orchestrator/nodeRuntime.js', () => ({
@@ -67,6 +139,20 @@ describe('monitorLoop', () => {
     telemetryMock.tokenEarningsGauge.set.mockClear();
     telemetryMock.agentUtilizationGauge.set.mockClear();
     telemetryMock.agentUtilizationGauge.reset.mockClear();
+    telemetryMock.registryProfileGauge.reset.mockClear();
+    telemetryMock.registryProfileGauge.set.mockClear();
+    telemetryMock.registryCompatibilityGauge.reset.mockClear();
+    telemetryMock.registryCompatibilityGauge.set.mockClear();
+    telemetryMock.alphaAcceptanceGauge.reset.mockClear();
+    telemetryMock.alphaAcceptanceGauge.set.mockClear();
+    telemetryMock.alphaOnTimeGauge.reset.mockClear();
+    telemetryMock.alphaOnTimeGauge.set.mockClear();
+    telemetryMock.alphaYieldGauge.reset.mockClear();
+    telemetryMock.alphaYieldGauge.set.mockClear();
+    telemetryMock.alphaQualityGauge.reset.mockClear();
+    telemetryMock.alphaQualityGauge.set.mockClear();
+    telemetryMock.alphaBreakdownGauge.reset.mockClear();
+    telemetryMock.alphaBreakdownGauge.set.mockClear();
   });
 
   afterEach(() => {

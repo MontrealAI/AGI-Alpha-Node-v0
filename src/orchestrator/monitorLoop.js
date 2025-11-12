@@ -2,6 +2,7 @@ import pino from 'pino';
 import { runNodeDiagnostics, launchMonitoring } from './nodeRuntime.js';
 import { formatTokenAmount } from '../utils/formatters.js';
 import { loadOfflineSnapshot } from '../services/offlineSnapshot.js';
+import { applyAlphaWorkUnitMetricsToTelemetry } from '../telemetry/alphaMetrics.js';
 
 function assertPositiveInteger(value, name) {
   if (!Number.isFinite(value) || value <= 0 || Math.floor(value) !== value) {
@@ -85,6 +86,27 @@ function updateTelemetryGauges(telemetry, diagnostics) {
         telemetry.registryCompatibilityGauge.set({ profile: profileId, reason }, 1);
       });
     }
+  }
+
+  const alphaMetrics = performance?.alphaWorkUnits ?? performance?.jobMetrics?.alphaWorkUnits ?? null;
+  if (alphaMetrics) {
+    applyAlphaWorkUnitMetricsToTelemetry(telemetry, alphaMetrics);
+  } else if (
+    telemetry.alphaAcceptanceGauge ||
+    telemetry.alphaOnTimeGauge ||
+    telemetry.alphaYieldGauge ||
+    telemetry.alphaQualityGauge
+  ) {
+    applyAlphaWorkUnitMetricsToTelemetry(telemetry, {
+      overall: {
+        window: 'all',
+        acceptanceRate: 0,
+        onTimeP95Seconds: 0,
+        slashingAdjustedYield: 0,
+        quality: {}
+      },
+      windows: []
+    });
   }
 }
 
