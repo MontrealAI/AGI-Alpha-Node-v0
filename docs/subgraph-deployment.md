@@ -30,6 +30,22 @@ accepted, and slashed Alpha Work Units.
      first relevant event on the target network.
    - Adjust the `network` value if you are indexing a chain other than mainnet.
 
+3. For CI or quick local validation runs, render a manifest with safe defaults
+   (or your desired overrides) by running:
+
+   ```bash
+   # optionally export real deployment details before rendering
+   export ALPHA_NODE_MANAGER_ADDRESS=0x0000000000000000000000000000000000000000
+   export ALPHA_NODE_MANAGER_START_BLOCK=0
+
+   node scripts/render-subgraph-manifest.mjs
+   ```
+
+   This produces `subgraph/subgraph.ci.yaml`, which `npm run ci:ts` consumes via
+   `graph build subgraph.ci.yaml`. The script falls back to the zero address and
+   block `0` so the Graph CLI can parse the manifest even when no deployment
+   metadata has been supplied yet.
+
 ## Build & deploy
 
 Run the standard Graph CLI pipeline from the `subgraph` directory:

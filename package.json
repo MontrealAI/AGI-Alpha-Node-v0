@@ -22,7 +22,7 @@
     "ci:test": "npm run test",
     "ci:coverage": "npm run coverage",
     "ci:solidity": "npm run lint:sol && npm run test:sol",
-    "ci:ts": "npm --prefix subgraph ci --no-audit --no-fund && npm --prefix subgraph run build",
+    "ci:ts": "node scripts/render-subgraph-manifest.mjs && npm --prefix subgraph ci --no-audit --no-fund && npm --prefix subgraph run codegen:ci && npm --prefix subgraph run build:ci",
     "ci:security": "npm audit --omit=dev --audit-level=high",
     "ci:policy": "node scripts/verify-health-gate.mjs",
     "ci:branch": "node scripts/verify-branch-gate.mjs",

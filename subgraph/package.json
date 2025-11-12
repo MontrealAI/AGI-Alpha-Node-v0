@@ -4,7 +4,9 @@
   "license": "MIT",
   "scripts": {
     "codegen": "graph codegen",
-    "build": "graph build"
+    "codegen:ci": "graph codegen subgraph.ci.yaml",
+    "build": "graph build",
+    "build:ci": "graph build subgraph.ci.yaml"
   },
   "dependencies": {
     "@graphprotocol/graph-ts": "^0.38.2"
