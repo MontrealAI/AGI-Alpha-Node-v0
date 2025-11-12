@@ -206,7 +206,7 @@ For non-React front-ends, fetch the JSON once and hydrate an existing Grafana pa
 
 Widgets can point directly at the deterministic KPI subgraph (`alphaSubgraph` datasource). The following GraphQL snippets cover common tasks:
 
-**Validator quality leaderboard (24h window)**
+#### Validator quality leaderboard (24h window)
 
 ```graphql
 query ValidationLeaderboard($windowStart: BigInt!) {
@@ -225,7 +225,7 @@ query ValidationLeaderboard($windowStart: BigInt!) {
 }
 ```
 
-**Agent acceptance rate SLO (7d window)**
+#### Agent acceptance rate SLO (7d window)
 
 ```graphql
 query AgentAcceptance($agent: Bytes!, $from: BigInt!, $to: BigInt!) {
@@ -239,7 +239,7 @@ query AgentAcceptance($agent: Bytes!, $from: BigInt!, $to: BigInt!) {
 }
 ```
 
-**Minted vs. accepted totals by node (30d window)**
+#### Minted vs. accepted totals by node (30d window)
 
 ```graphql
 query NodeProduction($window: String!) {
