@@ -197,6 +197,12 @@ function computeQualityMetrics(records, validatorsStakeMap, windowLabel) {
     perValidator: new Map()
   };
 
+  const weightTotals = {
+    perAgent: new Map(),
+    perNode: new Map(),
+    perValidator: new Map()
+  };
+
   let globalWeight = 0;
 
   for (const { record, validations } of records) {
@@ -219,36 +225,53 @@ function computeQualityMetrics(records, validatorsStakeMap, windowLabel) {
     if (record.agent) {
       const previous = qualityTotals.perAgent.get(record.agent) ?? 0;
       qualityTotals.perAgent.set(record.agent, previous + medianScore * weight);
+      const previousWeight = weightTotals.perAgent.get(record.agent) ?? 0;
+      weightTotals.perAgent.set(record.agent, previousWeight + weight);
     }
     if (record.node) {
       const previous = qualityTotals.perNode.get(record.node) ?? 0;
       qualityTotals.perNode.set(record.node, previous + medianScore * weight);
+      const previousWeight = weightTotals.perNode.get(record.node) ?? 0;
+      weightTotals.perNode.set(record.node, previousWeight + weight);
     }
     if (totalStake > 0 && unitStake > 0) {
       validations.forEach((entry) => {
         const validatorWeight = entry.stake / totalStake;
+        if (!entry.validator || !Number.isFinite(validatorWeight) || validatorWeight <= 0) {
+          return;
+        }
         const previous = qualityTotals.perValidator.get(entry.validator) ?? 0;
         qualityTotals.perValidator.set(entry.validator, previous + medianScore * validatorWeight);
+        const previousWeight = weightTotals.perValidator.get(entry.validator) ?? 0;
+        weightTotals.perValidator.set(entry.validator, previousWeight + validatorWeight);
       });
     }
   }
 
-  if (globalWeight > 0) {
-    qualityTotals.global = qualityTotals.global;
-  }
+  const normalizeValue = (value, weight) => {
+    if (!Number.isFinite(value) || !Number.isFinite(weight) || weight <= 0) {
+      return 0;
+    }
+    const normalized = value / weight;
+    return Number.isFinite(normalized) ? normalized : 0;
+  };
+
+  const normalizeMap = (valueMap, weightMap) =>
+    Object.fromEntries(
+      Array.from(valueMap.entries()).map(([key, value]) => {
+        const weight = weightMap.get(key) ?? 0;
+        return [key, normalizeValue(value, weight)];
+      })
+    );
+
+  const normalizedGlobal = normalizeValue(qualityTotals.global, globalWeight);
 
   return {
     window: windowLabel,
-    global: Number.isFinite(qualityTotals.global) ? qualityTotals.global : 0,
-    perAgent: Object.fromEntries(
-      Array.from(qualityTotals.perAgent.entries()).map(([agent, value]) => [agent, value])
-    ),
-    perNode: Object.fromEntries(
-      Array.from(qualityTotals.perNode.entries()).map(([node, value]) => [node, value])
-    ),
-    perValidator: Object.fromEntries(
-      Array.from(qualityTotals.perValidator.entries()).map(([validator, value]) => [validator, value])
-    )
+    global: normalizedGlobal,
+    perAgent: normalizeMap(qualityTotals.perAgent, weightTotals.perAgent),
+    perNode: normalizeMap(qualityTotals.perNode, weightTotals.perNode),
+    perValidator: normalizeMap(qualityTotals.perValidator, weightTotals.perValidator)
   };
 }
 
