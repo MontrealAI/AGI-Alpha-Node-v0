@@ -119,7 +119,7 @@ sequenceDiagram
 | KPI | Formula | Gauge | Windows |
 | --- | --- | --- | --- |
 | **Acceptance Rate (AR)** | `accepted ÷ minted` | `agi_alpha_node_alpha_wu_acceptance_rate` | 7d · 30d · all |
-| **Validator-Weighted Quality (VQS)** | median(score) × stake weight | `agi_alpha_node_alpha_wu_quality` | 7d · 30d · all |
+| **Validator-Weighted Quality (VQS)** | median(score) × stake weight (normalized per stake share) | `agi_alpha_node_alpha_wu_quality` | 7d · 30d · all |
 | **On-Time Completion (OTC)** | `p95(accepted.ts − minted.ts)` | `agi_alpha_node_alpha_wu_on_time_p95_seconds` | 7d · 30d · all |
 | **Slashing-Adjusted Yield (SAY)** | `(accepted − slashes) ÷ stake` | `agi_alpha_node_alpha_wu_slash_adjusted_yield` | 7d · 30d · all |
 
@@ -137,6 +137,21 @@ quadrantChart
     "Validator Median" : [0.41, 0.87]
     "Recovery Candidate" : [0.68, 0.72]
 ```
+
+```mermaid
+flowchart TD
+  Minted[[AlphaWUMinted]] --> Median[Stake-Weighted Median]
+  Validated[[AlphaWUValidated]] --> Median
+  Median --> Normalized[[Normalize by Validator Stake Share]]
+  Normalized --> Gauges[[Prometheus Gauges]]
+  Normalized --> Leaderboards[[CLI / Dashboard Leaderboards]]
+  Normalized --> Archives[[Subgraph Aggregates]]
+  Slash[[SlashApplied]] --> Adjust[Slash-Adjusted Yield]
+  Adjust --> Gauges
+  Adjust --> Leaderboards
+```
+
+The telemetry engine now divides every validator and agent contribution by its observed stake share, ensuring global and per-dimension quality scores never exceed their theoretical bounds while preserving the influence of heavyweight validators. Normalization keeps multi-validator epochs consistent even when individual validations arrive asynchronously, guaranteeing a reproducible stake-aware KPI stream across Prometheus, the CLI, and the published subgraph blueprints.
 
 Multi-window dashboards expose the same gauges inside [docs/telemetry/dashboard.json](docs/telemetry/dashboard.json) for Prometheus-only installs and [docs/telemetry/alpha-work-unit-dashboard.json](docs/telemetry/alpha-work-unit-dashboard.json) when pairing Prometheus with the subgraph feed. Each blueprint ships with mirrored 7d and 30d tiles for acceptance, yield, latency, validator-weighted quality, and slash-adjusted leaderboards across agents and nodes.
 
