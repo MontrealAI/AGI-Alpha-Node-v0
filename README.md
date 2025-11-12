@@ -30,8 +30,11 @@
   <a href="https://img.shields.io/github/actions/workflow/status/MontrealAI/AGI-Alpha-Node-v0/ci.yml?branch=main&job=Docker%20Build%20%26%20Smoke%20Test&label=Docker%20%E2%9A%A1&logo=docker&logoColor=white&style=flat-square">
     <img src="https://img.shields.io/github/actions/workflow/status/MontrealAI/AGI-Alpha-Node-v0/ci.yml?branch=main&job=Docker%20Build%20%26%20Smoke%20Test&label=Docker%20%E2%9A%A1&logo=docker&logoColor=white&style=flat-square" alt="Docker Build &amp; Smoke Test" />
   </a>
+  <img src="https://img.shields.io/badge/Tests-136%20passing-34d058.svg?style=flat-square&logo=vitest&logoColor=white" alt="136 Tests Passing" />
+  <img src="https://img.shields.io/badge/Coverage-lcov%20artifacts-0ea5e9.svg?style=flat-square&logo=codecov&logoColor=white" alt="Coverage Artifacts" />
   <img src="https://img.shields.io/badge/Checks-Enforced-1f2933.svg?style=flat-square" alt="Checks Enforced" />
   <img src="https://img.shields.io/badge/Alpha%20KPIs-Live%20Telemetry-8b5cf6.svg?style=flat-square" alt="Alpha KPIs" />
+  <img src="https://img.shields.io/badge/Owner%20Controls-Granular%20Governance-111827.svg?style=flat-square&logo=ethereum" alt="Owner Control" />
   <a href="Dockerfile">
     <img src="https://img.shields.io/badge/Docker-Production%20Image-2496ed.svg?style=flat-square&logo=docker&logoColor=white" alt="Docker" />
   </a>
@@ -197,8 +200,32 @@ Every surface is owner-configurable and validated by [`test/governance.test.js`]
 - **Prometheus Exporter:** [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) publishes stake, throughput, provider mode, registry compatibility, and α‑WU KPI gauges.
 - **Telemetry Harmoniser:** [`src/telemetry/alphaMetrics.js`](src/telemetry/alphaMetrics.js) maps aggregated α‑WU metrics across global/agent/node/validator dimensions with rolling windows.
 - **Monitor Loop:** [`src/orchestrator/monitorLoop.js`](src/orchestrator/monitorLoop.js) continuously synthesizes diagnostics, owner directives, and telemetry updates.
-- **CI Hardening:** `.github/workflows/ci.yml` enforces linting, tests, coverage, Docker builds, and required checks (`.github/required-checks.json`).
-- **Coverage & Tests:** `npm run coverage` (`c8`) and `npm test` (Vitest) maintain the 131-test suite and guarantee branch protection remains green.
+- **CI Hardening:** `.github/workflows/ci.yml` enforces linting, tests, coverage, Docker builds, and required checks (`.github/required-checks.json`). Use `npm run ci:verify` locally to reproduce the GitHub Actions matrix.
+- **Coverage & Tests:** `npm run coverage` (`c8`) and `npm test` (Vitest) now cover 135 passing specs plus a guarded integration skip (136 total), mirroring the badge above and protecting mainline quality.
+
+```mermaid
+flowchart TB
+  subgraph CI[CI Mesh]
+    lint[Markdown & Link Lint]
+    unit[Unit & Integration Tests]
+    coverage[Coverage & LCOV]
+    docker[Docker Build + Smoke]
+  end
+
+  dev[Local ci:verify]
+  badge[Branch Protection · required-checks.json]
+  release[Main / Tagged Release]
+
+  dev --> lint
+  dev --> unit
+  dev --> coverage
+  dev --> docker
+  lint --> badge
+  unit --> badge
+  coverage --> badge
+  docker --> badge
+  badge --> release
+```
 
 ---
 
@@ -212,7 +239,7 @@ Every surface is owner-configurable and validated by [`test/governance.test.js`]
 | [`docs/offline-snapshot.example.json`](docs/offline-snapshot.example.json) | Offline replay template for diagnostics. |
 | [`deploy/helm/agi-alpha-node`](deploy/helm/agi-alpha-node) | Production Helm chart. |
 | [`scripts/`](scripts/) | Husky bootstrapping & auxiliary automation. |
-| [`test/`](test/) | 130+ Vitest specifications across governance, staking, lifecycle, telemetry, and α‑WU metrics. |
+| [`test/`](test/) | 136 Vitest specifications (135 active, 1 safeguarded skip) across governance, staking, lifecycle, telemetry, and α‑WU metrics. |
 
 ---
 
