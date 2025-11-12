@@ -72,6 +72,7 @@ function updateAgentDaily(
   acceptedDelta: BigInt,
   validationDelta: BigInt,
   scoreDelta: BigInt,
+  stakeDelta: BigInt,
   slashDelta: BigInt,
 ): void {
   const metricId = agentId + "-" + day.toString();
@@ -84,6 +85,7 @@ function updateAgentDaily(
     metric.acceptedCount = ZERO_BI;
     metric.validationCount = ZERO_BI;
     metric.scoreSum = ZERO_BI;
+    metric.stakeSum = ZERO_BI;
     metric.slashAmount = ZERO_BI;
   }
 
@@ -91,6 +93,7 @@ function updateAgentDaily(
   metric.acceptedCount = metric.acceptedCount.plus(acceptedDelta);
   metric.validationCount = metric.validationCount.plus(validationDelta);
   metric.scoreSum = metric.scoreSum.plus(scoreDelta);
+  metric.stakeSum = metric.stakeSum.plus(stakeDelta);
   metric.slashAmount = metric.slashAmount.plus(slashDelta);
   metric.save();
 }
@@ -102,6 +105,7 @@ function updateNodeDaily(
   acceptedDelta: BigInt,
   validationDelta: BigInt,
   scoreDelta: BigInt,
+  stakeDelta: BigInt,
   slashDelta: BigInt,
 ): void {
   const metricId = nodeId + "-" + day.toString();
@@ -114,6 +118,7 @@ function updateNodeDaily(
     metric.acceptedCount = ZERO_BI;
     metric.validationCount = ZERO_BI;
     metric.scoreSum = ZERO_BI;
+    metric.stakeSum = ZERO_BI;
     metric.slashAmount = ZERO_BI;
   }
 
@@ -121,6 +126,7 @@ function updateNodeDaily(
   metric.acceptedCount = metric.acceptedCount.plus(acceptedDelta);
   metric.validationCount = metric.validationCount.plus(validationDelta);
   metric.scoreSum = metric.scoreSum.plus(scoreDelta);
+  metric.stakeSum = metric.stakeSum.plus(stakeDelta);
   metric.slashAmount = metric.slashAmount.plus(slashDelta);
   metric.save();
 }
@@ -146,6 +152,7 @@ function updateAgentWindows(agentId: string, day: i32, timestamp: BigInt): void 
     let acceptedTotal = ZERO_BI;
     let validationTotal = ZERO_BI;
     let scoreTotal = ZERO_BI;
+    let stakeTotal = ZERO_BI;
     let slashTotal = ZERO_BI;
 
     for (let offset = 0; offset < window; offset++) {
@@ -160,6 +167,7 @@ function updateAgentWindows(agentId: string, day: i32, timestamp: BigInt): void 
         acceptedTotal = acceptedTotal.plus(daily.acceptedCount);
         validationTotal = validationTotal.plus(daily.validationCount);
         scoreTotal = scoreTotal.plus(daily.scoreSum);
+        stakeTotal = stakeTotal.plus(daily.stakeSum);
         slashTotal = slashTotal.plus(daily.slashAmount);
       }
     }
@@ -169,8 +177,8 @@ function updateAgentWindows(agentId: string, day: i32, timestamp: BigInt): void 
     aggregate.validationCount = validationTotal;
     aggregate.slashAmount = slashTotal;
 
-    if (validationTotal.gt(ZERO_BI)) {
-      aggregate.averageScore = scoreTotal.toBigDecimal().div(validationTotal.toBigDecimal());
+    if (stakeTotal.gt(ZERO_BI)) {
+      aggregate.averageScore = scoreTotal.toBigDecimal().div(stakeTotal.toBigDecimal());
     } else {
       aggregate.averageScore = ZERO_BD;
     }
@@ -201,6 +209,7 @@ function updateNodeWindows(nodeId: string, day: i32, timestamp: BigInt): void {
     let acceptedTotal = ZERO_BI;
     let validationTotal = ZERO_BI;
     let scoreTotal = ZERO_BI;
+    let stakeTotal = ZERO_BI;
     let slashTotal = ZERO_BI;
 
     for (let offset = 0; offset < window; offset++) {
@@ -215,6 +224,7 @@ function updateNodeWindows(nodeId: string, day: i32, timestamp: BigInt): void {
         acceptedTotal = acceptedTotal.plus(daily.acceptedCount);
         validationTotal = validationTotal.plus(daily.validationCount);
         scoreTotal = scoreTotal.plus(daily.scoreSum);
+        stakeTotal = stakeTotal.plus(daily.stakeSum);
         slashTotal = slashTotal.plus(daily.slashAmount);
       }
     }
@@ -224,8 +234,8 @@ function updateNodeWindows(nodeId: string, day: i32, timestamp: BigInt): void {
     aggregate.validationCount = validationTotal;
     aggregate.slashAmount = slashTotal;
 
-    if (validationTotal.gt(ZERO_BI)) {
-      aggregate.averageScore = scoreTotal.toBigDecimal().div(validationTotal.toBigDecimal());
+    if (stakeTotal.gt(ZERO_BI)) {
+      aggregate.averageScore = scoreTotal.toBigDecimal().div(stakeTotal.toBigDecimal());
     } else {
       aggregate.averageScore = ZERO_BD;
     }
@@ -258,8 +268,8 @@ export function handleAlphaWUMinted(event: AlphaWUMinted): void {
   workUnit.mintedAt = event.params.timestamp.toI32();
   workUnit.save();
 
-  updateAgentDaily(agentId, day, ONE_BI, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI);
-  updateNodeDaily(nodeId, day, ONE_BI, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI);
+  updateAgentDaily(agentId, day, ONE_BI, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI);
+  updateNodeDaily(nodeId, day, ONE_BI, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI);
   updateAgentWindows(agentId, day, timestamp);
   updateNodeWindows(nodeId, day, timestamp);
 }
@@ -275,6 +285,7 @@ export function handleAlphaWUValidated(event: AlphaWUValidated): void {
   const day = getDayFromTimestamp(timestamp);
   const agentId = workUnit.agent;
   const nodeId = workUnit.node;
+  const weightedScore = event.params.score.times(event.params.stakeAmount);
 
   const agent = getOrCreateAgent(agentId);
   agent.totalValidations = agent.totalValidations.plus(ONE_BI);
@@ -292,8 +303,26 @@ export function handleAlphaWUValidated(event: AlphaWUValidated): void {
   workUnit.lastValidatedAt = event.params.timestamp.toI32();
   workUnit.save();
 
-  updateAgentDaily(agentId, day, ZERO_BI, ZERO_BI, ONE_BI, event.params.score, ZERO_BI);
-  updateNodeDaily(nodeId, day, ZERO_BI, ZERO_BI, ONE_BI, event.params.score, ZERO_BI);
+  updateAgentDaily(
+    agentId,
+    day,
+    ZERO_BI,
+    ZERO_BI,
+    ONE_BI,
+    weightedScore,
+    event.params.stakeAmount,
+    ZERO_BI,
+  );
+  updateNodeDaily(
+    nodeId,
+    day,
+    ZERO_BI,
+    ZERO_BI,
+    ONE_BI,
+    weightedScore,
+    event.params.stakeAmount,
+    ZERO_BI,
+  );
   updateAgentWindows(agentId, day, timestamp);
   updateNodeWindows(nodeId, day, timestamp);
 }
@@ -323,8 +352,8 @@ export function handleAlphaWUAccepted(event: AlphaWUAccepted): void {
   workUnit.acceptedAt = event.params.timestamp.toI32();
   workUnit.save();
 
-  updateAgentDaily(agentId, day, ZERO_BI, ONE_BI, ZERO_BI, ZERO_BI, ZERO_BI);
-  updateNodeDaily(nodeId, day, ZERO_BI, ONE_BI, ZERO_BI, ZERO_BI, ZERO_BI);
+  updateAgentDaily(agentId, day, ZERO_BI, ONE_BI, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI);
+  updateNodeDaily(nodeId, day, ZERO_BI, ONE_BI, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI);
   updateAgentWindows(agentId, day, timestamp);
   updateNodeWindows(nodeId, day, timestamp);
 }
@@ -351,8 +380,8 @@ export function handleSlashApplied(event: SlashApplied): void {
   node.lastUpdated = timestamp.toI32();
   node.save();
 
-  updateAgentDaily(agentId, day, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI, event.params.amount);
-  updateNodeDaily(nodeId, day, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI, event.params.amount);
+  updateAgentDaily(agentId, day, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI, event.params.amount);
+  updateNodeDaily(nodeId, day, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI, event.params.amount);
   updateAgentWindows(agentId, day, timestamp);
   updateNodeWindows(nodeId, day, timestamp);
 }

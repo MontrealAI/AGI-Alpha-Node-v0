@@ -44,6 +44,7 @@ type AgentDailyMetric @entity {
   acceptedCount: BigInt!
   validationCount: BigInt!
   scoreSum: BigInt!
+  stakeSum: BigInt!
   slashAmount: BigInt!
 }
 
@@ -55,6 +56,7 @@ type NodeDailyMetric @entity {
   acceptedCount: BigInt!
   validationCount: BigInt!
   scoreSum: BigInt!
+  stakeSum: BigInt!
   slashAmount: BigInt!
 }
 
