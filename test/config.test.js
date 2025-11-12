@@ -19,6 +19,17 @@ describe('config schema', () => {
     expect(config.AGIALPHA_TOKEN_DECIMALS).toBe(AGIALPHA_TOKEN_DECIMALS);
   });
 
+  it('strips unknown environment variables without rejection', () => {
+    const config = coerceConfig({
+      RPC_URL: 'https://rpc.ankr.com/eth',
+      SOME_RANDOM_VAR: 'value',
+      HTTP_PROXY: 'http://127.0.0.1:8080'
+    });
+    expect(config.RPC_URL).toBe('https://rpc.ankr.com/eth');
+    expect(config.SOME_RANDOM_VAR).toBeUndefined();
+    expect(config.HTTP_PROXY).toBeUndefined();
+  });
+
   it('rejects invalid addresses', () => {
     expect(() =>
       coerceConfig({

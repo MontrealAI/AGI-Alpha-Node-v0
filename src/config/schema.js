@@ -252,7 +252,7 @@ export const configSchema = z
         return trimmed.length ? trimmed : '.agi/lifecycle';
       })
   })
-  .strict();
+  .strip();
 
 export function coerceConfig(input = {}) {
   return configSchema.parse(input);
