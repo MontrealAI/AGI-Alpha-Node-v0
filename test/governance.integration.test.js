@@ -11,7 +11,21 @@ import {
   buildGlobalSharesTx,
   buildJobRegistryUpgradeTx,
   buildDisputeTriggerTx,
-  buildIdentityDelegateTx
+  buildIdentityDelegateTx,
+  buildNodeRegistrationTx,
+  buildNodeMetadataTx,
+  buildNodeStatusTx,
+  buildNodeOperatorTx,
+  buildNodeWorkMeterTx,
+  buildWorkMeterValidatorTx,
+  buildWorkMeterOracleTx,
+  buildWorkMeterWindowTx,
+  buildWorkMeterProductivityIndexTx,
+  buildWorkMeterUsageTx,
+  buildProductivityRecordTx,
+  buildProductivityEmissionManagerTx,
+  buildProductivityWorkMeterTx,
+  buildProductivityTreasuryTx
 } from '../src/services/governance.js';
 
 const ANVIL_PORT = 8547;
@@ -96,6 +110,113 @@ contract MockIdentityRegistry is Ownable {
         delegates[operator] = allowed;
     }
 }
+
+contract MockNodeRegistry is Ownable {
+    mapping(bytes32 => string) public metadata;
+    mapping(bytes32 => bool) public active;
+    mapping(address => bool) public operators;
+    address public workMeter;
+
+    function registerNode(bytes32 nodeId, address operator, string calldata metadataURI) external onlyOwner {
+        metadata[nodeId] = metadataURI;
+        active[nodeId] = true;
+        operators[operator] = true;
+    }
+
+    function setNodeMetadata(bytes32 nodeId, string calldata metadataURI) external onlyOwner {
+        metadata[nodeId] = metadataURI;
+    }
+
+    function setNodeStatus(bytes32 nodeId, bool isActive) external onlyOwner {
+        active[nodeId] = isActive;
+    }
+
+    function setNodeOperator(address operator, bool allowed) external onlyOwner {
+        operators[operator] = allowed;
+    }
+
+    function setWorkMeter(address newWorkMeter) external onlyOwner {
+        workMeter = newWorkMeter;
+    }
+}
+
+contract MockWorkMeter is Ownable {
+    struct UsageReport {
+        bytes32 reportId;
+        bytes32 nodeId;
+        uint256 gpuSeconds;
+        uint256 gflopsNorm;
+        uint256 modelTier;
+        uint256 sloPassBps;
+        uint256 qualityBps;
+        bytes32 usageHash;
+    }
+
+    mapping(address => bool) public validators;
+    mapping(address => bool) public oracles;
+    uint256 public submissionWindow;
+    address public productivityIndex;
+    UsageReport public lastReport;
+
+    function setValidator(address validator, bool allowed) external onlyOwner {
+        validators[validator] = allowed;
+    }
+
+    function setOracle(address oracle, bool allowed) external onlyOwner {
+        oracles[oracle] = allowed;
+    }
+
+    function setSubmissionWindow(uint256 windowSeconds) external onlyOwner {
+        submissionWindow = windowSeconds;
+    }
+
+    function setProductivityIndex(address index) external onlyOwner {
+        productivityIndex = index;
+    }
+
+    function submitUsage(
+        bytes32 reportId,
+        bytes32 nodeId,
+        uint256 gpuSeconds,
+        uint256 gflopsNorm,
+        uint256 modelTier,
+        uint256 sloPassBps,
+        uint256 qualityBps,
+        bytes32 usageHash
+    ) external {
+        lastReport = UsageReport(reportId, nodeId, gpuSeconds, gflopsNorm, modelTier, sloPassBps, qualityBps, usageHash);
+    }
+}
+
+contract MockProductivityIndex is Ownable {
+    struct EpochEntry {
+        uint256 epoch;
+        uint256 alphaWu;
+        uint256 tokensEmitted;
+        uint256 tokensBurned;
+    }
+
+    mapping(uint256 => EpochEntry) public epochs;
+    address public emissionManager;
+    address public workMeter;
+    address public treasury;
+
+    function recordEpoch(uint256 epoch, uint256 alphaWu, uint256 tokensEmitted, uint256 tokensBurned) external onlyOwner {
+        epochs[epoch] = EpochEntry(epoch, alphaWu, tokensEmitted, tokensBurned);
+    }
+
+    function setEmissionManager(address newEmissionManager) external onlyOwner {
+        emissionManager = newEmissionManager;
+    }
+
+    function setWorkMeter(address newWorkMeter) external onlyOwner {
+        workMeter = newWorkMeter;
+    }
+
+    function setTreasury(address newTreasury) external onlyOwner {
+        treasury = newTreasury;
+    }
+}
 `;
 
 function compileContracts() {
@@ -162,6 +283,9 @@ beforeAll(async () => {
   await deployContract('RewardEngine', compiled.MockRewardEngine);
   await deployContract('JobRegistry', compiled.MockJobRegistry);
   await deployContract('IdentityRegistry', compiled.MockIdentityRegistry);
+  await deployContract('NodeRegistry', compiled.MockNodeRegistry);
+  await deployContract('WorkMeter', compiled.MockWorkMeter);
+  await deployContract('ProductivityIndex', compiled.MockProductivityIndex);
 });
 
 afterAll(async () => {
@@ -185,6 +309,9 @@ describeCase('governance builders integration', () => {
     const rewardEngineAddress = await deployments.RewardEngine.getAddress();
     const jobRegistryAddress = await deployments.JobRegistry.getAddress();
     const identityRegistryAddress = await deployments.IdentityRegistry.getAddress();
+    const nodeRegistryAddress = await deployments.NodeRegistry.getAddress();
+    const workMeterAddress = await deployments.WorkMeter.getAddress();
+    const productivityIndexAddress = await deployments.ProductivityIndex.getAddress();
 
     const pauseTx = buildSystemPauseTx({ systemPauseAddress });
     await owner.sendTransaction({ to: pauseTx.to, data: pauseTx.data });
@@ -256,6 +383,116 @@ describeCase('governance builders integration', () => {
     });
     await owner.sendTransaction({ to: identityTx.to, data: identityTx.data });
     expect(await deployments.IdentityRegistry.delegates(systemPauseAddress)).toBe(true);
+
+    const nodeRegisterTx = buildNodeRegistrationTx({
+      nodeRegistryAddress,
+      nodeId: 'alpha-node-1',
+      operatorAddress: await owner.getAddress(),
+      metadataURI: 'ipfs://node-1'
+    });
+    await owner.sendTransaction({ to: nodeRegisterTx.to, data: nodeRegisterTx.data });
+    const nodeIdHash = nodeRegisterTx.nodeId;
+    expect(await deployments.NodeRegistry.metadata(nodeIdHash)).toBe('ipfs://node-1');
+    expect(await deployments.NodeRegistry.active(nodeIdHash)).toBe(true);
+    const nodeMetadataTx = buildNodeMetadataTx({
+      nodeRegistryAddress,
+      nodeId: nodeIdHash,
+      metadataURI: 'ipfs://node-1-v2'
+    });
+    await owner.sendTransaction({ to: nodeMetadataTx.to, data: nodeMetadataTx.data });
+    expect(await deployments.NodeRegistry.metadata(nodeIdHash)).toBe('ipfs://node-1-v2');
+    const nodeStatusTx = buildNodeStatusTx({
+      nodeRegistryAddress,
+      nodeId: nodeIdHash,
+      active: false
+    });
+    await owner.sendTransaction({ to: nodeStatusTx.to, data: nodeStatusTx.data });
+    expect(await deployments.NodeRegistry.active(nodeIdHash)).toBe(false);
+    const nodeOperatorTx = buildNodeOperatorTx({
+      nodeRegistryAddress,
+      operatorAddress: '0x0000000000000000000000000000000000000002',
+      allowed: true
+    });
+    await owner.sendTransaction({ to: nodeOperatorTx.to, data: nodeOperatorTx.data });
+    expect(await deployments.NodeRegistry.operators('0x0000000000000000000000000000000000000002')).toBe(true);
+    const nodeWorkMeterTx = buildNodeWorkMeterTx({
+      nodeRegistryAddress,
+      workMeterAddress
+    });
+    await owner.sendTransaction({ to: nodeWorkMeterTx.to, data: nodeWorkMeterTx.data });
+    expect(await deployments.NodeRegistry.workMeter()).toBe(workMeterAddress);
+
+    const validatorBuilderTx = buildWorkMeterValidatorTx({
+      workMeterAddress,
+      validatorAddress: await owner.getAddress(),
+      allowed: true
+    });
+    await owner.sendTransaction({ to: validatorBuilderTx.to, data: validatorBuilderTx.data });
+    expect(await deployments.WorkMeter.validators(await owner.getAddress())).toBe(true);
+    const oracleBuilderTx = buildWorkMeterOracleTx({
+      workMeterAddress,
+      oracleAddress: '0x0000000000000000000000000000000000000003',
+      allowed: true
+    });
+    await owner.sendTransaction({ to: oracleBuilderTx.to, data: oracleBuilderTx.data });
+    expect(await deployments.WorkMeter.oracles('0x0000000000000000000000000000000000000003')).toBe(true);
+    const windowBuilderTx = buildWorkMeterWindowTx({
+      workMeterAddress,
+      submissionWindowSeconds: 900
+    });
+    await owner.sendTransaction({ to: windowBuilderTx.to, data: windowBuilderTx.data });
+    expect(await deployments.WorkMeter.submissionWindow()).toBe(900n);
+    const productivityIndexBuilderTx = buildWorkMeterProductivityIndexTx({
+      workMeterAddress,
+      productivityIndexAddress
+    });
+    await owner.sendTransaction({ to: productivityIndexBuilderTx.to, data: productivityIndexBuilderTx.data });
+    expect(await deployments.WorkMeter.productivityIndex()).toBe(productivityIndexAddress);
+
+    const usageTx = buildWorkMeterUsageTx({
+      workMeterAddress,
+      reportId: 'usage-report-1',
+      nodeId: nodeIdHash,
+      gpuSeconds: '123.456',
+      gflopsNorm: '50.5',
+      modelTier: '1.1',
+      sloPass: 0.9,
+      quality: 0.95,
+      metricDecimals: 6
+    });
+    await owner.sendTransaction({ to: usageTx.to, data: usageTx.data });
+    const usageReport = await deployments.WorkMeter.lastReport();
+    expect(usageReport.reportId).toBe(usageTx.meta.args.reportId);
+    expect(usageReport.nodeId).toBe(nodeIdHash);
+
+    const recordTx = buildProductivityRecordTx({
+      productivityIndexAddress,
+      epoch: 1,
+      alphaWu: '10',
+      tokensEmitted: '5',
+      tokensBurned: '1'
+    });
+    await owner.sendTransaction({ to: recordTx.to, data: recordTx.data });
+    const epochEntry = await deployments.ProductivityIndex.epochs(1);
+    expect(epochEntry.alphaWu).toBe(BigInt(recordTx.meta.args.alphaWu));
+    const emissionManagerTx = buildProductivityEmissionManagerTx({
+      productivityIndexAddress,
+      emissionManagerAddress: stakeManagerAddress
+    });
+    await owner.sendTransaction({ to: emissionManagerTx.to, data: emissionManagerTx.data });
+    expect(await deployments.ProductivityIndex.emissionManager()).toBe(stakeManagerAddress);
+    const productivityWorkMeterTx = buildProductivityWorkMeterTx({
+      productivityIndexAddress,
+      workMeterAddress
+    });
+    await owner.sendTransaction({ to: productivityWorkMeterTx.to, data: productivityWorkMeterTx.data });
+    expect(await deployments.ProductivityIndex.workMeter()).toBe(workMeterAddress);
+    const productivityTreasuryTx = buildProductivityTreasuryTx({
+      productivityIndexAddress,
+      treasuryAddress: rewardEngineAddress
+    });
+    await owner.sendTransaction({ to: productivityTreasuryTx.to, data: productivityTreasuryTx.data });
+    expect(await deployments.ProductivityIndex.treasury()).toBe(rewardEngineAddress);
 
     expect(() =>
       buildMinimumStakeTx({ stakeManagerAddress, amount: '1', decimals: 6 })
