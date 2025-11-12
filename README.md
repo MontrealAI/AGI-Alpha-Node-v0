@@ -31,7 +31,7 @@
     <img src="https://img.shields.io/github/actions/workflow/status/MontrealAI/AGI-Alpha-Node-v0/ci.yml?branch=main&job=Docker%20Build%20%26%20Smoke%20Test&label=Docker%20%E2%9A%A1&logo=docker&logoColor=white&style=flat-square" alt="Docker Build &amp; Smoke Test" />
   </a>
   <img src="https://img.shields.io/badge/Checks-Enforced-1f2933.svg?style=flat-square" alt="Checks Enforced" />
-  <img src="https://img.shields.io/badge/Tests-130%20Passing-14b8a6.svg?style=flat-square" alt="Tests Passing" />
+  <img src="https://img.shields.io/badge/Tests-131%20Passing-14b8a6.svg?style=flat-square" alt="Tests Passing" />
   <img src="https://img.shields.io/badge/Coverage-c8%20Reports-22c55e.svg?style=flat-square" alt="Coverage" />
   <a href="Dockerfile">
     <img src="https://img.shields.io/badge/Docker-Production%20Image-2496ed.svg?style=flat-square&logo=docker&logoColor=white" alt="Docker" />
