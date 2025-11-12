@@ -774,7 +774,8 @@ export function startAgentApi({
   jobLifecycle = null,
   logger = pino({ level: 'info', name: 'agent-api' }),
   ownerToken = null,
-  ledgerRoot = process.cwd()
+  ledgerRoot = process.cwd(),
+  healthGate = null
 } = {}) {
   const jobs = new Map();
   const lifecycleJobs = new Map();
@@ -796,6 +797,8 @@ export function startAgentApi({
       ledgerEntries: 0
     }
   };
+
+  const resolveHealthGateState = () => (healthGate ? healthGate.getState() : null);
 
   let lifecycleSubscription = null;
   let lifecycleActionSubscription = null;
@@ -1584,7 +1587,8 @@ export function startAgentApi({
       ...metrics,
       tokensEarned: metrics.tokensEarned,
       throughput: metrics.completed,
-      successRate: metrics.submitted === 0 ? 1 : metrics.completed / metrics.submitted
+      successRate: metrics.submitted === 0 ? 1 : metrics.completed / metrics.submitted,
+      healthGate: resolveHealthGateState()
     }),
     listJobs: () => Array.from(jobs.values()),
     setOwnerDirectives: (directives) => {

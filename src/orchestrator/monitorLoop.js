@@ -10,11 +10,12 @@ function assertPositiveInteger(value, name) {
   }
 }
 
-function updateTelemetryGauges(telemetry, diagnostics) {
+function updateTelemetryGauges(telemetry, diagnostics, healthGate) {
   if (!telemetry) return;
   const stakeStatus = diagnostics?.stakeStatus ?? null;
   const performance = diagnostics?.performance ?? null;
   const runtimeMode = diagnostics?.runtimeMode ?? 'online';
+  const gateHealthy = healthGate?.isHealthy?.() ?? true;
 
   if (stakeStatus?.operatorStake !== null && stakeStatus?.operatorStake !== undefined) {
     telemetry.stakeGauge.set(Number(stakeStatus.operatorStake));
@@ -89,7 +90,7 @@ function updateTelemetryGauges(telemetry, diagnostics) {
   }
 
   const alphaMetrics = performance?.alphaWorkUnits ?? performance?.jobMetrics?.alphaWorkUnits ?? null;
-  if (alphaMetrics) {
+  if (gateHealthy && alphaMetrics) {
     applyAlphaWorkUnitMetricsToTelemetry(telemetry, alphaMetrics);
   } else if (
     telemetry.alphaAcceptanceGauge ||
@@ -107,6 +108,10 @@ function updateTelemetryGauges(telemetry, diagnostics) {
       },
       windows: []
     });
+  }
+
+  if (telemetry.healthGateGauge) {
+    telemetry.healthGateGauge.set({ state: gateHealthy ? 'ready' : 'sealed' }, gateHealthy ? 1 : 0);
   }
 }
 
@@ -132,7 +137,8 @@ export async function startMonitorLoop({
   logger = pino({ level: 'info', name: 'monitor-loop' }),
   maxIterations = Infinity,
   jobMetricsProvider = null,
-  onDiagnostics = null
+  onDiagnostics = null,
+  healthGate = null
 }) {
   if (!config) {
     throw new Error('config is required');
@@ -218,16 +224,26 @@ export async function startMonitorLoop({
           }
         }
 
+        if (healthGate) {
+          healthGate.updateFromDiagnostics({
+            ensName: diagnostics?.verification?.nodeName ?? null,
+            stakeEvaluation: diagnostics?.stakeEvaluation,
+            diagnosticsHealthy: diagnostics?.stakeEvaluation?.meets && !diagnostics?.stakeEvaluation?.penaltyActive,
+            source: 'monitor-loop'
+          });
+        }
+
         if (!telemetryServer) {
           telemetryServer = await launchMonitoring({
             port: config.METRICS_PORT,
             stakeStatus: diagnostics.stakeStatus,
             performance: diagnostics.performance,
             runtimeMode: diagnostics.runtimeMode,
-            logger
+            logger,
+            healthGate
           });
         } else {
-          updateTelemetryGauges(telemetryServer, diagnostics);
+          updateTelemetryGauges(telemetryServer, diagnostics, healthGate);
         }
 
         const actionSummary = diagnostics.ownerDirectives?.actions
