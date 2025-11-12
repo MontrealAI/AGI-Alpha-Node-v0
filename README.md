@@ -123,6 +123,23 @@ sequenceDiagram
 | **On-Time Completion (OTC)** | `p95(accepted.ts − minted.ts)` | `agi_alpha_node_alpha_wu_on_time_p95_seconds` | 7d · 30d · all |
 | **Slashing-Adjusted Yield (SAY)** | `(accepted − slashes) ÷ stake` | `agi_alpha_node_alpha_wu_slash_adjusted_yield` | 7d · 30d · all |
 
+```mermaid
+quadrantChart
+    title α‑WU KPI Envelope
+    x-axis Latency (faster → slower)
+    y-axis Yield (lower → higher)
+    quadrant-1 Sovereign Prime
+    quadrant-2 Guardian Vigilance
+    quadrant-3 Recovery Vector
+    quadrant-4 Intervention Deck
+    "7d Window" : [0.35, 0.84]
+    "30d Window" : [0.52, 0.91]
+    "Validator Median" : [0.41, 0.87]
+    "Recovery Candidate" : [0.68, 0.72]
+```
+
+Multi-window dashboards expose the same gauges inside [docs/telemetry/dashboard.json](docs/telemetry/dashboard.json) for Prometheus-only installs and [docs/telemetry/alpha-work-unit-dashboard.json](docs/telemetry/alpha-work-unit-dashboard.json) when pairing Prometheus with the subgraph feed. Each blueprint ships with mirrored 7d and 30d tiles for acceptance, yield, latency, validator-weighted quality, and slash-adjusted leaderboards across agents and nodes.
+
 ### CLI KPI Extraction
 
 ```bash

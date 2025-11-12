@@ -17,7 +17,7 @@
   "widgets": [
     {
       "type": "stat",
-      "title": "Acceptance Rate",
+      "title": "Acceptance Rate · 7d",
       "source": "alpha-node-telemetry",
       "query": "agi_alpha_node_alpha_wu_acceptance_rate{window=\"7d\"}",
       "format": "percent",
@@ -28,16 +28,41 @@
     },
     {
       "type": "stat",
-      "title": "p95 Completion Latency",
+      "title": "Acceptance Rate · 30d",
+      "source": "alpha-node-telemetry",
+      "query": "agi_alpha_node_alpha_wu_acceptance_rate{window=\"30d\"}",
+      "format": "percent",
+      "thresholds": {
+        "good": 0.85,
+        "warn": 0.65
+      }
+    },
+    {
+      "type": "stat",
+      "title": "p95 Completion Latency · 7d",
       "source": "alpha-node-telemetry",
       "query": "agi_alpha_node_alpha_wu_on_time_p95_seconds{window=\"7d\"}",
       "format": "duration"
     },
     {
       "type": "stat",
-      "title": "Slashing-Adjusted Yield",
+      "title": "p95 Completion Latency · 30d",
+      "source": "alpha-node-telemetry",
+      "query": "agi_alpha_node_alpha_wu_on_time_p95_seconds{window=\"30d\"}",
+      "format": "duration"
+    },
+    {
+      "type": "stat",
+      "title": "Slashing-Adjusted Yield · 7d",
       "source": "alpha-node-telemetry",
       "query": "agi_alpha_node_alpha_wu_slash_adjusted_yield{window=\"7d\"}",
+      "format": "percent"
+    },
+    {
+      "type": "stat",
+      "title": "Slashing-Adjusted Yield · 30d",
+      "source": "alpha-node-telemetry",
+      "query": "agi_alpha_node_alpha_wu_slash_adjusted_yield{window=\"30d\"}",
       "format": "percent"
     },
     {
@@ -51,16 +76,44 @@
       ]
     },
     {
+      "type": "table",
+      "title": "Slash Adjusted Yield by Node · 7d",
+      "source": "alpha-node-telemetry",
+      "query": "agi_alpha_node_alpha_wu_breakdown{window=\"7d\",dimension=\"node\",metric=\"slashingAdjustedYield\"}",
+      "columns": [
+        { "header": "Node", "field": "key" },
+        { "header": "Yield", "field": "value", "format": "decimal" }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Slash Adjusted Yield by Node · 30d",
+      "source": "alpha-node-telemetry",
+      "query": "agi_alpha_node_alpha_wu_breakdown{window=\"30d\",dimension=\"node\",metric=\"slashingAdjustedYield\"}",
+      "columns": [
+        { "header": "Node", "field": "key" },
+        { "header": "Yield", "field": "value", "format": "decimal" }
+      ]
+    },
+    {
       "type": "bar",
-      "title": "Top Agents by Slashing Adjusted Yield",
+      "title": "Top Agents by Slashing Adjusted Yield · 7d",
       "source": "alpha-wu-subgraph",
       "query": "{ aggregates(first:10, where:{entityType:\"agent\", windowSeconds:604800}, orderBy: slashingAdjustedYield, orderDirection:desc) { entityId slashingAdjustedYield } }",
       "xField": "entityId",
       "yField": "slashingAdjustedYield"
     },
     {
+      "type": "bar",
+      "title": "Top Agents by Slashing Adjusted Yield · 30d",
+      "source": "alpha-wu-subgraph",
+      "query": "{ aggregates(first:10, where:{entityType:\"agent\", windowSeconds:2592000}, orderBy: slashingAdjustedYield, orderDirection:desc) { entityId slashingAdjustedYield } }",
+      "xField": "entityId",
+      "yField": "slashingAdjustedYield"
+    },
+    {
       "type": "line",
-      "title": "Acceptance Rate Trend (30d)",
+      "title": "Acceptance Rate Trend · 30d",
       "source": "alpha-wu-subgraph",
       "query": "{ aggregates(where:{entityType:\"node\", windowSeconds:2592000}) { entityId acceptanceRate updatedAt } }",
       "xField": "updatedAt",

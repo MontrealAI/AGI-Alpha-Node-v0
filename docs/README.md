@@ -460,6 +460,7 @@ mindmap
 ## Observability & Reliability Mesh
 
 - **Metrics Fabric** — Prometheus endpoints expose throughput, success ratios, ROI, antifragility scores, gas consumption, and stake coverage.
+- **Dual-Horizon Dashboards** — [Prometheus blueprint](./telemetry/dashboard.json) and the [Prometheus + Subgraph hybrid](./telemetry/alpha-work-unit-dashboard.json) mirror 7d and 30d acceptance, latency, yield, and quality leaderboards for agents, nodes, and validators.
 - **REST Agent Plane** — [`src/network/apiServer.js`](../src/network/apiServer.js) serves `/healthz` and `/jobs` for institutional job intake; metrics flow straight into Prometheus via [`runNodeDiagnostics`](../src/orchestrator/nodeRuntime.js).
 - **Structured Telemetry** — JSONL traces correlate on-chain tx hashes with agent reasoning frames for deterministic replay.
 - **Health Automation** — Docker/Kubernetes manifests define liveness/readiness probes, restart policies, and rolling-upgrade safepoints.
