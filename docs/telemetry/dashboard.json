@@ -1,7 +1,27 @@
 {
   "$schema": "https://agi.alpha/schemas/dashboard/v1.json",
+  "version": "1.0.0",
   "title": "AGI Alpha Node KPI Control Plane",
   "description": "Validator-weighted α-WU KPIs with ENS-gated health posture telemetry.",
+  "domains": ["slo", "validation", "leaderboard"],
+  "tags": ["agi", "alpha-node", "telemetry"],
+  "refreshInterval": "30s",
+  "timeRange": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "datasources": [
+    {
+      "name": "prometheus",
+      "type": "prometheus",
+      "endpoint": "https://prometheus.alpha-node.local/api/v1"
+    },
+    {
+      "name": "alphaSubgraph",
+      "type": "subgraph",
+      "endpoint": "https://api.thegraph.com/subgraphs/name/agi/alpha-work-units"
+    }
+  ],
   "widgets": [
     {
       "type": "status",
@@ -81,14 +101,16 @@
       "title": "Validator Weighted Quality · 7d",
       "metric": "agi_alpha_node_alpha_wu_quality",
       "labels": { "window": "7d", "dimension": "validator" },
-      "groupBy": "key"
+      "groupBy": "key",
+      "sort": "desc"
     },
     {
       "type": "bar",
       "title": "Validator Weighted Quality · 30d",
       "metric": "agi_alpha_node_alpha_wu_quality",
       "labels": { "window": "30d", "dimension": "validator" },
-      "groupBy": "key"
+      "groupBy": "key",
+      "sort": "desc"
     },
     {
       "type": "table",
@@ -98,7 +120,14 @@
         "window": "7d",
         "dimension": "node",
         "metric": "slashingAdjustedYield"
-      }
+      },
+      "columns": [
+        { "key": "key", "label": "Node", "format": "hash" },
+        { "key": "value", "label": "SAY", "format": "percent" },
+        { "key": "accepted", "label": "Accepted", "format": "integer" },
+        { "key": "minted", "label": "Minted", "format": "integer" }
+      ],
+      "sort": { "field": "value", "direction": "desc" }
     },
     {
       "type": "table",
@@ -108,7 +137,14 @@
         "window": "30d",
         "dimension": "node",
         "metric": "slashingAdjustedYield"
-      }
+      },
+      "columns": [
+        { "key": "key", "label": "Node", "format": "hash" },
+        { "key": "value", "label": "SAY", "format": "percent" },
+        { "key": "accepted", "label": "Accepted", "format": "integer" },
+        { "key": "minted", "label": "Minted", "format": "integer" }
+      ],
+      "sort": { "field": "value", "direction": "desc" }
     },
     {
       "type": "table",
@@ -118,7 +154,14 @@
         "window": "7d",
         "dimension": "agent",
         "metric": "slashingAdjustedYield"
-      }
+      },
+      "columns": [
+        { "key": "key", "label": "Agent", "format": "hash" },
+        { "key": "value", "label": "SAY", "format": "percent" },
+        { "key": "accepted", "label": "Accepted", "format": "integer" },
+        { "key": "minted", "label": "Minted", "format": "integer" }
+      ],
+      "sort": { "field": "value", "direction": "desc" }
     },
     {
       "type": "table",
@@ -128,6 +171,32 @@
         "window": "30d",
         "dimension": "agent",
         "metric": "slashingAdjustedYield"
+      },
+      "columns": [
+        { "key": "key", "label": "Agent", "format": "hash" },
+        { "key": "value", "label": "SAY", "format": "percent" },
+        { "key": "accepted", "label": "Accepted", "format": "integer" },
+        { "key": "minted", "label": "Minted", "format": "integer" }
+      ],
+      "sort": { "field": "value", "direction": "desc" }
+    },
+    {
+      "type": "leaderboard",
+      "title": "Validation Health Leaders · 24h",
+      "datasource": "alphaSubgraph",
+      "query": "query ValidationLeaderboard($windowStart: BigInt!) {\n  validators: alphaValidators(first: 10, orderBy: stakeWeightedScore, orderDirection: desc, where: {windowStart_gte: $windowStart}) {\n    id\n    address\n    stakeWeightedScore\n    validations\n    medianLatencySeconds\n  }\n}",
+      "columns": [
+        { "key": "address", "label": "Validator", "format": "hash" },
+        { "key": "stakeWeightedScore", "label": "Stake Weighted Score", "format": "number" },
+        { "key": "validations", "label": "Validations", "format": "integer" },
+        { "key": "medianLatencySeconds", "label": "Median Latency", "format": "duration" }
+      ],
+      "rankingField": "stakeWeightedScore",
+      "limit": 10,
+      "transform": {
+        "variables": {
+          "windowStart": "{{ nowSubHours(24) }}"
+        }
       }
     }
   ]

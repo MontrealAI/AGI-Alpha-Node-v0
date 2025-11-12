@@ -1,0 +1,434 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://agi.alpha/schemas/dashboard/v1.json",
+  "title": "AGI Alpha Telemetry Dashboard",
+  "description": "Schema for SLO, validation health, and leaderboard dashboards backed by Prometheus and subgraph data sources.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["title", "widgets"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Optional meta pointer to the schema location.",
+      "pattern": "^https?://.+"
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version of the dashboard specification payload.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "domains": {
+      "type": "array",
+      "description": "High-level dashboard intents covered by this specification.",
+      "items": {
+        "type": "string",
+        "enum": ["leaderboard", "slo", "validation"]
+      },
+      "uniqueItems": true
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "refreshInterval": {
+      "type": "string",
+      "description": "Default auto-refresh cadence (e.g. 30s, 5m, 1h).",
+      "pattern": "^\\d+(ms|s|m|h|d)$"
+    },
+    "timeRange": {
+      "type": "object",
+      "description": "Default time window used by the frontend when rendering the dashboard.",
+      "required": ["from", "to"],
+      "additionalProperties": false,
+      "properties": {
+        "from": {
+          "type": "string",
+          "description": "Relative or absolute start timestamp accepted by the frontend (e.g. now-7d)."
+        },
+        "to": {
+          "type": "string",
+          "description": "Relative or absolute end timestamp accepted by the frontend (e.g. now)."
+        }
+      }
+    },
+    "datasources": {
+      "type": "array",
+      "description": "Upstream telemetry endpoints referenced by widgets.",
+      "items": {
+        "$ref": "#/$defs/datasource"
+      },
+      "uniqueItems": true
+    },
+    "widgets": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/widget"
+      }
+    }
+  },
+  "$defs": {
+    "labelMap": {
+      "type": "object",
+      "description": "Label filters forwarded to the underlying metrics backend.",
+      "propertyNames": {
+        "pattern": "^[A-Za-z0-9_:-]+$"
+      },
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "thresholds": {
+      "type": "object",
+      "description": "Static thresholds used for SLO or health scoring widgets.",
+      "additionalProperties": false,
+      "properties": {
+        "warning": {
+          "type": "number"
+        },
+        "critical": {
+          "type": "number"
+        },
+        "target": {
+          "type": "number"
+        }
+      }
+    },
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Field identifier coming from the datasource response."
+        },
+        "label": {
+          "type": "string",
+          "description": "Human readable label shown in the UI."
+        },
+        "format": {
+          "type": "string",
+          "description": "Frontend formatter hint (e.g. percent, duration, stake)."
+        },
+        "unit": {
+          "type": "string",
+          "description": "Metric unit hint for charting libraries."
+        }
+      },
+      "required": ["key"]
+    },
+    "datasource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "type", "endpoint"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Handle used by widgets to reference this datasource.",
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["prometheus", "subgraph", "rest", "static"],
+          "description": "Datasource backend kind."
+        },
+        "endpoint": {
+          "type": "string",
+          "description": "Network endpoint queried at runtime.",
+          "pattern": "^https?://.+"
+        },
+        "auth": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["none", "bearer", "basic"]
+            },
+            "token": {
+              "type": "string"
+            },
+            "username": {
+              "type": "string"
+            },
+            "password": {
+              "type": "string"
+            }
+          }
+        },
+        "defaultHeaders": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[A-Za-z0-9-]+$"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "widget": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/statusWidget"
+        },
+        {
+          "$ref": "#/$defs/statWidget"
+        },
+        {
+          "$ref": "#/$defs/timeSeriesWidget"
+        },
+        {
+          "$ref": "#/$defs/barWidget"
+        },
+        {
+          "$ref": "#/$defs/tableWidget"
+        },
+        {
+          "$ref": "#/$defs/leaderboardWidget"
+        }
+      ]
+    },
+    "baseWidget": {
+      "type": "object",
+      "required": ["type", "title"],
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "datasource": {
+          "type": "string",
+          "description": "Datasource name to use. Defaults to the first listed datasource when omitted.",
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "metric": {
+          "type": "string",
+          "description": "Metric name for Prometheus-backed widgets."
+        },
+        "query": {
+          "type": "string",
+          "description": "Raw query string for datasources that require it (GraphQL, SQL, PromQL, etc.)."
+        },
+        "labels": {
+          "$ref": "#/$defs/labelMap"
+        },
+        "thresholds": {
+          "$ref": "#/$defs/thresholds"
+        },
+        "interval": {
+          "type": "string",
+          "pattern": "^\\d+(ms|s|m|h|d)$",
+          "description": "Override the dashboard-level refresh interval for this widget."
+        },
+        "transform": {
+          "type": "object",
+          "description": "Client-side transformation hints (aggregation, sorting, slicing).",
+          "additionalProperties": true
+        }
+      }
+    },
+    "statusWidget": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/baseWidget"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "status"
+            },
+            "mode": {
+              "type": "string",
+              "enum": ["state", "delta", "slo"],
+              "default": "state"
+            }
+          },
+          "required": ["thresholds"],
+          "anyOf": [
+            { "type": "object", "required": ["metric"] },
+            { "type": "object", "required": ["query"] }
+          ]
+        }
+      ]
+    },
+    "statWidget": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/baseWidget"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "stat"
+            },
+            "unit": {
+              "type": "string"
+            },
+            "format": {
+              "type": "string"
+            }
+          },
+          "anyOf": [
+            { "type": "object", "required": ["metric"] },
+            { "type": "object", "required": ["query"] }
+          ]
+        }
+      ]
+    },
+    "timeSeriesWidget": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/baseWidget"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "timeseries"
+            },
+            "yAxis": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "unit": {
+                  "type": "string"
+                },
+                "min": {
+                  "type": ["number", "null"]
+                },
+                "max": {
+                  "type": ["number", "null"]
+                }
+              }
+            }
+          },
+          "anyOf": [
+            { "type": "object", "required": ["metric"] },
+            { "type": "object", "required": ["query"] }
+          ]
+        }
+      ]
+    },
+    "barWidget": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/baseWidget"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "bar"
+            },
+            "groupBy": {
+              "type": "string",
+              "description": "Label key used to bucket leaderboard style charts."
+            },
+            "sort": {
+              "type": "string",
+              "enum": ["asc", "desc"]
+            }
+          },
+          "required": ["groupBy"],
+          "anyOf": [
+            { "type": "object", "required": ["metric"] },
+            { "type": "object", "required": ["query"] }
+          ]
+        }
+      ]
+    },
+    "tableWidget": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/baseWidget"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "table"
+            },
+            "columns": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/field"
+              }
+            },
+            "sort": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["field", "direction"],
+              "properties": {
+                "field": {
+                  "type": "string"
+                },
+                "direction": {
+                  "type": "string",
+                  "enum": ["asc", "desc"]
+                }
+              }
+            }
+          },
+          "anyOf": [
+            { "type": "object", "required": ["metric"] },
+            { "type": "object", "required": ["query"] }
+          ]
+        }
+      ]
+    },
+    "leaderboardWidget": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/baseWidget"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "leaderboard"
+            },
+            "columns": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/field"
+              }
+            },
+            "rankingField": {
+              "type": "string",
+              "description": "Column used to rank entries in the leaderboard."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": ["columns", "rankingField"],
+          "anyOf": [
+            { "type": "object", "required": ["metric"] },
+            { "type": "object", "required": ["query"] }
+          ]
+        }
+      ]
+    }
+  }
+}
