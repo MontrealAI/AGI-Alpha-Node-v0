@@ -64,6 +64,24 @@ const interfaces = Object.fromEntries(
   Object.entries(OWNER_ONLY_ABIS).map(([name, abi]) => [name, new Interface(abi)])
 );
 
+function extractMethodName(signature) {
+  if (!signature) {
+    throw new Error('Function signature is required');
+  }
+  const match = signature.match(/function\s+([^(\s]+)\s*\(/i);
+  if (!match) {
+    throw new Error(`Unable to extract method name from signature: ${signature}`);
+  }
+  return match[1];
+}
+
+const ownerMethodMap = Object.fromEntries(
+  Object.entries(OWNER_ONLY_ABIS).map(([contract, abi]) => [
+    contract,
+    abi.map((signature) => extractMethodName(signature))
+  ])
+);
+
 const roleAliasMap = {
   operator: 'NODE_OPERATOR_ROLE',
   node: 'NODE_OPERATOR_ROLE',
@@ -1532,4 +1550,136 @@ export function buildIncentivesTreasuryTx({
       proposed
     })
   };
+}
+
+const OWNER_CONTROL_SURFACES = [
+  {
+    id: 'global-safeguard',
+    label: 'Global Safeguard Relay',
+    contract: 'SystemPause',
+    description: 'Freeze or resume every protocol entrypoint with a single signature.',
+    methods: ownerMethodMap.SystemPause,
+    builders: [buildSystemPauseTx]
+  },
+  {
+    id: 'stake-governance',
+    label: 'Stake Governance Prism',
+    contract: 'StakeManager',
+    description: 'Tune minimum stake, validator quorum, and registry routing.',
+    methods: ownerMethodMap.StakeManager,
+    builders: [buildMinimumStakeTx, buildValidatorThresholdTx, buildStakeRegistryUpgradeTx]
+  },
+  {
+    id: 'reward-surface',
+    label: 'Reward Distribution Matrix',
+    contract: 'RewardEngine',
+    description: 'Rebalance operator, validator, guardian, and treasury reward shares.',
+    methods: ownerMethodMap.RewardEngine,
+    builders: [buildRoleShareTx, buildGlobalSharesTx]
+  },
+  {
+    id: 'emission-forge',
+    label: 'Emission Control Forge',
+    contract: 'EmissionManager',
+    description: 'Shape wage curves through emission cadence, caps, and multipliers.',
+    methods: ownerMethodMap.EmissionManager,
+    builders: [
+      buildEmissionPerEpochTx,
+      buildEmissionEpochLengthTx,
+      buildEmissionCapTx,
+      buildEmissionRateMultiplierTx
+    ]
+  },
+  {
+    id: 'node-registry',
+    label: 'Node Registry Dominion',
+    contract: 'NodeRegistry',
+    description: 'Register nodes, rotate operators, metadata, and WorkMeter bindings.',
+    methods: ownerMethodMap.NodeRegistry,
+    builders: [
+      buildNodeRegistrationTx,
+      buildNodeMetadataTx,
+      buildNodeStatusTx,
+      buildNodeOperatorTx,
+      buildNodeWorkMeterTx
+    ]
+  },
+  {
+    id: 'workmeter-orbit',
+    label: 'WorkMeter Orbit Control',
+    contract: 'WorkMeter',
+    description: 'Curate validators/oracles, tune submission windows, and submit proofs.',
+    methods: ownerMethodMap.WorkMeter,
+    builders: [
+      buildWorkMeterValidatorTx,
+      buildWorkMeterOracleTx,
+      buildWorkMeterWindowTx,
+      buildWorkMeterProductivityIndexTx,
+      buildWorkMeterUsageTx
+    ]
+  },
+  {
+    id: 'productivity-index',
+    label: 'α-Productivity Index Apex',
+    contract: 'ProductivityIndex',
+    description: 'Record epochs and direct emission, WorkMeter, and treasury routing.',
+    methods: ownerMethodMap.ProductivityIndex,
+    builders: [
+      buildProductivityRecordTx,
+      buildProductivityEmissionManagerTx,
+      buildProductivityWorkMeterTx,
+      buildProductivityTreasuryTx
+    ]
+  },
+  {
+    id: 'job-registry',
+    label: 'Job Registry Arsenal',
+    contract: 'JobRegistry',
+    description: 'Upgrade validation, reputation, dispute modules, or trigger disputes.',
+    methods: ownerMethodMap.JobRegistry,
+    builders: [buildJobRegistryUpgradeTx, buildDisputeTriggerTx]
+  },
+  {
+    id: 'identity-registry',
+    label: 'Identity Delegation Vault',
+    contract: 'IdentityRegistry',
+    description: 'Authorize or revoke auxiliary operators for node custody.',
+    methods: ownerMethodMap.IdentityRegistry,
+    builders: [buildIdentityDelegateTx]
+  },
+  {
+    id: 'platform-incentives',
+    label: 'Platform Incentives Conductor',
+    contract: 'PlatformIncentives',
+    description: 'Redirect stake manager hooks, heartbeat grace, activation fees, and treasury.',
+    methods: ownerMethodMap.PlatformIncentives,
+    builders: [
+      buildIncentivesStakeManagerTx,
+      buildIncentivesMinimumStakeTx,
+      buildIncentivesHeartbeatTx,
+      buildIncentivesActivationFeeTx,
+      buildIncentivesTreasuryTx
+    ]
+  }
+];
+
+export function getOwnerControlSurfaces() {
+  return OWNER_CONTROL_SURFACES.map((surface) => {
+    const totalMethods = new Set(ownerMethodMap[surface.contract] ?? surface.methods);
+    const coveredMethods = Array.from(new Set(surface.methods));
+    const coverageRatio = totalMethods.size === 0 ? 1 : coveredMethods.length / totalMethods.size;
+    return {
+      id: surface.id,
+      label: surface.label,
+      contract: surface.contract,
+      description: surface.description,
+      methods: coveredMethods,
+      builders: surface.builders.map((builder) => builder.name),
+      coverage: {
+        covered: coveredMethods.length,
+        total: totalMethods.size,
+        percent: Number((coverageRatio * 100).toFixed(2))
+      }
+    };
+  });
 }

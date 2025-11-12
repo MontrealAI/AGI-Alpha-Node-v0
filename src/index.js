@@ -58,7 +58,8 @@ import {
   buildIncentivesHeartbeatTx,
   buildIncentivesActivationFeeTx,
   buildIncentivesTreasuryTx,
-  getOwnerFunctionCatalog
+  getOwnerFunctionCatalog,
+  getOwnerControlSurfaces
 } from './services/governance.js';
 import { recordGovernanceAction } from './services/governanceLedger.js';
 import { generateEnsSetupGuide, formatEnsGuide } from './services/ensGuide.js';
@@ -1857,6 +1858,32 @@ governance
       console.log(chalk.bold(contract));
       console.table(entries.map((entry) => ({ signature: entry.signature })));
     }
+  });
+
+governance
+  .command('surfaces')
+  .description('Summarize owner control surfaces, coverage, and builder mappings')
+  .option('--json', 'Emit JSON manifest for downstream tooling')
+  .action((options) => {
+    const surfaces = getOwnerControlSurfaces();
+    if (options.json) {
+      console.log(JSON.stringify(surfaces, null, 2));
+      return;
+    }
+    const table = surfaces.map((surface) => {
+      const percent = surface.coverage.percent;
+      const formattedPercent = Number.isFinite(percent)
+        ? `${percent % 1 === 0 ? percent.toFixed(0) : percent.toFixed(2)}%`
+        : 'n/a';
+      return {
+        Surface: surface.label,
+        Contract: surface.contract,
+        Coverage: `${surface.coverage.covered}/${surface.coverage.total} (${formattedPercent})`,
+        Methods: surface.methods.join(', '),
+        Builders: surface.builders.join(', ')
+      };
+    });
+    console.table(table);
   });
 
 addCommonGovernanceOptions(
