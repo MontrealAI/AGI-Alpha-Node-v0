@@ -276,6 +276,7 @@ Branch protection is backed by [`./.github/required-checks.json`](.github/requir
 
 ## Telemetry Blueprints
 
+- Telemetry codex: [`docs/telemetry/README.md`](docs/telemetry/README.md)
 - Solidity interface: [`docs/telemetry/alpha-kpi-interface.sol`](docs/telemetry/alpha-kpi-interface.sol)
 - Event manifest: [`docs/telemetry/AlphaWorkUnitEvents.sol`](docs/telemetry/AlphaWorkUnitEvents.sol)
 - Subgraph schema: [`docs/telemetry/subgraph.schema.graphql`](docs/telemetry/subgraph.schema.graphql)
