@@ -265,6 +265,302 @@ describe('agent API server', () => {
     const identityDelegatePayload = await identityDelegateResponse.json();
     expect(identityDelegatePayload.meta.proposed.allowed).toBe(true);
 
+    const emissionPerEpochResponse = await fetch(`${baseUrl}/governance/emission-per-epoch`, {
+      method: 'POST',
+      headers: ownerJsonHeaders,
+      body: JSON.stringify({
+        emissionManagerAddress: '0x0000000000000000000000000000000000000012',
+        emissionPerEpoch: '123.45'
+      })
+    });
+    expect(emissionPerEpochResponse.status).toBe(200);
+    const emissionPerEpochPayload = await emissionPerEpochResponse.json();
+    expect(emissionPerEpochPayload.meta.contract).toBe('EmissionManager');
+
+    const emissionEpochLengthResponse = await fetch(
+      `${baseUrl}/governance/emission-epoch-length`,
+      {
+        method: 'POST',
+        headers: ownerJsonHeaders,
+        body: JSON.stringify({
+          emissionManagerAddress: '0x0000000000000000000000000000000000000012',
+          epochLengthSeconds: '7200'
+        })
+      }
+    );
+    expect(emissionEpochLengthResponse.status).toBe(200);
+
+    const emissionCapResponse = await fetch(`${baseUrl}/governance/emission-cap`, {
+      method: 'POST',
+      headers: ownerJsonHeaders,
+      body: JSON.stringify({
+        emissionManagerAddress: '0x0000000000000000000000000000000000000012',
+        emissionCap: '1000000'
+      })
+    });
+    expect(emissionCapResponse.status).toBe(200);
+
+    const emissionMultiplierResponse = await fetch(`${baseUrl}/governance/emission-multiplier`, {
+      method: 'POST',
+      headers: ownerJsonHeaders,
+      body: JSON.stringify({
+        emissionManagerAddress: '0x0000000000000000000000000000000000000012',
+        numerator: '2',
+        denominator: '1'
+      })
+    });
+    expect(emissionMultiplierResponse.status).toBe(200);
+
+    const nodeRegisterResponse = await fetch(`${baseUrl}/governance/node/register`, {
+      method: 'POST',
+      headers: ownerJsonHeaders,
+      body: JSON.stringify({
+        nodeRegistryAddress: '0x0000000000000000000000000000000000000013',
+        nodeId: 'alpha-node-1',
+        operatorAddress: '0x0000000000000000000000000000000000000014',
+        metadataUri: 'ipfs://node'
+      })
+    });
+    expect(nodeRegisterResponse.status).toBe(200);
+    const nodeRegisterPayload = await nodeRegisterResponse.json();
+    expect(nodeRegisterPayload.meta.contract).toBe('NodeRegistry');
+
+    const nodeMetadataResponse = await fetch(`${baseUrl}/governance/node/metadata`, {
+      method: 'POST',
+      headers: ownerJsonHeaders,
+      body: JSON.stringify({
+        nodeRegistryAddress: '0x0000000000000000000000000000000000000013',
+        nodeId: 'alpha-node-1',
+        metadataUri: 'ipfs://node-updated'
+      })
+    });
+    expect(nodeMetadataResponse.status).toBe(200);
+
+    const nodeStatusResponse = await fetch(`${baseUrl}/governance/node/status`, {
+      method: 'POST',
+      headers: ownerJsonHeaders,
+      body: JSON.stringify({
+        nodeRegistryAddress: '0x0000000000000000000000000000000000000013',
+        nodeId: 'alpha-node-1',
+        active: false
+      })
+    });
+    expect(nodeStatusResponse.status).toBe(200);
+
+    const nodeOperatorResponse = await fetch(`${baseUrl}/governance/node/operator`, {
+      method: 'POST',
+      headers: ownerJsonHeaders,
+      body: JSON.stringify({
+        nodeRegistryAddress: '0x0000000000000000000000000000000000000013',
+        operatorAddress: '0x0000000000000000000000000000000000000014',
+        allowed: false
+      })
+    });
+    expect(nodeOperatorResponse.status).toBe(200);
+
+    const nodeWorkMeterResponse = await fetch(`${baseUrl}/governance/node/work-meter`, {
+      method: 'POST',
+      headers: ownerJsonHeaders,
+      body: JSON.stringify({
+        nodeRegistryAddress: '0x0000000000000000000000000000000000000013',
+        workMeterAddress: '0x0000000000000000000000000000000000000015'
+      })
+    });
+    expect(nodeWorkMeterResponse.status).toBe(200);
+
+    const workMeterValidatorResponse = await fetch(
+      `${baseUrl}/governance/work-meter/validator`,
+      {
+        method: 'POST',
+        headers: ownerJsonHeaders,
+        body: JSON.stringify({
+          workMeterAddress: '0x0000000000000000000000000000000000000015',
+          validatorAddress: '0x0000000000000000000000000000000000000016',
+          allowed: true
+        })
+      }
+    );
+    expect(workMeterValidatorResponse.status).toBe(200);
+
+    const workMeterOracleResponse = await fetch(`${baseUrl}/governance/work-meter/oracle`, {
+      method: 'POST',
+      headers: ownerJsonHeaders,
+      body: JSON.stringify({
+        workMeterAddress: '0x0000000000000000000000000000000000000015',
+        oracleAddress: '0x0000000000000000000000000000000000000019',
+        allowed: true
+      })
+    });
+    expect(workMeterOracleResponse.status).toBe(200);
+
+    const workMeterWindowResponse = await fetch(`${baseUrl}/governance/work-meter/window`, {
+      method: 'POST',
+      headers: ownerJsonHeaders,
+      body: JSON.stringify({
+        workMeterAddress: '0x0000000000000000000000000000000000000015',
+        submissionWindowSeconds: '3600'
+      })
+    });
+    expect(workMeterWindowResponse.status).toBe(200);
+
+    const workMeterProductivityResponse = await fetch(
+      `${baseUrl}/governance/work-meter/productivity-index`,
+      {
+        method: 'POST',
+        headers: ownerJsonHeaders,
+        body: JSON.stringify({
+          workMeterAddress: '0x0000000000000000000000000000000000000015',
+          productivityIndexAddress: '0x0000000000000000000000000000000000000017'
+        })
+      }
+    );
+    expect(workMeterProductivityResponse.status).toBe(200);
+
+    const workMeterUsageResponse = await fetch(
+      `${baseUrl}/governance/work-meter/submit-usage`,
+      {
+        method: 'POST',
+        headers: ownerJsonHeaders,
+        body: JSON.stringify({
+          workMeterAddress: '0x0000000000000000000000000000000000000015',
+          reportId: 'usage-report-1',
+          nodeId: 'alpha-node-1',
+          gpuSeconds: '12.5',
+          gflopsNorm: '1.0',
+          modelTier: '1.3',
+          sloPass: '0.95',
+          quality: '0.9'
+        })
+      }
+    );
+    expect(workMeterUsageResponse.status).toBe(200);
+    const workMeterUsagePayload = await workMeterUsageResponse.json();
+    expect(workMeterUsagePayload.meta.contract).toBe('WorkMeter');
+
+    const productivityRecordResponse = await fetch(
+      `${baseUrl}/governance/productivity/record-epoch`,
+      {
+        method: 'POST',
+        headers: ownerJsonHeaders,
+        body: JSON.stringify({
+          productivityIndexAddress: '0x0000000000000000000000000000000000000017',
+          epoch: '1',
+          alphaWu: '42.42',
+          tokensEmitted: '10',
+          tokensBurned: '2'
+        })
+      }
+    );
+    expect(productivityRecordResponse.status).toBe(200);
+    const productivityRecordPayload = await productivityRecordResponse.json();
+    expect(productivityRecordPayload.meta.contract).toBe('ProductivityIndex');
+
+    const productivityEmissionResponse = await fetch(
+      `${baseUrl}/governance/productivity/emission-manager`,
+      {
+        method: 'POST',
+        headers: ownerJsonHeaders,
+        body: JSON.stringify({
+          productivityIndexAddress: '0x0000000000000000000000000000000000000017',
+          emissionManagerAddress: '0x0000000000000000000000000000000000000012'
+        })
+      }
+    );
+    expect(productivityEmissionResponse.status).toBe(200);
+
+    const productivityWorkMeterResponse = await fetch(
+      `${baseUrl}/governance/productivity/work-meter`,
+      {
+        method: 'POST',
+        headers: ownerJsonHeaders,
+        body: JSON.stringify({
+          productivityIndexAddress: '0x0000000000000000000000000000000000000017',
+          workMeterAddress: '0x0000000000000000000000000000000000000015'
+        })
+      }
+    );
+    expect(productivityWorkMeterResponse.status).toBe(200);
+
+    const productivityTreasuryResponse = await fetch(
+      `${baseUrl}/governance/productivity/treasury`,
+      {
+        method: 'POST',
+        headers: ownerJsonHeaders,
+        body: JSON.stringify({
+          productivityIndexAddress: '0x0000000000000000000000000000000000000017',
+          treasuryAddress: '0x0000000000000000000000000000000000000020'
+        })
+      }
+    );
+    expect(productivityTreasuryResponse.status).toBe(200);
+
+    const incentivesMinimumResponse = await fetch(
+      `${baseUrl}/governance/incentives/minimum-stake`,
+      {
+        method: 'POST',
+        headers: ownerJsonHeaders,
+        body: JSON.stringify({
+          incentivesAddress: '0x0000000000000000000000000000000000000018',
+          amount: '750.25'
+        })
+      }
+    );
+    expect(incentivesMinimumResponse.status).toBe(200);
+    const incentivesMinimumPayload = await incentivesMinimumResponse.json();
+    expect(incentivesMinimumPayload.meta.contract).toBe('PlatformIncentives');
+
+    const incentivesStakeManagerResponse = await fetch(
+      `${baseUrl}/governance/incentives/stake-manager`,
+      {
+        method: 'POST',
+        headers: ownerJsonHeaders,
+        body: JSON.stringify({
+          incentivesAddress: '0x0000000000000000000000000000000000000018',
+          stakeManagerAddress: '0x0000000000000000000000000000000000000002'
+        })
+      }
+    );
+    expect(incentivesStakeManagerResponse.status).toBe(200);
+
+    const incentivesHeartbeatResponse = await fetch(
+      `${baseUrl}/governance/incentives/heartbeat-grace`,
+      {
+        method: 'POST',
+        headers: ownerJsonHeaders,
+        body: JSON.stringify({
+          incentivesAddress: '0x0000000000000000000000000000000000000018',
+          graceSeconds: '600'
+        })
+      }
+    );
+    expect(incentivesHeartbeatResponse.status).toBe(200);
+
+    const incentivesActivationResponse = await fetch(
+      `${baseUrl}/governance/incentives/activation-fee`,
+      {
+        method: 'POST',
+        headers: ownerJsonHeaders,
+        body: JSON.stringify({
+          incentivesAddress: '0x0000000000000000000000000000000000000018',
+          feeAmount: '25'
+        })
+      }
+    );
+    expect(incentivesActivationResponse.status).toBe(200);
+
+    const incentivesTreasuryResponse = await fetch(
+      `${baseUrl}/governance/incentives/treasury`,
+      {
+        method: 'POST',
+        headers: ownerJsonHeaders,
+        body: JSON.stringify({
+          incentivesAddress: '0x0000000000000000000000000000000000000018',
+          treasuryAddress: '0x0000000000000000000000000000000000000021'
+        })
+      }
+    );
+    expect(incentivesTreasuryResponse.status).toBe(200);
+
     const persistResponse = await fetch(`${baseUrl}/governance/minimum-stake`, {
       method: 'POST',
       headers: ownerJsonHeaders,
@@ -325,7 +621,7 @@ describe('agent API server', () => {
 
     const metrics = api.getMetrics();
     expect(metrics.governance.directivesUpdates).toBeGreaterThanOrEqual(2);
-    expect(metrics.governance.payloads).toBeGreaterThanOrEqual(9);
+    expect(metrics.governance.payloads).toBeGreaterThanOrEqual(30);
     expect(metrics.governance.ledgerEntries).toBeGreaterThanOrEqual(1);
 
     const invalidResponse = await fetch(`${baseUrl}/governance/minimum-stake`, {

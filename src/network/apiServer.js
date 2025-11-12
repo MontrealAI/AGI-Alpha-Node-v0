@@ -14,6 +14,29 @@ import {
   buildJobRegistryUpgradeTx,
   buildDisputeTriggerTx,
   buildIdentityDelegateTx,
+  buildEmissionPerEpochTx,
+  buildEmissionEpochLengthTx,
+  buildEmissionCapTx,
+  buildEmissionRateMultiplierTx,
+  buildNodeRegistrationTx,
+  buildNodeMetadataTx,
+  buildNodeStatusTx,
+  buildNodeOperatorTx,
+  buildNodeWorkMeterTx,
+  buildWorkMeterValidatorTx,
+  buildWorkMeterOracleTx,
+  buildWorkMeterWindowTx,
+  buildWorkMeterProductivityIndexTx,
+  buildWorkMeterUsageTx,
+  buildProductivityRecordTx,
+  buildProductivityEmissionManagerTx,
+  buildProductivityWorkMeterTx,
+  buildProductivityTreasuryTx,
+  buildIncentivesStakeManagerTx,
+  buildIncentivesMinimumStakeTx,
+  buildIncentivesHeartbeatTx,
+  buildIncentivesActivationFeeTx,
+  buildIncentivesTreasuryTx,
   getOwnerFunctionCatalog
 } from '../services/governance.js';
 import { buildStakeAndActivateTx } from '../services/staking.js';
@@ -176,6 +199,40 @@ const decimalAmountSchema = z
   });
 
 const basisPointsSchema = z.coerce.number().int().min(0).max(10_000);
+
+const nonEmptyStringSchema = z.string().min(1);
+
+const numericLikeSchema = z
+  .union([z.string(), z.number(), z.bigint()])
+  .transform((value, ctx) => {
+    const asString = typeof value === 'string' ? value.trim() : value.toString();
+    if (!asString) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'value must be numeric'
+      });
+      return z.NEVER;
+    }
+    return asString;
+  });
+
+const optionalNumericLikeSchema = z
+  .union([z.string(), z.number(), z.bigint()])
+  .optional()
+  .transform((value, ctx) => {
+    if (value === undefined || value === null) {
+      return null;
+    }
+    const asString = typeof value === 'string' ? value.trim() : value.toString();
+    if (!asString) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'value must be numeric'
+      });
+      return z.NEVER;
+    }
+    return asString;
+  });
 
 const bigIntSchema = z
   .union([z.string(), z.number(), z.bigint()])
@@ -392,6 +449,324 @@ const identityDelegateSchema = governanceCommonSchema.extend({
   allowed: booleanFlagSchema,
   currentAllowed: booleanFlagSchema.optional()
 });
+
+const emissionPerEpochSchema = governanceCommonSchema
+  .extend({
+    emissionManagerAddress: checksumAddressSchema,
+    emissionPerEpoch: decimalAmountSchema,
+    decimals: z.coerce.number().int().min(0).max(36).optional(),
+    currentEmissionPerEpoch: optionalNumericLikeSchema,
+    current: optionalNumericLikeSchema
+  })
+  .transform((value) => {
+    const decimals = value.decimals ?? 18;
+    const currentRaw = value.currentEmissionPerEpoch ?? value.current;
+    return {
+      ...value,
+      decimals,
+      currentEmissionPerEpoch: currentRaw ? parseUnits(currentRaw, decimals) : null
+    };
+  });
+
+const emissionEpochLengthSchema = governanceCommonSchema.extend({
+  emissionManagerAddress: checksumAddressSchema,
+  epochLengthSeconds: bigIntSchema,
+  currentEpochLengthSeconds: bigIntSchema.optional(),
+  current: bigIntSchema.optional()
+});
+
+const emissionCapSchema = governanceCommonSchema
+  .extend({
+    emissionManagerAddress: checksumAddressSchema,
+    emissionCap: decimalAmountSchema,
+    decimals: z.coerce.number().int().min(0).max(36).optional(),
+    currentEmissionCap: optionalNumericLikeSchema,
+    current: optionalNumericLikeSchema
+  })
+  .transform((value) => {
+    const decimals = value.decimals ?? 18;
+    const currentRaw = value.currentEmissionCap ?? value.current;
+    return {
+      ...value,
+      decimals,
+      currentEmissionCap: currentRaw ? parseUnits(currentRaw, decimals) : null
+    };
+  });
+
+const emissionMultiplierSchema = governanceCommonSchema
+  .extend({
+    emissionManagerAddress: checksumAddressSchema,
+    numerator: bigIntSchema,
+    denominator: bigIntSchema,
+    currentNumerator: bigIntSchema.optional(),
+    currentDenominator: bigIntSchema.optional(),
+    current: z
+      .object({ numerator: bigIntSchema, denominator: bigIntSchema })
+      .optional()
+  })
+  .transform((value) => {
+    const current = value.current
+      ? { numerator: value.current.numerator, denominator: value.current.denominator }
+      : null;
+    const numerator = value.currentNumerator ?? current?.numerator ?? null;
+    const denominator = value.currentDenominator ?? current?.denominator ?? null;
+    return {
+      ...value,
+      currentMultiplier:
+        numerator !== null && denominator !== null ? { numerator, denominator } : null
+    };
+  });
+
+const nodeRegistrationSchema = governanceCommonSchema
+  .extend({
+    nodeRegistryAddress: checksumAddressSchema,
+    nodeId: nonEmptyStringSchema,
+    operatorAddress: checksumAddressSchema,
+    metadataUri: nonEmptyStringSchema
+  })
+  .transform((value) => ({
+    ...value,
+    metadataURI: value.metadataUri
+  }));
+
+const nodeMetadataSchema = governanceCommonSchema
+  .extend({
+    nodeRegistryAddress: checksumAddressSchema,
+    nodeId: nonEmptyStringSchema,
+    metadataUri: nonEmptyStringSchema,
+    currentMetadataUri: z.string().optional(),
+    current: z.string().optional()
+  })
+  .transform((value) => ({
+    ...value,
+    metadataURI: value.metadataUri,
+    currentMetadataURI: value.currentMetadataUri ?? value.current ?? null
+  }));
+
+const nodeStatusSchema = governanceCommonSchema
+  .extend({
+    nodeRegistryAddress: checksumAddressSchema,
+    nodeId: nonEmptyStringSchema,
+    active: booleanFlagSchema,
+    currentStatus: booleanFlagSchema.optional(),
+    current: booleanFlagSchema.optional()
+  })
+  .transform((value) => ({
+    ...value,
+    currentStatus: value.currentStatus ?? value.current ?? null
+  }));
+
+const nodeOperatorSchema = governanceCommonSchema
+  .extend({
+    nodeRegistryAddress: checksumAddressSchema,
+    operatorAddress: checksumAddressSchema,
+    allowed: booleanFlagSchema,
+    currentAllowed: booleanFlagSchema.optional(),
+    current: booleanFlagSchema.optional()
+  })
+  .transform((value) => ({
+    ...value,
+    currentAllowed: value.currentAllowed ?? value.current ?? null
+  }));
+
+const nodeWorkMeterSchema = governanceCommonSchema
+  .extend({
+    nodeRegistryAddress: checksumAddressSchema,
+    workMeterAddress: checksumAddressSchema,
+    currentWorkMeter: checksumAddressSchema.optional(),
+    current: checksumAddressSchema.optional()
+  })
+  .transform((value) => ({
+    ...value,
+    currentWorkMeter: value.currentWorkMeter ?? value.current ?? null
+  }));
+
+const workMeterValidatorSchema = governanceCommonSchema
+  .extend({
+    workMeterAddress: checksumAddressSchema,
+    validatorAddress: checksumAddressSchema,
+    allowed: booleanFlagSchema,
+    currentAllowed: booleanFlagSchema.optional(),
+    current: booleanFlagSchema.optional()
+  })
+  .transform((value) => ({
+    ...value,
+    currentAllowed: value.currentAllowed ?? value.current ?? null
+  }));
+
+const workMeterOracleSchema = governanceCommonSchema
+  .extend({
+    workMeterAddress: checksumAddressSchema,
+    oracleAddress: checksumAddressSchema,
+    allowed: booleanFlagSchema,
+    currentAllowed: booleanFlagSchema.optional(),
+    current: booleanFlagSchema.optional()
+  })
+  .transform((value) => ({
+    ...value,
+    currentAllowed: value.currentAllowed ?? value.current ?? null
+  }));
+
+const workMeterWindowSchema = governanceCommonSchema
+  .extend({
+    workMeterAddress: checksumAddressSchema,
+    submissionWindowSeconds: bigIntSchema,
+    currentWindowSeconds: bigIntSchema.optional(),
+    current: bigIntSchema.optional()
+  })
+  .transform((value) => ({
+    ...value,
+    currentWindowSeconds: value.currentWindowSeconds ?? value.current ?? null
+  }));
+
+const workMeterProductivitySchema = governanceCommonSchema
+  .extend({
+    workMeterAddress: checksumAddressSchema,
+    productivityIndexAddress: checksumAddressSchema,
+    currentProductivityIndex: checksumAddressSchema.optional(),
+    current: checksumAddressSchema.optional()
+  })
+  .transform((value) => ({
+    ...value,
+    currentProductivityIndex: value.currentProductivityIndex ?? value.current ?? null
+  }));
+
+const workMeterUsageSchema = governanceCommonSchema.extend({
+  workMeterAddress: checksumAddressSchema,
+  reportId: nonEmptyStringSchema,
+  nodeId: nonEmptyStringSchema,
+  gpuSeconds: numericLikeSchema,
+  gflopsNorm: numericLikeSchema,
+  modelTier: numericLikeSchema,
+  sloPass: numericLikeSchema,
+  quality: numericLikeSchema,
+  usageHash: z.string().optional(),
+  metricDecimals: z.coerce.number().int().min(0).max(36).optional()
+});
+
+const productivityRecordSchema = governanceCommonSchema
+  .extend({
+    productivityIndexAddress: checksumAddressSchema,
+    epoch: bigIntSchema,
+    alphaWu: decimalAmountSchema,
+    tokensEmitted: decimalAmountSchema.optional(),
+    tokensBurned: decimalAmountSchema.optional(),
+    decimals: z.coerce.number().int().min(0).max(36).optional()
+  })
+  .transform((value) => ({
+    ...value,
+    decimals: value.decimals ?? 18,
+    tokensEmitted: value.tokensEmitted ?? '0',
+    tokensBurned: value.tokensBurned ?? '0'
+  }));
+
+const productivityEmissionSchema = governanceCommonSchema
+  .extend({
+    productivityIndexAddress: checksumAddressSchema,
+    emissionManagerAddress: checksumAddressSchema,
+    currentEmissionManager: checksumAddressSchema.optional(),
+    current: checksumAddressSchema.optional()
+  })
+  .transform((value) => ({
+    ...value,
+    currentEmissionManager: value.currentEmissionManager ?? value.current ?? null
+  }));
+
+const productivityWorkMeterSchema = governanceCommonSchema
+  .extend({
+    productivityIndexAddress: checksumAddressSchema,
+    workMeterAddress: checksumAddressSchema,
+    currentWorkMeter: checksumAddressSchema.optional(),
+    current: checksumAddressSchema.optional()
+  })
+  .transform((value) => ({
+    ...value,
+    currentWorkMeter: value.currentWorkMeter ?? value.current ?? null
+  }));
+
+const productivityTreasurySchema = governanceCommonSchema
+  .extend({
+    productivityIndexAddress: checksumAddressSchema,
+    treasuryAddress: checksumAddressSchema,
+    currentTreasury: checksumAddressSchema.optional(),
+    current: checksumAddressSchema.optional()
+  })
+  .transform((value) => ({
+    ...value,
+    currentTreasury: value.currentTreasury ?? value.current ?? null
+  }));
+
+const incentivesStakeManagerSchema = governanceCommonSchema
+  .extend({
+    incentivesAddress: checksumAddressSchema,
+    stakeManagerAddress: checksumAddressSchema,
+    currentStakeManager: checksumAddressSchema.optional(),
+    current: checksumAddressSchema.optional()
+  })
+  .transform((value) => ({
+    ...value,
+    currentStakeManager: value.currentStakeManager ?? value.current ?? null
+  }));
+
+const incentivesMinimumStakeSchema = governanceCommonSchema
+  .extend({
+    incentivesAddress: checksumAddressSchema,
+    amount: decimalAmountSchema,
+    decimals: z.coerce.number().int().min(0).max(36).optional(),
+    currentMinimum: optionalNumericLikeSchema,
+    current: optionalNumericLikeSchema
+  })
+  .transform((value) => {
+    const decimals = value.decimals ?? 18;
+    const currentRaw = value.currentMinimum ?? value.current;
+    return {
+      ...value,
+      decimals,
+      currentMinimum: currentRaw ? parseUnits(currentRaw, decimals) : null
+    };
+  });
+
+const incentivesHeartbeatSchema = governanceCommonSchema
+  .extend({
+    incentivesAddress: checksumAddressSchema,
+    graceSeconds: bigIntSchema,
+    currentGraceSeconds: bigIntSchema.optional(),
+    current: bigIntSchema.optional()
+  })
+  .transform((value) => ({
+    ...value,
+    currentGraceSeconds: value.currentGraceSeconds ?? value.current ?? null
+  }));
+
+const incentivesActivationFeeSchema = governanceCommonSchema
+  .extend({
+    incentivesAddress: checksumAddressSchema,
+    feeAmount: decimalAmountSchema,
+    decimals: z.coerce.number().int().min(0).max(36).optional(),
+    currentFee: optionalNumericLikeSchema,
+    current: optionalNumericLikeSchema
+  })
+  .transform((value) => {
+    const decimals = value.decimals ?? 18;
+    const currentRaw = value.currentFee ?? value.current;
+    return {
+      ...value,
+      decimals,
+      currentFee: currentRaw ? parseUnits(currentRaw, decimals) : null
+    };
+  });
+
+const incentivesTreasurySchema = governanceCommonSchema
+  .extend({
+    incentivesAddress: checksumAddressSchema,
+    treasuryAddress: checksumAddressSchema,
+    currentTreasury: checksumAddressSchema.optional(),
+    current: checksumAddressSchema.optional()
+  })
+  .transform((value) => ({
+    ...value,
+    currentTreasury: value.currentTreasury ?? value.current ?? null
+  }));
 
 export function startAgentApi({
   port = 8080,
@@ -792,6 +1167,280 @@ export function startAgentApi({
               input.currentAllowed === undefined
                 ? null
                 : { operator: input.operatorAddress, allowed: input.currentAllowed }
+          })
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/emission-per-epoch') {
+        await handleGovernanceRequest(req, res, emissionPerEpochSchema, (input) =>
+          buildEmissionPerEpochTx({
+            emissionManagerAddress: input.emissionManagerAddress,
+            emissionPerEpoch: input.emissionPerEpoch,
+            decimals: input.decimals,
+            currentEmissionPerEpoch: input.currentEmissionPerEpoch
+          })
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/emission-epoch-length') {
+        await handleGovernanceRequest(req, res, emissionEpochLengthSchema, (input) =>
+          buildEmissionEpochLengthTx({
+            emissionManagerAddress: input.emissionManagerAddress,
+            epochLengthSeconds: input.epochLengthSeconds,
+            currentEpochLengthSeconds: input.currentEpochLengthSeconds ?? input.current ?? null
+          })
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/emission-cap') {
+        await handleGovernanceRequest(req, res, emissionCapSchema, (input) =>
+          buildEmissionCapTx({
+            emissionManagerAddress: input.emissionManagerAddress,
+            emissionCap: input.emissionCap,
+            decimals: input.decimals,
+            currentEmissionCap: input.currentEmissionCap
+          })
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/emission-multiplier') {
+        await handleGovernanceRequest(req, res, emissionMultiplierSchema, (input) =>
+          buildEmissionRateMultiplierTx({
+            emissionManagerAddress: input.emissionManagerAddress,
+            numerator: input.numerator,
+            denominator: input.denominator,
+            currentMultiplier: input.currentMultiplier
+          })
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/node/register') {
+        await handleGovernanceRequest(req, res, nodeRegistrationSchema, (input) =>
+          buildNodeRegistrationTx({
+            nodeRegistryAddress: input.nodeRegistryAddress,
+            nodeId: input.nodeId,
+            operatorAddress: input.operatorAddress,
+            metadataURI: input.metadataURI
+          })
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/node/metadata') {
+        await handleGovernanceRequest(req, res, nodeMetadataSchema, (input) =>
+          buildNodeMetadataTx({
+            nodeRegistryAddress: input.nodeRegistryAddress,
+            nodeId: input.nodeId,
+            metadataURI: input.metadataURI,
+            currentMetadataURI: input.currentMetadataURI
+          })
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/node/status') {
+        await handleGovernanceRequest(req, res, nodeStatusSchema, (input) =>
+          buildNodeStatusTx({
+            nodeRegistryAddress: input.nodeRegistryAddress,
+            nodeId: input.nodeId,
+            active: input.active,
+            currentStatus: input.currentStatus
+          })
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/node/operator') {
+        await handleGovernanceRequest(req, res, nodeOperatorSchema, (input) =>
+          buildNodeOperatorTx({
+            nodeRegistryAddress: input.nodeRegistryAddress,
+            operatorAddress: input.operatorAddress,
+            allowed: input.allowed,
+            currentAllowed: input.currentAllowed
+          })
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/node/work-meter') {
+        await handleGovernanceRequest(req, res, nodeWorkMeterSchema, (input) =>
+          buildNodeWorkMeterTx({
+            nodeRegistryAddress: input.nodeRegistryAddress,
+            workMeterAddress: input.workMeterAddress,
+            currentWorkMeter: input.currentWorkMeter
+          })
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/work-meter/validator') {
+        await handleGovernanceRequest(req, res, workMeterValidatorSchema, (input) =>
+          buildWorkMeterValidatorTx({
+            workMeterAddress: input.workMeterAddress,
+            validatorAddress: input.validatorAddress,
+            allowed: input.allowed,
+            currentAllowed: input.currentAllowed
+          })
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/work-meter/oracle') {
+        await handleGovernanceRequest(req, res, workMeterOracleSchema, (input) =>
+          buildWorkMeterOracleTx({
+            workMeterAddress: input.workMeterAddress,
+            oracleAddress: input.oracleAddress,
+            allowed: input.allowed,
+            currentAllowed: input.currentAllowed
+          })
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/work-meter/window') {
+        await handleGovernanceRequest(req, res, workMeterWindowSchema, (input) =>
+          buildWorkMeterWindowTx({
+            workMeterAddress: input.workMeterAddress,
+            submissionWindowSeconds: input.submissionWindowSeconds,
+            currentWindowSeconds: input.currentWindowSeconds ?? input.current ?? null
+          })
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/work-meter/productivity-index') {
+        await handleGovernanceRequest(req, res, workMeterProductivitySchema, (input) =>
+          buildWorkMeterProductivityIndexTx({
+            workMeterAddress: input.workMeterAddress,
+            productivityIndexAddress: input.productivityIndexAddress,
+            currentProductivityIndex: input.currentProductivityIndex
+          })
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/work-meter/submit-usage') {
+        await handleGovernanceRequest(req, res, workMeterUsageSchema, (input) =>
+          buildWorkMeterUsageTx({
+            workMeterAddress: input.workMeterAddress,
+            reportId: input.reportId,
+            nodeId: input.nodeId,
+            gpuSeconds: input.gpuSeconds,
+            gflopsNorm: input.gflopsNorm,
+            modelTier: input.modelTier,
+            sloPass: input.sloPass,
+            quality: input.quality,
+            usageHash: input.usageHash,
+            metricDecimals: input.metricDecimals
+          })
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/productivity/record-epoch') {
+        await handleGovernanceRequest(req, res, productivityRecordSchema, (input) =>
+          buildProductivityRecordTx({
+            productivityIndexAddress: input.productivityIndexAddress,
+            epoch: input.epoch,
+            alphaWu: input.alphaWu,
+            tokensEmitted: input.tokensEmitted,
+            tokensBurned: input.tokensBurned,
+            decimals: input.decimals
+          })
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/productivity/emission-manager') {
+        await handleGovernanceRequest(req, res, productivityEmissionSchema, (input) =>
+          buildProductivityEmissionManagerTx({
+            productivityIndexAddress: input.productivityIndexAddress,
+            emissionManagerAddress: input.emissionManagerAddress,
+            currentEmissionManager: input.currentEmissionManager
+          })
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/productivity/work-meter') {
+        await handleGovernanceRequest(req, res, productivityWorkMeterSchema, (input) =>
+          buildProductivityWorkMeterTx({
+            productivityIndexAddress: input.productivityIndexAddress,
+            workMeterAddress: input.workMeterAddress,
+            currentWorkMeter: input.currentWorkMeter
+          })
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/productivity/treasury') {
+        await handleGovernanceRequest(req, res, productivityTreasurySchema, (input) =>
+          buildProductivityTreasuryTx({
+            productivityIndexAddress: input.productivityIndexAddress,
+            treasuryAddress: input.treasuryAddress,
+            currentTreasury: input.currentTreasury
+          })
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/incentives/stake-manager') {
+        await handleGovernanceRequest(req, res, incentivesStakeManagerSchema, (input) =>
+          buildIncentivesStakeManagerTx({
+            incentivesAddress: input.incentivesAddress,
+            stakeManagerAddress: input.stakeManagerAddress,
+            currentStakeManager: input.currentStakeManager
+          })
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/incentives/minimum-stake') {
+        await handleGovernanceRequest(req, res, incentivesMinimumStakeSchema, (input) =>
+          buildIncentivesMinimumStakeTx({
+            incentivesAddress: input.incentivesAddress,
+            amount: input.amount,
+            decimals: input.decimals,
+            currentMinimum: input.currentMinimum
+          })
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/incentives/heartbeat-grace') {
+        await handleGovernanceRequest(req, res, incentivesHeartbeatSchema, (input) =>
+          buildIncentivesHeartbeatTx({
+            incentivesAddress: input.incentivesAddress,
+            graceSeconds: input.graceSeconds,
+            currentGraceSeconds: input.currentGraceSeconds
+          })
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/incentives/activation-fee') {
+        await handleGovernanceRequest(req, res, incentivesActivationFeeSchema, (input) =>
+          buildIncentivesActivationFeeTx({
+            incentivesAddress: input.incentivesAddress,
+            feeAmount: input.feeAmount,
+            decimals: input.decimals,
+            currentFee: input.currentFee
+          })
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/incentives/treasury') {
+        await handleGovernanceRequest(req, res, incentivesTreasurySchema, (input) =>
+          buildIncentivesTreasuryTx({
+            incentivesAddress: input.incentivesAddress,
+            treasuryAddress: input.treasuryAddress,
+            currentTreasury: input.currentTreasury
           })
         );
         return;

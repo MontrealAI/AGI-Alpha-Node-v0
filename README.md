@@ -202,6 +202,34 @@ sequenceDiagram
 - [`src/network/apiServer.js`](src/network/apiServer.js) exposes a hardened HTTP interface that lists lifecycle jobs, forwards apply/submit/finalize commands, broadcasts owner directives, and crafts governance payloads for authenticated operators.
 - [`test/apiServer.test.js`](test/apiServer.test.js) verifies endpoint behavior, lifecycle integration, and owner authentication flows.
 
+#### Governance Payload Endpoints
+
+```mermaid
+flowchart LR
+  OwnerToken[Bearer owner token] --> API[/Agent Mesh API/]
+  API --> Ledger[Governance Ledger]
+  API --> Builders[Governance Builders]
+  Builders --> Chain[(Protocol Contracts)]
+  Ledger --> EvidenceVault[Owner Evidence Vault]
+  API --> Metrics[Runtime Metrics]
+```
+
+| Contract Surface | Purpose | REST Endpoint → Builder |
+| ---------------- | ------- | ---------------------- |
+| **SystemPause** | Freeze or resume protocol entry points. | `/governance/pause` → [`buildSystemPauseTx`](src/services/governance.js) |
+| **StakeManager** | Tune minimum stake & validator quorum, wire registries. | `/governance/minimum-stake`, `/governance/validator-threshold`, `/governance/registry-upgrade` → [`buildMinimumStakeTx`](src/services/governance.js), [`buildValidatorThresholdTx`](src/services/governance.js), [`buildStakeRegistryUpgradeTx`](src/services/governance.js) |
+| **RewardEngine** | Rebalance operator/validator/treasury splits. | `/governance/role-share`, `/governance/global-shares` → [`buildRoleShareTx`](src/services/governance.js), [`buildGlobalSharesTx`](src/services/governance.js) |
+| **EmissionManager** | Shape emission cadence, caps, multipliers. | `/governance/emission-per-epoch`, `/governance/emission-epoch-length`, `/governance/emission-cap`, `/governance/emission-multiplier` → [`buildEmissionPerEpochTx`](src/services/governance.js), [`buildEmissionEpochLengthTx`](src/services/governance.js), [`buildEmissionCapTx`](src/services/governance.js), [`buildEmissionRateMultiplierTx`](src/services/governance.js) |
+| **NodeRegistry** | Register nodes, rotate operators, bind WorkMeter. | `/governance/node/register`, `/governance/node/metadata`, `/governance/node/status`, `/governance/node/operator`, `/governance/node/work-meter` → [`buildNodeRegistrationTx`](src/services/governance.js), [`buildNodeMetadataTx`](src/services/governance.js), [`buildNodeStatusTx`](src/services/governance.js), [`buildNodeOperatorTx`](src/services/governance.js), [`buildNodeWorkMeterTx`](src/services/governance.js) |
+| **WorkMeter** | Curate validators/oracles, adjust windows, submit usage. | `/governance/work-meter/validator`, `/governance/work-meter/oracle`, `/governance/work-meter/window`, `/governance/work-meter/productivity-index`, `/governance/work-meter/submit-usage` → [`buildWorkMeterValidatorTx`](src/services/governance.js), [`buildWorkMeterOracleTx`](src/services/governance.js), [`buildWorkMeterWindowTx`](src/services/governance.js), [`buildWorkMeterProductivityIndexTx`](src/services/governance.js), [`buildWorkMeterUsageTx`](src/services/governance.js) |
+| **ProductivityIndex** | Record α‑WU epochs, retune downstream routing. | `/governance/productivity/record-epoch`, `/governance/productivity/emission-manager`, `/governance/productivity/work-meter`, `/governance/productivity/treasury` → [`buildProductivityRecordTx`](src/services/governance.js), [`buildProductivityEmissionManagerTx`](src/services/governance.js), [`buildProductivityWorkMeterTx`](src/services/governance.js), [`buildProductivityTreasuryTx`](src/services/governance.js) |
+| **JobRegistry** | Upgrade modules or trigger disputes. | `/governance/job-module`, `/governance/dispute` → [`buildJobRegistryUpgradeTx`](src/services/governance.js), [`buildDisputeTriggerTx`](src/services/governance.js) |
+| **IdentityRegistry** | Delegate or revoke operator authority. | `/governance/identity-delegate` → [`buildIdentityDelegateTx`](src/services/governance.js) |
+| **PlatformIncentives** | Redirect stake hooks, heartbeat grace, fees, treasury. | `/governance/incentives/minimum-stake`, `/governance/incentives/stake-manager`, `/governance/incentives/heartbeat-grace`, `/governance/incentives/activation-fee`, `/governance/incentives/treasury` → [`buildIncentivesMinimumStakeTx`](src/services/governance.js), [`buildIncentivesStakeManagerTx`](src/services/governance.js), [`buildIncentivesHeartbeatTx`](src/services/governance.js), [`buildIncentivesActivationFeeTx`](src/services/governance.js), [`buildIncentivesTreasuryTx`](src/services/governance.js) |
+| **Stake Activation** | Top-up incentives vault via helper. | `/governance/stake-top-up` → [`buildStakeAndActivateTx`](src/services/staking.js) |
+
+> Every governance call defaults to dry-run signing envelopes; set `dryRun: false` and `confirm: true` to notarize payloads into the owner ledger.
+
 ### Telemetry Surfaces
 
 - [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) publishes Prometheus gauges for stake posture, heartbeats, throughput, success rates, token projections, agent utilization, provider modes, and registry compatibility. [`test/monitoring.test.js`](test/monitoring.test.js) confirms metrics exposure and path hardening.
