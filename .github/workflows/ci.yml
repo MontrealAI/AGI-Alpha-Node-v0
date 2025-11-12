@@ -52,6 +52,11 @@ jobs:
           CI: true
         run: npm run ci:policy
 
+      - name: Enforce branch gate
+        env:
+          CI: true
+        run: npm run ci:branch
+
   test:
     name: Unit & Integration Tests
     runs-on: ubuntu-latest
@@ -74,10 +79,56 @@ jobs:
           CI: true
         run: npm test
 
+  solidity:
+    name: Solidity Lint & Compile
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Solidity checks
+        env:
+          CI: true
+        run: npm run ci:solidity
+
+  typescript:
+    name: Subgraph TypeScript Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install CLI dependencies
+        run: npm ci
+
+      - name: Build subgraph project
+        env:
+          CI: true
+        run: npm run ci:ts
+
   coverage:
     name: Coverage Report
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      coverage: ${{ steps.coverage_summary.outputs.coverage }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -95,6 +146,19 @@ jobs:
         env:
           CI: true
         run: npm run coverage
+
+      - name: Capture coverage summary
+        id: coverage_summary
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          import { resolve } from 'node:path';
+          const summaryPath = resolve('coverage/coverage-summary.json');
+          const data = JSON.parse(readFileSync(summaryPath, 'utf8'));
+          const statements = data.total?.statements?.pct ?? 0;
+          const rounded = Math.round(statements * 10) / 10;
+          writeFileSync(process.env.GITHUB_OUTPUT, `coverage=${rounded}\n`, { flag: 'a' });
+          NODE
 
       - name: Upload coverage artifacts
         if: always()
@@ -137,3 +201,108 @@ jobs:
           path: docker-smoke-help.txt
           retention-days: 7
           if-no-files-found: warn
+
+  security:
+    name: Dependency Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run security audit
+        env:
+          CI: true
+        run: npm run ci:security
+
+  badges:
+    name: Publish Status Badges
+    runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/main' }}
+    needs:
+      - lint
+      - test
+      - solidity
+      - typescript
+      - coverage
+      - docker-smoke
+      - security
+    steps:
+      - name: Checkout scripts
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts/publish-badges.mjs
+
+      - name: Generate badge payloads
+        run: |
+          node --input-type=module <<'NODE'
+          import { writeFileSync } from 'node:fs';
+          const results = {
+            lint: process.env.LINT_RESULT,
+            test: process.env.TEST_RESULT,
+            solidity: process.env.SOLIDITY_RESULT,
+            typescript: process.env.TYPESCRIPT_RESULT,
+            docker: process.env.DOCKER_RESULT,
+            security: process.env.SECURITY_RESULT
+          };
+          const coverageRaw = Number(process.env.COVERAGE ?? '0');
+          const coverage = Number.isFinite(coverageRaw) ? coverageRaw : 0;
+
+          const statusBadge = (label, result) => {
+            const normalized = (result ?? '').toLowerCase();
+            let message = 'unknown';
+            let color = 'lightgrey';
+            if (normalized === 'success') {
+              message = 'pass';
+              color = 'brightgreen';
+            } else if (normalized === 'failure' || normalized === 'cancelled') {
+              message = 'fail';
+              color = 'red';
+            }
+            return { schemaVersion: 1, label, message, color };
+          };
+
+          const badges = {
+            'lint.json': JSON.stringify(statusBadge('lint', results.lint)),
+            'test.json': JSON.stringify(statusBadge('tests', results.test)),
+            'solidity.json': JSON.stringify(statusBadge('solidity', results.solidity)),
+            'typescript.json': JSON.stringify(statusBadge('subgraph', results.typescript)),
+            'docker.json': JSON.stringify(statusBadge('docker', results.docker)),
+            'security.json': JSON.stringify(statusBadge('security', results.security)),
+            'coverage.json': JSON.stringify({
+              schemaVersion: 1,
+              label: 'coverage',
+              message: `${coverage.toFixed(1)}%`,
+              color: coverage >= 80 ? 'brightgreen' : coverage >= 60 ? 'yellow' : 'orange'
+            })
+          };
+
+          for (const [file, contents] of Object.entries(badges)) {
+            writeFileSync(file, contents);
+          }
+          NODE
+        env:
+          LINT_RESULT: ${{ needs.lint.result }}
+          TEST_RESULT: ${{ needs.test.result }}
+          SOLIDITY_RESULT: ${{ needs.solidity.result }}
+          TYPESCRIPT_RESULT: ${{ needs.typescript.result }}
+          DOCKER_RESULT: ${{ needs['docker-smoke'].result }}
+          SECURITY_RESULT: ${{ needs.security.result }}
+          COVERAGE: ${{ needs.coverage.outputs.coverage }}
+
+      - name: Publish badges
+        env:
+          BADGE_GIST_ID: ${{ secrets.BADGE_GIST_ID }}
+          BADGE_GIST_TOKEN: ${{ secrets.BADGE_GIST_TOKEN }}
+        run: |
+          node scripts/publish-badges.mjs lint.json test.json solidity.json typescript.json docker.json security.json coverage.json

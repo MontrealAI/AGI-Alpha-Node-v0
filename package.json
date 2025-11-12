@@ -16,11 +16,17 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "coverage": "c8 --reporter=text --reporter=lcov vitest run",
+    "lint:sol": "solhint --config .solhint.json \"contracts/**/*.sol\"",
+    "test:sol": "solcjs --base-path . --include-path node_modules --bin --abi contracts/AlphaNodeManager.sol",
     "ci:lint": "npm run lint",
     "ci:test": "npm run test",
     "ci:coverage": "npm run coverage",
+    "ci:solidity": "npm run lint:sol && npm run test:sol",
+    "ci:ts": "npm --prefix subgraph ci --no-audit --no-fund && npm --prefix subgraph run build",
+    "ci:security": "npm audit --omit=dev --audit-level=high",
     "ci:policy": "node scripts/verify-health-gate.mjs",
-    "ci:verify": "npm run ci:lint && npm run ci:test && npm run ci:coverage && npm run ci:policy",
+    "ci:branch": "node scripts/verify-branch-gate.mjs",
+    "ci:verify": "npm run ci:lint && npm run ci:test && npm run ci:coverage && npm run ci:solidity && npm run ci:ts && npm run ci:security && npm run ci:policy && npm run ci:branch",
     "simulate:subgraph": "node scripts/subgraph-simulation.js",
     "prepare": "node -e \"const { existsSync } = require('node:fs'); const { join } = require('node:path'); const script = join(process.cwd(), 'scripts/prepare-husky.cjs'); if (!existsSync(script)) { console.log('husky prepare script missing; skipping'); process.exit(0); } require(script);\""
   },
@@ -40,11 +46,13 @@
   "devDependencies": {
     "c8": "^9.1.0",
     "cross-env": "^7.0.3",
+    "husky": "^9.1.6",
     "markdown-link-check": "^3.10.3",
     "markdownlint-cli2": "^0.8.1",
     "markdownlint-cli2-formatter-pretty": "^0.0.9",
-    "husky": "^9.1.6",
+    "prettier": "^3.3.3",
     "solc": "^0.8.26",
+    "solhint": "^5.0.3",
     "vitest": "^1.6.0"
   }
 }

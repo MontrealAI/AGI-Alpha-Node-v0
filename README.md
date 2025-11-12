@@ -19,8 +19,13 @@
     <img src="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI Status" />
   </a>
   <img src="https://img.shields.io/badge/Checks-Enforced-111827.svg?style=flat-square" alt="Branch Protection" />
-  <img src="https://img.shields.io/badge/Tests-146%20passing-34d058.svg?style=flat-square&logo=vitest&logoColor=white" alt="Vitest" />
-  <img src="https://img.shields.io/badge/Coverage-82.8%25-0ea5e9.svg?style=flat-square&logo=c8&logoColor=white" alt="Coverage" />
+  <!-- Replace BADGE_GIST_OWNER and BADGE_GIST_ID with the configured gist coordinates -->
+  <img src="https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/BADGE_GIST_OWNER/BADGE_GIST_ID/raw/lint.json" alt="Lint Status" />
+  <img src="https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/BADGE_GIST_OWNER/BADGE_GIST_ID/raw/test.json" alt="Test Status" />
+  <img src="https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/BADGE_GIST_OWNER/BADGE_GIST_ID/raw/solidity.json" alt="Solidity Checks" />
+  <img src="https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/BADGE_GIST_OWNER/BADGE_GIST_ID/raw/typescript.json" alt="Subgraph Build" />
+  <img src="https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/BADGE_GIST_OWNER/BADGE_GIST_ID/raw/security.json" alt="Security Audit" />
+  <img src="https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/BADGE_GIST_OWNER/BADGE_GIST_ID/raw/coverage.json" alt="Coverage" />
   <img src="https://img.shields.io/badge/KPI-α%E2%80%91WU%20Streaming-9333ea.svg?style=flat-square&logo=prometheus&logoColor=white" alt="Alpha KPIs" />
   <img src="https://img.shields.io/badge/Runtime-Node.js%2020.x-43853d.svg?style=flat-square&logo=node.js&logoColor=white" alt="Runtime" />
   <a href="Dockerfile">
@@ -311,15 +316,33 @@ Environment ingestion stays deterministic even inside noisy container hosts. The
 
 ## CI & Quality Lattice
 
-The workflow [`./.github/workflows/ci.yml`](.github/workflows/ci.yml) enforces deterministic hygiene on `main` and every pull request:
+The workflow [`./.github/workflows/ci.yml`](.github/workflows/ci.yml) fans out into dedicated stages so every merge candidate exercises the runtime, smart contracts, subgraph, and supply-chain controls:
 
-- **Lint Markdown & Links** → `npm run lint`
-- **Unit & Integration Tests** → `npm test`
-- **Coverage Report** → `npm run coverage`
-- **Policy Gate** → `npm run ci:policy`
-- **Docker Smoke Test** → build & inspect CLI help
+| Check | Command | What it enforces |
+| ----- | ------- | ---------------- |
+| **Lint Markdown & Links** | `npm run lint` | Human-facing docs stay linted and links remain resolvable. |
+| **Unit & Integration Tests** | `npm test` | Vitest coverage for orchestrator, services, and telemetry. |
+| **Solidity Lint & Compile** | `npm run ci:solidity` | `solhint` and `solcjs` validate contracts before deployment. |
+| **Subgraph TypeScript Build** | `npm run ci:ts` | Graph CLI builds the subgraph to guard mapping drift. |
+| **Coverage Report** | `npm run coverage` | Emits LCOV plus a badge-ready summary for shields.io. |
+| **Docker Build & Smoke Test** | `docker build` + CLI smoke run | Production image stays healthy and CLI help is captured. |
+| **Dependency Security Scan** | `npm run ci:security` | `npm audit --audit-level=high` blocks vulnerable dependency trees. |
 
-Branch protection is backed by [`./.github/required-checks.json`](.github/required-checks.json), ensuring every badge remains green before merges land. Artifact uploads include coverage LCOV and Docker CLI transcripts for audit trails.
+Policy guardrails run in the lint stage:
+
+- [`scripts/verify-health-gate.mjs`](scripts/verify-health-gate.mjs) rejects allowlist drift or rogue override ENS names.
+- [`scripts/verify-branch-gate.mjs`](scripts/verify-branch-gate.mjs) requires merge-critical branches (`deploy/*`, `release/*`, `hotfix/*`) to encode an ENS subname that matches the health gate allowlist, so only authorized operators can toggle deployment posture through Git.
+
+Branch protection mirrors the workflow via [`./.github/required-checks.json`](.github/required-checks.json); mark these as required status checks on `main` so GitHub blocks merges that skip a gate. The full policy, including required reviewers and allowed ENS subnames, is documented in [`docs/deployment/branch-protection.md`](docs/deployment/branch-protection.md).
+
+### Shields.io badges
+
+The `badges` job aggregates job results plus statement coverage and pushes JSON payloads to a gist. Configure the following repository secrets so the publishing step can write to your gist:
+
+- `BADGE_GIST_ID` – the target gist identifier (create a secret gist to avoid accidental edits).
+- `BADGE_GIST_TOKEN` – a PAT with `gist` scope belonging to the gist owner.
+
+Point the README badges at `https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/<owner>/<gist-id>/raw/<badge>.json`. Until the secrets are supplied the workflow skips publishing, so the badges will render with cached defaults.
 
 ---
 
