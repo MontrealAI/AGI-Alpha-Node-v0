@@ -19,8 +19,8 @@
     <img src="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI Status" />
   </a>
   <img src="https://img.shields.io/badge/Checks-Enforced-111827.svg?style=flat-square" alt="Branch Protection" />
-  <img src="https://img.shields.io/badge/Tests-142%20passing-34d058.svg?style=flat-square&logo=vitest&logoColor=white" alt="Vitest" />
-  <img src="https://img.shields.io/badge/Coverage-82%25-0ea5e9.svg?style=flat-square&logo=c8&logoColor=white" alt="Coverage" />
+  <img src="https://img.shields.io/badge/Tests-146%20passing-34d058.svg?style=flat-square&logo=vitest&logoColor=white" alt="Vitest" />
+  <img src="https://img.shields.io/badge/Coverage-82.8%25-0ea5e9.svg?style=flat-square&logo=c8&logoColor=white" alt="Coverage" />
   <img src="https://img.shields.io/badge/KPI-α%E2%80%91WU%20Streaming-9333ea.svg?style=flat-square&logo=prometheus&logoColor=white" alt="Alpha KPIs" />
   <img src="https://img.shields.io/badge/Runtime-Node.js%2020.x-43853d.svg?style=flat-square&logo=node.js&logoColor=white" alt="Runtime" />
   <a href="Dockerfile">
