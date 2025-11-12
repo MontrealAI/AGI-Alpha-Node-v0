@@ -417,6 +417,13 @@ Keep the `artifacts/` directory out of version control but preserved in your ope
 | **Emergency Brake** | `SystemPause.pauseAll()` / `SystemPause.unpauseAll()` | Freeze or resume job, staking, and validation flows in a single transaction. |
 | **Capital Recovery** | `StakeManager.withdrawStake(role, amount)` / `StakeManager.slash(...)` | Withdraw idle stake or enforce penalties aligned with governance policy. |
 
+Run `node src/index.js governance surfaces` to view the full coverage manifest (use `--json` for machine-readable custody evidence).
+
+```bash
+node ../src/index.js governance surfaces
+node ../src/index.js governance surfaces --json > ../.governance-ledger/atlas.json
+```
+
 ### Owner Command Mindmap
 
 ```mermaid

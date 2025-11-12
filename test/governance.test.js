@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import {
+import * as governance from '../src/services/governance.js';
+
+const {
   buildSystemPauseTx,
   buildMinimumStakeTx,
   buildValidatorThresholdTx,
@@ -33,8 +35,9 @@ import {
   buildIncentivesActivationFeeTx,
   buildIncentivesTreasuryTx,
   getOwnerFunctionCatalog,
+  getOwnerControlSurfaces,
   resolveRoleIdentifier
-} from '../src/services/governance.js';
+} = governance;
 
 const DEAD = '0x000000000000000000000000000000000000dEaD';
 
@@ -171,6 +174,40 @@ describe('governance utilities', () => {
     });
     expect(tx.meta.method).toBe('setAdditionalNodeOperator');
     expect(tx.meta.proposed.allowed).toBe(true);
+  });
+
+  it('surfaces owner control manifest coverage for every contract method', () => {
+    const surfaces = getOwnerControlSurfaces();
+    expect(surfaces.length).toBeGreaterThan(0);
+
+    const coverageByContract = new Map();
+    for (const surface of surfaces) {
+      expect(surface.contract).toBeTruthy();
+      expect(surface.methods.length).toBeGreaterThan(0);
+      expect(surface.builders.length).toBeGreaterThan(0);
+      for (const builderName of surface.builders) {
+        expect(typeof governance[builderName]).toBe('function');
+      }
+      const methodSet = coverageByContract.get(surface.contract) ?? new Set();
+      for (const method of surface.methods) {
+        methodSet.add(method);
+      }
+      coverageByContract.set(surface.contract, methodSet);
+      expect(surface.coverage.covered).toBe(surface.methods.length);
+      expect(surface.coverage.total).toBeGreaterThan(0);
+      expect(surface.coverage.percent).toBeGreaterThan(0);
+    }
+
+    const catalog = getOwnerFunctionCatalog();
+    for (const [contract, entries] of Object.entries(catalog)) {
+      const covered = coverageByContract.get(contract);
+      expect(covered).toBeDefined();
+      for (const entry of entries) {
+        const match = entry.signature.match(/function\s+([^(]+)/i);
+        const methodName = match ? match[1] : entry.signature;
+        expect(covered?.has(methodName)).toBe(true);
+      }
+    }
   });
 
   it('builds node registry payloads', () => {

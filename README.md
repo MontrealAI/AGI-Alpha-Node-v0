@@ -91,6 +91,7 @@
 - **Identity Backbone** — ENS guardianship freezes execution the moment `⟨label⟩.alpha.node.agi.eth` drifts from policy. Deterministic proofs route through [`src/services/ensVerifier.js`](src/services/ensVerifier.js) and the operational brief in [`src/services/ensGuide.js`](src/services/ensGuide.js).
 - **Economic Sovereignty** — `$AGIALPHA` (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) is enforced everywhere via [`src/constants/token.js`](src/constants/token.js), [`src/services/token.js`](src/services/token.js), and downstream services so settlement, staking, and burns remain perfectly aligned with the owner treasury.
 - **Absolute Governance** — Pause toggles, emission levers, registry upgrades, incentive rewiring, and delegate management all compile into hardware-wallet ready payloads through [`src/services/governance.js`](src/services/governance.js) and are notarized by [`src/services/governanceLedger.js`](src/services/governanceLedger.js).
+- **Control Surface Atlas** — `node src/index.js governance surfaces` enumerates every owner-only contract method, proving nothing escapes the sovereign signature.
 - **Synthetic Labor Engine** — α‑Work Units (α‑WU) fuse GPU telemetry, validator attestations, and quality metrics via [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js), [`src/services/performance.js`](src/services/performance.js), and [`src/services/rewards.js`](src/services/rewards.js) so every epoch outputs auditable labor economics.
 - **Omniscient Telemetry** — [`src/orchestrator/monitorLoop.js`](src/orchestrator/monitorLoop.js), [`src/orchestrator/nodeRuntime.js`](src/orchestrator/nodeRuntime.js), and [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) synthesize run-time health, antifragility, and reward posture so the node operates as the world-shaping intelligence engine it was commissioned to be.
 
@@ -299,6 +300,83 @@ sequenceDiagram
 ## Owner Command Authority
 
 Every governance helper returns an ABI-encoded payload suitable for multisig, hardware wallet, or direct RPC broadcast. All logic is consolidated in [`src/services/governance.js`](src/services/governance.js); diffs are journaled by [`src/services/governanceLedger.js`](src/services/governanceLedger.js).
+
+### Control Surface Atlas
+
+`node src/index.js governance surfaces` renders a manifest of every owner-exclusive control plane. Use `--json` to emit machine-readable coverage proofs for your custody vault.
+
+```mermaid
+mindmap
+  root((Owner Command Lattice))
+    "Global Safeguard"
+      pauseAll
+      resumeAll
+      unpauseAll
+    "Stake Governance"
+      minimumStake
+      validatorThreshold
+      jobRegistry
+      identityRegistry
+    "Reward Matrix"
+      roleShare
+      globalShares
+    "Emission Forge"
+      epochEmission
+      epochLength
+      emissionCap
+      rewardRateMultiplier
+    "Node Dominion"
+      registerNode
+      metadataRotation
+      statusToggle
+      operatorDelegates
+      workMeterBinding
+    "WorkMeter Orbit"
+      validators
+      oracles
+      submissionWindow
+      productivityIndex
+      submitUsage
+    "Productivity Apex"
+      recordEpoch
+      emissionManager
+      workMeterLink
+      treasuryRoute
+    "Job Arsenal"
+      validationModule
+      reputationModule
+      disputeModule
+      triggerDispute
+    "Identity Vault"
+      addOperator
+    "Incentive Conductor"
+      stakeManager
+      minimumStake
+      heartbeatGrace
+      activationFee
+      treasury
+```
+
+| Surface | Contract | Coverage | Primary Builders | Command |
+| ------- | -------- | -------- | ---------------- | ------- |
+| Global Safeguard Relay | `SystemPause` | `3/3` | `buildSystemPauseTx` | `node src/index.js governance surfaces` |
+| Stake Governance Prism | `StakeManager` | `4/4` | `buildMinimumStakeTx`, `buildValidatorThresholdTx`, `buildStakeRegistryUpgradeTx` | `node src/index.js governance surfaces` |
+| Reward Distribution Matrix | `RewardEngine` | `2/2` | `buildRoleShareTx`, `buildGlobalSharesTx` | `node src/index.js governance surfaces` |
+| Emission Control Forge | `EmissionManager` | `4/4` | `buildEmissionPerEpochTx`, `buildEmissionEpochLengthTx`, `buildEmissionCapTx`, `buildEmissionRateMultiplierTx` | `node src/index.js governance surfaces` |
+| Node Registry Dominion | `NodeRegistry` | `5/5` | `buildNodeRegistrationTx`, `buildNodeMetadataTx`, `buildNodeStatusTx`, `buildNodeOperatorTx`, `buildNodeWorkMeterTx` | `node src/index.js governance surfaces` |
+| WorkMeter Orbit Control | `WorkMeter` | `5/5` | `buildWorkMeterValidatorTx`, `buildWorkMeterOracleTx`, `buildWorkMeterWindowTx`, `buildWorkMeterProductivityIndexTx`, `buildWorkMeterUsageTx` | `node src/index.js governance surfaces` |
+| α-Productivity Index Apex | `ProductivityIndex` | `4/4` | `buildProductivityRecordTx`, `buildProductivityEmissionManagerTx`, `buildProductivityWorkMeterTx`, `buildProductivityTreasuryTx` | `node src/index.js governance surfaces` |
+| Job Registry Arsenal | `JobRegistry` | `4/4` | `buildJobRegistryUpgradeTx`, `buildDisputeTriggerTx` | `node src/index.js governance surfaces` |
+| Identity Delegation Vault | `IdentityRegistry` | `1/1` | `buildIdentityDelegateTx` | `node src/index.js governance surfaces` |
+| Platform Incentives Conductor | `PlatformIncentives` | `5/5` | `buildIncentivesStakeManagerTx`, `buildIncentivesMinimumStakeTx`, `buildIncentivesHeartbeatTx`, `buildIncentivesActivationFeeTx`, `buildIncentivesTreasuryTx` | `node src/index.js governance surfaces` |
+
+```bash
+# Human-readable atlas
+node src/index.js governance surfaces
+
+# Immutable manifest for evidence vaults
+node src/index.js governance surfaces --json > governance-surfaces.json
+```
 
 | Domain | Purpose | Builders |
 | ------ | ------- | -------- |
