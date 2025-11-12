@@ -15,7 +15,7 @@
     "lint": "npm run lint:md && npm run lint:links",
     "test": "vitest run",
     "test:watch": "vitest",
-    "coverage": "c8 --reporter=text --reporter=lcov vitest run",
+    "coverage": "c8 --reporter=text --reporter=lcov --reporter=json-summary vitest run",
     "lint:sol": "solhint --config .solhint.json \"contracts/**/*.sol\"",
     "test:sol": "solcjs --base-path . --include-path node_modules --bin --abi contracts/AlphaNodeManager.sol",
     "ci:lint": "npm run lint",

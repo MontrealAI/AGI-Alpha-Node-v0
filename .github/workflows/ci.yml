@@ -151,9 +151,14 @@ jobs:
         id: coverage_summary
         run: |
           node --input-type=module <<'NODE'
-          import { readFileSync, writeFileSync } from 'node:fs';
+          import { readFileSync, writeFileSync, existsSync } from 'node:fs';
           import { resolve } from 'node:path';
           const summaryPath = resolve('coverage/coverage-summary.json');
+          if (!existsSync(summaryPath)) {
+            console.warn(`Coverage summary not found at ${summaryPath}; defaulting to 0%`);
+            writeFileSync(process.env.GITHUB_OUTPUT, 'coverage=0\n', { flag: 'a' });
+            process.exit(0);
+          }
           const data = JSON.parse(readFileSync(summaryPath, 'utf8'));
           const statements = data.total?.statements?.pct ?? 0;
           const rounded = Math.round(statements * 10) / 10;
