@@ -242,6 +242,8 @@ node src/index.js jobs alpha-kpi --events snapshots/alpha-history.json
 
 Job lifecycle automation (discover/apply/submit/finalize/notify) is exposed via the `jobs` namespace in [`src/index.js`](src/index.js), backed by [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js). Journals persist to the directory configured by `LIFECYCLE_LOG_DIR`.
 
+Environment ingestion stays deterministic even inside noisy container hosts. The configuration schema strips unknown environment variables (proxy injections, CI toggles, shell helpers) before validation so owner commands run without ever tripping on infrastructure-provided context.
+
 ---
 
 ## CI & Quality Lattice
