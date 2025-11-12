@@ -13,6 +13,20 @@ import {
   buildJobRegistryUpgradeTx,
   buildDisputeTriggerTx,
   buildIdentityDelegateTx,
+  buildNodeRegistrationTx,
+  buildNodeMetadataTx,
+  buildNodeStatusTx,
+  buildNodeOperatorTx,
+  buildNodeWorkMeterTx,
+  buildWorkMeterValidatorTx,
+  buildWorkMeterOracleTx,
+  buildWorkMeterWindowTx,
+  buildWorkMeterProductivityIndexTx,
+  buildWorkMeterUsageTx,
+  buildProductivityRecordTx,
+  buildProductivityEmissionManagerTx,
+  buildProductivityWorkMeterTx,
+  buildProductivityTreasuryTx,
   buildIncentivesStakeManagerTx,
   buildIncentivesMinimumStakeTx,
   buildIncentivesHeartbeatTx,
@@ -157,6 +171,138 @@ describe('governance utilities', () => {
     });
     expect(tx.meta.method).toBe('setAdditionalNodeOperator');
     expect(tx.meta.proposed.allowed).toBe(true);
+  });
+
+  it('builds node registry payloads', () => {
+    const tx = buildNodeRegistrationTx({
+      nodeRegistryAddress: DEAD,
+      nodeId: 'alpha-node-1',
+      operatorAddress: '0x0000000000000000000000000000000000000001',
+      metadataURI: 'ipfs://node-1'
+    });
+    expect(tx.meta.contract).toBe('NodeRegistry');
+    expect(tx.meta.method).toBe('registerNode');
+    expect(tx.nodeId.startsWith('0x')).toBe(true);
+    expect(tx.metadataURI).toBe('ipfs://node-1');
+  });
+
+  it('builds node metadata updates with diff context', () => {
+    const tx = buildNodeMetadataTx({
+      nodeRegistryAddress: DEAD,
+      nodeId: 'alpha-node-1',
+      metadataURI: 'ipfs://node-1-v2',
+      currentMetadataURI: 'ipfs://node-1'
+    });
+    expect(tx.meta.method).toBe('setNodeMetadata');
+    expect(tx.meta.current.metadataURI).toBe('ipfs://node-1');
+    expect(tx.meta.proposed.metadataURI).toBe('ipfs://node-1-v2');
+  });
+
+  it('builds node status toggles', () => {
+    const tx = buildNodeStatusTx({
+      nodeRegistryAddress: DEAD,
+      nodeId: 'alpha-node-1',
+      active: false,
+      currentStatus: true
+    });
+    expect(tx.active).toBe(false);
+    expect(tx.meta.method).toBe('setNodeStatus');
+    expect(tx.meta.current.active).toBe(true);
+  });
+
+  it('builds node operator authorization payloads', () => {
+    const tx = buildNodeOperatorTx({
+      nodeRegistryAddress: DEAD,
+      operatorAddress: '0x0000000000000000000000000000000000000002',
+      allowed: true,
+      currentAllowed: false
+    });
+    expect(tx.allowed).toBe(true);
+    expect(tx.meta.method).toBe('setNodeOperator');
+    expect(tx.meta.current.allowed).toBe(false);
+  });
+
+  it('builds node work meter binding payloads', () => {
+    const tx = buildNodeWorkMeterTx({
+      nodeRegistryAddress: DEAD,
+      workMeterAddress: '0x0000000000000000000000000000000000000003',
+      currentWorkMeter: '0x0000000000000000000000000000000000000004'
+    });
+    expect(tx.meta.method).toBe('setWorkMeter');
+    expect(tx.meta.current.workMeter).toBe('0x0000000000000000000000000000000000000004');
+  });
+
+  it('builds work meter validator/oracle/window/productivity payloads', () => {
+    const validatorTx = buildWorkMeterValidatorTx({
+      workMeterAddress: DEAD,
+      validatorAddress: '0x0000000000000000000000000000000000000005',
+      allowed: true,
+      currentAllowed: false
+    });
+    expect(validatorTx.meta.method).toBe('setValidator');
+    const oracleTx = buildWorkMeterOracleTx({
+      workMeterAddress: DEAD,
+      oracleAddress: '0x0000000000000000000000000000000000000006',
+      allowed: false,
+      currentAllowed: true
+    });
+    expect(oracleTx.allowed).toBe(false);
+    const windowTx = buildWorkMeterWindowTx({
+      workMeterAddress: DEAD,
+      submissionWindowSeconds: 600,
+      currentWindowSeconds: 300
+    });
+    expect(windowTx.submissionWindowSeconds).toBe(600n);
+    const productivityTx = buildWorkMeterProductivityIndexTx({
+      workMeterAddress: DEAD,
+      productivityIndexAddress: '0x0000000000000000000000000000000000000007',
+      currentProductivityIndex: '0x0000000000000000000000000000000000000008'
+    });
+    expect(productivityTx.productivityIndex).toBe('0x0000000000000000000000000000000000000007');
+  });
+
+  it('builds work meter usage submissions with derived hash', () => {
+    const tx = buildWorkMeterUsageTx({
+      workMeterAddress: DEAD,
+      reportId: 'usage-1',
+      nodeId: 'alpha-node-1',
+      gpuSeconds: '123.456',
+      gflopsNorm: '789.1',
+      modelTier: '1.2',
+      sloPass: 0.95,
+      quality: 0.9,
+      metricDecimals: 6
+    });
+    expect(tx.meta.method).toBe('submitUsage');
+    expect(tx.meta.args.gpuSeconds).toMatch(/^\d+$/);
+    expect(tx.meta.args.usageHash.startsWith('0x')).toBe(true);
+  });
+
+  it('builds productivity index payloads', () => {
+    const recordTx = buildProductivityRecordTx({
+      productivityIndexAddress: DEAD,
+      epoch: 5,
+      alphaWu: '42.5',
+      tokensEmitted: '10',
+      tokensBurned: '2.5',
+      decimals: 18
+    });
+    expect(recordTx.meta.method).toBe('recordEpoch');
+    const emissionTx = buildProductivityEmissionManagerTx({
+      productivityIndexAddress: DEAD,
+      emissionManagerAddress: '0x0000000000000000000000000000000000000009'
+    });
+    expect(emissionTx.meta.method).toBe('setEmissionManager');
+    const workMeterTx = buildProductivityWorkMeterTx({
+      productivityIndexAddress: DEAD,
+      workMeterAddress: '0x000000000000000000000000000000000000000a'
+    });
+    expect(workMeterTx.meta.method).toBe('setWorkMeter');
+    const treasuryTx = buildProductivityTreasuryTx({
+      productivityIndexAddress: DEAD,
+      treasuryAddress: '0x000000000000000000000000000000000000000b'
+    });
+    expect(treasuryTx.meta.method).toBe('setTreasury');
   });
 
   it('builds incentives stake manager payloads', () => {

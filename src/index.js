@@ -35,6 +35,24 @@ import {
   buildJobRegistryUpgradeTx,
   buildDisputeTriggerTx,
   buildIdentityDelegateTx,
+  buildNodeRegistrationTx,
+  buildNodeMetadataTx,
+  buildNodeStatusTx,
+  buildNodeOperatorTx,
+  buildNodeWorkMeterTx,
+  buildWorkMeterValidatorTx,
+  buildWorkMeterOracleTx,
+  buildWorkMeterWindowTx,
+  buildWorkMeterProductivityIndexTx,
+  buildWorkMeterUsageTx,
+  buildProductivityRecordTx,
+  buildProductivityEmissionManagerTx,
+  buildProductivityWorkMeterTx,
+  buildProductivityTreasuryTx,
+  buildEmissionPerEpochTx,
+  buildEmissionEpochLengthTx,
+  buildEmissionCapTx,
+  buildEmissionRateMultiplierTx,
   buildIncentivesStakeManagerTx,
   buildIncentivesMinimumStakeTx,
   buildIncentivesHeartbeatTx,
@@ -632,6 +650,7 @@ program
   .option('--job-registry <address>', 'JobRegistry contract address')
   .option('--identity-registry <address>', 'IdentityRegistry contract address')
   .option('--system-pause <address>', 'System pause contract address for owner overrides')
+  .option('--emission-manager <address>', 'EmissionManager contract address')
   .option('--desired-minimum <amount>', 'Desired minimum stake floor in $AGIALPHA (decimal)')
   .option('--auto-resume', 'Generate resume transaction when the stake posture is healthy')
   .option('--operator-share-bps <bps>', 'Desired operator global share (basis points)')
@@ -642,6 +661,11 @@ program
   .option('--desired-validation-module <address>', 'Desired JobRegistry validation module address')
   .option('--desired-reputation-module <address>', 'Desired JobRegistry reputation module address')
   .option('--desired-dispute-module <address>', 'Desired JobRegistry dispute module address')
+  .option('--desired-epoch-emission <amount>', 'Desired emission released per epoch in $AGIALPHA (decimal)')
+  .option('--desired-epoch-length <seconds>', 'Desired emission epoch length in seconds (integer)')
+  .option('--desired-emission-cap <amount>', 'Desired cumulative emission cap in $AGIALPHA (decimal)')
+  .option('--desired-multiplier-numerator <value>', 'Desired emission multiplier numerator (uint256)')
+  .option('--desired-multiplier-denominator <value>', 'Desired emission multiplier denominator (uint256)')
   .option(
     '--role-share <role=bps>',
     'Role share target definition (repeatable). Example: guardian=250',
@@ -678,6 +702,7 @@ program
         JOB_REGISTRY_ADDRESS: options.jobRegistry,
         IDENTITY_REGISTRY_ADDRESS: options.identityRegistry,
         SYSTEM_PAUSE_ADDRESS: options.systemPause,
+        EMISSION_MANAGER_ADDRESS: options.emissionManager,
         DESIRED_MINIMUM_STAKE: options.desiredMinimum,
         AUTO_RESUME: options.autoResume,
         METRICS_PORT: options.metricsPort,
@@ -689,6 +714,11 @@ program
         DESIRED_VALIDATION_MODULE_ADDRESS: options.desiredValidationModule,
         DESIRED_REPUTATION_MODULE_ADDRESS: options.desiredReputationModule,
         DESIRED_DISPUTE_MODULE_ADDRESS: options.desiredDisputeModule,
+        DESIRED_EMISSION_PER_EPOCH: options.desiredEpochEmission,
+        DESIRED_EPOCH_LENGTH_SECONDS: options.desiredEpochLength,
+        DESIRED_EMISSION_CAP: options.desiredEmissionCap,
+        DESIRED_EMISSION_MULTIPLIER_NUMERATOR: options.desiredMultiplierNumerator,
+        DESIRED_EMISSION_MULTIPLIER_DENOMINATOR: options.desiredMultiplierDenominator,
         ROLE_SHARE_TARGETS:
           options.roleShare && Object.keys(options.roleShare).length > 0 ? options.roleShare : undefined
       };
@@ -720,6 +750,12 @@ program
         desiredValidationModuleAddress: config.DESIRED_VALIDATION_MODULE_ADDRESS,
         desiredReputationModuleAddress: config.DESIRED_REPUTATION_MODULE_ADDRESS,
         desiredDisputeModuleAddress: config.DESIRED_DISPUTE_MODULE_ADDRESS,
+        emissionManagerAddress: config.EMISSION_MANAGER_ADDRESS,
+        desiredEmissionPerEpoch: config.DESIRED_EMISSION_PER_EPOCH,
+        desiredEpochLengthSeconds: config.DESIRED_EPOCH_LENGTH_SECONDS,
+        desiredEmissionCap: config.DESIRED_EMISSION_CAP,
+        desiredEmissionMultiplierNumerator: config.DESIRED_EMISSION_MULTIPLIER_NUMERATOR,
+        desiredEmissionMultiplierDenominator: config.DESIRED_EMISSION_MULTIPLIER_DENOMINATOR,
         projectedRewards: options.projectedRewards,
         offlineSnapshot,
         logger
@@ -1825,6 +1861,361 @@ governance
 
 addCommonGovernanceOptions(
   governance
+    .command('node-register')
+    .description('Register a node identity, operator, and metadata in the NodeRegistry')
+    .requiredOption('--registry <address>', 'NodeRegistry contract address')
+    .requiredOption('--node-id <id>', 'Node identifier (hex bytes32 or label to hash)')
+    .requiredOption('--operator <address>', 'Operator address controlling the node')
+    .option('--metadata <uri>', 'Metadata URI or descriptor for the node dossier')
+    .option('--metadata-file <path>', 'Path to file containing metadata URI/dossier reference')
+).action((options) => {
+  try {
+    const metadataSource = options.metadataFile ? loadFileContents(options.metadataFile) : options.metadata;
+    if (!metadataSource || !metadataSource.trim()) {
+      throw new Error('Provide --metadata or --metadata-file with a non-empty value');
+    }
+    const tx = buildNodeRegistrationTx({
+      nodeRegistryAddress: options.registry,
+      nodeId: options.nodeId,
+      operatorAddress: options.operator,
+      metadataURI: metadataSource.trim()
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
+    .command('node-metadata')
+    .description('Update or rotate NodeRegistry metadata URI for a node')
+    .requiredOption('--registry <address>', 'NodeRegistry contract address')
+    .requiredOption('--node-id <id>', 'Node identifier (hex bytes32 or label)')
+    .option('--metadata <uri>', 'New metadata URI')
+    .option('--metadata-file <path>', 'Path to file containing metadata URI')
+    .option('--current <uri>', 'Current metadata URI for diff context')
+).action((options) => {
+  try {
+    const metadataSource = options.metadataFile ? loadFileContents(options.metadataFile) : options.metadata;
+    if (!metadataSource || !metadataSource.trim()) {
+      throw new Error('Provide --metadata or --metadata-file with a non-empty value');
+    }
+    const tx = buildNodeMetadataTx({
+      nodeRegistryAddress: options.registry,
+      nodeId: options.nodeId,
+      metadataURI: metadataSource.trim(),
+      currentMetadataURI: options.current ?? undefined
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
+    .command('node-status')
+    .description('Toggle NodeRegistry active status for a node')
+    .requiredOption('--registry <address>', 'NodeRegistry contract address')
+    .requiredOption('--node-id <id>', 'Node identifier (hex bytes32 or label)')
+    .requiredOption('--active <bool>', 'Active flag (true/false)')
+    .option('--current <bool>', 'Current active flag for diff context')
+).action((options) => {
+  try {
+    const active = parseBooleanOption(options.active, 'active');
+    const current = options.current !== undefined ? parseBooleanOption(options.current, 'current') : undefined;
+    const tx = buildNodeStatusTx({
+      nodeRegistryAddress: options.registry,
+      nodeId: options.nodeId,
+      active,
+      currentStatus: current ?? undefined
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
+    .command('node-operator')
+    .description('Authorize or revoke operator addresses in the NodeRegistry')
+    .requiredOption('--registry <address>', 'NodeRegistry contract address')
+    .requiredOption('--operator <address>', 'Operator address to update')
+    .requiredOption('--allowed <bool>', 'Allowed flag (true/false)')
+    .option('--current <bool>', 'Current allowed state for diff context')
+).action((options) => {
+  try {
+    const allowed = parseBooleanOption(options.allowed, 'allowed');
+    const current = options.current !== undefined ? parseBooleanOption(options.current, 'current') : undefined;
+    const tx = buildNodeOperatorTx({
+      nodeRegistryAddress: options.registry,
+      operatorAddress: options.operator,
+      allowed,
+      currentAllowed: current ?? undefined
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
+    .command('node-workmeter')
+    .description('Bind the NodeRegistry to a WorkMeter contract')
+    .requiredOption('--registry <address>', 'NodeRegistry contract address')
+    .requiredOption('--work-meter <address>', 'WorkMeter contract address')
+    .option('--current <address>', 'Current WorkMeter address for diff context')
+).action((options) => {
+  try {
+    const tx = buildNodeWorkMeterTx({
+      nodeRegistryAddress: options.registry,
+      workMeterAddress: options.workMeter,
+      currentWorkMeter: options.current ?? undefined
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
+    .command('workmeter-validator')
+    .description('Authorize or disable WorkMeter validator addresses')
+    .requiredOption('--work-meter <address>', 'WorkMeter contract address')
+    .requiredOption('--validator <address>', 'Validator address to update')
+    .requiredOption('--allowed <bool>', 'Allowed flag (true/false)')
+    .option('--current <bool>', 'Current allowed state for diff context')
+).action((options) => {
+  try {
+    const allowed = parseBooleanOption(options.allowed, 'allowed');
+    const current = options.current !== undefined ? parseBooleanOption(options.current, 'current') : undefined;
+    const tx = buildWorkMeterValidatorTx({
+      workMeterAddress: options.workMeter,
+      validatorAddress: options.validator,
+      allowed,
+      currentAllowed: current ?? undefined
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
+    .command('workmeter-oracle')
+    .description('Authorize or disable WorkMeter oracle addresses')
+    .requiredOption('--work-meter <address>', 'WorkMeter contract address')
+    .requiredOption('--oracle <address>', 'Oracle address to update')
+    .requiredOption('--allowed <bool>', 'Allowed flag (true/false)')
+    .option('--current <bool>', 'Current allowed state for diff context')
+).action((options) => {
+  try {
+    const allowed = parseBooleanOption(options.allowed, 'allowed');
+    const current = options.current !== undefined ? parseBooleanOption(options.current, 'current') : undefined;
+    const tx = buildWorkMeterOracleTx({
+      workMeterAddress: options.workMeter,
+      oracleAddress: options.oracle,
+      allowed,
+      currentAllowed: current ?? undefined
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
+    .command('workmeter-window')
+    .description('Reconfigure WorkMeter submission window in seconds')
+    .requiredOption('--work-meter <address>', 'WorkMeter contract address')
+    .requiredOption('--seconds <seconds>', 'Submission window in seconds')
+    .option('--current <seconds>', 'Current window for diff context')
+).action((options) => {
+  try {
+    const windowSeconds = parseBigIntOption(options.seconds, 'seconds');
+    if (windowSeconds === undefined) {
+      throw new Error('seconds is required');
+    }
+    const current = options.current !== undefined ? parseBigIntOption(options.current, 'current seconds') : undefined;
+    const tx = buildWorkMeterWindowTx({
+      workMeterAddress: options.workMeter,
+      submissionWindowSeconds: windowSeconds,
+      currentWindowSeconds: current ?? undefined
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
+    .command('workmeter-productivity')
+    .description('Assign ProductivityIndex contract to WorkMeter outputs')
+    .requiredOption('--work-meter <address>', 'WorkMeter contract address')
+    .requiredOption('--index <address>', 'ProductivityIndex contract address')
+    .option('--current <address>', 'Current productivity index address for diff context')
+).action((options) => {
+  try {
+    const tx = buildWorkMeterProductivityIndexTx({
+      workMeterAddress: options.workMeter,
+      productivityIndexAddress: options.index,
+      currentProductivityIndex: options.current ?? undefined
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
+    .command('workmeter-submit')
+    .description('Encode WorkMeter usage submission for α-WU accounting')
+    .requiredOption('--work-meter <address>', 'WorkMeter contract address')
+    .requiredOption('--report-id <id>', 'Usage report identifier (hex bytes32 or label)')
+    .requiredOption('--node-id <id>', 'Node identifier (hex bytes32 or label)')
+    .requiredOption('--gpu-seconds <value>', 'GPU seconds consumed (decimal)')
+    .requiredOption('--gflops <value>', 'Normalized GFLOPS (decimal)')
+    .requiredOption('--model-tier <value>', 'Model tier multiplier (decimal)')
+    .requiredOption('--slo <ratio>', 'SLO pass ratio (0-1)')
+    .requiredOption('--quality <ratio>', 'Quality validation ratio (0-1)')
+    .option('--usage-hash <hash>', 'Precomputed usage hash (32-byte hex); defaults to deterministic digest')
+    .option('--metric-decimals <decimals>', 'Metric precision decimals', '6')
+).action((options) => {
+  try {
+    const metricDecimals = parseIntegerOption(options.metricDecimals, 'metric-decimals') ?? 6;
+    const tx = buildWorkMeterUsageTx({
+      workMeterAddress: options.workMeter,
+      reportId: options.reportId,
+      nodeId: options.nodeId,
+      gpuSeconds: options.gpuSeconds,
+      gflopsNorm: options.gflops,
+      modelTier: options.modelTier,
+      sloPass: options.slo,
+      quality: options.quality,
+      usageHash: options.usageHash ?? undefined,
+      metricDecimals
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
+    .command('productivity-record')
+    .description('Record epoch productivity totals and token flows')
+    .requiredOption('--index <address>', 'ProductivityIndex contract address')
+    .requiredOption('--epoch <number>', 'Epoch number (integer)')
+    .requiredOption('--alpha <amount>', 'α-WU total for the epoch (decimal)')
+    .option('--emitted <amount>', 'Tokens emitted for the epoch (decimal)', '0')
+    .option('--burned <amount>', 'Tokens burned for the epoch (decimal)', '0')
+    .option('--decimals <decimals>', 'Token decimals for α-WU and token amounts', '18')
+).action((options) => {
+  try {
+    const decimals = parseIntegerOption(options.decimals, 'decimals') ?? 18;
+    const epoch = parseBigIntOption(options.epoch, 'epoch');
+    if (epoch === undefined) {
+      throw new Error('epoch is required');
+    }
+    const tx = buildProductivityRecordTx({
+      productivityIndexAddress: options.index,
+      epoch,
+      alphaWu: options.alpha,
+      tokensEmitted: options.emitted,
+      tokensBurned: options.burned,
+      decimals
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
+    .command('productivity-emission-manager')
+    .description('Assign EmissionManager to ProductivityIndex supervision')
+    .requiredOption('--index <address>', 'ProductivityIndex contract address')
+    .requiredOption('--emission-manager <address>', 'EmissionManager contract address')
+    .option('--current <address>', 'Current emission manager for diff context')
+).action((options) => {
+  try {
+    const tx = buildProductivityEmissionManagerTx({
+      productivityIndexAddress: options.index,
+      emissionManagerAddress: options.emissionManager,
+      currentEmissionManager: options.current ?? undefined
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
+    .command('productivity-workmeter')
+    .description('Bind ProductivityIndex to WorkMeter feed')
+    .requiredOption('--index <address>', 'ProductivityIndex contract address')
+    .requiredOption('--work-meter <address>', 'WorkMeter contract address')
+    .option('--current <address>', 'Current WorkMeter for diff context')
+).action((options) => {
+  try {
+    const tx = buildProductivityWorkMeterTx({
+      productivityIndexAddress: options.index,
+      workMeterAddress: options.workMeter,
+      currentWorkMeter: options.current ?? undefined
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
+    .command('productivity-treasury')
+    .description('Configure ProductivityIndex treasury distribution address')
+    .requiredOption('--index <address>', 'ProductivityIndex contract address')
+    .requiredOption('--treasury <address>', 'Treasury address to receive flows')
+    .option('--current <address>', 'Current treasury address for diff context')
+).action((options) => {
+  try {
+    const tx = buildProductivityTreasuryTx({
+      productivityIndexAddress: options.index,
+      treasuryAddress: options.treasury,
+      currentTreasury: options.current ?? undefined
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
     .command('system-pause')
     .description('Encode pause/resume directives for the SystemPause contract')
     .requiredOption('--system-pause <address>', 'SystemPause contract address')
@@ -1986,6 +2377,119 @@ addCommonGovernanceOptions(
       validatorShareBps: validatorShare,
       treasuryShareBps: treasuryShare,
       currentShares: hasCurrent ? currentShares : null
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
+    .command('emission-per-epoch')
+    .description('Update base emission released each epoch (18 decimal $AGIALPHA)')
+    .requiredOption('--emission-manager <address>', 'EmissionManager contract address')
+    .requiredOption('--amount <amount>', 'Emission amount in $AGIALPHA (decimal)')
+    .option('--current <amount>', 'Current emission amount for diff (decimal)')
+    .option('--decimals <decimals>', 'Token decimals (defaults to 18)', String(AGIALPHA_TOKEN_DECIMALS))
+).action((options) => {
+  try {
+    const decimals = parseIntegerOption(options.decimals, 'decimals') ?? AGIALPHA_TOKEN_DECIMALS;
+    const current = parseDecimalToWei(options.current, 'current emission per epoch');
+    const tx = buildEmissionPerEpochTx({
+      emissionManagerAddress: options.emissionManager,
+      emissionPerEpoch: options.amount,
+      decimals,
+      currentEmissionPerEpoch: current ?? undefined
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
+    .command('emission-epoch-length')
+    .description('Adjust emission epoch length (seconds)')
+    .requiredOption('--emission-manager <address>', 'EmissionManager contract address')
+    .requiredOption('--seconds <seconds>', 'New epoch length in seconds (integer)')
+    .option('--current <seconds>', 'Current epoch length for diff (integer)')
+).action((options) => {
+  try {
+    const epochLength = parseBigIntOption(options.seconds, 'seconds');
+    if (epochLength === undefined) {
+      throw new Error('seconds is required');
+    }
+    const current = parseBigIntOption(options.current, 'current epoch length');
+    const tx = buildEmissionEpochLengthTx({
+      emissionManagerAddress: options.emissionManager,
+      epochLengthSeconds: epochLength,
+      currentEpochLengthSeconds: current ?? undefined
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
+    .command('emission-cap')
+    .description('Set cumulative emission cap (18 decimal $AGIALPHA)')
+    .requiredOption('--emission-manager <address>', 'EmissionManager contract address')
+    .requiredOption('--amount <amount>', 'Emission cap in $AGIALPHA (decimal)')
+    .option('--current <amount>', 'Current emission cap for diff (decimal)')
+    .option('--decimals <decimals>', 'Token decimals (defaults to 18)', String(AGIALPHA_TOKEN_DECIMALS))
+).action((options) => {
+  try {
+    const decimals = parseIntegerOption(options.decimals, 'decimals') ?? AGIALPHA_TOKEN_DECIMALS;
+    const current = parseDecimalToWei(options.current, 'current emission cap');
+    const tx = buildEmissionCapTx({
+      emissionManagerAddress: options.emissionManager,
+      emissionCap: options.amount,
+      decimals,
+      currentEmissionCap: current ?? undefined
+    });
+    emitGovernanceResult(tx, options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  }
+});
+
+addCommonGovernanceOptions(
+  governance
+    .command('emission-multiplier')
+    .description('Adjust emission reward rate multiplier (numerator/denominator)')
+    .requiredOption('--emission-manager <address>', 'EmissionManager contract address')
+    .requiredOption('--numerator <value>', 'Multiplier numerator (uint256)')
+    .requiredOption('--denominator <value>', 'Multiplier denominator (uint256)')
+    .option('--current-numerator <value>', 'Current numerator (uint256)')
+    .option('--current-denominator <value>', 'Current denominator (uint256)')
+).action((options) => {
+  try {
+    const numerator = parseBigIntOption(options.numerator, 'numerator');
+    const denominator = parseBigIntOption(options.denominator, 'denominator');
+    if (numerator === undefined || denominator === undefined) {
+      throw new Error('numerator and denominator are required');
+    }
+    if (denominator === 0n) {
+      throw new Error('denominator must be greater than zero');
+    }
+    const currentNumerator = parseBigIntOption(options.currentNumerator, 'current numerator');
+    const currentDenominator = parseBigIntOption(options.currentDenominator, 'current denominator');
+    const tx = buildEmissionRateMultiplierTx({
+      emissionManagerAddress: options.emissionManager,
+      numerator,
+      denominator,
+      currentMultiplier:
+        currentNumerator === undefined || currentDenominator === undefined
+          ? null
+          : { numerator: currentNumerator, denominator: currentDenominator }
     });
     emitGovernanceResult(tx, options);
   } catch (error) {

@@ -64,8 +64,11 @@
 2. [Rapid Launch Protocol](#rapid-launch-protocol)
 3. [Sovereign Command Deck](#sovereign-command-deck)
    - [Node Control](#node-control)
+   - [Registry Dominion](#registry-dominion)
    - [Token Authority](#token-authority)
+   - [WorkMeter Orchestration](#workmeter-orchestration)
    - [Proof & Jobs](#proof--jobs)
+   - [Productivity Index](#productivity-index)
    - [Intelligence Suite](#intelligence-suite)
 4. [Architecture & Flow](#architecture--flow)
    - [Network Flywheel](#network-flywheel)
@@ -138,12 +141,20 @@ The CLI in [`src/index.js`](src/index.js) is the owner’s omni-console. Every d
 ```mermaid
 flowchart TB
   CLI[agi-alpha-node CLI] --> NodeOps[Node Control]
+  CLI --> RegistryOps[Registry Dominion]
   CLI --> TokenOps[$AGIALPHA Authority]
+  CLI --> MeterOps[WorkMeter Orchestration]
   CLI --> JobsOps[Proof & Job Lifecycle]
+  CLI --> ProductivityOps[Productivity Index]
   CLI --> IntelOps[Intelligence & Economics]
   NodeOps --> Governance[Governance Builders]
+  RegistryOps --> NodeRegistry[(NodeRegistry)]
+  MeterOps --> UsageLedger[(Usage Attestations)]
+  ProductivityOps --> ProductivityLedger[(α-Productivity Index)]
   Governance --> Ledger[(Governance Ledger)]
   JobsOps --> Lifecycle[jobLifecycle Engine]
+  MeterOps --> JobsOps
+  ProductivityOps --> TokenOps
   IntelOps --> Rewards[Reinvestment & Planning]
 ```
 
@@ -157,6 +168,16 @@ flowchart TB
 | `stake-tx` / `stake-activate` | Generate or broadcast PlatformIncentives stake activation payloads. | [`buildStakeAndActivateTx`](src/services/staking.js), [`acknowledgeStakeAndActivate`](src/services/stakeActivation.js) |
 | `reward-share` / `reward-distribution` | Model reward splits and thermodynamic wage curves before execution. | [`calculateRewardShare`](src/services/rewards.js), [`splitRewardPool`](src/services/rewards.js) |
 
+### Registry Dominion
+
+| Command | Purpose | Backing Modules |
+| ------- | ------- | --------------- |
+| `governance node-register` | Mint a node identity, operator binding, and dossier URI inside the on-chain registry. | [`buildNodeRegistrationTx`](src/services/governance.js) |
+| `governance node-metadata` | Rotate metadata URIs without disrupting attestations. | [`buildNodeMetadataTx`](src/services/governance.js) |
+| `governance node-status` | Pause or re-enable a node’s participation in the network. | [`buildNodeStatusTx`](src/services/governance.js) |
+| `governance node-operator` | Allow or revoke delegated operators with a single signature. | [`buildNodeOperatorTx`](src/services/governance.js) |
+| `governance node-workmeter` | Bind the NodeRegistry to a canonical WorkMeter contract. | [`buildNodeWorkMeterTx`](src/services/governance.js) |
+
 ### Token Authority
 
 | Command | Purpose | Backing Modules |
@@ -164,6 +185,16 @@ flowchart TB
 | `token metadata` | Print canonical `$AGIALPHA` specification and checksum enforcement. | [`describeAgialphaToken`](src/services/token.js) |
 | `token approve` | Encode ERC‑20 allowance envelopes for staking contracts. | [`buildTokenApproveTx`](src/services/token.js) |
 | `token allowance` | Query live allowances against StakeManager/PlatformIncentives. | [`getTokenAllowance`](src/services/token.js), [`createProvider`](src/services/provider.js) |
+
+### WorkMeter Orchestration
+
+| Command | Purpose | Backing Modules |
+| ------- | ------- | --------------- |
+| `governance workmeter-validator` | Enroll or slash validator endpoints that co-sign usage proofs. | [`buildWorkMeterValidatorTx`](src/services/governance.js) |
+| `governance workmeter-oracle` | Grant oracle agents permission to post telemetry feeds. | [`buildWorkMeterOracleTx`](src/services/governance.js) |
+| `governance workmeter-window` | Tune the commit window for usage submissions. | [`buildWorkMeterWindowTx`](src/services/governance.js) |
+| `governance workmeter-productivity` | Route WorkMeter output to the α‑Productivity Index aggregator. | [`buildWorkMeterProductivityIndexTx`](src/services/governance.js) |
+| `governance workmeter-submit` | Deterministically encode a usage report for manual dispatch or offline signing. | [`buildWorkMeterUsageTx`](src/services/governance.js) |
 
 ### Proof & Jobs
 
@@ -173,6 +204,15 @@ flowchart TB
 | `proof submit-tx` | Compile `JobRegistry.submitProof` calldata, including metadata URIs. | [`buildProofSubmissionTx`](src/services/jobProof.js) |
 | `jobs discover` | Stream open jobs, validator assignments, and lifecycle history. | [`buildJobLifecycleFromConfig`](src/services/jobLifecycle.js) |
 | `jobs apply / submit / finalize / notify-validator` | Drive the entire α‑WU lifecycle from acquisition to reward release. | [`buildJobLifecycleFromConfig`](src/services/jobLifecycle.js) |
+
+### Productivity Index
+
+| Command | Purpose | Backing Modules |
+| ------- | ------- | --------------- |
+| `governance productivity-record` | Finalize epoch α‑WU, emission, and burn metrics into the index. | [`buildProductivityRecordTx`](src/services/governance.js) |
+| `governance productivity-emission-manager` | Delegate emission manager authority to adjust wage curves. | [`buildProductivityEmissionManagerTx`](src/services/governance.js) |
+| `governance productivity-workmeter` | Connect WorkMeter feeds to the productivity index in real time. | [`buildProductivityWorkMeterTx`](src/services/governance.js) |
+| `governance productivity-treasury` | Redirect productivity-derived flows toward the owner treasury. | [`buildProductivityTreasuryTx`](src/services/governance.js) |
 
 ### Intelligence Suite
 
@@ -265,13 +305,45 @@ Every governance helper returns an ABI-encoded payload suitable for multisig, ha
 | **Global Halt / Resume** | Freeze or resume every protocol entry point. | `buildSystemPauseTx()` |
 | **Stake Policy** | Tune minimum stake and validator quorum. | `buildMinimumStakeTx()`, `buildValidatorThresholdTx()` |
 | **Registry Routing** | Rotate job or identity registries. | `buildStakeRegistryUpgradeTx()` |
+| **Node Registry** | Register nodes, rotate metadata, toggle availability, bind WorkMeter. | `buildNodeRegistrationTx()`, `buildNodeMetadataTx()`, `buildNodeStatusTx()`, `buildNodeOperatorTx()`, `buildNodeWorkMeterTx()` |
 | **Reward Distribution** | Rebalance role shares or global basis points. | `buildRoleShareTx()`, `buildGlobalSharesTx()` |
 | **Emission Envelope** | Adjust per-epoch issuance, length, caps, and multipliers. | `buildEmissionPerEpochTx()`, `buildEmissionEpochLengthTx()`, `buildEmissionCapTx()`, `buildEmissionRateMultiplierTx()` |
 | **Job Modules & Disputes** | Swap validation, reputation, dispute modules, or trigger disputes. | `buildJobRegistryUpgradeTx()`, `buildDisputeTriggerTx()` |
 | **Identity Delegation** | Authorize or revoke additional operators. | `buildIdentityDelegateTx()` |
 | **Incentive Surface** | Redirect stake manager, heartbeat grace, activation fee, or treasury sink. | `buildIncentivesStakeManagerTx()`, `buildIncentivesMinimumStakeTx()`, `buildIncentivesHeartbeatTx()`, `buildIncentivesActivationFeeTx()`, `buildIncentivesTreasuryTx()` |
+| **WorkMeter Control** | Curate validators/oracles, tune submission windows, connect productivity feeds, craft usage payloads. | `buildWorkMeterValidatorTx()`, `buildWorkMeterOracleTx()`, `buildWorkMeterWindowTx()`, `buildWorkMeterProductivityIndexTx()`, `buildWorkMeterUsageTx()` |
+| **Productivity Index** | Record α‑WU epochs, wire emission managers, sync WorkMeter, direct treasury flows. | `buildProductivityRecordTx()`, `buildProductivityEmissionManagerTx()`, `buildProductivityWorkMeterTx()`, `buildProductivityTreasuryTx()` |
 
 Invoke the console with `agi-alpha-node governance <subcommand>`; review available signatures through `agi-alpha-node governance catalog` (internally backed by `getOwnerFunctionCatalog()`).
+
+### Governance Console Commands
+
+| Subcommand | Directive | Highlights |
+| ---------- | --------- | ---------- |
+| `governance emission-per-epoch` | Align base issuance per epoch (18-decimal $AGIALPHA). | Accepts `--current` diff preview; journals calldata via governance ledger. |
+| `governance emission-epoch-length` | Retune epoch pacing in seconds. | Guards against zero denominators and surfaces diffs in summaries. |
+| `governance emission-cap` | Cap cumulative emissions with ledger diff context. | Works with decimal input; optional `--current` for before/after proofs. |
+| `governance emission-multiplier` | Adjust reward rate multiplier numerator/denominator. | Validates denominator > 0 and serializes current vs. target ratios. |
+| `governance global-shares` | Balance operator/validator/treasury splits. | Provides diffed share payloads and meta for multisig review. |
+| `governance role-share` | Tune specific role basis points. | Supports aliases (`guardian`, `validator`, `node`). |
+| `governance node-register` | Provision registry entries with metadata + operator custodianship. | Accepts ENS labels or raw bytes32 IDs, persists meta into ledger. |
+| `governance workmeter-submit` | Deterministically hash GPU usage for out-of-band submission. | Auto-computes usage hash from metrics when omitted. |
+| `governance productivity-record` | Seal α‑WU, emission, and burn totals for an epoch. | Supports decimals + diff context, writes to productivity ledger. |
+
+### Configuration Surface (additive excerpt)
+
+Set the following environment variables (or CLI overrides) before invoking `status`, `monitor`, or `container` to keep emissions aligned with treasury policy:
+
+| Variable | Purpose | CLI Flag |
+| -------- | ------- | -------- |
+| `EMISSION_MANAGER_ADDRESS` | Contract authorized to mutate emission schedules. | `--emission-manager` |
+| `DESIRED_EMISSION_PER_EPOCH` | Target issuance per epoch (decimal). | `--desired-epoch-emission` |
+| `DESIRED_EPOCH_LENGTH_SECONDS` | Epoch cadence in seconds (uint). | `--desired-epoch-length` |
+| `DESIRED_EMISSION_CAP` | Aggregate emission ceiling (decimal). | `--desired-emission-cap` |
+| `DESIRED_EMISSION_MULTIPLIER_NUMERATOR` | Multiplier numerator (uint). | `--desired-multiplier-numerator` |
+| `DESIRED_EMISSION_MULTIPLIER_DENOMINATOR` | Multiplier denominator (uint). | `--desired-multiplier-denominator` |
+
+These fields integrate with `deriveOwnerDirectives` so the control plane automatically recommends governance payloads whenever on-chain emission telemetry diverges from the owner’s policy.
 
 ---
 
@@ -279,6 +351,8 @@ Invoke the console with `agi-alpha-node governance <subcommand>`; review availab
 
 - **α‑Work Unit Formula** — `α‑WU = GPUₛ × gflops_norm × ModelTier × SLO_pass × QV` (implemented across [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js), [`src/services/performance.js`](src/services/performance.js), and validators).
 - **Reward Mechanics** — [`src/services/rewards.js`](src/services/rewards.js) and [`src/services/economics.js`](src/services/economics.js) compute per-epoch yield, reinvestment posture, and Synthetic Labor Yield (SLY).
+- **Node Registry & WorkMeter Stack** — [`buildNodeRegistrationTx`](src/services/governance.js) through [`buildWorkMeterUsageTx`](src/services/governance.js) wire node identities, oracle/validator committees, submission windows, and signed usage payloads so α‑WU proofs stay auditable.
+- **α‑Productivity Governance** — [`buildProductivityRecordTx`](src/services/governance.js) + companions stream WorkMeter output into the α‑Productivity Index while maintaining emission manager + treasury control.
 - **α‑Productivity Index Console** — `node src/index.js economics productivity --alpha <series>` (or `--reports data.json`) renders epoch-by-epoch α‑WU aggregates, wage-per-α analytics, and burn/emission basis points. Backed by [`calculateAlphaProductivityIndex`](src/services/economics.js).
 - **Stake Orchestration** — [`src/services/staking.js`](src/services/staking.js) and [`src/services/stakeActivation.js`](src/services/stakeActivation.js) construct stake/activate envelopes and validate minimums before any commit.
 - **Token Discipline** — `$AGIALPHA` normalization utilities in [`src/constants/token.js`](src/constants/token.js) ensure every address matches the canonical checksum contract (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`).
