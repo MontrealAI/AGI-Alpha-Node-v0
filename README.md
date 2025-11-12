@@ -153,6 +153,28 @@ flowchart TD
 
 The telemetry engine now divides every validator and agent contribution by its observed stake share, ensuring global and per-dimension quality scores never exceed their theoretical bounds while preserving the influence of heavyweight validators. Normalization keeps multi-validator epochs consistent even when individual validations arrive asynchronously, guaranteeing a reproducible stake-aware KPI stream across Prometheus, the CLI, and the published subgraph blueprints.
 
+```mermaid
+flowchart LR
+  classDef chain fill:#1f2937,stroke:#f59e0b,stroke-width:2px,color:#f8fafc;
+  classDef runtime fill:#0f172a,stroke:#22d3ee,stroke-width:2px,color:#e0f2fe;
+  classDef insight fill:#111827,stroke:#9333ea,stroke-width:2px,color:#fef9ff;
+  classDef command fill:#1e293b,stroke:#34d399,stroke-width:2px,color:#ecfdf5;
+
+  OnChain[(AGI Jobs Surface)]:::chain --> Events[[IAlphaWorkUnitEvents]]:::chain
+  Events --> Indexer[[Subgraph Indexer]]:::runtime
+  Events --> Streamer[[Realtime Stream]]:::runtime
+  Indexer --> KPICache[[Rolling KPI Cache]]:::insight
+  Streamer --> KPICache
+  KPICache --> Prometheus[[Prometheus Exporter]]:::insight
+  KPICache --> Dashboards[[Grafana / JSON Dashboards]]:::insight
+  KPICache --> CLI[[CLI `jobs alpha-kpi`]]:::command
+  Prometheus --> Owner[[Owner Console & Alerts]]:::command
+  Dashboards --> Owner
+  CLI --> Owner
+```
+
+The artefacts referenced in this flow are versioned in-tree: the Solidity event interface ([`docs/telemetry/AlphaWorkUnitEvents.sol`](docs/telemetry/AlphaWorkUnitEvents.sol)), the subgraph schema ([`docs/telemetry/subgraph.schema.graphql`](docs/telemetry/subgraph.schema.graphql)), and the dashboard blueprints ([`docs/telemetry/dashboard.json`](docs/telemetry/dashboard.json) & [`docs/telemetry/alpha-work-unit-dashboard.json`](docs/telemetry/alpha-work-unit-dashboard.json)). Subgraph operators can deploy the schema as-is, while operators preferring scripts can rely on the same event model through [`src/services/alphaWorkUnits.js`](src/services/alphaWorkUnits.js) and [`src/telemetry/alphaMetrics.js`](src/telemetry/alphaMetrics.js). The CLI and Prometheus exporter consume the exact median/p95 logic, eliminating drift between automation, dashboards, and governance reports.
+
 Multi-window dashboards expose the same gauges inside [docs/telemetry/dashboard.json](docs/telemetry/dashboard.json) for Prometheus-only installs and [docs/telemetry/alpha-work-unit-dashboard.json](docs/telemetry/alpha-work-unit-dashboard.json) when pairing Prometheus with the subgraph feed. Each blueprint ships with mirrored 7d and 30d tiles for acceptance, yield, latency, validator-weighted quality, and slash-adjusted leaderboards across agents and nodes.
 
 ### CLI KPI Extraction
