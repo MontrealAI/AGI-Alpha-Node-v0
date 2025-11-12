@@ -4,6 +4,7 @@ import pino from 'pino';
 import { normalizeJobId, createJobProof } from './jobProof.js';
 import { resolveJobProfile, createInterfaceFromProfile } from './jobProfiles.js';
 import { buildActionEntry, buildSnapshotEntry } from './lifecycleJournal.js';
+import { createAlphaWorkUnitRegistry, DEFAULT_WINDOWS as DEFAULT_ALPHA_WINDOWS } from './alphaWorkUnits.js';
 
 const JOB_STATUS_MAP = {
   0: 'open',
@@ -15,6 +16,8 @@ const JOB_STATUS_MAP = {
   6: 'cancelled',
   7: 'failed'
 };
+
+const ALPHA_WORK_UNIT_WINDOWS = DEFAULT_ALPHA_WINDOWS.map((entry) => ({ ...entry }));
 
 const defaultContractFactory = (address, abi, providerOrSigner) => new Contract(address, abi, providerOrSigner);
 
@@ -229,6 +232,7 @@ export function createJobLifecycle({
   const iface = createInterfaceFromProfile(profile);
   const emitter = new EventEmitter({ captureRejections: true });
   const jobs = new Map();
+  const alphaWorkUnits = createAlphaWorkUnitRegistry();
   const metrics = {
     discovered: 0,
     applied: 0,
@@ -238,7 +242,8 @@ export function createJobLifecycle({
     lastAction: null,
     lastJobProvider: 'agi-jobs',
     activeProfile: profile.id,
-    compatibilityWarnings: []
+    compatibilityWarnings: [],
+    alphaWorkUnits: alphaWorkUnits.getMetrics({ windows: ALPHA_WORK_UNIT_WINDOWS })
   };
 
   let registryAddress = jobRegistryAddress ? getAddress(jobRegistryAddress) : null;
@@ -246,6 +251,51 @@ export function createJobLifecycle({
   let watchers = [];
 
   const compatibilityWarnings = new Map();
+
+  function refreshAlphaWorkUnitMetrics(windowOverrides = null) {
+    const windowsToUse = windowOverrides && windowOverrides.length ? windowOverrides : ALPHA_WORK_UNIT_WINDOWS;
+    metrics.alphaWorkUnits = alphaWorkUnits.getMetrics({ windows: windowsToUse });
+  }
+
+  function recordAlphaWorkUnitEvent(type, payload = {}, options = {}) {
+    if (!type || typeof type !== 'string') {
+      throw new Error('Alpha work unit event type is required');
+    }
+    const normalizedType = type.trim().toLowerCase();
+    let result;
+    switch (normalizedType) {
+      case 'mint':
+      case 'minted':
+        result = alphaWorkUnits.recordMint(payload);
+        break;
+      case 'validate':
+      case 'validated':
+        result = alphaWorkUnits.recordValidation(payload);
+        break;
+      case 'accept':
+      case 'accepted':
+        result = alphaWorkUnits.recordAcceptance(payload);
+        break;
+      case 'slash':
+      case 'slashed':
+        result = alphaWorkUnits.recordSlash(payload);
+        break;
+      default:
+        throw new Error(`Unknown alpha work unit event type: ${type}`);
+    }
+
+    refreshAlphaWorkUnitMetrics(options.windows ?? null);
+
+    if (options.emit !== false) {
+      emitter.emit('alpha-wu:event', {
+        type: normalizedType,
+        unit: result,
+        raw: { ...payload }
+      });
+    }
+
+    return result;
+  }
 
   function emitCompatibilityWarning(reason, details = {}) {
     const key = `${reason}:${JSON.stringify(details)}`;
@@ -692,7 +742,8 @@ export function createJobLifecycle({
     return normalizeJobMetadata(jobs.get(normalizedJobId));
   }
 
-  function getMetrics() {
+  function getMetrics({ alphaWindows = null } = {}) {
+    refreshAlphaWorkUnitMetrics(alphaWindows ?? null);
     return { ...metrics };
   }
 
@@ -875,6 +926,92 @@ export function createJobLifecycle({
       }
     });
 
+    const alphaMintedEvent = profile.events?.alphaWUMinted ?? null;
+    const alphaValidatedEvent = profile.events?.alphaWUValidated ?? null;
+    const alphaAcceptedEvent = profile.events?.alphaWUAccepted ?? null;
+    const slashAppliedEvent = profile.events?.slashApplied ?? null;
+
+    const alphaMintedFilter = alphaMintedEvent ? buildEventFilter(registryAddress, iface, alphaMintedEvent) : null;
+    const alphaValidatedFilter = alphaValidatedEvent ? buildEventFilter(registryAddress, iface, alphaValidatedEvent) : null;
+    const alphaAcceptedFilter = alphaAcceptedEvent ? buildEventFilter(registryAddress, iface, alphaAcceptedEvent) : null;
+    const slashAppliedFilter = slashAppliedEvent ? buildEventFilter(registryAddress, iface, slashAppliedEvent) : null;
+
+    if (alphaMintedEvent && !alphaMintedFilter) {
+      emitCompatibilityWarning('missing-event', { event: alphaMintedEvent, phase: 'watch' });
+    }
+    if (alphaValidatedEvent && !alphaValidatedFilter) {
+      emitCompatibilityWarning('missing-event', { event: alphaValidatedEvent, phase: 'watch' });
+    }
+    if (alphaAcceptedEvent && !alphaAcceptedFilter) {
+      emitCompatibilityWarning('missing-event', { event: alphaAcceptedEvent, phase: 'watch' });
+    }
+    if (slashAppliedEvent && !slashAppliedFilter) {
+      emitCompatibilityWarning('missing-event', { event: slashAppliedEvent, phase: 'watch' });
+    }
+
+    attachWatcher(alphaMintedFilter, async (log) => {
+      if (!alphaMintedEvent) return;
+      try {
+        const decoded = iface.decodeEventLog(alphaMintedEvent, log.data, log.topics);
+        const [unitId, agent, node, timestamp] = decoded;
+        recordAlphaWorkUnitEvent('minted', {
+          id: unitId,
+          agent,
+          node,
+          timestamp
+        });
+      } catch (error) {
+        logger?.warn?.(error, `Failed to process ${alphaMintedEvent} event`);
+      }
+    });
+
+    attachWatcher(alphaValidatedFilter, async (log) => {
+      if (!alphaValidatedEvent) return;
+      try {
+        const decoded = iface.decodeEventLog(alphaValidatedEvent, log.data, log.topics);
+        const [unitId, validator, stake, score, timestamp] = decoded;
+        recordAlphaWorkUnitEvent('validated', {
+          id: unitId,
+          validator,
+          stake,
+          score,
+          timestamp
+        });
+      } catch (error) {
+        logger?.warn?.(error, `Failed to process ${alphaValidatedEvent} event`);
+      }
+    });
+
+    attachWatcher(alphaAcceptedFilter, async (log) => {
+      if (!alphaAcceptedEvent) return;
+      try {
+        const decoded = iface.decodeEventLog(alphaAcceptedEvent, log.data, log.topics);
+        const [unitId, timestamp] = decoded;
+        recordAlphaWorkUnitEvent('accepted', {
+          id: unitId,
+          timestamp
+        });
+      } catch (error) {
+        logger?.warn?.(error, `Failed to process ${alphaAcceptedEvent} event`);
+      }
+    });
+
+    attachWatcher(slashAppliedFilter, async (log) => {
+      if (!slashAppliedEvent) return;
+      try {
+        const decoded = iface.decodeEventLog(slashAppliedEvent, log.data, log.topics);
+        const [unitId, validator, amount, timestamp] = decoded;
+        recordAlphaWorkUnitEvent('slashed', {
+          id: unitId,
+          validator,
+          amount,
+          timestamp
+        });
+      } catch (error) {
+        logger?.warn?.(error, `Failed to process ${slashAppliedEvent} event`);
+      }
+    });
+
     return () => {
       detachWatchers();
     };
@@ -919,11 +1056,13 @@ export function createJobLifecycle({
     listJobs,
     getJob,
     getMetrics,
+    recordAlphaWorkUnitEvent,
+    getAlphaWorkUnitMetrics: (options = {}) => alphaWorkUnits.getMetrics(options),
     watch,
     stop,
     updateConfig,
     on,
     off,
-    __getInternalState: () => ({ jobs, metrics })
+    __getInternalState: () => ({ jobs, metrics, alphaWorkUnits: alphaWorkUnits.exportState() })
   };
 }

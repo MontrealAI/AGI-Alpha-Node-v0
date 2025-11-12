@@ -34,6 +34,10 @@ const JOB_PROFILE_DEFINITIONS = {
       'event JobAssigned(bytes32 indexed jobId, address indexed worker)',
       'event JobSubmitted(bytes32 indexed jobId, address indexed client, address indexed worker, bytes32 resultHash, string resultURI)',
       'event JobFinalized(bytes32 indexed jobId, address indexed client, address indexed worker)',
+      'event AlphaWUMinted(bytes32 indexed id, address indexed agent, address indexed node, uint256 timestamp)',
+      'event AlphaWUValidated(bytes32 indexed id, address indexed validator, uint256 stake, uint256 score, uint256 timestamp)',
+      'event AlphaWUAccepted(bytes32 indexed id, uint256 timestamp)',
+      'event SlashApplied(bytes32 indexed id, address indexed validator, uint256 amount, uint256 timestamp)',
       'function getOpenJobs() view returns (tuple(bytes32 jobId,address client,uint256 reward,uint256 deadline,string uri,string tags)[])',
       'function jobCount() view returns (uint256)',
       'function jobs(bytes32 jobId) view returns (tuple(address client,address worker,uint8 status,uint256 reward,uint256 deadline,string uri,string tags))',
@@ -45,7 +49,13 @@ const JOB_PROFILE_DEFINITIONS = {
       'function finalize(bytes32 jobId)',
       'function finalizeJob(bytes32 jobId)'
     ],
-    events: { ...baseEvents },
+    events: {
+      ...baseEvents,
+      alphaWUMinted: 'AlphaWUMinted',
+      alphaWUValidated: 'AlphaWUValidated',
+      alphaWUAccepted: 'AlphaWUAccepted',
+      slashApplied: 'SlashApplied'
+    },
     methods: v0Methods
   },
   v2: {
@@ -58,6 +68,10 @@ const JOB_PROFILE_DEFINITIONS = {
       'event JobSubmitted(bytes32 indexed jobId, address indexed client, address indexed worker, bytes32 resultHash, string resultURI)',
       'event JobValidated(bytes32 indexed jobId, address indexed validator, bool accepted)',
       'event JobFinalized(bytes32 indexed jobId, address indexed client, address indexed worker)',
+      'event AlphaWUMinted(bytes32 indexed id, address indexed agent, address indexed node, uint256 timestamp)',
+      'event AlphaWUValidated(bytes32 indexed id, address indexed validator, uint256 stake, uint256 score, uint256 timestamp)',
+      'event AlphaWUAccepted(bytes32 indexed id, uint256 timestamp)',
+      'event SlashApplied(bytes32 indexed id, address indexed validator, uint256 amount, uint256 timestamp)',
       'function getOpenJobs() view returns (tuple(bytes32 jobId,address client,uint256 reward,uint256 deadline,string uri,string tags)[])',
       'function jobCount() view returns (uint256)',
       'function jobs(bytes32 jobId) view returns (tuple(address client,address worker,uint8 status,uint256 reward,uint256 deadline,string uri,string tags))',
@@ -71,7 +85,14 @@ const JOB_PROFILE_DEFINITIONS = {
       'function finalizeWithValidator(bytes32 jobId,address validator)',
       'function finalize(bytes32 jobId)'
     ],
-    events: { ...baseEvents, validated: 'JobValidated' },
+    events: {
+      ...baseEvents,
+      validated: 'JobValidated',
+      alphaWUMinted: 'AlphaWUMinted',
+      alphaWUValidated: 'AlphaWUValidated',
+      alphaWUAccepted: 'AlphaWUAccepted',
+      slashApplied: 'SlashApplied'
+    },
     methods: {
       apply: v0Methods.apply,
       submit: [

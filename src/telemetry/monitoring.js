@@ -63,6 +63,41 @@ export function startMonitoringServer({ port = 9464, logger }) {
     registers: [registry]
   });
 
+  const alphaAcceptanceGauge = new Gauge({
+    name: 'agi_alpha_node_alpha_wu_acceptance_rate',
+    help: 'Acceptance rate for alpha work units (0-1 scale)',
+    labelNames: ['window'],
+    registers: [registry]
+  });
+
+  const alphaOnTimeGauge = new Gauge({
+    name: 'agi_alpha_node_alpha_wu_on_time_p95_seconds',
+    help: 'p95 completion latency for alpha work units in seconds',
+    labelNames: ['window'],
+    registers: [registry]
+  });
+
+  const alphaYieldGauge = new Gauge({
+    name: 'agi_alpha_node_alpha_wu_slash_adjusted_yield',
+    help: 'Slashing-adjusted yield for alpha work units',
+    labelNames: ['window'],
+    registers: [registry]
+  });
+
+  const alphaQualityGauge = new Gauge({
+    name: 'agi_alpha_node_alpha_wu_quality',
+    help: 'Validator-weighted quality score for alpha work units by dimension',
+    labelNames: ['window', 'dimension', 'key'],
+    registers: [registry]
+  });
+
+  const alphaBreakdownGauge = new Gauge({
+    name: 'agi_alpha_node_alpha_wu_breakdown',
+    help: 'Alpha work unit KPI breakdowns by dimension and metric',
+    labelNames: ['window', 'dimension', 'metric', 'key'],
+    registers: [registry]
+  });
+
   const server = http.createServer(async (req, res) => {
     if (req.url === '/metrics') {
       const metrics = await registry.metrics();
@@ -89,6 +124,11 @@ export function startMonitoringServer({ port = 9464, logger }) {
     agentUtilizationGauge,
     providerModeGauge,
     registryProfileGauge,
-    registryCompatibilityGauge
+    registryCompatibilityGauge,
+    alphaAcceptanceGauge,
+    alphaOnTimeGauge,
+    alphaYieldGauge,
+    alphaQualityGauge,
+    alphaBreakdownGauge
   };
 }

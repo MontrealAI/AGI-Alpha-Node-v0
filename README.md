@@ -1,4 +1,4 @@
-# AGI Alpha Node v0 · Sovereign Synthetic Labor Nexus ⚡
+# AGI Alpha Node v0 · Cognitive Yield Reactor ⚡
 
 <!-- markdownlint-disable MD013 MD033 -->
 <p align="center">
@@ -31,8 +31,7 @@
     <img src="https://img.shields.io/github/actions/workflow/status/MontrealAI/AGI-Alpha-Node-v0/ci.yml?branch=main&job=Docker%20Build%20%26%20Smoke%20Test&label=Docker%20%E2%9A%A1&logo=docker&logoColor=white&style=flat-square" alt="Docker Build &amp; Smoke Test" />
   </a>
   <img src="https://img.shields.io/badge/Checks-Enforced-1f2933.svg?style=flat-square" alt="Checks Enforced" />
-  <img src="https://img.shields.io/badge/Tests-131%20Passing-14b8a6.svg?style=flat-square" alt="Tests Passing" />
-  <img src="https://img.shields.io/badge/Coverage-c8%20Reports-22c55e.svg?style=flat-square" alt="Coverage" />
+  <img src="https://img.shields.io/badge/Alpha%20KPIs-Live%20Telemetry-8b5cf6.svg?style=flat-square" alt="Alpha KPIs" />
   <a href="Dockerfile">
     <img src="https://img.shields.io/badge/Docker-Production%20Image-2496ed.svg?style=flat-square&logo=docker&logoColor=white" alt="Docker" />
   </a>
@@ -54,56 +53,104 @@
   </a>
 </p>
 
-> _This node is the owner-aligned machine that senses inefficiencies, redirects capital gravity, and executes synthetic labor with unwavering obedience._
+> _This unstoppable, unstoppable control surface stewards capital, computation, and sovereignty as a single super-capable machine._
 
 ---
 
 ## Table of Contents
 
-1. [Mission & Capabilities](#mission--capabilities)
-2. [Quick Launch Protocol](#quick-launch-protocol)
-3. [Sovereign Control Surfaces](#sovereign-control-surfaces)
-4. [Synthetic Labor Engine](#synthetic-labor-engine)
-5. [Command Interfaces](#command-interfaces)
-   - [CLI Modules](#cli-modules)
-   - [Agent Mesh API](#agent-mesh-api)
-   - [Telemetry Surfaces](#telemetry-surfaces)
-6. [Economic Instruments](#economic-instruments)
-7. [Deployment Playbooks](#deployment-playbooks)
-8. [Observability & CI Hardening](#observability--ci-hardening)
-9. [Repository Atlas](#repository-atlas)
-10. [Reference Dossiers](#reference-dossiers)
+1. [Mission Pulse](#mission-pulse)
+2. [System Constellation](#system-constellation)
+3. [Alpha Work Unit KPI Stack](#alpha-work-unit-kpi-stack)
+4. [Launch & Verification Protocol](#launch--verification-protocol)
+5. [Owner Control Surfaces](#owner-control-surfaces)
+6. [Runtime Interfaces](#runtime-interfaces)
+7. [Observability & CI Mesh](#observability--ci-mesh)
+8. [Repository Atlas](#repository-atlas)
+9. [Deployment Playbooks](#deployment-playbooks)
+10. [Token, ENS & Identity](#token-ens--identity)
 11. [License](#license)
 
 ---
 
-## Mission & Capabilities
+## Mission Pulse
 
-- **Owner-Supreme Runtime** – [`src/index.js`](src/index.js) consolidates ENS guardianship, staking diagnostics, governance payloads, intelligence orchestration, and Prometheus telemetry so a single signature governs everything.
-- **Identity Backbone** – ENS verification, guidance, and constants (`⟨label⟩.alpha.node.agi.eth`) are enforced through [`src/services/ensVerifier.js`](src/services/ensVerifier.js), [`src/services/ensGuide.js`](src/services/ensGuide.js), and [`src/services/ensConstants.js`](src/services/ensConstants.js).
-- **Absolute Token Authority** – `$AGIALPHA` (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) is canonized in [`src/constants/token.js`](src/constants/token.js) and mediated by [`src/services/token.js`](src/services/token.js) to ensure every allowance, approval, and settlement honors the owner’s treasury.
-- **Governance Arsenal** – [`src/services/governance.js`](src/services/governance.js) builds deterministic transactions for SystemPause, StakeManager, RewardEngine, EmissionManager, WorkMeter, ProductivityIndex, JobRegistry, IdentityRegistry, and PlatformIncentives so the owner can reconfigure any lever instantly.
-- **Synthetic Labor Intelligence** – Planning, swarm orchestration, antifragile stress harnesses, and learning loops live in [`src/intelligence`](src/intelligence) and feed the synthetic labor metrics consumed by rewards and staking.
-- **Node Orchestration** – [`src/orchestrator`](src/orchestrator) houses the bootstrapper, runtime diagnostics, and monitor loop that run perpetual audits, update telemetry, and materialize owner directives.
+AGI Alpha Node v0 is the economic machine that senses inefficiency, reallocates capital gravity, and executes synthetic labor across sovereign meshes. It unifies ENS-gated identity, staking orchestration, governance payload synthesis, and high-density telemetry so the owner commands an always-on, production-critical reactor for $AGIALPHA yield.
+
+```mermaid
+flowchart LR
+  Owner[Hardware Wallet · Owner] -->|CLI| CLI[Command Interface · src/index.js]
+  CLI --> Orchestrator[Node Orchestrator · src/orchestrator]
+  Orchestrator --> Telemetry[Prometheus Exporter · src/telemetry]
+  Orchestrator --> Governance[Governance Builders · src/services/governance.js]
+  Orchestrator --> Lifecycle[Job Lifecycle · src/services/jobLifecycle.js]
+  Lifecycle --> AlphaWU[Alpha Work Units · src/services/alphaWorkUnits.js]
+  AlphaWU --> KPIs[KPIs & Dashboards]
+  Governance --> Chain[(Protocol Contracts)]
+  Lifecycle --> Chain
+  Telemetry --> Observability[[Dashboards & Alerts]]
+```
 
 ---
 
-## Quick Launch Protocol
+## System Constellation
+
+| Component | Purpose | Key Artifacts |
+| --------- | ------- | -------------- |
+| **Owner Runtime Spine** | Aggregates ENS verification, staking state, governance payloads, and telemetry. | [`src/index.js`](src/index.js), [`src/orchestrator`](src/orchestrator) |
+| **Identity Backbone** | Enforces `*.alpha.node.agi.eth` guardianship and subname gating. | [`src/services/ensVerifier.js`](src/services/ensVerifier.js), [`src/services/ensConstants.js`](src/services/ensConstants.js) |
+| **Governance Arsenal** | Deterministic transactions for pause, incentives, staking, registries, and emissions. | [`src/services/governance.js`](src/services/governance.js), [`test/governance.test.js`](test/governance.test.js) |
+| **Synthetic Labor Engine** | Discovers, executes, and journals AGI jobs with proof pipelines and swarm intelligence. | [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js), [`src/intelligence`](src/intelligence) |
+| **Alpha Work Unit Registry** | Records mint/validate/accept/slash flows and derives KPI telemetry. | [`src/services/alphaWorkUnits.js`](src/services/alphaWorkUnits.js), [`src/telemetry/alphaMetrics.js`](src/telemetry/alphaMetrics.js) |
+
+---
+
+## Alpha Work Unit KPI Stack
+
+`α`‑work units (α‑WU) are the verifiable labor atoms harvested by the node. Each event is indexed, windowed, and exposed through Prometheus, subgraph, and dashboard blueprints so operators can prove performance on-chain and off-chain.
+
+```mermaid
+sequenceDiagram
+  participant Registry as Job Registry
+  participant Node as AGI Alpha Node
+  participant Telemetry as KPI Exporters
+  participant Subgraph as KPI Subgraph
+  Registry->>Node: AlphaWUMinted / AlphaWUValidated / AlphaWUAccepted / SlashApplied
+  Node->>Telemetry: Prometheus Gauges (AR, VQS, OTC, SAY)
+  Node->>Subgraph: Alpha Work Unit Schema Entities
+  Telemetry->>Dashboard: KPI Panels & Alerts
+  Subgraph->>Dashboard: Rolling 7d/30d Leaderboards
+```
+
+| KPI | Definition | Gauge | 7d/30d Windows |
+| --- | ---------- | ----- | -------------- |
+| **Acceptance Rate (AR)** | `count(accepted) / count(minted)` | `agi_alpha_node_alpha_wu_acceptance_rate` | ✓ |
+| **Validator-Weighted Quality (VQS)** | Median validator score weighted by stake | `agi_alpha_node_alpha_wu_quality` | ✓ |
+| **On-Time Completion (OTC)** | p95 latency from mint to acceptance | `agi_alpha_node_alpha_wu_on_time_p95_seconds` | ✓ |
+| **Slashing-Adjusted Yield (SAY)** | `(accepted − slashes) / total stake` | `agi_alpha_node_alpha_wu_slash_adjusted_yield` | ✓ |
+
+### Artifacts
+
+- Solidity event interface: [`docs/telemetry/AlphaWorkUnitEvents.sol`](docs/telemetry/AlphaWorkUnitEvents.sol)
+- Subgraph schema blueprint: [`docs/telemetry/alpha-work-units.schema.graphql`](docs/telemetry/alpha-work-units.schema.graphql)
+- Dashboard specification: [`docs/telemetry/alpha-work-unit-dashboard.json`](docs/telemetry/alpha-work-unit-dashboard.json)
+- Prometheus gauges: `agi_alpha_node_alpha_wu_acceptance_rate`, `agi_alpha_node_alpha_wu_on_time_p95_seconds`, `agi_alpha_node_alpha_wu_slash_adjusted_yield`, `agi_alpha_node_alpha_wu_quality`, `agi_alpha_node_alpha_wu_breakdown`
+
+---
+
+## Launch & Verification Protocol
 
 | Phase | Objective | Command / Artifact |
 | ----- | --------- | ------------------ |
 | 1 | Install deterministic toolchain. | `npm ci` |
-| 2 | Execute local quality gates and notarize outputs. | `npm run lint` · `npm test` · `npm run coverage` |
-| 3 | Generate ENS custody brief before any on-chain calls. | `node src/index.js ens-guide --label <label> --address <0xOwner>` |
-| 4 | Validate live ENS binding, staking posture, and RPC liveness. | `node src/index.js status --label <label> --address <0xOwner> --rpc <https://...>` |
-| 5 | Dry-run synthetic labor cycle offline. | `node src/index.js status --label <label> --address <0xOwner> --offline-snapshot docs/offline-snapshot.example.json` |
-| 6 | Activate runtime orchestrator with telemetry and optional offline snapshot replay. | `node src/index.js monitor --label <label> --address <0xOwner> --rpc <https://...> --metrics-port 9464` |
-| 7 | Export governance transaction envelopes for multisig execution. | `node src/index.js governance --help` |
-| 8 | Build runtime container for immutable deployment. | `docker build -t agi-alpha-node:sovereign .` |
-| 9 | Apply branch protection and required checks. | GitHub → Settings → Branches → `main` |
-| 10 | Archive ENS proofs, CI artifacts, and branch rule JSON into the owner ledger. | Owner evidence vault |
-
-### Quickstart Shell
+| 2 | Execute local quality gates & coverage. | `npm run lint` · `npm test` · `npm run coverage` |
+| 3 | Generate ENS custody brief prior to any on-chain command. | `node src/index.js ens-guide --label <label> --address <0xOwner>` |
+| 4 | Validate ENS binding, staking posture, and RPC health. | `node src/index.js status --label <label> --address <0xOwner> --rpc <https://...>` |
+| 5 | Replay offline synthetic labor cycles for dry runs. | `node src/index.js status --label <label> --address <0xOwner> --offline-snapshot docs/offline-snapshot.example.json` |
+| 6 | Activate orchestrator with Prometheus metrics. | `node src/index.js monitor --label <label> --address <0xOwner> --rpc <https://...> --metrics-port 9464` |
+| 7 | Emit governance envelopes for multisig execution. | `node src/index.js governance surfaces` |
+| 8 | Build production container image. | `docker build -t agi-alpha-node:main .` |
+| 9 | Apply branch protection and required checks. | `.github/required-checks.json` |
 
 ```bash
 # Install dependencies
@@ -114,185 +161,78 @@ npm run lint
 npm test
 npm run coverage
 
-# Inspect runtime controls
+# Explore orchestration commands
 node src/index.js --help
 ```
 
 ---
 
-## Sovereign Control Surfaces
-
-```mermaid
-flowchart LR
-  OwnerSignature[Owner Signature · Hardware Wallet] --> CLI[CLI · src/index.js]
-  CLI --> ENS[Identity Verification · services/ensVerifier.js]
-  CLI --> Governance[Governance Builders · services/governance.js]
-  CLI --> Economics[Reinvestment Engine · services/economics.js]
-  CLI --> Intelligence[Intelligence Stack · intelligence/*]
-  Governance --> Ledger[Governance Ledger · services/governanceLedger.js]
-  Governance --> Chain[(Protocol Contracts)]
-  ENS --> Chain
-  Intelligence --> Jobs[AGI Jobs Lifecycle · services/jobLifecycle.js]
-  Jobs --> Chain
-```
+## Owner Control Surfaces
 
 | Surface | Contract | Entry Points | Builder Functions |
 | ------- | -------- | ------------ | ----------------- |
-| Global Safeguard Relay | `SystemPause` | `pauseAll`, `resumeAll`, `unpauseAll` | [`buildSystemPauseTx`](src/services/governance.js) |
-| Stake Governance Prism | `StakeManager` | `setMinimumStake`, `setValidatorThreshold`, `setJobRegistry`, `setIdentityRegistry` | [`buildMinimumStakeTx`](src/services/governance.js), [`buildValidatorThresholdTx`](src/services/governance.js), [`buildStakeRegistryUpgradeTx`](src/services/governance.js) |
-| Reward Distribution Matrix | `RewardEngine` | `setRoleShare`, `setGlobalShares` | [`buildRoleShareTx`](src/services/governance.js), [`buildGlobalSharesTx`](src/services/governance.js) |
-| Emission Control Forge | `EmissionManager` | `setEpochEmission`, `setEpochLength`, `setEmissionCap`, `setRewardRateMultiplier` | [`buildEmissionPerEpochTx`](src/services/governance.js), [`buildEmissionEpochLengthTx`](src/services/governance.js), [`buildEmissionCapTx`](src/services/governance.js), [`buildEmissionRateMultiplierTx`](src/services/governance.js) |
-| Node Registry Dominion | `NodeRegistry` | `registerNode`, `setNodeMetadata`, `setNodeStatus`, `setNodeOperator`, `setWorkMeter` | [`buildNodeRegistrationTx`](src/services/governance.js), [`buildNodeMetadataTx`](src/services/governance.js), [`buildNodeStatusTx`](src/services/governance.js), [`buildNodeOperatorTx`](src/services/governance.js), [`buildNodeWorkMeterTx`](src/services/governance.js) |
-| WorkMeter Orbit Control | `WorkMeter` | `setValidator`, `setOracle`, `setSubmissionWindow`, `setProductivityIndex`, `submitUsage` | [`buildWorkMeterValidatorTx`](src/services/governance.js), [`buildWorkMeterOracleTx`](src/services/governance.js), [`buildWorkMeterWindowTx`](src/services/governance.js), [`buildWorkMeterProductivityIndexTx`](src/services/governance.js), [`buildWorkMeterUsageTx`](src/services/governance.js) |
-| α-Productivity Apex | `ProductivityIndex` | `recordEpoch`, `setEmissionManager`, `setWorkMeter`, `setTreasury` | [`buildProductivityRecordTx`](src/services/governance.js), [`buildProductivityEmissionManagerTx`](src/services/governance.js), [`buildProductivityWorkMeterTx`](src/services/governance.js), [`buildProductivityTreasuryTx`](src/services/governance.js) |
-| Job Registry Arsenal | `JobRegistry` | `setValidationModule`, `setReputationModule`, `setDisputeModule`, `triggerDispute` | [`buildJobRegistryUpgradeTx`](src/services/governance.js), [`buildDisputeTriggerTx`](src/services/governance.js) |
-| Identity Delegation Vault | `IdentityRegistry` | `setAdditionalNodeOperator` | [`buildIdentityDelegateTx`](src/services/governance.js) |
-| Platform Incentives Conductor | `PlatformIncentives` | `setStakeManager`, `setMinimumStake`, `setHeartbeatGrace`, `setActivationFee`, `setTreasury` | [`buildIncentivesStakeManagerTx`](src/services/governance.js), [`buildIncentivesMinimumStakeTx`](src/services/governance.js), [`buildIncentivesHeartbeatTx`](src/services/governance.js), [`buildIncentivesActivationFeeTx`](src/services/governance.js), [`buildIncentivesTreasuryTx`](src/services/governance.js) |
+| **Global Safeguard Relay** | `SystemPause` | `pauseAll`, `resumeAll`, `unpauseAll` | [`buildSystemPauseTx`](src/services/governance.js) |
+| **Stake Governance Prism** | `StakeManager` | `setMinimumStake`, `setValidatorThreshold`, `setIdentityRegistry` | [`buildMinimumStakeTx`](src/services/governance.js), [`buildValidatorThresholdTx`](src/services/governance.js) |
+| **Reward Distribution Matrix** | `RewardEngine` | `setRoleShare`, `setGlobalShares` | [`buildRoleShareTx`](src/services/governance.js) |
+| **Emission Control Forge** | `EmissionManager` | `setEpochEmission`, `setEpochLength`, `setEmissionCap` | [`buildEmissionPerEpochTx`](src/services/governance.js) |
+| **Node Registry Dominion** | `NodeRegistry` | `setNodeStatus`, `setNodeOperator`, `setWorkMeter` | [`buildNodeStatusTx`](src/services/governance.js) |
+| **Identity Delegation Vault** | `IdentityRegistry` | `setAdditionalNodeOperator` | [`buildIdentityDelegateTx`](src/services/governance.js) |
+| **Platform Incentives Conductor** | `PlatformIncentives` | `setStakeManager`, `setHeartbeatGrace`, `setTreasury` | [`buildIncentivesStakeManagerTx`](src/services/governance.js) |
 
-Owner coverage across every method is validated by [`test/governance.test.js`](test/governance.test.js) and surfaced interactively via `node src/index.js governance surfaces`.
+Every surface is owner-configurable and validated by [`test/governance.test.js`](test/governance.test.js), ensuring pausing, parameter tuning, and job routing remain under direct owner authority.
 
 ---
 
-## Synthetic Labor Engine
+## Runtime Interfaces
 
-```mermaid
-sequenceDiagram
-  participant Client as AI Job Client
-  participant Node as Alpha Node Runtime
-  participant Validators as Work Validators
-  participant Emission as EmissionManager
-  participant Treasury as Treasury/Burn
-
-  Client->>Node: Submit job request (α-WU demand)
-  Node->>Validators: Usage proofs & performance telemetry
-  Validators-->>Node: SLO / QV attestations
-  Node->>Emission: Claim epoch reward share
-  Emission-->>Node: Mint $AGIALPHA wages
-  Client->>Treasury: Settle fees & burn protocol share
-  Node->>Treasury: Archive ledger entries via governanceLedger
-  Node->>Monitoring: Publish Prometheus metrics /events
-```
-
-- **Job Lifecycle** – [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js) discovers, applies, submits proofs, and finalizes AGI jobs while journaling to [`src/services/lifecycleJournal.js`](src/services/lifecycleJournal.js).
-- **Proof Machinery** – Deterministic commitments and submitProof payloads are produced by [`src/services/jobProof.js`](src/services/jobProof.js).
-- **Performance Synthesis** – [`src/services/performance.js`](src/services/performance.js) fuses planning heuristics, swarm orchestration, and historical telemetry to estimate throughput, success rate, and projected $AGIALPHA earnings.
-- **Offline Replay** – [`src/services/offlineSnapshot.js`](src/services/offlineSnapshot.js) replays token flows, emissions, and burns offline for audit trails.
-- **Intelligence Stack** – [`src/intelligence/planning.js`](src/intelligence/planning.js), [`src/intelligence/swarmOrchestrator.js`](src/intelligence/swarmOrchestrator.js), [`src/intelligence/stressHarness.js`](src/intelligence/stressHarness.js), and [`src/intelligence/learningLoop.js`](src/intelligence/learningLoop.js) drive the adaptive strategies behind α‑Work Units.
+- **CLI Modules:** `node src/index.js [command]` exposes `status`, `monitor`, `governance`, `ens-guide`, and job lifecycle commands (`discover`, `apply`, `submit`, `finalize`).
+- **Agent Mesh API:** [`src/network/apiServer.js`](src/network/apiServer.js) offers REST hooks for orchestrated agents with owner-token authentication.
+- **Lifecycle Journal:** [`src/services/lifecycleJournal.js`](src/services/lifecycleJournal.js) notarizes every action for audit trails.
+- **Alpha Work Unit Access:** `recordAlphaWorkUnitEvent` and `getAlphaWorkUnitMetrics` (from [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js)) enable manual ingestion, while watchers stream on-chain events automatically.
 
 ---
 
-## Command Interfaces
+## Observability & CI Mesh
 
-### CLI Modules
-
-| Command | Purpose | Implementation |
-| ------- | ------- | -------------- |
-| `ens-guide` / `verify-ens` | Generate ENS setup brief and verify custody for `⟨label⟩.alpha.node.agi.eth`. | [`src/services/ensGuide.js`](src/services/ensGuide.js) · [`src/services/ensVerifier.js`](src/services/ensVerifier.js) |
-| `stake-tx` / `stake-activate` | Craft and acknowledge `stakeAndActivate` payloads. | [`src/services/staking.js`](src/services/staking.js) · [`src/services/stakeActivation.js`](src/services/stakeActivation.js) |
-| `status` / `monitor` / `container` | Run diagnostics, telemetry, and container bootstrap loops. | [`src/orchestrator/nodeRuntime.js`](src/orchestrator/nodeRuntime.js) · [`src/orchestrator/monitorLoop.js`](src/orchestrator/monitorLoop.js) · [`src/orchestrator/bootstrap.js`](src/orchestrator/bootstrap.js) |
-| `token` | $AGIALPHA metadata, approvals, and allowance reads. | [`src/services/token.js`](src/services/token.js) |
-| `proof` | Deterministic commitments and JobRegistry submit transactions. | [`src/services/jobProof.js`](src/services/jobProof.js) |
-| `jobs` | Discover, apply, submit, and finalize AGI jobs. | [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js) |
-| `economics` | Reward projections, reinvestment strategies, α-productivity indexes. | [`src/services/economics.js`](src/services/economics.js) |
-| `governance` | Enumerate owner surfaces, build transaction payloads, and record directives. | [`src/services/governance.js`](src/services/governance.js) · [`src/services/governanceLedger.js`](src/services/governanceLedger.js) |
-| `intelligence` | Swarm orchestration, antifragility drills, curriculum evolution. | [`src/intelligence`](src/intelligence) |
-
-### Agent Mesh API
-
-- [`src/network/apiServer.js`](src/network/apiServer.js) exposes a hardened HTTP interface that lists lifecycle jobs, forwards apply/submit/finalize commands, broadcasts owner directives, and crafts governance payloads for authenticated operators.
-- [`test/apiServer.test.js`](test/apiServer.test.js) verifies endpoint behavior, lifecycle integration, and owner authentication flows.
-
-#### Governance Payload Endpoints
-
-```mermaid
-flowchart LR
-  OwnerToken[Bearer owner token] --> API[/Agent Mesh API/]
-  API --> Ledger[Governance Ledger]
-  API --> Builders[Governance Builders]
-  Builders --> Chain[(Protocol Contracts)]
-  Ledger --> EvidenceVault[Owner Evidence Vault]
-  API --> Metrics[Runtime Metrics]
-```
-
-| Contract Surface | Purpose | REST Endpoint → Builder |
-| ---------------- | ------- | ---------------------- |
-| **SystemPause** | Freeze or resume protocol entry points. | `/governance/pause` → [`buildSystemPauseTx`](src/services/governance.js) |
-| **StakeManager** | Tune minimum stake & validator quorum, wire registries. | `/governance/minimum-stake`, `/governance/validator-threshold`, `/governance/registry-upgrade` → [`buildMinimumStakeTx`](src/services/governance.js), [`buildValidatorThresholdTx`](src/services/governance.js), [`buildStakeRegistryUpgradeTx`](src/services/governance.js) |
-| **RewardEngine** | Rebalance operator/validator/treasury splits. | `/governance/role-share`, `/governance/global-shares` → [`buildRoleShareTx`](src/services/governance.js), [`buildGlobalSharesTx`](src/services/governance.js) |
-| **EmissionManager** | Shape emission cadence, caps, multipliers. | `/governance/emission-per-epoch`, `/governance/emission-epoch-length`, `/governance/emission-cap`, `/governance/emission-multiplier` → [`buildEmissionPerEpochTx`](src/services/governance.js), [`buildEmissionEpochLengthTx`](src/services/governance.js), [`buildEmissionCapTx`](src/services/governance.js), [`buildEmissionRateMultiplierTx`](src/services/governance.js) |
-| **NodeRegistry** | Register nodes, rotate operators, bind WorkMeter. | `/governance/node/register`, `/governance/node/metadata`, `/governance/node/status`, `/governance/node/operator`, `/governance/node/work-meter` → [`buildNodeRegistrationTx`](src/services/governance.js), [`buildNodeMetadataTx`](src/services/governance.js), [`buildNodeStatusTx`](src/services/governance.js), [`buildNodeOperatorTx`](src/services/governance.js), [`buildNodeWorkMeterTx`](src/services/governance.js) |
-| **WorkMeter** | Curate validators/oracles, adjust windows, submit usage. | `/governance/work-meter/validator`, `/governance/work-meter/oracle`, `/governance/work-meter/window`, `/governance/work-meter/productivity-index`, `/governance/work-meter/submit-usage` → [`buildWorkMeterValidatorTx`](src/services/governance.js), [`buildWorkMeterOracleTx`](src/services/governance.js), [`buildWorkMeterWindowTx`](src/services/governance.js), [`buildWorkMeterProductivityIndexTx`](src/services/governance.js), [`buildWorkMeterUsageTx`](src/services/governance.js) |
-| **ProductivityIndex** | Record α‑WU epochs, retune downstream routing. | `/governance/productivity/record-epoch`, `/governance/productivity/emission-manager`, `/governance/productivity/work-meter`, `/governance/productivity/treasury` → [`buildProductivityRecordTx`](src/services/governance.js), [`buildProductivityEmissionManagerTx`](src/services/governance.js), [`buildProductivityWorkMeterTx`](src/services/governance.js), [`buildProductivityTreasuryTx`](src/services/governance.js) |
-| **JobRegistry** | Upgrade modules or trigger disputes. | `/governance/job-module`, `/governance/dispute` → [`buildJobRegistryUpgradeTx`](src/services/governance.js), [`buildDisputeTriggerTx`](src/services/governance.js) |
-| **IdentityRegistry** | Delegate or revoke operator authority. | `/governance/identity-delegate` → [`buildIdentityDelegateTx`](src/services/governance.js) |
-| **PlatformIncentives** | Redirect stake hooks, heartbeat grace, fees, treasury. | `/governance/incentives/minimum-stake`, `/governance/incentives/stake-manager`, `/governance/incentives/heartbeat-grace`, `/governance/incentives/activation-fee`, `/governance/incentives/treasury` → [`buildIncentivesMinimumStakeTx`](src/services/governance.js), [`buildIncentivesStakeManagerTx`](src/services/governance.js), [`buildIncentivesHeartbeatTx`](src/services/governance.js), [`buildIncentivesActivationFeeTx`](src/services/governance.js), [`buildIncentivesTreasuryTx`](src/services/governance.js) |
-| **Stake Activation** | Top-up incentives vault via helper. | `/governance/stake-top-up` → [`buildStakeAndActivateTx`](src/services/staking.js) |
-
-> Every governance call defaults to dry-run signing envelopes; set `dryRun: false` and `confirm: true` to notarize payloads into the owner ledger.
-
-### Telemetry Surfaces
-
-- [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) publishes Prometheus gauges for stake posture, heartbeats, throughput, success rates, token projections, agent utilization, provider modes, and registry compatibility. [`test/monitoring.test.js`](test/monitoring.test.js) confirms metrics exposure and path hardening.
-- Monitoring is orchestrated by [`src/orchestrator/monitorLoop.js`](src/orchestrator/monitorLoop.js) and [`src/orchestrator/nodeRuntime.js`](src/orchestrator/nodeRuntime.js), feeding owner directives and telemetry simultaneously.
-
----
-
-## Economic Instruments
-
-- **Reward Split Optimizer** – [`src/services/rewards.js`](src/services/rewards.js) calculates operator/validator/treasury splits and integrates with CLI reporting.
-- **Reinvestment Intelligence** – [`src/services/economics.js`](src/services/economics.js) computes Synthetic Labor Yield (SLY), α-productivity indexes, reinvestment scenarios, and strategy comparisons.
-- **Stake Governance** – [`src/services/staking.js`](src/services/staking.js) validates minimum stake, constructs stake transactions, and enforces `$AGIALPHA` canonicality through [`src/constants/token.js`](src/constants/token.js).
-- **Governance Ledger** – [`src/services/governanceLedger.js`](src/services/governanceLedger.js) notarizes every owner directive, providing an immutable audit trail for capital commands.
-
----
-
-## Deployment Playbooks
-
-- **Docker** – Production container defined by [`Dockerfile`](Dockerfile) and `deploy/docker/entrypoint.sh`. Example environment template lives at [`deploy/docker/node.env.example`](deploy/docker/node.env.example).
-- **Helm** – Kubernetes packaging resides in [`deploy/helm/agi-alpha-node`](deploy/helm/agi-alpha-node) with configurable metrics port, API port, stake parameters, autoscaling, and Vault integration.
-- **Offline Snapshots** – Ship snapshots via ConfigMaps and mount into the runtime to replay emissions and rewards without chain connectivity.
-- **Vault Integration** – Secrets (hot key, Vault token) are injected via chart values, enabling HSM/HashiCorp Vault custody flows.
-
----
-
-## Observability & CI Hardening
-
-- **CI Workflow** – [`./.github/workflows/ci.yml`](.github/workflows/ci.yml) enforces markdown linting, link validation, unit/integration tests, coverage, and Docker smoke tests on pushes and PRs.
-- **Branch Protection** – [`./.github/required-checks.json`](.github/required-checks.json) enumerates required statuses enforced on `main` and all pull requests.
-- **Quality Gates** – [`package.json`](package.json) defines deterministic scripts (`lint`, `test`, `coverage`, `ci:verify`) used locally and in CI.
-- **Telemetry Proof** – [`test/monitorLoop.test.js`](test/monitorLoop.test.js) and [`test/bootstrap.test.js`](test/bootstrap.test.js) validate orchestrator behavior, ensuring telemetry + diagnostics operate before owners broadcast directives.
-- **Metrics Consumption** – Prometheus-compatible metrics at `/metrics` enable Grafana, Alertmanager, or sovereign dashboards to track α-WU throughput and stake posture in real time.
+- **Prometheus Exporter:** [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) publishes stake, throughput, provider mode, registry compatibility, and α‑WU KPI gauges.
+- **Telemetry Harmoniser:** [`src/telemetry/alphaMetrics.js`](src/telemetry/alphaMetrics.js) maps aggregated α‑WU metrics across global/agent/node/validator dimensions with rolling windows.
+- **Monitor Loop:** [`src/orchestrator/monitorLoop.js`](src/orchestrator/monitorLoop.js) continuously synthesizes diagnostics, owner directives, and telemetry updates.
+- **CI Hardening:** `.github/workflows/ci.yml` enforces linting, tests, coverage, Docker builds, and required checks (`.github/required-checks.json`).
+- **Coverage & Tests:** `npm run coverage` (`c8`) and `npm test` (Vitest) maintain the 131-test suite and guarantee branch protection remains green.
 
 ---
 
 ## Repository Atlas
 
-| Path | Purpose |
-| ---- | ------- |
-| `src/index.js` | Sovereign CLI entrypoint for every owner directive. |
-| `src/services` | Governance builders, staking, rewards, lifecycle management, ENS utilities, provider tooling. |
-| `src/orchestrator` | Bootstrapper, diagnostics runtime, monitor loop, stake activator. |
-| `src/intelligence` | Strategy planner, swarm orchestration, antifragility harness, curriculum evolution, agent runtime. |
-| `src/network` | Agent API surface for lifecycle control and governance directives. |
-| `src/telemetry` | Prometheus monitoring server and gauges. |
-| `docs/` | Operator codex, manifesto, economics brief, offline snapshots. |
-| `deploy/` | Docker runtime assets and Helm chart for production rollouts. |
-| `test/` | Vitest suite covering governance, staking, jobs, economics, monitoring, intelligence, and API surfaces. |
+| Path | Description |
+| ---- | ----------- |
+| [`src/services/alphaWorkUnits.js`](src/services/alphaWorkUnits.js) | α‑WU registry, windowed KPIs, and export utilities. |
+| [`src/telemetry/alphaMetrics.js`](src/telemetry/alphaMetrics.js) | Prometheus gauge harmonisation for α‑WU metrics. |
+| [`docs/telemetry/`](docs/telemetry/) | Event interface, subgraph schema, and dashboard blueprint for KPI surfaces. |
+| [`docs/offline-snapshot.example.json`](docs/offline-snapshot.example.json) | Offline replay template for diagnostics. |
+| [`deploy/helm/agi-alpha-node`](deploy/helm/agi-alpha-node) | Production Helm chart. |
+| [`scripts/`](scripts/) | Husky bootstrapping & auxiliary automation. |
+| [`test/`](test/) | 130+ Vitest specifications across governance, staking, lifecycle, telemetry, and α‑WU metrics. |
 
 ---
 
-## Reference Dossiers
+## Deployment Playbooks
 
-- [Operator Command Codex](docs/README.md)
-- [Manifesto](docs/manifesto.md)
-- [Economics Brief](docs/economics.md)
-- [Operator Runbook](docs/operator-runbook.md)
-- [Offline Snapshot Example](docs/offline-snapshot.example.json)
+1. **Container Build:** `docker build -t agi-alpha-node:latest .`
+2. **Helm Release:** `helm upgrade --install agi-alpha-node deploy/helm/agi-alpha-node -f deploy/helm/agi-alpha-node/values.yaml`
+3. **Metrics Wiring:** Point Prometheus to `http://<node-host>:9464/metrics` and import [`docs/telemetry/alpha-work-unit-dashboard.json`](docs/telemetry/alpha-work-unit-dashboard.json) into your dashboard platform.
+4. **Subgraph Indexing:** Deploy [`docs/telemetry/alpha-work-units.schema.graphql`](docs/telemetry/alpha-work-units.schema.graphql) to The Graph (or a self-hosted indexer) to power 7d/30d leaderboards.
+
+---
+
+## Token, ENS & Identity
+
+- **$AGIALPHA Contract:** `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals). Canonical constants live in [`src/constants/token.js`](src/constants/token.js) and service abstractions in [`src/services/token.js`](src/services/token.js).
+- **ENS Hierarchy:** Owner and agent authentication relies on `*.node.agi.eth`, `*.alpha.node.agi.eth`, `*.agent.agi.eth`, and related club domains. Enforcement handled by [`src/services/ensVerifier.js`](src/services/ensVerifier.js).
+- **Identity Registry Hooks:** Governance builders manage delegates and operators ensuring complete owner control over pausing, activation fees, and stake thresholds.
 
 ---
 
 ## License
 
 Released under the [MIT License](LICENSE).
-
-<!-- markdownlint-enable MD013 MD033 -->

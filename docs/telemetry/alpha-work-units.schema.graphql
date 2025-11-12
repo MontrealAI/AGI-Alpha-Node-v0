@@ -1,0 +1,42 @@
+"""
+Graph schema for indexing alpha work unit KPIs.
+"""
+type AlphaWorkUnit @entity {
+  id: Bytes!
+  agent: Bytes
+  node: Bytes
+  mintedAt: BigInt!
+  acceptedAt: BigInt
+  validatorCount: Int!
+  validations: [AlphaWorkValidation!]! @derivedFrom(field: "workUnit")
+  slashes: [AlphaWorkSlash!]! @derivedFrom(field: "workUnit")
+}
+
+type AlphaWorkValidation @entity {
+  id: Bytes!
+  workUnit: AlphaWorkUnit!
+  validator: Bytes!
+  stake: BigInt!
+  score: BigInt!
+  timestamp: BigInt!
+}
+
+type AlphaWorkSlash @entity {
+  id: Bytes!
+  workUnit: AlphaWorkUnit!
+  validator: Bytes!
+  amount: BigInt!
+  timestamp: BigInt!
+}
+
+type AlphaWorkAggregate @entity {
+  id: ID!
+  windowSeconds: BigInt!
+  entityType: String!
+  entityId: Bytes
+  acceptanceRate: BigDecimal!
+  validatorWeightedQuality: BigDecimal!
+  onTimeP95Seconds: BigDecimal!
+  slashingAdjustedYield: BigDecimal!
+  updatedAt: BigInt!
+}

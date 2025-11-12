@@ -170,6 +170,7 @@ export async function bootstrapContainer({
     return {
       ...apiMetrics,
       lifecycle: lifecycleMetrics,
+      alphaWorkUnits: lifecycleMetrics.alphaWorkUnits ?? null,
       throughput: apiMetrics.throughput ?? lifecycleMetrics.discovered ?? 0,
       successRate: apiMetrics.successRate ?? 1,
       lastJobProvider: apiMetrics.lastJobProvider ?? lifecycleMetrics.lastJobProvider ?? 'local'

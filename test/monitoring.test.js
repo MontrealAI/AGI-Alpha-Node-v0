@@ -42,6 +42,14 @@ describe('monitoring telemetry server', () => {
     telemetry.providerModeGauge.set({ mode: 'remote' }, 1);
     telemetry.registryProfileGauge.set({ profile: 'sovereign' }, 1);
     telemetry.registryCompatibilityGauge.set({ profile: 'sovereign', reason: 'abi-drift' }, 1);
+    telemetry.alphaAcceptanceGauge.set({ window: 'all' }, 0.82);
+    telemetry.alphaOnTimeGauge.set({ window: 'all' }, 123);
+    telemetry.alphaYieldGauge.set({ window: 'all' }, 0.047);
+    telemetry.alphaQualityGauge.set({ window: 'all', dimension: 'global', key: 'overall' }, 0.91);
+    telemetry.alphaBreakdownGauge.set(
+      { window: 'all', dimension: 'agent', metric: 'minted', key: 'orion' },
+      3
+    );
 
     // Allow Prometheus registry to observe the gauge updates.
     await delay(10);
@@ -58,6 +66,11 @@ describe('monitoring telemetry server', () => {
     expect(metrics).toContain('mode="remote"');
     expect(metrics).toContain('agi_alpha_node_registry_compatibility_warning');
     expect(metrics).toContain('reason="abi-drift"');
+    expect(metrics).toContain('agi_alpha_node_alpha_wu_acceptance_rate');
+    expect(metrics).toContain('agi_alpha_node_alpha_wu_on_time_p95_seconds');
+    expect(metrics).toContain('agi_alpha_node_alpha_wu_slash_adjusted_yield');
+    expect(metrics).toContain('agi_alpha_node_alpha_wu_quality');
+    expect(metrics).toContain('agi_alpha_node_alpha_wu_breakdown');
   });
 
   it('returns 404 for unknown routes', async () => {
