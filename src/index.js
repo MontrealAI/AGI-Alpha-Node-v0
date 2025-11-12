@@ -110,6 +110,21 @@ function parseCsv(input) {
     .filter((value) => value.length > 0);
 }
 
+function parseWindowList(input) {
+  if (!input) {
+    return undefined;
+  }
+  if (Array.isArray(input)) {
+    return input
+      .map((entry) => (typeof entry === 'string' ? entry.trim() : String(entry)))
+      .filter((entry) => entry.length > 0);
+  }
+  return input
+    .split(',')
+    .map((value) => value.trim())
+    .filter((value, index, array) => value.length > 0 && array.indexOf(value) === index);
+}
+
 function formatBps(value) {
   if (value === null || value === undefined) {
     return 'n/a';
@@ -131,6 +146,106 @@ function formatOptionalRatio(value) {
     return 'n/a';
   }
   return numeric.toFixed(4);
+}
+
+function formatYield(value, digits = 4) {
+  if (value === null || value === undefined) {
+    return '0.0000';
+  }
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return '0.0000';
+  }
+  return numeric.toFixed(digits);
+}
+
+function formatLatencySeconds(value) {
+  if (value === null || value === undefined) {
+    return '0';
+  }
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return '0';
+  }
+  return numeric.toFixed(2);
+}
+
+function rankBreakdownEntries(breakdown = {}) {
+  return Object.entries(breakdown)
+    .map(([key, metrics]) => ({
+      key,
+      minted: Number(metrics?.minted ?? 0),
+      accepted: Number(metrics?.accepted ?? 0),
+      slashes: Number(metrics?.slashes ?? 0),
+      stake: Number(metrics?.stake ?? 0),
+      acceptanceRate: Number(metrics?.acceptanceRate ?? 0),
+      onTimeP95Seconds: Number(metrics?.onTimeP95Seconds ?? 0),
+      slashingAdjustedYield: Number(metrics?.slashingAdjustedYield ?? 0)
+    }))
+    .sort((a, b) => b.slashingAdjustedYield - a.slashingAdjustedYield);
+}
+
+function printAlphaWorkUnitMetrics(metrics) {
+  if (!metrics) {
+    console.log(chalk.yellow('No α-work unit metrics available. Stream data first with the monitor loop.'));
+    return;
+  }
+
+  const segments = [];
+  if (metrics.overall) {
+    segments.push({ label: metrics.overall.window ?? 'all', metrics: metrics.overall });
+  }
+  if (Array.isArray(metrics.windows)) {
+    metrics.windows.forEach((entry) => {
+      if (entry) {
+        segments.push({ label: entry.window ?? entry.label ?? 'window', metrics: entry });
+      }
+    });
+  }
+
+  if (!segments.length) {
+    console.log(chalk.yellow('α-work unit metrics registry is empty. Ingest event history before requesting KPIs.'));
+    return;
+  }
+
+  console.log(chalk.bold('α-work unit KPI rollup'));
+  const windowTable = segments.map(({ label, metrics: entry }) => ({
+    window: label,
+    minted: entry?.totals?.minted ?? 0,
+    accepted: entry?.totals?.accepted ?? 0,
+    acceptance: formatYield(entry?.acceptanceRate),
+    p95Seconds: formatLatencySeconds(entry?.onTimeP95Seconds),
+    slashAdjustedYield: formatYield(entry?.slashingAdjustedYield),
+    quality: formatYield(entry?.quality?.global ?? 0)
+  }));
+  console.table(windowTable);
+
+  const overallBreakdowns = metrics.overall?.breakdowns ?? {};
+  const breakdownConfigs = [
+    { title: 'Top agents', dimension: overallBreakdowns.agents },
+    { title: 'Top nodes', dimension: overallBreakdowns.nodes },
+    { title: 'Top validators', dimension: overallBreakdowns.validators }
+  ];
+
+  breakdownConfigs.forEach(({ title, dimension }) => {
+    const ranked = rankBreakdownEntries(dimension);
+    if (!ranked.length) {
+      return;
+    }
+    console.log(chalk.cyan(title));
+    console.table(
+      ranked.slice(0, 5).map((entry) => ({
+        id: entry.key,
+        minted: entry.minted,
+        accepted: entry.accepted,
+        acceptance: formatYield(entry.acceptanceRate),
+        p95Seconds: formatLatencySeconds(entry.onTimeP95Seconds),
+        slashAdjustedYield: formatYield(entry.slashingAdjustedYield),
+        slashes: entry.slashes,
+        stake: entry.stake
+      }))
+    );
+  });
 }
 
 function buildProductivityReports(options) {
@@ -1671,6 +1786,72 @@ jobs
       console.log(`  method: ${result.method}`);
     } catch (error) {
       logger.error(error, 'Validator notification failed');
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    } finally {
+      lifecycle?.stop?.();
+    }
+  });
+
+jobs
+  .command('alpha-kpi')
+  .description('Render validator-weighted α-work unit KPIs from lifecycle telemetry')
+  .option('--registry <address>', 'JobRegistry contract address override')
+  .option('--rpc <url>', 'RPC endpoint override')
+  .option('--profile <name>', 'JobRegistry compatibility profile (v0, v2, or custom)')
+  .option('--profile-config <json>', 'JSON overrides describing ABI/events/methods when using custom profiles')
+  .option('--windows <list>', 'Comma-separated window specifiers (e.g. 7d,30d,12h)')
+  .option('--events <path>', 'JSON file of α-work unit events to ingest before reporting')
+  .option('--lifecycle-log-dir <path>', 'Directory for append-only lifecycle journal entries')
+  .action(async (options) => {
+    const logger = pino({ level: 'info', name: 'jobs-alpha-kpi' });
+    const config = loadConfig();
+    let lifecycle;
+    try {
+      const { lifecycle: jobLifecycle } = buildJobLifecycleFromConfig(
+        config,
+        {
+          registry: options.registry,
+          rpcUrl: options.rpc,
+          profile: options.profile,
+          profileConfig: options.profileConfig,
+          lifecycleLogDir: options.lifecycleLogDir
+        },
+        logger
+      );
+      lifecycle = jobLifecycle;
+
+      if (options.events) {
+        const rawEvents = parseJsonMaybe(loadFileContents(options.events));
+        if (rawEvents && !Array.isArray(rawEvents)) {
+          throw new Error('--events file must contain an array of α-work unit events');
+        }
+        (rawEvents ?? []).forEach((entry, index) => {
+          if (!entry || typeof entry !== 'object') {
+            logger.warn({ index }, 'Skipping malformed α-work unit event entry');
+            return;
+          }
+          const { type, payload, ...rest } = entry;
+          if (!type) {
+            logger.warn({ index }, 'Skipping α-work unit event without type');
+            return;
+          }
+          const normalizedPayload = payload && typeof payload === 'object' ? payload : rest;
+          try {
+            jobLifecycle.recordAlphaWorkUnitEvent(type, normalizedPayload, { emit: false });
+          } catch (error) {
+            logger.warn({ index, type }, error, 'Failed to ingest α-work unit event');
+          }
+        });
+      }
+
+      const windows = parseWindowList(options.windows);
+      const metrics = jobLifecycle.getAlphaWorkUnitMetrics(
+        windows && windows.length ? { windows } : {}
+      );
+      printAlphaWorkUnitMetrics(metrics);
+    } catch (error) {
+      logger.error(error, 'Failed to render α-work unit KPIs');
       console.error(chalk.red(error.message));
       process.exitCode = 1;
     } finally {
