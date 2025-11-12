@@ -65,6 +65,35 @@ function coerceRoleShareTargets(value) {
   return Object.keys(normalized).length > 0 ? normalized : undefined;
 }
 
+function coerceEnsAllowlist(value) {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (Array.isArray(value)) {
+    const entries = value
+      .map((entry) => (typeof entry === 'string' ? entry.trim() : String(entry)))
+      .filter((entry) => entry && entry.length > 0);
+    return entries.length ? entries : undefined;
+  }
+  const stringValue = String(value).trim();
+  if (!stringValue) {
+    return undefined;
+  }
+  if (stringValue.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(stringValue);
+      return coerceEnsAllowlist(parsed);
+    } catch (error) {
+      throw new Error(`Unable to parse HEALTH_GATE_ALLOWLIST JSON: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  const splitEntries = stringValue
+    .split(/[\s,]+/)
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+  return splitEntries.length ? splitEntries : undefined;
+}
+
 function parseProfileSpec(value) {
   if (value === undefined || value === null) {
     return undefined;
@@ -195,6 +224,16 @@ export const configSchema = z
       .min(8)
       .optional(),
     GOVERNANCE_LEDGER_ROOT: z
+      .string()
+      .optional()
+      .transform((value) => {
+        if (!value) return undefined;
+        const trimmed = value.trim();
+        return trimmed.length ? trimmed : undefined;
+      }),
+    HEALTH_GATE_ALLOWLIST: z.any().optional().transform((value) => coerceEnsAllowlist(value)),
+    HEALTH_GATE_INITIAL_STATE: booleanFlag.optional().default(false),
+    HEALTH_GATE_OVERRIDE_ENS: z
       .string()
       .optional()
       .transform((value) => {

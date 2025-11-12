@@ -63,6 +63,13 @@ export function startMonitoringServer({ port = 9464, logger }) {
     registers: [registry]
   });
 
+  const healthGateGauge = new Gauge({
+    name: 'agi_alpha_node_health_gate_state',
+    help: 'Current health gate posture based on ENS allowlist and stake readiness',
+    labelNames: ['state'],
+    registers: [registry]
+  });
+
   const alphaAcceptanceGauge = new Gauge({
     name: 'agi_alpha_node_alpha_wu_acceptance_rate',
     help: 'Acceptance rate for alpha work units (0-1 scale)',
@@ -125,6 +132,7 @@ export function startMonitoringServer({ port = 9464, logger }) {
     providerModeGauge,
     registryProfileGauge,
     registryCompatibilityGauge,
+    healthGateGauge,
     alphaAcceptanceGauge,
     alphaOnTimeGauge,
     alphaYieldGauge,

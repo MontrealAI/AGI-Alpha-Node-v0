@@ -12,6 +12,7 @@ import { hydrateOperatorPrivateKey } from '../services/secretManager.js';
 import { createProvider, createWallet } from '../services/provider.js';
 import { createJobLifecycle } from '../services/jobLifecycle.js';
 import { createLifecycleJournal } from '../services/lifecycleJournal.js';
+import { createHealthGate } from '../services/healthGate.js';
 
 function assertConfigField(value, field) {
   if (!value) {
@@ -95,6 +96,25 @@ export async function bootstrapContainer({
   assertConfigField(config.NODE_LABEL, 'NODE_LABEL');
   assertConfigField(config.OPERATOR_ADDRESS, 'OPERATOR_ADDRESS');
 
+  const healthGateLogger = typeof logger.child === 'function' ? logger.child({ subsystem: 'health-gate' }) : logger;
+  const healthGate = createHealthGate({
+    allowlist: config.HEALTH_GATE_ALLOWLIST,
+    initialHealthy: config.HEALTH_GATE_INITIAL_STATE,
+    logger: healthGateLogger
+  });
+
+  const derivedEnsName = config.NODE_LABEL && config.ENS_PARENT_DOMAIN
+    ? `${config.NODE_LABEL}.${config.ENS_PARENT_DOMAIN}`
+    : null;
+  const initialEnsName = config.HEALTH_GATE_OVERRIDE_ENS ?? derivedEnsName;
+  if (initialEnsName) {
+    healthGate.setStatus({
+      isHealthy: config.HEALTH_GATE_INITIAL_STATE,
+      ensName: initialEnsName,
+      source: 'bootstrap-initial'
+    });
+  }
+
   let offlineSnapshot = null;
   const snapshotPath = offlineSnapshotPath ?? config.OFFLINE_SNAPSHOT_PATH ?? null;
 
@@ -137,7 +157,8 @@ export async function bootstrapContainer({
         profile: config.JOB_REGISTRY_PROFILE,
         profileOverrides: config.JOB_PROFILE_SPEC ?? null,
         journal: lifecycleJournal,
-        logger
+        logger,
+        healthGate
       });
       await jobLifecycle.discover();
       stopJobWatchers = jobLifecycle.watch();
@@ -155,7 +176,8 @@ export async function bootstrapContainer({
       jobLifecycle,
       logger,
       ownerToken: config.GOVERNANCE_API_TOKEN,
-      ledgerRoot: config.GOVERNANCE_LEDGER_ROOT ?? process.cwd()
+      ledgerRoot: config.GOVERNANCE_LEDGER_ROOT ?? process.cwd(),
+      healthGate
     });
   } catch (error) {
     logger.error(error, 'Failed to start agent API server');
@@ -167,13 +189,20 @@ export async function bootstrapContainer({
   const metricsProvider = () => {
     const apiMetrics = apiServer ? apiServer.getMetrics() : {};
     const lifecycleMetrics = jobLifecycle ? jobLifecycle.getMetrics() : {};
+    const derivedSuccessRate =
+      apiMetrics.successRate ??
+      lifecycleMetrics.successRate ??
+      (Number.isFinite(lifecycleMetrics.submitted) && lifecycleMetrics.submitted > 0
+        ? (lifecycleMetrics.completed ?? 0) / lifecycleMetrics.submitted
+        : 1);
     return {
       ...apiMetrics,
       lifecycle: lifecycleMetrics,
       alphaWorkUnits: lifecycleMetrics.alphaWorkUnits ?? null,
       throughput: apiMetrics.throughput ?? lifecycleMetrics.discovered ?? 0,
-      successRate: apiMetrics.successRate ?? 1,
-      lastJobProvider: apiMetrics.lastJobProvider ?? lifecycleMetrics.lastJobProvider ?? 'local'
+      successRate: derivedSuccessRate,
+      lastJobProvider: apiMetrics.lastJobProvider ?? lifecycleMetrics.lastJobProvider ?? 'local',
+      healthGate: healthGate.getState()
     };
   };
 
@@ -205,6 +234,12 @@ export async function bootstrapContainer({
       offlineSnapshot,
       jobMetricsProvider: metricsProvider,
       logger
+    });
+    healthGate.updateFromDiagnostics({
+      ensName: diagnostics?.verification?.nodeName ?? derivedEnsName,
+      stakeEvaluation: diagnostics?.stakeEvaluation,
+      diagnosticsHealthy: diagnostics?.stakeEvaluation?.meets && !diagnostics?.stakeEvaluation?.penaltyActive,
+      source: 'bootstrap-diagnostics'
     });
     if (apiServer?.setOwnerDirectives) {
       apiServer.setOwnerDirectives(diagnostics.ownerDirectives);
@@ -240,12 +275,27 @@ export async function bootstrapContainer({
     }
     stopJobWatchers?.();
     jobLifecycle?.stop();
-    return { config, diagnostics, monitor: null, apiServer: null, jobLifecycle: null };
+    return {
+      config,
+      diagnostics,
+      monitor: null,
+      apiServer: null,
+      jobLifecycle: null,
+      healthGate
+    };
   }
 
   let monitor;
   try {
     const onDiagnostics = (diag) => {
+      if (diag) {
+        healthGate.updateFromDiagnostics({
+          ensName: diag?.verification?.nodeName ?? derivedEnsName,
+          stakeEvaluation: diag?.stakeEvaluation,
+          diagnosticsHealthy: diag?.stakeEvaluation?.meets && !diag?.stakeEvaluation?.penaltyActive,
+          source: 'monitor-diagnostics'
+        });
+      }
       if (apiServer?.setOwnerDirectives && diag?.ownerDirectives) {
         apiServer.setOwnerDirectives(diag.ownerDirectives);
       }
@@ -258,7 +308,8 @@ export async function bootstrapContainer({
       logger,
       maxIterations,
       jobMetricsProvider: metricsProvider,
-      onDiagnostics
+      onDiagnostics,
+      healthGate
     });
   } catch (error) {
     if (apiServer) {
@@ -275,6 +326,7 @@ export async function bootstrapContainer({
     monitor,
     apiServer,
     jobLifecycle,
-    stopJobWatchers
+    stopJobWatchers,
+    healthGate
   };
 }

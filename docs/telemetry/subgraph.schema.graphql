@@ -1,0 +1,39 @@
+type AlphaWorkUnit @entity {
+  """keccak256 identifier emitted by AlphaWUMinted"""
+  id: Bytes!
+  agent: Bytes
+  node: Bytes
+  mintedAt: BigInt!
+  acceptedAt: BigInt
+  validations: [AlphaValidation!]! @derivedFrom(field: "workUnit")
+  slashes: [AlphaSlash!]! @derivedFrom(field: "workUnit")
+}
+
+type AlphaValidation @entity {
+  id: ID!
+  workUnit: AlphaWorkUnit!
+  validator: Bytes!
+  stake: BigInt!
+  score: BigInt!
+  timestamp: BigInt!
+}
+
+type AlphaSlash @entity {
+  id: ID!
+  workUnit: AlphaWorkUnit!
+  validator: Bytes!
+  amount: BigInt!
+  timestamp: BigInt!
+}
+
+type KPIWindow @entity {
+  id: ID!
+  label: String!
+  fromTimestamp: BigInt!
+  toTimestamp: BigInt!
+  acceptanceRate: BigDecimal!
+  validatorWeightedQuality: BigDecimal!
+  onTimeP95Seconds: BigInt!
+  slashingAdjustedYield: BigDecimal!
+  sampleSize: BigInt!
+}

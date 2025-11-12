@@ -261,7 +261,8 @@ export async function launchMonitoring({
   stakeStatus,
   performance = null,
   runtimeMode = 'online',
-  logger = pino({ level: 'info', name: 'agi-alpha-node' })
+  logger = pino({ level: 'info', name: 'agi-alpha-node' }),
+  healthGate = null
 }) {
   const telemetry = startMonitoringServer({ port, logger });
   if (stakeStatus?.operatorStake) {
@@ -279,6 +280,14 @@ export async function launchMonitoring({
   }
   if (telemetry.registryCompatibilityGauge) {
     telemetry.registryCompatibilityGauge.reset();
+  }
+  if (telemetry.healthGateGauge) {
+    telemetry.healthGateGauge.reset();
+    const gateHealthy = healthGate?.isHealthy?.() ?? true;
+    const readyValue = gateHealthy ? 1 : 0;
+    const sealedValue = gateHealthy ? 0 : 1;
+    telemetry.healthGateGauge.set({ state: 'ready' }, readyValue);
+    telemetry.healthGateGauge.set({ state: 'sealed' }, sealedValue);
   }
   if (performance) {
     if (telemetry.jobThroughputGauge && performance.throughputPerEpoch !== undefined) {
@@ -326,8 +335,15 @@ export async function launchMonitoring({
         });
       }
     }
+    const gateHealthy = healthGate?.isHealthy?.() ?? true;
+    const readyValue = gateHealthy ? 1 : 0;
+    const sealedValue = gateHealthy ? 0 : 1;
+    if (telemetry.healthGateGauge) {
+      telemetry.healthGateGauge.set({ state: 'ready' }, readyValue);
+      telemetry.healthGateGauge.set({ state: 'sealed' }, sealedValue);
+    }
     const alphaMetrics = performance.alphaWorkUnits ?? performance.jobMetrics?.alphaWorkUnits ?? null;
-    if (alphaMetrics) {
+    if (gateHealthy && alphaMetrics) {
       applyAlphaWorkUnitMetricsToTelemetry(telemetry, alphaMetrics);
     } else if (
       telemetry.alphaAcceptanceGauge ||

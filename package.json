@@ -19,7 +19,8 @@
     "ci:lint": "npm run lint",
     "ci:test": "npm run test",
     "ci:coverage": "npm run coverage",
-    "ci:verify": "npm run ci:lint && npm run ci:test && npm run ci:coverage",
+    "ci:policy": "node scripts/verify-health-gate.mjs",
+    "ci:verify": "npm run ci:lint && npm run ci:test && npm run ci:coverage && npm run ci:policy",
     "prepare": "node -e \"const { existsSync } = require('node:fs'); const { join } = require('node:path'); const script = join(process.cwd(), 'scripts/prepare-husky.cjs'); if (!existsSync(script)) { console.log('husky prepare script missing; skipping'); process.exit(0); } require(script);\""
   },
   "engines": {

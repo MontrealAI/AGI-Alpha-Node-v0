@@ -47,6 +47,11 @@ jobs:
           CI: true
         run: npm run lint:links
 
+      - name: Verify health gate policy
+        env:
+          CI: true
+        run: npm run ci:policy
+
   test:
     name: Unit & Integration Tests
     runs-on: ubuntu-latest

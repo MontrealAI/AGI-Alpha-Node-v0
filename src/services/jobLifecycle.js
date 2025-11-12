@@ -226,7 +226,8 @@ export function createJobLifecycle({
   profileOverrides = null,
   journal = null,
   logger = pino({ level: 'info', name: 'job-lifecycle' }),
-  contractFactory = defaultContractFactory
+  contractFactory = defaultContractFactory,
+  healthGate = null
 } = {}) {
   const profile = resolveJobProfile(profileInput, profileOverrides);
   const iface = createInterfaceFromProfile(profile);
@@ -243,7 +244,8 @@ export function createJobLifecycle({
     lastJobProvider: 'agi-jobs',
     activeProfile: profile.id,
     compatibilityWarnings: [],
-    alphaWorkUnits: alphaWorkUnits.getMetrics({ windows: ALPHA_WORK_UNIT_WINDOWS })
+    alphaWorkUnits: alphaWorkUnits.getMetrics({ windows: ALPHA_WORK_UNIT_WINDOWS }),
+    alphaGate: { suppressed: 0 }
   };
 
   let registryAddress = jobRegistryAddress ? getAddress(jobRegistryAddress) : null;
@@ -286,12 +288,15 @@ export function createJobLifecycle({
 
     refreshAlphaWorkUnitMetrics(options.windows ?? null);
 
-    if (options.emit !== false) {
+    const gateAllows = healthGate?.shouldEmitAlphaEvent?.({ type: normalizedType, payload }) ?? true;
+    if (options.emit !== false && gateAllows) {
       emitter.emit('alpha-wu:event', {
         type: normalizedType,
         unit: result,
         raw: { ...payload }
       });
+    } else if (!gateAllows) {
+      metrics.alphaGate.suppressed = (metrics.alphaGate.suppressed ?? 0) + 1;
     }
 
     return result;

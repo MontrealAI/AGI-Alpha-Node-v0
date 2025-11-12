@@ -1,0 +1,56 @@
+{
+  "$schema": "https://agi.alpha/schemas/dashboard/v1.json",
+  "title": "AGI Alpha Node KPI Control Plane",
+  "description": "Validator-weighted α-WU KPIs with ENS-gated health posture telemetry.",
+  "widgets": [
+    {
+      "type": "status",
+      "title": "Health Gate",
+      "metric": "agi_alpha_node_health_gate_state",
+      "mode": "state",
+      "labels": { "state": "ready" },
+      "thresholds": {
+        "warning": 0.5,
+        "critical": 0.1
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "α-WU Acceptance Rate",
+      "metric": "agi_alpha_node_alpha_wu_acceptance_rate",
+      "labels": { "window": "7d" },
+      "yAxis": {
+        "unit": "ratio",
+        "min": 0,
+        "max": 1
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "α-WU On-Time p95",
+      "metric": "agi_alpha_node_alpha_wu_on_time_p95_seconds",
+      "labels": { "window": "7d" },
+      "yAxis": {
+        "unit": "seconds",
+        "min": 0
+      }
+    },
+    {
+      "type": "bar",
+      "title": "Validator Weighted Quality",
+      "metric": "agi_alpha_node_alpha_wu_quality",
+      "labels": { "window": "7d", "dimension": "validator" },
+      "groupBy": "key"
+    },
+    {
+      "type": "table",
+      "title": "Slash Adjusted Yield by Node",
+      "metric": "agi_alpha_node_alpha_wu_breakdown",
+      "labels": {
+        "window": "7d",
+        "dimension": "node",
+        "metric": "slashingAdjustedYield"
+      }
+    }
+  ]
+}
