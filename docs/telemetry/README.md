@@ -156,6 +156,121 @@ graph LR
 
 Each blueprint mirrors gauges defined in [`src/telemetry/alphaMetrics.js`](../../src/telemetry/alphaMetrics.js). CI will fail if schema files drift thanks to `npm run lint` and `npm test` coverage.
 
+### Dashboard schema contract
+
+- [`dashboard.schema.json`](./dashboard.schema.json) codifies the dashboard contract and is referenced by every blueprint via the `$schema` field.
+- The schema enumerates widgets for SLO health (`status`, `stat`), time-series KPIs, and leaderboard/table surfaces backed by Prometheus or subgraph data sources.
+- Validate an authoring change with `npx ajv-cli validate -s docs/telemetry/dashboard.schema.json -d docs/telemetry/dashboard.json` before shipping.
+
+```jsonc
+{
+  "title": "AGI Alpha Node KPI Control Plane",
+  "domains": ["slo", "validation", "leaderboard"],
+  "datasources": [
+    { "name": "prometheus", "type": "prometheus", "endpoint": "https://prometheus.alpha-node.local/api/v1" },
+    { "name": "alphaSubgraph", "type": "subgraph", "endpoint": "https://api.thegraph.com/subgraphs/name/agi/alpha-work-units" }
+  ]
+}
+```
+
+### Lightweight embed stub
+
+Drop-in React hook for loading `dashboard.json` and binding to an existing charting surface:
+
+```tsx
+import useSWR from "swr";
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
+export function useAlphaDashboard() {
+  const { data, error, isLoading } = useSWR("/dashboards/dashboard.json", fetcher, {
+    revalidateOnFocus: false,
+  });
+
+  return {
+    spec: data,
+    isLoading,
+    error,
+  };
+}
+
+// Usage inside a component
+// const { spec, isLoading } = useAlphaDashboard();
+// if (!spec || isLoading) return <Spinner label="Loading KPIs" />;
+// <DashboardRenderer spec={spec} />
+```
+
+For non-React front-ends, fetch the JSON once and hydrate an existing Grafana panel via the HTTP API `POST /api/dashboards/db` using the same payload.
+
+### Subgraph integration guide
+
+Widgets can point directly at the deterministic KPI subgraph (`alphaSubgraph` datasource). The following GraphQL snippets cover common tasks:
+
+#### Validator quality leaderboard (24h window)
+
+```graphql
+query ValidationLeaderboard($windowStart: BigInt!) {
+  validators: alphaValidators(
+    first: 10
+    orderBy: stakeWeightedScore
+    orderDirection: desc
+    where: { windowStart_gte: $windowStart }
+  ) {
+    id
+    address
+    stakeWeightedScore
+    validations
+    medianLatencySeconds
+  }
+}
+```
+
+#### Agent acceptance rate SLO (7d window)
+
+```graphql
+query AgentAcceptance($agent: Bytes!, $from: BigInt!, $to: BigInt!) {
+  windows: kpiWindows(
+    where: { agent: $agent, window: "7d", start_gte: $from, end_lte: $to }
+  ) {
+    acceptanceRate
+    onTimeP95Seconds
+    slashAdjustedYield
+  }
+}
+```
+
+#### Minted vs. accepted totals by node (30d window)
+
+```graphql
+query NodeProduction($window: String!) {
+  nodes: nodeBreakdowns(where: { window: $window }) {
+    node
+    minted
+    accepted
+    slashAdjustedYield
+  }
+}
+```
+
+Execute queries with any GraphQL client or via cURL:
+
+```bash
+curl -X POST https://api.thegraph.com/subgraphs/name/agi/alpha-work-units \
+  -H 'content-type: application/json' \
+  -d '{"query":"query ($windowStart: BigInt!) { validators: alphaValidators(first: 10, orderBy: stakeWeightedScore, orderDirection: desc, where: { windowStart_gte: $windowStart }) { address stakeWeightedScore validations medianLatencySeconds }}","variables":{"windowStart":"1696291200"}}'
+```
+
+### Agent/Node customization playbook
+
+Stakeholders tailor dashboards by adjusting `labels`, `transform.variables`, or datasource variables per widget:
+
+1. **Agent focus** — duplicate [`dashboard.json`](./dashboard.json) and set `labels.agent` on KPI widgets to the ENS or address of interest. Combine with subgraph variables (`$agent`) for derived queries.
+2. **Node-specific drill-down** — apply `labels.node` and limit leaderboard widgets with `transform.limit` or GraphQL `where: { node: $node }` filters.
+3. **Per-tenant overlays** — use the schema's `domains` and `tags` arrays to annotate the dashboard (e.g., `"tags": ["agent:orca", "sla:gold"]`) so renderers can surface tenant selectors.
+4. **Access control** — check-in custom blueprints under `docs/telemetry/custom/<agent>.dashboard.json` and wire CI validation against `dashboard.schema.json` to prevent malformed payloads.
+
+Runtime overrides can be applied without redeploying Grafana by pushing the JSON via `POST /api/dashboards/db` or by shipping the blueprint through the CLI helper `node src/index.js dashboards push --file docs/telemetry/custom/orca.dashboard.json`.
+
 ---
 
 ## Deployment Checklist
