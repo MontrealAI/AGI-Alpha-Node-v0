@@ -1,6 +1,6 @@
 # AGI Alpha Node Subgraph schema
 
-type Agent @entity {
+type Agent @entity(immutable: false) {
   id: ID!
   totalWorkUnits: BigInt!
   totalAccepted: BigInt!
@@ -12,7 +12,7 @@ type Agent @entity {
   metricWindows: [AgentMetricWindow!]! @derivedFrom(field: "agent")
 }
 
-type Node @entity {
+type Node @entity(immutable: false) {
   id: ID!
   totalWorkUnits: BigInt!
   totalAccepted: BigInt!
@@ -24,7 +24,7 @@ type Node @entity {
   metricWindows: [NodeMetricWindow!]! @derivedFrom(field: "node")
 }
 
-type WorkUnit @entity {
+type WorkUnit @entity(immutable: false) {
   id: ID!
   agent: Agent!
   node: Node!
@@ -36,7 +36,7 @@ type WorkUnit @entity {
   totalStake: BigInt!
 }
 
-type AgentDailyMetric @entity {
+type AgentDailyMetric @entity(immutable: false) {
   id: ID!
   agent: Agent!
   day: Int!
@@ -48,7 +48,7 @@ type AgentDailyMetric @entity {
   slashAmount: BigInt!
 }
 
-type NodeDailyMetric @entity {
+type NodeDailyMetric @entity(immutable: false) {
   id: ID!
   node: Node!
   day: Int!
@@ -60,7 +60,7 @@ type NodeDailyMetric @entity {
   slashAmount: BigInt!
 }
 
-type AgentMetricWindow @entity {
+type AgentMetricWindow @entity(immutable: false) {
   id: ID!
   agent: Agent!
   windowDays: Int!
@@ -72,7 +72,7 @@ type AgentMetricWindow @entity {
   updatedAt: Int!
 }
 
-type NodeMetricWindow @entity {
+type NodeMetricWindow @entity(immutable: false) {
   id: ID!
   node: Node!
   windowDays: Int!

@@ -83,7 +83,7 @@ contract AlphaNodeManager is Ownable, IAlphaWorkUnitEvents {
     event StakeDeposited(address indexed account, uint256 amount);
     event StakeWithdrawn(address indexed recipient, uint256 amount);
 
-    address public constant CANONICAL_AGIALPHA = 0xa61A3B3A130A9C20768eEBf97E21515A6046a1FA;
+    address public constant CANONICAL_AGIALPHA = 0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA;
 
     IERC20 public immutable stakingToken;
     bool public paused;

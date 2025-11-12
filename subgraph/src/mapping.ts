@@ -285,7 +285,7 @@ export function handleAlphaWUValidated(event: AlphaWUValidated): void {
   const day = getDayFromTimestamp(timestamp);
   const agentId = workUnit.agent;
   const nodeId = workUnit.node;
-  const weightedScore = event.params.score.times(event.params.stakeAmount);
+  const weightedScore = event.params.score.times(event.params.stake);
 
   const agent = getOrCreateAgent(agentId);
   agent.totalValidations = agent.totalValidations.plus(ONE_BI);
@@ -299,7 +299,7 @@ export function handleAlphaWUValidated(event: AlphaWUValidated): void {
 
   workUnit.validationCount = workUnit.validationCount.plus(ONE_BI);
   workUnit.totalScore = workUnit.totalScore.plus(event.params.score);
-  workUnit.totalStake = workUnit.totalStake.plus(event.params.stakeAmount);
+  workUnit.totalStake = workUnit.totalStake.plus(event.params.stake);
   workUnit.lastValidatedAt = event.params.timestamp.toI32();
   workUnit.save();
 
@@ -310,7 +310,7 @@ export function handleAlphaWUValidated(event: AlphaWUValidated): void {
     ZERO_BI,
     ONE_BI,
     weightedScore,
-    event.params.stakeAmount,
+    event.params.stake,
     ZERO_BI,
   );
   updateNodeDaily(
@@ -320,7 +320,7 @@ export function handleAlphaWUValidated(event: AlphaWUValidated): void {
     ZERO_BI,
     ONE_BI,
     weightedScore,
-    event.params.stakeAmount,
+    event.params.stake,
     ZERO_BI,
   );
   updateAgentWindows(agentId, day, timestamp);
