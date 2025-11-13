@@ -108,6 +108,8 @@ type AgentMetricWindow @entity(immutable: false) {
   id: ID!
   agent: Agent!
   windowDays: Int!
+  windowStart: Int!
+  windowEnd: Int!
   mintedCount: BigInt!
   acceptedCount: BigInt!
   validationCount: BigInt!
@@ -124,6 +126,8 @@ type NodeMetricWindow @entity(immutable: false) {
   id: ID!
   node: Node!
   windowDays: Int!
+  windowStart: Int!
+  windowEnd: Int!
   mintedCount: BigInt!
   acceptedCount: BigInt!
   validationCount: BigInt!
@@ -140,6 +144,8 @@ type ValidatorMetricWindow @entity(immutable: false) {
   id: ID!
   validator: Validator!
   windowDays: Int!
+  windowStart: Int!
+  windowEnd: Int!
   mintedCount: BigInt!
   acceptedCount: BigInt!
   validationCount: BigInt!

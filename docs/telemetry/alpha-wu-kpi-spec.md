@@ -57,7 +57,8 @@ extends the raw events into usable analytics windows:
   `ValidatorDailyMetric`) accumulate counts, scores, stake, and slash totals.
 - Rolling window entities (`*MetricWindow`) persist 7/30‑day acceptance rate,
   validator-weighted quality, p95 latency, and slashing-adjusted yield
-  snapshots.
+  snapshots. Each window records `windowStart` and `windowEnd` UNIX timestamps
+  so dashboards can filter by freshness without recomputing aggregations.
 - Histogram entities (`QualityBucket`, `LatencyBucket`) keep the raw
   distributions needed to recompute medians and p95s deterministically.
 
