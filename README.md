@@ -193,13 +193,45 @@ Operational recommendations:
 
 ## Governance & Owner Controls
 
-The owner address wields complete authority over runtime parameters and can adjust business levers without redeploying contracts.
+The owner address wields complete authority over runtime parameters and can adjust business levers without redeploying contracts. Every directive is designed for immediate execution so that treasury posture, validator availability, and α-WU policy can be tuned in seconds.
 
-* **Pausing:** `pause()` and `unpause()` freeze or resume validator activity instantly.
-* **Validator Registry:** `setValidator(address,bool)` approves or revokes operators.
-* **Identity Mesh:** Register ENS nodes, rotate controllers, and toggle activation through `registerIdentity`, `updateIdentityController`, and `setIdentityStatus`.
-* **Stake Custody:** Deposit or withdraw stakes, enforce minimums via configuration, and align treasury shares with `ROLE_SHARE_TARGETS`.
-* **Work Unit Policy:** Tune α-WU economics through `WORK_UNITS` configuration; the runtime validates inputs before bootstrapping.
+| Owner Directive | Smart-Contract Surface | Runtime / CLI Entry Point | Operational Impact |
+| --- | --- | --- | --- |
+| Pause / resume | `SystemPause.pauseAll()` / `SystemPause.resumeAll()` via [`buildSystemPauseTx`](src/services/governance.js) | `node src/index.js governance system-pause --system-pause <addr> --action pause|resume` | Instantly halts or resumes validator flow, freezing α-WU mint/validate events until resumed. |
+| Validator registry | `WorkMeter.setValidator(address,bool)` via [`buildWorkMeterValidatorTx`](src/services/governance.js) | `node src/index.js governance workmeter-validator --work-meter <addr> --validator <addr> --allowed true|false` | Curate which operators can validate segments; rejected addresses are blocked at contract level. |
+| Identity mesh | `IdentityRegistry.setAdditionalNodeOperator(address,bool)` via [`buildIdentityDelegateTx`](src/services/governance.js) | `node src/index.js governance identity-delegate --identity-registry <addr> --operator <addr> --allowed true|false` | Assign ENS guardianship, rotate controllers, toggle activation for enclaves and research agents. |
+| Stake custody | `PlatformIncentives.stakeAndActivate()` / `StakeManager.setMinimumStake()` via [`buildStakeAndActivateTx`](src/services/governance.js) & [`buildMinimumStakeTx`](src/services/governance.js) | `node src/index.js stake-tx --amount <amt> --incentives <addr>` / `governance minimum-stake --stake-manager <addr> --amount <amt>` | Move $AGIALPHA into or out of custody, enforce minimum posture, and redirect rewards. |
+| α-WU policy | [`WORK_UNITS` config](src/config/schema.js) | `WORK_UNITS=... npm run ci:verify` | Reweight economics, epoch cadence, and benchmark multipliers with schema validation preventing malformed entries. |
+
+```mermaid
+stateDiagram-v2
+  classDef owner fill:#0f172a,stroke:#38bdf8,color:#e0f2fe;
+  classDef ledger fill:#111827,stroke:#f97316,color:#f8fafc;
+
+  [*] --> Operational
+  Operational --> Paused: owner.pause()
+  Paused --> Operational: owner.unpause()
+  Operational --> ValidatorRotated: owner.setValidator()
+  ValidatorRotated --> Operational
+  Operational --> IdentityShifted: owner.updateIdentityController()
+  IdentityShifted --> Operational
+  Operational --> TreasuryRebalanced: owner.withdrawStake()/stake()
+  TreasuryRebalanced --> Operational
+
+  note right of Operational
+    α-WU mint/validate/accept flows,
+    reward routing, and telemetry
+    run at full velocity.
+  end note
+
+  note right of Paused
+    Runtime enters safe mode,
+    validators blocked, telemetry
+    announces suspension.
+  end note
+```
+
+Further playbooks live in the [operator runbook](docs/operator-runbook.md), covering deterministic recovery sequences, ENS hygiene, and safe rollout choreography. Direct owner invocations of [`AlphaNodeManager`](contracts/AlphaNodeManager.sol) functions (e.g., `pause`, `unpause`, `setValidator`, `recordAlphaWUMint`) remain available for hardware wallets and custodial scripts when low-level control is required.
 
 ---
 
