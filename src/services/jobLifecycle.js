@@ -227,11 +227,17 @@ function cloneAlphaSummary(summary) {
         .map(([key, value]) => [key, toNumber(value)])
         .sort(([a], [b]) => a.localeCompare(b))
     );
+  const modelClassBreakdown = normalizeBreakdown(summary.modelClassBreakdown);
+  const slaBreakdown = normalizeBreakdown(summary.slaBreakdown);
   return {
     total: toNumber(summary.total),
     bySegment,
-    modelClassBreakdown: normalizeBreakdown(summary.modelClassBreakdown),
-    slaBreakdown: normalizeBreakdown(summary.slaBreakdown)
+    modelClassBreakdown,
+    slaBreakdown,
+    quality: {
+      modelClass: { ...modelClassBreakdown },
+      sla: { ...slaBreakdown }
+    }
   };
 }
 

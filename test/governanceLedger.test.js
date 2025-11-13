@@ -47,6 +47,8 @@ describe('governance ledger α-WU enrichment', () => {
     expect(stored.meta.alphaWU.total).toBeGreaterThan(0);
     expect(Object.keys(stored.meta.alphaWU.modelClassBreakdown)).toContain(MODEL_CLASSES.LLM_8B);
     expect(Object.values(stored.meta.alphaWU.slaBreakdown).reduce((acc, value) => acc + Number(value), 0)).toBeGreaterThan(0);
+    expect(Object.keys(stored.meta.alphaWU.quality.modelClass)).toContain(MODEL_CLASSES.LLM_8B);
+    expect(Object.keys(stored.meta.alphaWU.quality.sla)).toContain(SLA_PROFILES.STANDARD);
   });
 
   it('falls back to global α-WU aggregates when no jobId is provided', () => {
@@ -75,5 +77,7 @@ describe('governance ledger α-WU enrichment', () => {
     expect(stored.meta.alphaWU.total).toBeGreaterThan(0);
     expect(Object.keys(stored.meta.alphaWU.modelClassBreakdown).length).toBeGreaterThan(0);
     expect(Object.keys(stored.meta.alphaWU.slaBreakdown).length).toBeGreaterThan(0);
+    expect(Object.keys(stored.meta.alphaWU.quality.modelClass).length).toBeGreaterThan(0);
+    expect(Object.keys(stored.meta.alphaWU.quality.sla).length).toBeGreaterThan(0);
   });
 });

@@ -58,14 +58,24 @@ function sanitizeAlphaMeta(summary = null, { totalOverride = null } = {}) {
     return {
       total: toNumber(totalOverride),
       modelClassBreakdown: {},
-      slaBreakdown: {}
+      slaBreakdown: {},
+      quality: {
+        modelClass: {},
+        sla: {}
+      }
     };
   }
   const normalizedTotal = totalOverride !== null && totalOverride !== undefined ? totalOverride : summary.total;
+  const modelClassBreakdown = sanitizeBreakdown(summary.modelClassBreakdown);
+  const slaBreakdown = sanitizeBreakdown(summary.slaBreakdown);
   return {
     total: toNumber(normalizedTotal),
-    modelClassBreakdown: sanitizeBreakdown(summary.modelClassBreakdown),
-    slaBreakdown: sanitizeBreakdown(summary.slaBreakdown)
+    modelClassBreakdown,
+    slaBreakdown,
+    quality: {
+      modelClass: { ...modelClassBreakdown },
+      sla: { ...slaBreakdown }
+    }
   };
 }
 
