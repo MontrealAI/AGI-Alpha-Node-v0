@@ -102,8 +102,8 @@ function getOrCreateWorkUnit(id: string): WorkUnit {
   if (entity == null) {
     entity = new WorkUnit(id);
     entity.mintedAt = 0;
-    entity.acceptedAt = null;
-    entity.lastValidatedAt = null;
+    entity.acceptedAt = 0;
+    entity.lastValidatedAt = 0;
     entity.validationCount = ZERO_BI;
     entity.totalScore = ZERO_BI;
     entity.totalStake = ZERO_BI;
