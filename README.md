@@ -20,6 +20,7 @@
   </a>
   <img src="https://img.shields.io/badge/Coverage-Automated-0e9aa7?logo=codecov&logoColor=white" alt="Coverage" />
   <img src="https://img.shields.io/badge/Node.js-20.x-43853d?logo=node.js&logoColor=white" alt="Runtime" />
+  <img src="https://img.shields.io/badge/TypeScript-Ready-3178c6?logo=typescript&logoColor=white" alt="TypeScript Ready" />
   <a href="Dockerfile">
     <img src="https://img.shields.io/badge/Docker-Production%20Image-2496ed?logo=docker&logoColor=white" alt="Docker" />
   </a>
@@ -46,12 +47,13 @@
 4. [α-WU Economics](#α-wu-economics)
 5. [Smart Contract Sovereignty](#smart-contract-sovereignty)
 6. [Telemetry & Insight Mesh](#telemetry--insight-mesh)
-7. [Deployment & Operations](#deployment--operations)
-8. [Governance & Owner Controls](#governance--owner-controls)
-9. [Continuous Integration](#continuous-integration)
-10. [Quickstart](#quickstart)
-11. [Testing & Quality Gates](#testing--quality-gates)
-12. [Further Reading](#further-reading)
+7. [Value Flywheel Atlas](#value-flywheel-atlas)
+8. [Deployment & Operations](#deployment--operations)
+9. [Governance & Owner Controls](#governance--owner-controls)
+10. [Continuous Integration](#continuous-integration)
+11. [Quickstart](#quickstart)
+12. [Testing & Quality Gates](#testing--quality-gates)
+13. [Further Reading](#further-reading)
 
 ---
 
@@ -232,6 +234,35 @@ stateDiagram-v2
 ```
 
 Further playbooks live in the [operator runbook](docs/operator-runbook.md), covering deterministic recovery sequences, ENS hygiene, and safe rollout choreography. Direct owner invocations of [`AlphaNodeManager`](contracts/AlphaNodeManager.sol) functions (e.g., `pause`, `unpause`, `setValidator`, `recordAlphaWUMint`) remain available for hardware wallets and custodial scripts when low-level control is required.
+
+---
+
+## Value Flywheel Atlas
+
+The node compounds every completed workload into compounding demand, ensuring the control plane continually tightens its grip on global alpha surfaces.
+
+```mermaid
+mindmap
+  root((AGI Alpha Node))
+    Compute Swarms
+      Deterministic α-WU metering
+      GPU enclaves tuned per SLA
+      Dynamic validator rotations
+    Token Velocity
+      Stake & slashing incentives
+      Treasury auto-balancing
+      Liquidity gravity wells
+    Intelligence Surfaces
+      Telemetry atlases
+      Predictive governance playbooks
+      Autonomous agent onboarding
+    Market Expansion
+      Industry vertical integrations
+      Synthetic workforce marketplaces
+      Kardashev-ready infrastructure
+```
+
+*The flywheel loops reinforce each other: more jobs yield greater demand for $AGIALPHA, drawing in new operators, unlocking additional compute, and enabling the runtime to identify fresh markets before humans can react.*
 
 ---
 
