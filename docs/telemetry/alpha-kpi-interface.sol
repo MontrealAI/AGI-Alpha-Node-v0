@@ -9,6 +9,8 @@ interface IAlphaWorkUnitKpiEvents {
     /// @param agent Address of the submitting agent.
     /// @param node Registered node that orchestrated the α-WU.
     /// @param mintedAt Unix timestamp when the unit became actionable.
+    /// @custom:kpi acceptance-rate
+    /// @custom:kpi on-time-completion
     event AlphaWUMinted(bytes32 indexed id, address indexed agent, address indexed node, uint256 mintedAt);
 
     /// @notice Emitted when a validator submits a scored attestation for an α-WU.
@@ -17,6 +19,7 @@ interface IAlphaWorkUnitKpiEvents {
     /// @param stake Validator stake weight applied to the score.
     /// @param score Validator-assigned quality score (scaled to 1e18 basis).
     /// @param validatedAt Unix timestamp when the attestation was recorded.
+    /// @custom:kpi validator-weighted-quality
     event AlphaWUValidated(
         bytes32 indexed id,
         address indexed validator,
@@ -28,6 +31,9 @@ interface IAlphaWorkUnitKpiEvents {
     /// @notice Emitted when an α-WU is accepted by governance after quorum validation.
     /// @param id keccak256 identifier for the α-WU.
     /// @param acceptedAt Unix timestamp when the α-WU was accepted.
+    /// @custom:kpi acceptance-rate
+    /// @custom:kpi on-time-completion
+    /// @custom:kpi slashing-adjusted-yield
     event AlphaWUAccepted(bytes32 indexed id, uint256 acceptedAt);
 
     /// @notice Emitted when slashing is applied to a validator for the referenced α-WU.
@@ -35,5 +41,6 @@ interface IAlphaWorkUnitKpiEvents {
     /// @param validator Address of the validator being slashed.
     /// @param amount Amount of stake slashed (denominated in the validator stake token units).
     /// @param slashedAt Unix timestamp when the slash occurred.
+    /// @custom:kpi slashing-adjusted-yield
     event SlashApplied(bytes32 indexed id, address indexed validator, uint256 amount, uint256 slashedAt);
 }

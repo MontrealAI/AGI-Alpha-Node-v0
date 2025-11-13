@@ -45,6 +45,13 @@ Implementations must gate event emission through ENS subnames such as
 consulting the shared identity registry. This ensures only authorised agents,
 validators, nodes, and operator clubs can generate KPI-impacting telemetry.
 
+| Event | Primary KPIs Powered |
+| ----- | -------------------- |
+| `AlphaWUMinted` | Acceptance Rate (AR), On-Time Completion (OTC) |
+| `AlphaWUValidated` | Validator-Weighted Quality Score (VQS) |
+| `AlphaWUAccepted` | AR / OTC / SAY |
+| `SlashApplied` | Slashing-Adjusted Yield (SAY) |
+
 ## Indexing Model
 
 The Graph schema in [`subgraph/schema.graphql`](../../subgraph/schema.graphql)

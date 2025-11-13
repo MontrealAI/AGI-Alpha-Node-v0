@@ -7,7 +7,7 @@ enum HistogramOwner {
   VALIDATOR
 }
 
-"""Aggregated alpha work unit statistics for an agent identity."""
+"""Aggregated alpha work unit statistics for an agent identity powering AR/VQS/OTC/SAY windows."""
 type Agent @entity(immutable: false) {
   id: ID!
   totalWorkUnits: BigInt!
@@ -21,7 +21,7 @@ type Agent @entity(immutable: false) {
   metricWindows: [AgentMetricWindow!]! @derivedFrom(field: "agent")
 }
 
-"""Aggregated alpha work unit statistics for a node identity."""
+"""Aggregated alpha work unit statistics for a node identity powering AR/VQS/OTC/SAY windows."""
 type Node @entity(immutable: false) {
   id: ID!
   totalWorkUnits: BigInt!
@@ -35,7 +35,7 @@ type Node @entity(immutable: false) {
   metricWindows: [NodeMetricWindow!]! @derivedFrom(field: "node")
 }
 
-"""Validator level counters with stake, quality, and slashing totals."""
+"""Validator level counters with stake, quality, and slashing totals backing AR/VQS/OTC/SAY rollups."""
 type Validator @entity(immutable: false) {
   id: ID!
   totalWorkUnits: BigInt!
@@ -49,7 +49,7 @@ type Validator @entity(immutable: false) {
   metricWindows: [ValidatorMetricWindow!]! @derivedFrom(field: "validator")
 }
 
-"""Represents a single minted alpha work unit and its validation state."""
+"""Represents a single minted alpha work unit and its validation state (input for AR, OTC, and SAY)."""
 type WorkUnit @entity(immutable: false) {
   id: ID!
   agent: Agent!
@@ -64,7 +64,7 @@ type WorkUnit @entity(immutable: false) {
   participations: [ValidatorParticipation!]! @derivedFrom(field: "workUnit")
 }
 
-"""Join entity linking validators to the work units they reviewed."""
+"""Join entity linking validators to the work units they reviewed (source for VQS weighting)."""
 type ValidatorParticipation @entity(immutable: false) {
   id: ID!
   workUnit: WorkUnit!
@@ -74,7 +74,7 @@ type ValidatorParticipation @entity(immutable: false) {
   lastValidatedAt: Int!
 }
 
-"""Daily agent-level totals used for recomputing rolling KPI windows."""
+"""Daily agent-level totals used for recomputing AR/VQS/OTC/SAY rolling windows."""
 type AgentDailyMetric @entity(immutable: false) {
   id: ID!
   agent: Agent!
@@ -87,7 +87,7 @@ type AgentDailyMetric @entity(immutable: false) {
   slashAmount: BigInt!
 }
 
-"""Daily node-level totals used for recomputing rolling KPI windows."""
+"""Daily node-level totals used for recomputing AR/VQS/OTC/SAY rolling windows."""
 type NodeDailyMetric @entity(immutable: false) {
   id: ID!
   node: Node!
@@ -100,7 +100,7 @@ type NodeDailyMetric @entity(immutable: false) {
   slashAmount: BigInt!
 }
 
-"""Daily validator-level totals used for recomputing rolling KPI windows."""
+"""Daily validator-level totals used for recomputing AR/VQS/OTC/SAY rolling windows."""
 type ValidatorDailyMetric @entity(immutable: false) {
   id: ID!
   validator: Validator!
@@ -113,7 +113,7 @@ type ValidatorDailyMetric @entity(immutable: false) {
   slashAmount: BigInt!
 }
 
-"""Rolling KPI snapshot for an agent (e.g. 7-day or 30-day window)."""
+"""Rolling KPI snapshot for an agent (e.g. 7-day or 30-day window) covering AR, VQS, OTC, and SAY."""
 type AgentMetricWindow @entity(immutable: false) {
   id: ID!
   agent: Agent!
@@ -132,7 +132,7 @@ type AgentMetricWindow @entity(immutable: false) {
   updatedAt: Int!
 }
 
-"""Rolling KPI snapshot for a node (e.g. 7-day or 30-day window)."""
+"""Rolling KPI snapshot for a node (e.g. 7-day or 30-day window) covering AR, VQS, OTC, and SAY."""
 type NodeMetricWindow @entity(immutable: false) {
   id: ID!
   node: Node!
@@ -151,7 +151,7 @@ type NodeMetricWindow @entity(immutable: false) {
   updatedAt: Int!
 }
 
-"""Rolling KPI snapshot for a validator (e.g. 7-day or 30-day window)."""
+"""Rolling KPI snapshot for a validator (e.g. 7-day or 30-day window) covering AR, VQS, OTC, and SAY."""
 type ValidatorMetricWindow @entity(immutable: false) {
   id: ID!
   validator: Validator!
@@ -170,7 +170,7 @@ type ValidatorMetricWindow @entity(immutable: false) {
   updatedAt: Int!
 }
 
-"""Stake-weighted quality histogram bucket for KPI median calculations."""
+"""Stake-weighted quality histogram bucket for KPI median calculations (feeds VQS)."""
 type QualityBucket @entity(immutable: false) {
   id: ID!
   ownerType: HistogramOwner!
@@ -180,7 +180,7 @@ type QualityBucket @entity(immutable: false) {
   stake: BigInt!
 }
 
-"""Latency histogram bucket supporting p95 cycle-time computation."""
+"""Latency histogram bucket supporting p95 cycle-time computation (feeds OTC)."""
 type LatencyBucket @entity(immutable: false) {
   id: ID!
   ownerType: HistogramOwner!
