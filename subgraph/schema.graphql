@@ -66,6 +66,7 @@ type WorkUnit @entity(immutable: false) {
   validationCount: BigInt!
   totalScore: BigInt!
   totalStake: BigInt!
+  totalSlashAmount: BigInt!
   validatorIds: [String!]!
   participations: [ValidatorParticipation!]! @derivedFrom(field: "workUnit")
 }
@@ -194,4 +195,13 @@ type LatencyBucket @entity(immutable: false) {
   day: Int!
   bucket: Int!
   count: BigInt!
+}
+
+"""Immutable record of every SlashApplied event for downstream analytics and dashboards."""
+type SlashEvent @entity(immutable: true) {
+  id: ID!
+  workUnit: WorkUnit!
+  validator: Validator!
+  amount: BigInt!
+  slashedAt: Int!
 }
