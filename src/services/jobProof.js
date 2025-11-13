@@ -230,6 +230,8 @@ export function createJobProof({ jobId, result, operator, timestamp, metadata, r
     total: alphaSummary.total,
     bySegment: alphaSummary.bySegment,
     breakdown: alphaSummary.breakdown,
+    modelClassBreakdown: alphaSummary.modelClassBreakdown,
+    slaBreakdown: alphaSummary.slaBreakdown,
     quality: alphaSummary.quality
   };
 
