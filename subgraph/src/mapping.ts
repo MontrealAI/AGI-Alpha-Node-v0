@@ -384,6 +384,12 @@ function computeSlashingAdjustedYield(accepted: BigInt, slashAmount: BigInt, sta
   return numerator.div(stake.toBigDecimal());
 }
 
+function computeWindowStartTimestamp(day: i32, window: i32): i32 {
+  const startDay = day - window + 1;
+  const normalizedDay = startDay > 0 ? startDay : 0;
+  return normalizedDay * SECONDS_PER_DAY;
+}
+
 function updateAgentWindows(agentId: string, day: i32, timestamp: BigInt): void {
   for (let i = 0; i < WINDOW_OPTIONS.length; i++) {
     const window = WINDOW_OPTIONS[i];
@@ -393,6 +399,8 @@ function updateAgentWindows(agentId: string, day: i32, timestamp: BigInt): void 
       aggregate = new AgentMetricWindow(aggregateId);
       aggregate.agent = agentId;
       aggregate.windowDays = window;
+      aggregate.windowStart = 0;
+      aggregate.windowEnd = 0;
       aggregate.mintedCount = ZERO_BI;
       aggregate.acceptedCount = ZERO_BI;
       aggregate.validationCount = ZERO_BI;
@@ -436,6 +444,8 @@ function updateAgentWindows(agentId: string, day: i32, timestamp: BigInt): void 
     aggregate.validatorWeightedQuality = computeQualityMedian(OWNER_AGENT, agentId, day, window);
     aggregate.onTimeP95Seconds = computeLatencyP95(OWNER_AGENT, agentId, day, window);
     aggregate.slashingAdjustedYield = computeSlashingAdjustedYield(acceptedTotal, slashTotal, stakeTotal);
+    aggregate.windowStart = computeWindowStartTimestamp(day, window);
+    aggregate.windowEnd = timestamp.toI32();
     aggregate.updatedAt = timestamp.toI32();
     aggregate.save();
   }
@@ -450,6 +460,8 @@ function updateNodeWindows(nodeId: string, day: i32, timestamp: BigInt): void {
       aggregate = new NodeMetricWindow(aggregateId);
       aggregate.node = nodeId;
       aggregate.windowDays = window;
+      aggregate.windowStart = 0;
+      aggregate.windowEnd = 0;
       aggregate.mintedCount = ZERO_BI;
       aggregate.acceptedCount = ZERO_BI;
       aggregate.validationCount = ZERO_BI;
@@ -493,6 +505,8 @@ function updateNodeWindows(nodeId: string, day: i32, timestamp: BigInt): void {
     aggregate.validatorWeightedQuality = computeQualityMedian(OWNER_NODE, nodeId, day, window);
     aggregate.onTimeP95Seconds = computeLatencyP95(OWNER_NODE, nodeId, day, window);
     aggregate.slashingAdjustedYield = computeSlashingAdjustedYield(acceptedTotal, slashTotal, stakeTotal);
+    aggregate.windowStart = computeWindowStartTimestamp(day, window);
+    aggregate.windowEnd = timestamp.toI32();
     aggregate.updatedAt = timestamp.toI32();
     aggregate.save();
   }
@@ -507,6 +521,8 @@ function updateValidatorWindows(validatorId: string, day: i32, timestamp: BigInt
       aggregate = new ValidatorMetricWindow(aggregateId);
       aggregate.validator = validatorId;
       aggregate.windowDays = window;
+      aggregate.windowStart = 0;
+      aggregate.windowEnd = 0;
       aggregate.mintedCount = ZERO_BI;
       aggregate.acceptedCount = ZERO_BI;
       aggregate.validationCount = ZERO_BI;
@@ -550,6 +566,8 @@ function updateValidatorWindows(validatorId: string, day: i32, timestamp: BigInt
     aggregate.validatorWeightedQuality = computeQualityMedian(OWNER_VALIDATOR, validatorId, day, window);
     aggregate.onTimeP95Seconds = computeLatencyP95(OWNER_VALIDATOR, validatorId, day, window);
     aggregate.slashingAdjustedYield = computeSlashingAdjustedYield(acceptedTotal, slashTotal, stakeTotal);
+    aggregate.windowStart = computeWindowStartTimestamp(day, window);
+    aggregate.windowEnd = timestamp.toI32();
     aggregate.updatedAt = timestamp.toI32();
     aggregate.save();
   }

@@ -148,18 +148,20 @@
       "type": "leaderboard",
       "title": "Validation Health Leaders · 24h",
       "datasource": "alphaSubgraph",
-      "query": "query ValidationLeaderboard($windowStart: BigInt!) {\n  validators: alphaValidators(first: 10, orderBy: stakeWeightedScore, orderDirection: desc, where: {windowStart_gte: $windowStart}) {\n    id\n    address\n    stakeWeightedScore\n    validations\n    medianLatencySeconds\n  }\n}",
+      "query": "query ValidationLeaderboard($windowStart: Int!) {\n  windows: validatorMetricWindows(first: 10, orderBy: validatorWeightedQuality, orderDirection: desc, where: {windowDays: 7, windowEnd_gte: $windowStart}) {\n    id\n    validator { id }\n    validatorWeightedQuality\n    validationCount\n    acceptanceRate\n    onTimeP95Seconds\n    windowEnd\n  }\n}",
       "columns": [
-        { "key": "address", "label": "Validator", "format": "hash" },
-        { "key": "stakeWeightedScore", "label": "Stake Weighted Score", "format": "number" },
-        { "key": "validations", "label": "Validations", "format": "integer" },
-        { "key": "medianLatencySeconds", "label": "Median Latency", "format": "duration" }
+        { "key": "validator.id", "label": "Validator", "format": "hash" },
+        { "key": "validatorWeightedQuality", "label": "Stake Weighted Quality", "format": "number" },
+        { "key": "validationCount", "label": "Validations", "format": "integer" },
+        { "key": "onTimeP95Seconds", "label": "p95 Latency", "format": "duration" },
+        { "key": "acceptanceRate", "label": "Acceptance", "format": "percent" }
       ],
-      "rankingField": "stakeWeightedScore",
+      "rankingField": "validatorWeightedQuality",
       "limit": 10,
       "transform": {
+        "select": "windows",
         "variables": {
-          "windowStart": "{{ nowSubHours(24) }}"
+          "windowStart": {{ nowSubHours(24) }}
         }
       }
     }
