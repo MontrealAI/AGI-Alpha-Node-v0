@@ -18,6 +18,8 @@ interface IAlphaWorkUnitEvents {
     /// @param agent ENS-resolved agent or operator address responsible for execution.
     /// @param node The node that produced the unit.
     /// @param mintedAt UNIX timestamp for the mint event.
+    /// @custom:kpi acceptance-rate
+    /// @custom:kpi on-time-completion
     event AlphaWUMinted(bytes32 indexed id, address indexed agent, address indexed node, uint256 mintedAt);
 
     /// @notice Emitted when a validator scores an alpha work unit submission.
@@ -26,6 +28,7 @@ interface IAlphaWorkUnitEvents {
     /// @param stake Validator stake used for weighting downstream KPIs.
     /// @param score Validator supplied score (0-10000 == 0-100.00%).
     /// @param validatedAt UNIX timestamp of the validation event.
+    /// @custom:kpi validator-weighted-quality
     event AlphaWUValidated(
         bytes32 indexed id,
         address indexed validator,
@@ -37,6 +40,9 @@ interface IAlphaWorkUnitEvents {
     /// @notice Emitted when an alpha work unit is accepted by the protocol.
     /// @param id Work unit identifier.
     /// @param acceptedAt UNIX timestamp for acceptance.
+    /// @custom:kpi acceptance-rate
+    /// @custom:kpi on-time-completion
+    /// @custom:kpi slashing-adjusted-yield
     event AlphaWUAccepted(bytes32 indexed id, uint256 acceptedAt);
 
     /// @notice Emitted whenever a slashing event is applied to a validator for a work unit.
@@ -44,5 +50,6 @@ interface IAlphaWorkUnitEvents {
     /// @param validator Address of the slashed validator.
     /// @param amount Amount of stake slashed in protocol native units.
     /// @param slashedAt UNIX timestamp for the slash event.
+    /// @custom:kpi slashing-adjusted-yield
     event SlashApplied(bytes32 indexed id, address indexed validator, uint256 amount, uint256 slashedAt);
 }
