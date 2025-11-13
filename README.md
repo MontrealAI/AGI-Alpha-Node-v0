@@ -222,24 +222,33 @@ Owner interventions are always authenticated and auditable. Ledger entries embed
 ## Deployment & Operations
 
 1. **Install dependencies**
+
    ```bash
    npm install
    ```
+
 2. **Local runtime** – boot the orchestrator with mocked providers:
+
    ```bash
    npm run dev
    ```
+
 3. **Container image** – build production image aligned with the Helm chart:
+
    ```bash
    docker build -t agi-alpha-node:latest .
    ```
+
 4. **Helm deployment** – render charts against your cluster:
+
    ```bash
    helm upgrade --install agi-alpha-node deploy/helm/agi-alpha-node \
      --set image.repository=registry.example.com/agi-alpha-node \
      --set image.tag=latest
    ```
+
 5. **Subgraph indexing** – deploy mappings for analytics:
+
    ```bash
    npm run subgraph:deploy
    ```
