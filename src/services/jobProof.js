@@ -182,6 +182,10 @@ function normalizeAlphaSummary(jobId) {
     bySegment: segments,
     modelClassBreakdown,
     slaBreakdown,
+    breakdown: {
+      modelClass: { ...modelClassBreakdown },
+      sla: { ...slaBreakdown }
+    },
     quality: {
       modelClass: { ...modelClassBreakdown },
       sla: { ...slaBreakdown }
@@ -225,9 +229,10 @@ export function createJobProof({ jobId, result, operator, timestamp, metadata, r
   const alphaWU = {
     total: alphaSummary.total,
     bySegment: alphaSummary.bySegment,
-    quality: alphaSummary.quality,
+    breakdown: alphaSummary.breakdown,
     modelClassBreakdown: alphaSummary.modelClassBreakdown,
-    slaBreakdown: alphaSummary.slaBreakdown
+    slaBreakdown: alphaSummary.slaBreakdown,
+    quality: alphaSummary.quality
   };
 
   return {

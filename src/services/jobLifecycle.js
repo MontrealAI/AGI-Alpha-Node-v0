@@ -234,6 +234,10 @@ function cloneAlphaSummary(summary) {
     bySegment,
     modelClassBreakdown,
     slaBreakdown,
+    breakdown: {
+      modelClass: { ...modelClassBreakdown },
+      sla: { ...slaBreakdown }
+    },
     quality: {
       modelClass: { ...modelClassBreakdown },
       sla: { ...slaBreakdown }
@@ -450,11 +454,15 @@ export function createJobLifecycle({
 
   function recordAction(action, jobState = null) {
     metrics.lastAction = action?.type ?? null;
-    emitter.emit('action', action);
+    const extendedAction =
+      jobState?.alphaWU && typeof jobState.alphaWU === 'object'
+        ? { ...action, alphaWU: cloneAlphaSummary(jobState.alphaWU) }
+        : action;
+    emitter.emit('action', extendedAction);
     if (journal?.append) {
       const normalizedJob = jobState ? normalizeJobMetadata(jobState) : null;
       try {
-        journal.append(buildActionEntry(profile.id, action, normalizedJob));
+        journal.append(buildActionEntry(profile.id, extendedAction, normalizedJob));
       } catch (error) {
         logger?.warn?.(error, 'Failed to append lifecycle action entry');
       }
