@@ -102,13 +102,13 @@ function getOrCreateWorkUnit(id: string): WorkUnit {
   if (entity == null) {
     entity = new WorkUnit(id);
     entity.mintedAt = 0;
-    entity.acceptedAt = null;
-    entity.lastValidatedAt = null;
     entity.validationCount = ZERO_BI;
     entity.totalScore = ZERO_BI;
     entity.totalStake = ZERO_BI;
     entity.totalSlashAmount = ZERO_BI;
     entity.validatorIds = new Array<string>();
+    entity.unset("acceptedAt");
+    entity.unset("lastValidatedAt");
   }
   return entity as WorkUnit;
 }

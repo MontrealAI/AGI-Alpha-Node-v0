@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import {Ownable} from "./access/Ownable.sol";
 import {IAlphaWorkUnitEvents} from "./interfaces/IAlphaWorkUnitEvents.sol";
 
 /// @notice Minimal ERC20 interface required for staking interactions.
@@ -12,49 +13,6 @@ interface IERC20 {
     function balanceOf(address owner) external view returns (uint256);
 
     function allowance(address owner, address spender) external view returns (uint256);
-}
-
-/// @title Ownable
-/// @notice Lightweight Ownable implementation guarding sensitive operations.
-abstract contract Ownable {
-    error OwnerZeroAddress();
-    error CallerNotOwner();
-
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
-    address private _owner;
-
-    constructor() {
-        _transferOwnership(msg.sender);
-    }
-
-    modifier onlyOwner() {
-        if (msg.sender != _owner) {
-            revert CallerNotOwner();
-        }
-        _;
-    }
-
-    function owner() public view returns (address) {
-        return _owner;
-    }
-
-    function renounceOwnership() public onlyOwner {
-        _transferOwnership(address(0));
-    }
-
-    function transferOwnership(address newOwner) public onlyOwner {
-        if (newOwner == address(0)) {
-            revert OwnerZeroAddress();
-        }
-        _transferOwnership(newOwner);
-    }
-
-    function _transferOwnership(address newOwner) internal {
-        address previousOwner = _owner;
-        _owner = newOwner;
-        emit OwnershipTransferred(previousOwner, newOwner);
-    }
 }
 
 /// @title Alpha Node Manager
@@ -85,6 +43,7 @@ contract AlphaNodeManager is Ownable, IAlphaWorkUnitEvents {
 
     address public constant CANONICAL_AGIALPHA = 0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA;
 
+    // solhint-disable-next-line immutable-vars-naming
     IERC20 public immutable stakingToken;
     bool public paused;
 
