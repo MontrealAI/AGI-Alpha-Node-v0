@@ -72,7 +72,8 @@ read-only dashboard contract. It enumerates:
 - Prometheus-backed widgets for AR, VQS, OTC, and SAY time series.
 - Tables backed by the subgraph for stake-weighted leaderboards.
 - A health gate widget wired to the ENS-gated telemetry toggle.
-- A latency SLO card targeting 30 minute p95 completion and a bar chart rendering validator quality distributions.
+- A latency SLO card targeting 30 minute p95 completion and a bar chart
+  rendering validator quality distributions.
 
 The payload conforms to
 [`docs/telemetry/dashboard.schema.json`](./dashboard.schema.json) so CI can
