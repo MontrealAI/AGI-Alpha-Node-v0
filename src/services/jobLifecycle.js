@@ -690,12 +690,14 @@ export function createJobLifecycle({
       onUnavailable: methodUnavailable
     });
 
+    const alphaSummary = buildJobAlphaSummary(normalizedJobId, logger);
     const updated = recordJob(normalizedJobId, {
       status: 'submitted',
       resultHash: proofPayload.resultHash,
       resultUri: resultUri ?? '',
       commitment: proofPayload.commitment,
       proof: proofBytes,
+      alphaWU: alphaSummary,
       lastEvent: {
         type: method,
         transactionHash: response.hash ?? null
@@ -930,12 +932,15 @@ export function createJobLifecycle({
       try {
         const decoded = iface.decodeEventLog(submittedEvent, log.data, log.topics);
         const [jobId, client, worker, resultHash, resultUri] = decoded;
-        recordJob(jobId, {
+        const normalizedJobId = normalizeJobId(jobId);
+        const alphaSummary = buildJobAlphaSummary(normalizedJobId, logger);
+        recordJob(normalizedJobId, {
           client: client ?? null,
           worker: worker ?? null,
           status: 'submitted',
           resultHash,
           resultUri,
+          alphaWU: alphaSummary,
           lastEvent: {
             type: submittedEvent,
             blockNumber: log.blockNumber ?? null,

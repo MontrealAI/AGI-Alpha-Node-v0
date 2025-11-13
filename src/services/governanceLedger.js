@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { getGlobalAlphaSummary, getJobAlphaSummary } from './metering.js';
+import { getGlobalAlphaSummary, getJobAlphaSummary, getJobAlphaWU } from './metering.js';
 
 const LEDGER_ROOT = '.governance-ledger';
 const LEDGER_VERSION = 'v1';
@@ -53,12 +53,17 @@ function sanitizeBreakdown(source = {}) {
   );
 }
 
-function sanitizeAlphaMeta(summary = null) {
+function sanitizeAlphaMeta(summary = null, { totalOverride = null } = {}) {
   if (!summary || typeof summary !== 'object') {
-    return { total: 0, modelClassBreakdown: {}, slaBreakdown: {} };
+    return {
+      total: toNumber(totalOverride),
+      modelClassBreakdown: {},
+      slaBreakdown: {}
+    };
   }
+  const normalizedTotal = totalOverride !== null && totalOverride !== undefined ? totalOverride : summary.total;
   return {
-    total: toNumber(summary.total),
+    total: toNumber(normalizedTotal),
     modelClassBreakdown: sanitizeBreakdown(summary.modelClassBreakdown),
     slaBreakdown: sanitizeBreakdown(summary.slaBreakdown)
   };
@@ -126,8 +131,29 @@ function enrichMetaWithAlpha(meta) {
     return meta;
   }
   const jobIdCandidate = normalizeJobIdentifier(extractJobId(meta));
-  const rawSummary = jobIdCandidate ? getJobAlphaSummary(jobIdCandidate) : getGlobalAlphaSummary();
-  const alphaWU = sanitizeAlphaMeta(rawSummary);
+  let rawSummary = null;
+  if (jobIdCandidate) {
+    try {
+      rawSummary = getJobAlphaSummary(jobIdCandidate);
+    } catch {
+      rawSummary = null;
+    }
+  } else {
+    try {
+      rawSummary = getGlobalAlphaSummary();
+    } catch {
+      rawSummary = null;
+    }
+  }
+  let totalOverride = null;
+  if (jobIdCandidate) {
+    try {
+      totalOverride = getJobAlphaWU(jobIdCandidate);
+    } catch {
+      totalOverride = null;
+    }
+  }
+  const alphaWU = sanitizeAlphaMeta(rawSummary, { totalOverride });
   return {
     ...meta,
     alphaWU
