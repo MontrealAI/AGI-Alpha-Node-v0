@@ -64,6 +64,50 @@ extends the raw events into usable analytics windows:
 These structures make the four KPIs available per agent, node, and validator
 without off-chain joins.
 
+## Telemetry Bootstrapping
+
+Operator identity is already encoded on-chain via the delegated ENS hierarchy.
+Subnames under `node.agi.eth`, `alpha.node.agi.eth`, `agent.agi.eth`,
+`alpha.agent.agi.eth`, `club.agi.eth`, and `alpha.club.agi.eth` serve as the
+admission control layer for KPI emission and validation. The existing
+`IdentityRegistry` lookups power:
+
+- **Name-gated submissions** — only authorised agents can mint α‑WU or post
+  validator attestations.
+- **Validator permissions** — staked validators mapped to `*.alpha.node.agi.eth`
+  can issue scores and slashing events.
+- **Telemetry toggles** — CI jobs assert that the ENS set matches the authorised
+  deployment roster before allowing `isHealthy` to flip to production.
+
+Because these ENS subdomains are active today, no additional oracle, registry,
+or allow list contract is required to enforce telemetry hygiene.
+
+## Minimal Wiring Plan
+
+1. **Events spec (no oracle)** — Implement
+   [`IAlphaWorkUnitEvents`](../../contracts/interfaces/IAlphaWorkUnitEvents.sol)
+   so runtime contracts emit:
+   - `AlphaWUMinted(id, agent, node, mintedAt)`
+   - `AlphaWUValidated(id, validator, stake, score, validatedAt)`
+   - `AlphaWUAccepted(id, acceptedAt)`
+   - `SlashApplied(id, validator, amount, slashedAt)`
+
+2. **Index & KPIs** — Feed the above events into the
+   [`subgraph/schema.graphql`](../../subgraph/schema.graphql) entities to derive
+   each KPI directly from event data:
+   - `AcceptanceRate = accepted ÷ minted`
+   - `ValidatorWeightedQuality = median(score) × stake weight`
+   - `OnTimeCompletion = p95(acceptedAt − mintedAt)`
+   - `SlashingAdjustedYield = (accepted − slashUnits) ÷ stake`
+
+3. **Identity gating** — Gate minting, validation, and health toggles through
+   the ENS registry described above so only nodes and validators with active
+   subnames can submit KPI-impacting transactions.
+
+4. **Safety rails** — Integrate the existing `AGIJobsv0` CI toggles so the
+   telemetry mesh emits production events only when the deployment health check
+   passes (`isHealthy == true`).
+
 ## Dashboard Blueprint
 
 [`docs/telemetry/dashboard.json`](./dashboard.json) serves as the minimal
@@ -92,6 +136,18 @@ validate any future edits with `npx ajv-cli validate`.
 4. **CI guardrails** — Use the identity registry and ENS name-gates to restrict
    who can toggle `isHealthy` and ship telemetry changes via the existing
    `AGIJobsv0` pipelines.
+
+## Quick Wins
+
+- **Publish a KPI subgraph** — Ship a Foundry script or hosted subgraph that
+  materialises rolling 7/30-day windows for AR, VQS, OTC, and SAY across agents,
+  nodes, and validators using the schema above.
+- **Expose a read-only dashboard** — Base implementations on
+  [`alpha-work-unit-dashboard.json`](./alpha-work-unit-dashboard.json) so the
+  owner can monitor leaderboards, latency SLOs, and validation health without
+  mutating production data sources.
+- **Extend CI name-gates** — Wire ENS subname checks into the `isHealthy`
+  toggles so unauthorised identities cannot enable or pause telemetry streams.
 
 With this wiring, every α‑WU minted by the network produces verifiable KPI
 trails that are consumable on-chain and in observability tooling within
