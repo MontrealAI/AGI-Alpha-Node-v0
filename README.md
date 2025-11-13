@@ -59,7 +59,7 @@
 
 ## Mission & Highlights
 
-AGI Alpha Node v0 is the command spine for validator-weighted α-work units. It couples blockchain truth with high-intensity compute routing so that a single owner can steer a fleet of agents, enclaves, and validators in real time.
+AGI Alpha Node v0 is the command spine for validator-weighted α-work units. It couples blockchain truth with high-intensity compute routing so that a single owner can steer a fleet of agents, enclaves, and validators in real time. The runtime is engineered as an unstoppable cognition engine—coordinating swarms, treasury, and governance with machine accuracy while remaining entirely under owner command.
 
 * **Unified Metering:** [`src/constants/workUnits.js`](src/constants/workUnits.js) defines α-WU from first principles and powers every on-chain reward, KPI, and treasury shift.
 * **Owner Supremacy:** [`contracts/AlphaNodeManager.sol`](contracts/AlphaNodeManager.sol) provides fine-grained ownership controls—pause, resume, reassign validators, rotate ENS identities, and redirect stakes instantly.
@@ -127,6 +127,7 @@ flowchart TD
 
 * **Base Unit:** `ALPHA_WU = 1` within [`src/constants/workUnits.js`](src/constants/workUnits.js).
 * **Configurable Weights:** The `WORK_UNITS` block in [`src/config/schema.js`](src/config/schema.js) accepts JSON overrides to adjust model class, VRAM, SLA, and benchmark weights—invalid or negative entries are rejected.
+* **Deterministic Multipliers:** [`calculateQualityMultiplier`](src/constants/workUnits.js) multiplies canonical weight tables (or injected config) for you; feed the result into [`computeAlphaWorkUnits`](src/constants/workUnits.js) to derive ledger-grade α-WU tallies.
 * **Documentation:** Refer to the dedicated [α-WU framework](docs/alpha-wu.md) for canonical tables and worked examples (including 20-minute 80 GB, 70B low-latency enclave jobs).
 * **Ledger Impact:** KPI dashboards, staking rewards, and treasury routing all derive from these weights; adjust them to express bespoke economics without touching code.
 
