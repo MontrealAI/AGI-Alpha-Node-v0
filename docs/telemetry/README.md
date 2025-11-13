@@ -71,6 +71,18 @@ sequenceDiagram
 
 ENS name-gating is enforced by [`scripts/verify-health-gate.mjs`](../../scripts/verify-health-gate.mjs) so only whitelisted subnames (`*.agent.agi.eth`, `*.alpha.agent.agi.eth`, `*.node.agi.eth`, `*.alpha.node.agi.eth`, `*.club.agi.eth`, `*.alpha.club.agi.eth`) can toggle telemetry flows.
 
+### Why this KPI spine works
+
+- **End-to-end coverage** — KPIs touch correctness, quality, latency, and
+  economics so the owner can audit the entire α‑WU lifecycle from mint to
+  slash.
+- **Stake-aware scoring** — Validator quality is weighted by stake which keeps
+  the scoreboard robust against low-effort reviews while rewarding committed
+  validators.
+- **Roll-up ready** — The events above mirror the on-chain log surface so every
+  KPI can be recomputed deterministically from existing receipts—no custom
+  oracles or off-ledger bookkeeping required.
+
 ---
 
 ## KPI Contract Snapshot

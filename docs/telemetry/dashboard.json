@@ -70,6 +70,19 @@
       "yAxis": { "unit": "seconds", "min": 0 }
     },
     {
+      "type": "status",
+      "title": "On-Time Completion SLO · 30d",
+      "metric": "agi_alpha_node_alpha_wu_on_time_p95_seconds",
+      "labels": { "window": "30d" },
+      "mode": "slo",
+      "thresholds": {
+        "target": 1800,
+        "warning": 2700,
+        "critical": 3600
+      },
+      "description": "Tracks mint→accept p95 latency against the 30-minute SLO target backed by CI health gates."
+    },
+    {
       "type": "timeseries",
       "title": "Slash Adjusted Yield",
       "metric": "agi_alpha_node_alpha_wu_slash_adjusted_yield",
@@ -162,6 +175,23 @@
         "select": "windows",
         "variables": {
           "windowStart": {{ nowSubHours(24) }}
+        }
+      }
+    },
+    {
+      "type": "table",
+      "title": "Validator Quality Distribution · 7d",
+      "datasource": "alphaSubgraph",
+      "query": "query QualityDistribution($fromDay: Int!) {\n  buckets: qualityBuckets(first: 50, where: { ownerType: VALIDATOR, day_gte: $fromDay }, orderBy: stake, orderDirection: desc) {\n    owner\n    bucket\n    stake\n  }\n}",
+      "columns": [
+        { "key": "owner", "label": "Validator", "format": "hash" },
+        { "key": "bucket", "label": "Quality Bucket", "format": "integer" },
+        { "key": "stake", "label": "Weighted Stake", "format": "stake" }
+      ],
+      "transform": {
+        "select": "buckets",
+        "variables": {
+          "fromDay": {{ startOfDay(nowSubDays(7)) }}
         }
       }
     }

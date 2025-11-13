@@ -28,6 +28,17 @@ These four KPIs jointly cover correctness, quality, timeliness, and economics.
 Because they are derived exclusively from events the contracts already emit,
 anyone can recompute them without trusting an oracle.
 
+### Why this set works
+
+- **End-to-end** — The four KPIs span correctness, quality, timeliness, and
+  post-slash economics so operators always see the full α‑WU lifecycle.
+- **Stake-aware** — Validator-weighted scoring bakes trust directly into the
+  data plane by rewarding staked validators without any external oracle.
+- **Roll-up ready** — Every metric is derivable from the existing
+  `AlphaWUMinted`, `AlphaWUValidated`, `AlphaWUAccepted`, and `SlashApplied`
+  events, which makes them trivial to recompute inside a roll-up or subgraph
+  without bespoke reconciliation jobs.
+
 ## Event Interface
 
 Runtime registries should emit the events defined in
@@ -86,6 +97,9 @@ admission control layer for KPI emission and validation. The existing
   can issue scores and slashing events.
 - **Telemetry toggles** — CI jobs assert that the ENS set matches the authorised
   deployment roster before allowing `isHealthy` to flip to production.
+- **Owner controls** — The `AGIJobsv0` pipelines enforce “pause/upgrade” safety
+  so telemetry events only stream while the job lane reports `isHealthy ==
+  true`, preventing noisy KPIs during maintenance windows.
 
 Because these ENS subdomains are active today, no additional oracle, registry,
 or allow list contract is required to enforce telemetry hygiene.
