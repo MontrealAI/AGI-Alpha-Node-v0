@@ -4,7 +4,8 @@
 # and `SlashApplied`) fully determine the acceptance, quality, latency, and
 # yield KPIs. This schema projects those logs into deterministic entities so
 # roll-ups, dashboards, and operators can recompute α‑WU performance without
-# bespoke ETL pipelines.
+# bespoke ETL pipelines. Only production events emitted while `isHealthy == true`
+# should be indexed to keep KPI rollups aligned with CI-controlled deploy gates.
 
 """Enumerates which principal owns a histogram bucket (agent, node, validator)."""
 enum HistogramOwner {

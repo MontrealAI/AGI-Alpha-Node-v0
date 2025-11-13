@@ -4,6 +4,9 @@
   "title": "α‑WU KPI Flight Deck",
   "description": "Read-only dashboard blueprint exposing acceptance, quality, latency, and yield for alpha work units.",
   "domains": ["slo", "validation", "leaderboard"],
+  "tags": ["alpha-wu", "verifiable", "owner-controls"],
+  "refreshInterval": "30s",
+  "timeRange": { "from": "now-30d", "to": "now" },
   "datasources": [
     {
       "type": "prometheus",
