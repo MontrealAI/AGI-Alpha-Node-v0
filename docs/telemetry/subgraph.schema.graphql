@@ -1,4 +1,7 @@
 # α-WU KPI Subgraph Schema (documentation snapshot)
+# Four canonical events (`AlphaWUMinted`, `AlphaWUValidated`, `AlphaWUAccepted`, and
+# `SlashApplied`) back every KPI. Indexers should only ingest production events while
+# `isHealthy == true` so CI-controlled deploy gates and dashboards stay in sync.
 
 enum HistogramOwner {
   AGENT

@@ -131,7 +131,27 @@ or allow list contract is required to enforce telemetry hygiene.
 
 4. **Safety rails** — Integrate the existing `AGIJobsv0` CI toggles so the
    telemetry mesh emits production events only when the deployment health check
-   passes (`isHealthy == true`).
+   passes (`isHealthy == true`). Health gating keeps dashboards, subgraphs, and
+   Prometheus exports aligned with the owner-controlled pause/upgrade workflow.
+
+## Weekly Shipping Plan
+
+Operators can stand up verifiable α‑WU telemetry in a single sprint by focusing
+on three deliverables:
+
+1. **Launch the KPI subgraph** — Deploy the deterministic schema in
+   [`subgraph/schema.graphql`](../../subgraph/schema.graphql) so acceptance rate,
+   validator-weighted quality, p95 cycle times, and slashing-adjusted yield are
+   queryable per agent/node/validator.
+2. **Wire the dashboard contract** — Serve the
+   [`alpha-work-unit-dashboard.json`](./alpha-work-unit-dashboard.json) blueprint
+   (or the minimal [`alpha-wu-dashboard.min.json`](./alpha-wu-dashboard.min.json))
+   inside your preferred viewer to surface leaderboards, SLO cards, and slash
+   feeds without additional design work.
+3. **Lock the ENS health gate** — Extend CI (`AGIJobsv0`) with ENS subname
+   checks so only authorised operators can flip `isHealthy` to `true`. This
+   guarantees KPI events mirror production state and prevents noisy metrics
+   during maintenance windows.
 
 ## Dashboard Blueprint
 

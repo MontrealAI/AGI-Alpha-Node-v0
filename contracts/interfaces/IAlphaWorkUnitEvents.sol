@@ -5,7 +5,9 @@ pragma solidity ^0.8.20;
 /// @notice Canonical event surface emitted by AGI Alpha Node compatible registries.
 /// @dev Events intentionally expose just enough data for the telemetry mesh to derive the
 ///      four α-WU KPIs (acceptance rate, validator-weighted quality, on-time completion,
-///      and slashing-adjusted yield) without auxiliary oracles.
+///      and slashing-adjusted yield) without auxiliary oracles. Implementations should only
+///      emit production telemetry when the deployment is healthy (`isHealthy == true`) so
+///      downstream dashboards stay aligned with the CI-controlled safety rails.
 /// @custom:ens Runtime implementations must enforce ENS name-gating via an
 ///             IdentityRegistry so only authorised agents, validators, and nodes emit
 ///             these logs. Recommended allow-list: `*.agent.agi.eth`,

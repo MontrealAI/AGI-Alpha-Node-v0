@@ -126,6 +126,28 @@ Outputs feed into [`src/telemetry/alphaMetrics.js`](../../src/telemetry/alphaMet
 
 ---
 
+## Quick Wins
+
+Deploying the telemetry mesh requires minimal wiring because the owner controls
+the ENS name-gate and CI toggles today:
+
+1. **Publish the KPI subgraph** — Ship [`subgraph/schema.graphql`](../../subgraph/schema.graphql)
+   with a rolling 7/30-day window indexer so dashboards and CLIs can compute
+   acceptance, quality, latency, and yield straight from chain logs.
+2. **Expose the read-only dashboard** — Load
+   [`docs/telemetry/alpha-work-unit-dashboard.json`](./alpha-work-unit-dashboard.json)
+   (or the [`alpha-wu-dashboard.min.json`](./alpha-wu-dashboard.min.json) quick
+   start) into Grafana or any JSON-driven viewer to surface leaderboards,
+   latency SLOs, and validation health.
+3. **Enforce ENS name-gates in CI** — Reuse the `AGIJobsv0` pipelines so only
+   whitelisted subnames can flip `isHealthy`, guaranteeing that telemetry events
+   are emitted when the deployment is ready for production auditors.
+
+These three tasks complete the “KPI flight deck” with on-chain verifiability and
+owner-first safety rails.
+
+---
+
 ## Prometheus Surfaces
 
 Telemetry is exported by [`src/telemetry/monitoring.js`](../../src/telemetry/monitoring.js). Exposed metrics include:
