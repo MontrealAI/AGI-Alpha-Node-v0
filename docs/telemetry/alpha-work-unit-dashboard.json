@@ -97,7 +97,7 @@
       "type": "bar",
       "title": "Validator Quality Distribution · 7d",
       "datasource": "alpha-wu-subgraph",
-      "query": "query QualityDistribution($window: Int!) { qualityBuckets(first: 20, where: { ownerType: VALIDATOR, day: $window }) { bucket stake } }",
+      "query": "{ qualityBuckets(first: 20, where: { ownerType: VALIDATOR, day: 7 }) { bucket stake } }",
       "groupBy": "bucket",
       "transform": {
         "normalize": "percentage",
