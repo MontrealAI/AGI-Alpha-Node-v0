@@ -161,6 +161,7 @@ function normalizeAlphaSummary(jobId) {
         slaProfile: segment.slaProfile ?? null,
         deviceClass: segment.deviceClass ?? null,
         vramTier: segment.vramTier ?? null,
+        gpuCount: segment.gpuCount ?? null,
         gpuMinutes: toNumber(segment.gpuMinutes),
         qualityMultiplier: toNumber(segment.qualityMultiplier),
         alphaWU: toNumber(segment.alphaWU),
@@ -216,7 +217,9 @@ export function createJobProof({ jobId, result, operator, timestamp, metadata, r
   const alphaSummary = normalizeAlphaSummary(normalizedJobId);
   const alphaWU = {
     total: alphaSummary.total,
-    bySegment: alphaSummary.bySegment
+    bySegment: alphaSummary.bySegment,
+    modelClassBreakdown: alphaSummary.modelClassBreakdown,
+    slaBreakdown: alphaSummary.slaBreakdown
   };
 
   return {

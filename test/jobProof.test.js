@@ -41,6 +41,8 @@ describe('job proof attestation', () => {
     expect(proof.resultUri).toBe('');
     expect(proof.alphaWU.total).toBe(0);
     expect(proof.alphaWU.bySegment).toHaveLength(0);
+    expect(proof.alphaWU.modelClassBreakdown).toEqual({});
+    expect(proof.alphaWU.slaBreakdown).toEqual({});
   });
 
   it('builds submitProof transaction payloads', () => { 
@@ -108,6 +110,9 @@ describe('job proof attestation', () => {
     expect(proof.alphaWU.bySegment).toHaveLength(1);
     expect(proof.alphaWU.bySegment[0].modelClass).toBe(MODEL_CLASSES.RESEARCH_AGENT);
     expect(proof.alphaWU.bySegment[0].qualityMultiplier).toBeGreaterThan(0);
+    expect(proof.alphaWU.bySegment[0].gpuCount).toBe(2);
+    expect(Object.keys(proof.alphaWU.modelClassBreakdown)).toContain(MODEL_CLASSES.RESEARCH_AGENT);
+    expect(Object.keys(proof.alphaWU.slaBreakdown)).toContain(SLA_PROFILES.HIGH_REDUNDANCY);
     expect(proof.resultUri).toBe('ipfs://proofs/swarm-oracle-77');
   });
 });
