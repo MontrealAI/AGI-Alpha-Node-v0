@@ -40,6 +40,7 @@ function normalizeAlphaSnapshot(alpha) {
           slaProfile: segment.slaProfile ?? null,
           deviceClass: segment.deviceClass ?? null,
           vramTier: segment.vramTier ?? null,
+          gpuCount: segment.gpuCount ?? null,
           startedAt: segment.startedAt ?? null,
           endedAt: segment.endedAt ?? null,
           gpuMinutes: Number(segment.gpuMinutes ?? 0),
