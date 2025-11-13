@@ -8,6 +8,7 @@ import {
   toUtf8Bytes,
   zeroPadValue
 } from 'ethers';
+import { getJobAlphaSummary, getJobAlphaWU } from './metering.js';
 
 const JOB_REGISTRY_ABI = [
   'function submitProof(bytes32 jobId, bytes32 commitment, bytes32 resultHash, string resultURI, bytes metadata)'
@@ -125,7 +126,63 @@ function normalizeResultHash(resultHash) {
   throw new TypeError('Unsupported resultHash type; expected hex string or Uint8Array');
 }
 
-export function createJobProof({ jobId, result, operator, timestamp, metadata }) {
+function toNumber(value) {
+  if (value === undefined || value === null) {
+    return 0;
+  }
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : 0;
+  }
+  if (typeof value === 'bigint') {
+    return Number(value);
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizeAlphaSummary(jobId) {
+  let total = 0;
+  try {
+    total = toNumber(getJobAlphaWU(jobId));
+  } catch {
+    total = 0;
+  }
+  let summary = null;
+  try {
+    summary = getJobAlphaSummary(jobId);
+  } catch {
+    summary = null;
+  }
+  const segments = Array.isArray(summary?.bySegment)
+    ? summary.bySegment.map((segment) => ({
+        segmentId: segment.segmentId ?? null,
+        jobId: segment.jobId ?? null,
+        modelClass: segment.modelClass ?? null,
+        slaProfile: segment.slaProfile ?? null,
+        deviceClass: segment.deviceClass ?? null,
+        vramTier: segment.vramTier ?? null,
+        gpuMinutes: toNumber(segment.gpuMinutes),
+        qualityMultiplier: toNumber(segment.qualityMultiplier),
+        alphaWU: toNumber(segment.alphaWU),
+        startedAt: segment.startedAt ?? null,
+        endedAt: segment.endedAt ?? null
+      }))
+    : [];
+  const normalizeBreakdown = (source = {}) =>
+    Object.fromEntries(
+      Object.entries(source)
+        .map(([key, value]) => [key, toNumber(value)])
+        .sort(([a], [b]) => a.localeCompare(b))
+    );
+  return {
+    total,
+    bySegment: segments,
+    modelClassBreakdown: normalizeBreakdown(summary?.modelClassBreakdown),
+    slaBreakdown: normalizeBreakdown(summary?.slaBreakdown)
+  };
+}
+
+export function createJobProof({ jobId, result, operator, timestamp, metadata, resultUri = '' }) {
   const normalizedJobId = normalizeJobId(jobId);
   const normalizedOperator = operator ? getAddress(operator) : '0x0000000000000000000000000000000000000000';
   let normalizedTimestamp;
@@ -156,13 +213,17 @@ export function createJobProof({ jobId, result, operator, timestamp, metadata })
     )
   );
 
+  const alphaWU = normalizeAlphaSummary(normalizedJobId);
+
   return {
     jobId: normalizedJobId,
     operator: normalizedOperator,
     timestamp: normalizedTimestamp,
     resultHash,
     metadata: encodedMetadata,
-    commitment
+    commitment,
+    resultUri: resultUri ?? '',
+    alphaWU
   };
 }
 

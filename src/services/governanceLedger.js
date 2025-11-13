@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { getGlobalAlphaSummary, getJobAlphaSummary } from './metering.js';
 
 const LEDGER_ROOT = '.governance-ledger';
 const LEDGER_VERSION = 'v1';
@@ -28,6 +29,77 @@ function serialize(value) {
   return value;
 }
 
+const ALPHA_TRIGGER_METHODS = ['submit', 'stake', 'reward'];
+
+function shouldAttachAlpha(meta) {
+  if (!meta || typeof meta !== 'object') {
+    return false;
+  }
+  const method = typeof meta.method === 'string' ? meta.method.toLowerCase() : '';
+  return ALPHA_TRIGGER_METHODS.some((needle) => method.includes(needle));
+}
+
+function extractJobId(meta) {
+  if (!meta || typeof meta !== 'object') {
+    return null;
+  }
+  const args = meta.args;
+  const candidates = [];
+  if (args && typeof args === 'object' && !Array.isArray(args)) {
+    candidates.push(args);
+  } else if (Array.isArray(args)) {
+    candidates.push(...args.filter((entry) => entry && typeof entry === 'object'));
+  }
+  for (const candidate of candidates) {
+    for (const key of ['jobId', 'jobID', 'job']) {
+      if (candidate[key] !== undefined && candidate[key] !== null) {
+        return candidate[key];
+      }
+    }
+  }
+  return null;
+}
+
+function normalizeJobIdentifier(value) {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  if (typeof value === 'string') {
+    return value.trim() ? value : null;
+  }
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) {
+      return null;
+    }
+    return value.toString();
+  }
+  if (typeof value === 'bigint') {
+    return value.toString();
+  }
+  if (typeof value === 'object') {
+    if (value.jobId !== undefined && value.jobId !== null) {
+      return normalizeJobIdentifier(value.jobId);
+    }
+    if (typeof value.toString === 'function') {
+      const rendered = value.toString();
+      return rendered ? rendered : null;
+    }
+  }
+  return String(value);
+}
+
+function enrichMetaWithAlpha(meta) {
+  if (!shouldAttachAlpha(meta)) {
+    return meta;
+  }
+  const jobIdCandidate = normalizeJobIdentifier(extractJobId(meta));
+  const alphaWU = jobIdCandidate ? getJobAlphaSummary(jobIdCandidate) : getGlobalAlphaSummary();
+  return {
+    ...meta,
+    alphaWU
+  };
+}
+
 export function recordGovernanceAction({
   payload,
   meta,
@@ -43,11 +115,12 @@ export function recordGovernanceAction({
     throw new Error('meta must be provided to record governance actions');
   }
   const ledgerDir = ensureLedgerDirectory(rootDir);
+  const decoratedMeta = enrichMetaWithAlpha(meta);
   const entry = {
     id: randomUUID(),
     recordedAt: new Date().toISOString(),
     payload: serialize(payload),
-    meta: serialize(meta),
+    meta: serialize(decoratedMeta),
     signature: signature ?? null,
     operator,
     tags

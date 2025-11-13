@@ -21,6 +21,45 @@ function stableStringify(value) {
   return JSON.stringify(object);
 }
 
+function normalizeAlphaSnapshot(alpha) {
+  if (!alpha) {
+    return null;
+  }
+  const normalizeBreakdown = (source = {}) =>
+    Object.fromEntries(
+      Object.entries(source)
+        .map(([key, value]) => [key, Number(value ?? 0)])
+        .sort(([a], [b]) => a.localeCompare(b))
+    );
+  const segments = Array.isArray(alpha.bySegment)
+    ? alpha.bySegment
+        .map((segment) => ({
+          segmentId: segment.segmentId ?? null,
+          jobId: segment.jobId ?? null,
+          modelClass: segment.modelClass ?? null,
+          slaProfile: segment.slaProfile ?? null,
+          deviceClass: segment.deviceClass ?? null,
+          vramTier: segment.vramTier ?? null,
+          startedAt: segment.startedAt ?? null,
+          endedAt: segment.endedAt ?? null,
+          gpuMinutes: Number(segment.gpuMinutes ?? 0),
+          qualityMultiplier: Number(segment.qualityMultiplier ?? 0),
+          alphaWU: Number(segment.alphaWU ?? 0)
+        }))
+        .sort((a, b) => {
+          const aId = a.segmentId ?? '';
+          const bId = b.segmentId ?? '';
+          return aId.localeCompare(bId);
+        })
+    : [];
+  return {
+    total: Number(alpha.total ?? 0),
+    bySegment: segments,
+    modelClassBreakdown: normalizeBreakdown(alpha.modelClassBreakdown),
+    slaBreakdown: normalizeBreakdown(alpha.slaBreakdown)
+  };
+}
+
 export function computeJobMetadataHash(job) {
   if (!job) {
     return keccak256(toUtf8Bytes('null'));
@@ -45,7 +84,8 @@ export function computeJobMetadataHash(job) {
     subdomain: job.subdomain ?? null,
     proof: job.proof ?? null,
     createdAt: job.createdAt ?? null,
-    updatedAt: job.updatedAt ?? null
+    updatedAt: job.updatedAt ?? null,
+    alphaWU: normalizeAlphaSnapshot(job.alphaWU)
   };
   return keccak256(toUtf8Bytes(stableStringify(normalized)));
 }

@@ -4,6 +4,8 @@ import {
   startSegment,
   stopSegment,
   getJobAlphaWU,
+  getJobAlphaSummary,
+  getGlobalAlphaSummary,
   getEpochAlphaWU,
   getRecentEpochSummaries,
   resetMetering
@@ -74,5 +76,45 @@ describe('metering service', () => {
       expect(Object.values(entry.alphaWU_by_deviceClass).every((value) => value >= 0)).toBe(true);
       expect(Object.values(entry.alphaWU_by_slaProfile).every((value) => value >= 0)).toBe(true);
     });
+  });
+
+  it('exposes per-job and global α-WU summaries for proofs and governance', () => {
+    const jobId = '0x' + '42'.repeat(32);
+    const { segmentId } = startSegment({
+      jobId,
+      deviceInfo: { deviceClass: 'A100-80GB', vramTier: VRAM_TIERS.TIER_80, gpuCount: 1 },
+      modelClass: MODEL_CLASSES.LLM_8B,
+      slaProfile: SLA_PROFILES.STANDARD,
+      startedAt: new Date(START_TIME.getTime() + 120_000)
+    });
+    const firstSegment = stopSegment(segmentId, { endedAt: new Date(START_TIME.getTime() + 420_000) });
+
+    const secondStart = startSegment({
+      jobId,
+      deviceInfo: { deviceClass: 'H100-80GB', vramTier: VRAM_TIERS.TIER_80, gpuCount: 2 },
+      modelClass: MODEL_CLASSES.RESEARCH_AGENT,
+      slaProfile: SLA_PROFILES.LOW_LATENCY_ENCLAVE,
+      startedAt: new Date(START_TIME.getTime() + 600_000)
+    });
+    const secondSegment = stopSegment(secondStart.segmentId, {
+      endedAt: new Date(START_TIME.getTime() + 900_000)
+    });
+
+    const summary = getJobAlphaSummary(jobId);
+    expect(summary.total).toBeCloseTo(firstSegment.alphaWU + secondSegment.alphaWU, 5);
+    expect(summary.bySegment).toHaveLength(2);
+    expect(Object.values(summary.modelClassBreakdown).reduce((acc, value) => acc + value, 0)).toBeCloseTo(
+      summary.total,
+      5
+    );
+    expect(Object.values(summary.slaBreakdown).reduce((acc, value) => acc + value, 0)).toBeCloseTo(
+      summary.total,
+      5
+    );
+
+    const globalSummary = getGlobalAlphaSummary();
+    expect(globalSummary.total).toBeGreaterThan(0);
+    expect(globalSummary.total).toBeCloseTo(summary.total, 5);
+    expect(globalSummary.bySegment.length).toBeGreaterThanOrEqual(summary.bySegment.length);
   });
 });

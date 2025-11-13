@@ -2,6 +2,8 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { zeroPadValue, keccak256, toUtf8Bytes } from 'ethers';
 import { createJobLifecycle } from '../src/services/jobLifecycle.js';
 import { resolveJobProfile, createInterfaceFromProfile } from '../src/services/jobProfiles.js';
+import { resetMetering, startSegment, stopSegment } from '../src/services/metering.js';
+import { MODEL_CLASSES, SLA_PROFILES } from '../src/constants/workUnits.js';
 
 const registryAddress = '0x00000000000000000000000000000000000000aa';
 const v0Profile = resolveJobProfile('v0');
@@ -40,6 +42,7 @@ describe('job lifecycle service', () => {
   };
 
   beforeEach(() => {
+    resetMetering();
     provider.getBlockNumber.mockResolvedValue(120);
     provider.getLogs.mockResolvedValue([]);
     provider.on.mockReset();
@@ -132,6 +135,14 @@ describe('job lifecycle service', () => {
       journal
     });
 
+    const segmentStart = startSegment({
+      jobId: normalizedJobId,
+      deviceInfo: { deviceClass: 'A100-80GB', vramTier: 'TIER_80', gpuCount: 1 },
+      modelClass: MODEL_CLASSES.LLM_8B,
+      slaProfile: SLA_PROFILES.STANDARD,
+      startedAt: new Date('2024-01-01T00:00:00Z')
+    });
+
     await lifecycle.apply('job-7', { subdomain: 'node', proof: '0x1234' });
     expect(applyMock).toHaveBeenCalledWith(normalizedJobId, 'node', '0x1234');
 
@@ -144,11 +155,23 @@ describe('job lifecycle service', () => {
     expect(submission.resultHash).toMatch(/^0x/);
     expect(submission.validator).toBeNull();
 
+    stopSegment(segmentStart.segmentId, {
+      endedAt: new Date('2024-01-01T00:15:00Z')
+    });
+
     await lifecycle.finalize('job-7');
     expect(finalizeMock).toHaveBeenCalledWith(normalizedJobId);
 
     const actionTypes = journal.entries.filter((entry) => entry.kind === 'action').map((entry) => entry.action.type);
     expect(actionTypes).toEqual(expect.arrayContaining(['apply', 'submit', 'finalize']));
+
+    const finalizedJob = lifecycle.getJob('job-7');
+    expect(finalizedJob.alphaWU).not.toBeNull();
+    expect(finalizedJob.alphaWU.total).toBeGreaterThan(0);
+    expect(finalizedJob.alphaWU.bySegment.length).toBeGreaterThan(0);
+
+    const finalizeEntry = journal.entries.find((entry) => entry.action?.type === 'finalize');
+    expect(finalizeEntry?.job?.alphaWU?.total).toBeGreaterThan(0);
   });
 
   it('records alpha work unit events manually and surfaces metrics', () => {

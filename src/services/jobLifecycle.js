@@ -2,6 +2,7 @@ import { Contract, getAddress, hexlify, isHexString, toUtf8Bytes } from 'ethers'
 import { EventEmitter } from 'node:events';
 import pino from 'pino';
 import { normalizeJobId, createJobProof } from './jobProof.js';
+import { getJobAlphaSummary, getJobAlphaWU } from './metering.js';
 import { resolveJobProfile, createInterfaceFromProfile } from './jobProfiles.js';
 import { buildActionEntry, buildSnapshotEntry } from './lifecycleJournal.js';
 import { createAlphaWorkUnitRegistry, DEFAULT_WINDOWS as DEFAULT_ALPHA_WINDOWS } from './alphaWorkUnits.js';
@@ -192,6 +193,70 @@ function buildMethodCandidates(methodSpecs = [], context = {}) {
     .filter(Boolean);
 }
 
+function toNumber(value) {
+  if (value === undefined || value === null) return 0;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  if (typeof value === 'bigint') return Number(value);
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function cloneAlphaSummary(summary) {
+  if (!summary) {
+    return null;
+  }
+  const bySegment = Array.isArray(summary.bySegment)
+    ? summary.bySegment.map((segment) => ({
+        segmentId: segment.segmentId ?? null,
+        jobId: segment.jobId ?? null,
+        modelClass: segment.modelClass ?? null,
+        slaProfile: segment.slaProfile ?? null,
+        deviceClass: segment.deviceClass ?? null,
+        vramTier: segment.vramTier ?? null,
+        gpuCount: segment.gpuCount ?? null,
+        startedAt: segment.startedAt ?? null,
+        endedAt: segment.endedAt ?? null,
+        gpuMinutes: toNumber(segment.gpuMinutes),
+        qualityMultiplier: toNumber(segment.qualityMultiplier),
+        alphaWU: toNumber(segment.alphaWU)
+      }))
+    : [];
+  const normalizeBreakdown = (source = {}) =>
+    Object.fromEntries(
+      Object.entries(source)
+        .map(([key, value]) => [key, toNumber(value)])
+        .sort(([a], [b]) => a.localeCompare(b))
+    );
+  return {
+    total: toNumber(summary.total),
+    bySegment,
+    modelClassBreakdown: normalizeBreakdown(summary.modelClassBreakdown),
+    slaBreakdown: normalizeBreakdown(summary.slaBreakdown)
+  };
+}
+
+function buildJobAlphaSummary(jobId, logger = null) {
+  let total = 0;
+  try {
+    total = toNumber(getJobAlphaWU(jobId));
+  } catch (error) {
+    logger?.warn?.(error, 'Failed to compute α-WU total for job');
+  }
+  let summary = null;
+  try {
+    summary = getJobAlphaSummary(jobId);
+  } catch (error) {
+    logger?.warn?.(error, 'Failed to compute α-WU breakdown for job');
+  }
+  const base = {
+    total,
+    bySegment: summary?.bySegment ?? [],
+    modelClassBreakdown: summary?.modelClassBreakdown ?? {},
+    slaBreakdown: summary?.slaBreakdown ?? {}
+  };
+  return cloneAlphaSummary(base);
+}
+
 function normalizeJobMetadata(job) {
   if (!job) return null;
   return {
@@ -210,7 +275,8 @@ function normalizeJobMetadata(job) {
     subdomain: job.subdomain ?? null,
     proof: job.proof ?? null,
     createdAt: job.createdAt,
-    updatedAt: job.updatedAt
+    updatedAt: job.updatedAt,
+    alphaWU: cloneAlphaSummary(job.alphaWU)
   };
 }
 
@@ -357,7 +423,19 @@ export function createJobLifecycle({
     if (!jobId) return null;
     const normalizedJobId = normalizeJobId(jobId);
     const existing = jobs.get(normalizedJobId) ?? { jobId: normalizedJobId };
-    const merged = mergeJobRecord(existing, patch);
+    const sanitizedPatch = patch ? { ...patch } : {};
+    if (sanitizedPatch && Object.prototype.hasOwnProperty.call(sanitizedPatch, 'alphaWU')) {
+      sanitizedPatch.alphaWU = cloneAlphaSummary(sanitizedPatch.alphaWU);
+    }
+    if (
+      sanitizedPatch &&
+      sanitizedPatch.alphaWU === undefined &&
+      typeof sanitizedPatch.status === 'string' &&
+      sanitizedPatch.status.toLowerCase() === 'finalized'
+    ) {
+      sanitizedPatch.alphaWU = buildJobAlphaSummary(normalizedJobId, logger);
+    }
+    const merged = mergeJobRecord(existing, sanitizedPatch);
     jobs.set(normalizedJobId, merged);
     emitter.emit('job:update', normalizeJobMetadata(merged));
     metrics.discovered = jobs.size;
@@ -586,7 +664,8 @@ export function createJobLifecycle({
       result,
       operator: connection?.signer?.address ?? defaultSigner?.address ?? null,
       timestamp,
-      metadata
+      metadata,
+      resultUri: resultUri ?? ''
     });
 
     const context = {
@@ -658,8 +737,10 @@ export function createJobLifecycle({
       onUnavailable: methodUnavailable
     });
 
+    const alphaSummary = buildJobAlphaSummary(normalizedJobId, logger);
     const updated = recordJob(normalizedJobId, {
       status: 'finalized',
+      alphaWU: alphaSummary,
       lastEvent: {
         type: method,
         transactionHash: response.hash ?? null
@@ -870,10 +951,13 @@ export function createJobLifecycle({
       try {
         const decoded = iface.decodeEventLog(finalizedEvent, log.data, log.topics);
         const [jobId, client, worker] = decoded;
-        const updated = recordJob(jobId, {
+        const normalizedJobId = normalizeJobId(jobId);
+        const alphaSummary = buildJobAlphaSummary(normalizedJobId, logger);
+        const updated = recordJob(normalizedJobId, {
           client: client ?? null,
           worker: worker ?? null,
           status: 'finalized',
+          alphaWU: alphaSummary,
           lastEvent: {
             type: finalizedEvent,
             blockNumber: log.blockNumber ?? null,

@@ -9,8 +9,126 @@ import {
 const state = {
   activeSegments: new Map(),
   jobTotals: new Map(),
+  jobSegments: new Map(),
   epochBuckets: new Map()
 };
+
+function cloneSegmentForExport(segment) {
+  if (!segment) {
+    return null;
+  }
+  return {
+    segmentId: segment.segmentId,
+    jobId: segment.jobId,
+    modelClass: segment.modelClass ?? null,
+    slaProfile: segment.slaProfile ?? null,
+    deviceClass: segment.deviceInfo?.deviceClass ?? null,
+    vramTier: segment.deviceInfo?.vramTier ?? null,
+    gpuCount: segment.deviceInfo?.gpuCount ?? null,
+    startedAt: segment.startedAt,
+    endedAt: segment.endedAt,
+    gpuMinutes: segment.gpuMinutes,
+    qualityMultiplier: segment.qualityMultiplier,
+    alphaWU: segment.alphaWU
+  };
+}
+
+function normaliseJobKey(jobId) {
+  if (jobId === undefined || jobId === null) {
+    return null;
+  }
+  if (typeof jobId === 'string') {
+    const trimmed = jobId.trim();
+    return trimmed ? trimmed.toLowerCase() : null;
+  }
+  if (typeof jobId === 'bigint') {
+    return jobId.toString();
+  }
+  return String(jobId).toLowerCase();
+}
+
+function upsertJobSegment(segment) {
+  const key = normaliseJobKey(segment.jobId);
+  if (!key) {
+    return;
+  }
+  if (!state.jobSegments.has(key)) {
+    state.jobSegments.set(key, []);
+  }
+  state.jobSegments.get(key).push(
+    cloneSegmentForExport(segment)
+  );
+}
+
+function normaliseBreakdownMap(entries = {}) {
+  return Object.fromEntries(
+    Object.entries(entries)
+      .map(([label, value]) => [label, Number(value ?? 0)])
+      .sort(([a], [b]) => a.localeCompare(b))
+  );
+}
+
+function buildBreakdown(segments, property) {
+  const result = new Map();
+  for (const segment of segments) {
+    const label = segment?.[property] ?? 'UNKNOWN';
+    const current = result.get(label) ?? 0;
+    result.set(label, current + Number(segment?.alphaWU ?? 0));
+  }
+  return Object.fromEntries(
+    Array.from(result.entries()).sort(([a], [b]) => a.localeCompare(b))
+  );
+}
+
+function cloneSegments(segments = []) {
+  return segments.map((segment) => ({
+    ...segment,
+    alphaWU: Number(segment.alphaWU ?? 0),
+    gpuMinutes: Number(segment.gpuMinutes ?? 0),
+    qualityMultiplier: Number(segment.qualityMultiplier ?? 0),
+    gpuCount: segment.gpuCount ?? null
+  }));
+}
+
+function buildJobAlphaSummary(jobId) {
+  const key = normaliseJobKey(jobId);
+  if (!key || !state.jobSegments.has(key)) {
+    return {
+      total: Number(getJobAlphaWU(jobId)),
+      bySegment: [],
+      modelClassBreakdown: {},
+      slaBreakdown: {}
+    };
+  }
+  const segments = state.jobSegments.get(key);
+  const bySegment = cloneSegments(segments);
+  return {
+    total: Number(getJobAlphaWU(jobId)),
+    bySegment,
+    modelClassBreakdown: normaliseBreakdownMap(buildBreakdown(bySegment, 'modelClass')),
+    slaBreakdown: normaliseBreakdownMap(buildBreakdown(bySegment, 'slaProfile'))
+  };
+}
+
+function buildGlobalAlphaSummary() {
+  const allSegments = Array.from(state.jobSegments.values()).flat();
+  if (allSegments.length === 0) {
+    return {
+      total: 0,
+      bySegment: [],
+      modelClassBreakdown: {},
+      slaBreakdown: {}
+    };
+  }
+  const cloned = cloneSegments(allSegments);
+  const total = cloned.reduce((acc, segment) => acc + Number(segment.alphaWU ?? 0), 0);
+  return {
+    total,
+    bySegment: cloned,
+    modelClassBreakdown: buildBreakdown(cloned, 'modelClass'),
+    slaBreakdown: buildBreakdown(cloned, 'slaProfile')
+  };
+}
 
 function toMillis(value, fallback = Date.now()) {
   if (value instanceof Date) {
@@ -89,6 +207,10 @@ export function startSegment({ jobId, deviceInfo = {}, modelClass = null, slaPro
   if (!jobId) {
     throw new Error('jobId is required to start a metering segment');
   }
+  const normalizedJobId = normaliseJobKey(jobId);
+  if (!normalizedJobId) {
+    throw new Error('jobId must be a non-empty value');
+  }
   const startMs = toMillis(startedAt, Date.now());
   const epochIndex = computeEpochIndex(startMs);
   const epochId = `epoch-${epochIndex}`;
@@ -97,7 +219,7 @@ export function startSegment({ jobId, deviceInfo = {}, modelClass = null, slaPro
 
   state.activeSegments.set(segmentId, {
     segmentId,
-    jobId,
+    jobId: normalizedJobId,
     modelClass,
     slaProfile,
     deviceInfo: normalizedDeviceInfo,
@@ -143,8 +265,12 @@ export function stopSegment(segmentId, { endedAt = Date.now() } = {}) {
 
   state.activeSegments.delete(segmentId);
 
-  const existingJobTotal = state.jobTotals.get(segment.jobId) ?? 0;
-  state.jobTotals.set(segment.jobId, existingJobTotal + alphaWU);
+  const jobKey = normaliseJobKey(segment.jobId);
+  if (jobKey) {
+    const existingJobTotal = state.jobTotals.get(jobKey) ?? 0;
+    state.jobTotals.set(jobKey, existingJobTotal + alphaWU);
+  }
+  upsertJobSegment(segment);
 
   const epochDurationSeconds = getEpochDurationSeconds();
   const epochDurationMs = Number.isFinite(epochDurationSeconds) && epochDurationSeconds > 0
@@ -232,7 +358,22 @@ export function getJobAlphaWU(jobId) {
   if (!jobId) {
     return 0;
   }
-  return state.jobTotals.get(jobId) ?? 0;
+  const key = normaliseJobKey(jobId);
+  if (!key) {
+    return 0;
+  }
+  return state.jobTotals.get(key) ?? 0;
+}
+
+export function getJobAlphaSummary(jobId) {
+  return buildJobAlphaSummary(jobId);
+}
+
+export function getGlobalAlphaSummary() {
+  const summary = buildGlobalAlphaSummary();
+  summary.modelClassBreakdown = normaliseBreakdownMap(summary.modelClassBreakdown);
+  summary.slaBreakdown = normaliseBreakdownMap(summary.slaBreakdown);
+  return summary;
 }
 
 function resolveEpochIndex(epochId) {
@@ -316,6 +457,7 @@ export function getRecentEpochSummaries({ limit = 12 } = {}) {
 export function resetMetering() {
   state.activeSegments.clear();
   state.jobTotals.clear();
+  state.jobSegments.clear();
   state.epochBuckets.clear();
 }
 

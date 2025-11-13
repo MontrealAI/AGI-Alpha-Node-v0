@@ -1429,7 +1429,8 @@ proof
         result: options.result,
         operator: options.operator,
         timestamp: options.timestamp,
-        metadata
+        metadata,
+        resultUri: options.resultUri ?? ''
       });
       console.log(chalk.bold('Deterministic job proof commitment'));
       console.table({
@@ -1469,7 +1470,8 @@ proof
           result: options.result,
           operator: options.operator,
           timestamp: options.timestamp,
-          metadata
+          metadata,
+          resultUri: options.resultUri ?? ''
         });
       } else {
         if (!options.commitment) {
