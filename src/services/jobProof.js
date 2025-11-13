@@ -213,7 +213,11 @@ export function createJobProof({ jobId, result, operator, timestamp, metadata, r
     )
   );
 
-  const alphaWU = normalizeAlphaSummary(normalizedJobId);
+  const alphaSummary = normalizeAlphaSummary(normalizedJobId);
+  const alphaWU = {
+    total: alphaSummary.total,
+    bySegment: alphaSummary.bySegment
+  };
 
   return {
     jobId: normalizedJobId,

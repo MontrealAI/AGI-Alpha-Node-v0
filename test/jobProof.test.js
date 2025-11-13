@@ -106,7 +106,8 @@ describe('job proof attestation', () => {
 
     expect(proof.alphaWU.total).toBeGreaterThan(0);
     expect(proof.alphaWU.bySegment).toHaveLength(1);
-    expect(proof.alphaWU.modelClassBreakdown[MODEL_CLASSES.RESEARCH_AGENT]).toBeGreaterThan(0);
+    expect(proof.alphaWU.bySegment[0].modelClass).toBe(MODEL_CLASSES.RESEARCH_AGENT);
+    expect(proof.alphaWU.bySegment[0].qualityMultiplier).toBeGreaterThan(0);
     expect(proof.resultUri).toBe('ipfs://proofs/swarm-oracle-77');
   });
 });
