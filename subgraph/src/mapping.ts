@@ -556,8 +556,7 @@ function updateValidatorWindows(validatorId: string, day: i32, timestamp: BigInt
 }
 
 function resolveScoreBucket(score: BigInt): i32 {
-  const clamped = score.toI32();
-  let bucket = clamped / 100;
+  let bucket = score.toI32();
   if (bucket < 0) {
     bucket = 0;
   }
