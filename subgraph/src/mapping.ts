@@ -579,30 +579,30 @@ export function handleAlphaWUMinted(event: AlphaWUMinted): void {
   const agentId = event.params.agent.toHexString();
   const nodeId = event.params.node.toHexString();
   const workUnitId = event.params.id.toHexString();
-  const timestamp = event.block.timestamp;
-  const day = getDayFromTimestamp(timestamp);
+  const mintedAt = event.params.mintedAt;
+  const day = getDayFromTimestamp(mintedAt);
 
   const agent = getOrCreateAgent(agentId);
   agent.totalWorkUnits = agent.totalWorkUnits.plus(ONE_BI);
-  agent.lastUpdated = timestamp.toI32();
+  agent.lastUpdated = mintedAt.toI32();
   agent.save();
 
   const node = getOrCreateNode(nodeId);
   node.totalWorkUnits = node.totalWorkUnits.plus(ONE_BI);
-  node.lastUpdated = timestamp.toI32();
+  node.lastUpdated = mintedAt.toI32();
   node.save();
 
   const workUnit = getOrCreateWorkUnit(workUnitId);
   workUnit.agent = agentId;
   workUnit.node = nodeId;
-  workUnit.mintedAt = event.params.timestamp.toI32();
+  workUnit.mintedAt = event.params.mintedAt.toI32();
   workUnit.validatorIds = new Array<string>();
   workUnit.save();
 
   updateAgentDaily(agentId, day, ONE_BI, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI);
   updateNodeDaily(nodeId, day, ONE_BI, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI);
-  updateAgentWindows(agentId, day, timestamp);
-  updateNodeWindows(nodeId, day, timestamp);
+  updateAgentWindows(agentId, day, mintedAt);
+  updateNodeWindows(nodeId, day, mintedAt);
 }
 
 export function handleAlphaWUValidated(event: AlphaWUValidated): void {
@@ -612,8 +612,8 @@ export function handleAlphaWUValidated(event: AlphaWUValidated): void {
     return;
   }
 
-  const timestamp = event.block.timestamp;
-  const day = getDayFromTimestamp(timestamp);
+  const validatedAt = event.params.validatedAt;
+  const day = getDayFromTimestamp(validatedAt);
   const agentId = workUnit.agent;
   const nodeId = workUnit.node;
   const validatorId = event.params.validator.toHexString();
@@ -623,13 +623,13 @@ export function handleAlphaWUValidated(event: AlphaWUValidated): void {
   const agent = getOrCreateAgent(agentId);
   agent.totalValidations = agent.totalValidations.plus(ONE_BI);
   agent.totalStake = agent.totalStake.plus(event.params.stake);
-  agent.lastUpdated = timestamp.toI32();
+  agent.lastUpdated = validatedAt.toI32();
   agent.save();
 
   const node = getOrCreateNode(nodeId);
   node.totalValidations = node.totalValidations.plus(ONE_BI);
   node.totalStake = node.totalStake.plus(event.params.stake);
-  node.lastUpdated = timestamp.toI32();
+  node.lastUpdated = validatedAt.toI32();
   node.save();
 
   const validator = getOrCreateValidator(validatorId);
@@ -648,18 +648,18 @@ export function handleAlphaWUValidated(event: AlphaWUValidated): void {
 
   validator.totalValidations = validator.totalValidations.plus(ONE_BI);
   validator.totalStake = validator.totalStake.plus(event.params.stake);
-  validator.lastUpdated = timestamp.toI32();
+  validator.lastUpdated = validatedAt.toI32();
   validator.save();
 
   participation.stake = participation.stake.plus(event.params.stake);
   participation.score = event.params.score;
-  participation.lastValidatedAt = event.params.timestamp.toI32();
+  participation.lastValidatedAt = event.params.validatedAt.toI32();
   participation.save();
 
   workUnit.validationCount = workUnit.validationCount.plus(ONE_BI);
   workUnit.totalScore = workUnit.totalScore.plus(event.params.score);
   workUnit.totalStake = workUnit.totalStake.plus(event.params.stake);
-  workUnit.lastValidatedAt = event.params.timestamp.toI32();
+  workUnit.lastValidatedAt = event.params.validatedAt.toI32();
   workUnit.save();
 
   updateAgentDaily(agentId, day, ZERO_BI, ZERO_BI, ONE_BI, weightedScore, event.params.stake, ZERO_BI);
@@ -670,9 +670,9 @@ export function handleAlphaWUValidated(event: AlphaWUValidated): void {
   updateQualityHistogram(OWNER_NODE, nodeId, day, scoreBucket, event.params.stake);
   updateQualityHistogram(OWNER_VALIDATOR, validatorId, day, scoreBucket, event.params.stake);
 
-  updateAgentWindows(agentId, day, timestamp);
-  updateNodeWindows(nodeId, day, timestamp);
-  updateValidatorWindows(validatorId, day, timestamp);
+  updateAgentWindows(agentId, day, validatedAt);
+  updateNodeWindows(nodeId, day, validatedAt);
+  updateValidatorWindows(validatorId, day, validatedAt);
 }
 
 export function handleAlphaWUAccepted(event: AlphaWUAccepted): void {
@@ -682,24 +682,24 @@ export function handleAlphaWUAccepted(event: AlphaWUAccepted): void {
     return;
   }
 
-  const timestamp = event.block.timestamp;
-  const day = getDayFromTimestamp(timestamp);
+  const acceptedAt = event.params.acceptedAt;
+  const day = getDayFromTimestamp(acceptedAt);
   const agentId = workUnit.agent;
   const nodeId = workUnit.node;
-  const durationSeconds = event.params.timestamp.toI32() - workUnit.mintedAt;
+  const durationSeconds = event.params.acceptedAt.toI32() - workUnit.mintedAt;
   const latencyBucket = resolveLatencyBucket(durationSeconds);
 
   const agent = getOrCreateAgent(agentId);
   agent.totalAccepted = agent.totalAccepted.plus(ONE_BI);
-  agent.lastUpdated = timestamp.toI32();
+  agent.lastUpdated = acceptedAt.toI32();
   agent.save();
 
   const node = getOrCreateNode(nodeId);
   node.totalAccepted = node.totalAccepted.plus(ONE_BI);
-  node.lastUpdated = timestamp.toI32();
+  node.lastUpdated = acceptedAt.toI32();
   node.save();
 
-  workUnit.acceptedAt = event.params.timestamp.toI32();
+  workUnit.acceptedAt = event.params.acceptedAt.toI32();
   workUnit.save();
 
   updateLatencyHistogram(OWNER_AGENT, agentId, day, latencyBucket, ONE_BI);
@@ -713,16 +713,16 @@ export function handleAlphaWUAccepted(event: AlphaWUAccepted): void {
     const validatorId = validatorIds[i];
     const validator = getOrCreateValidator(validatorId);
     validator.totalAccepted = validator.totalAccepted.plus(ONE_BI);
-    validator.lastUpdated = timestamp.toI32();
+    validator.lastUpdated = acceptedAt.toI32();
     validator.save();
 
     updateValidatorDaily(validatorId, day, ZERO_BI, ONE_BI, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI);
     updateLatencyHistogram(OWNER_VALIDATOR, validatorId, day, latencyBucket, ONE_BI);
-    updateValidatorWindows(validatorId, day, timestamp);
+    updateValidatorWindows(validatorId, day, acceptedAt);
   }
 
-  updateAgentWindows(agentId, day, timestamp);
-  updateNodeWindows(nodeId, day, timestamp);
+  updateAgentWindows(agentId, day, acceptedAt);
+  updateNodeWindows(nodeId, day, acceptedAt);
 }
 
 export function handleSlashApplied(event: SlashApplied): void {
@@ -732,32 +732,32 @@ export function handleSlashApplied(event: SlashApplied): void {
     return;
   }
 
-  const timestamp = event.block.timestamp;
-  const day = getDayFromTimestamp(timestamp);
+  const slashedAt = event.params.slashedAt;
+  const day = getDayFromTimestamp(slashedAt);
   const agentId = workUnit.agent;
   const nodeId = workUnit.node;
   const validatorId = event.params.validator.toHexString();
 
   const agent = getOrCreateAgent(agentId);
   agent.totalSlashAmount = agent.totalSlashAmount.plus(event.params.amount);
-  agent.lastUpdated = timestamp.toI32();
+  agent.lastUpdated = slashedAt.toI32();
   agent.save();
 
   const node = getOrCreateNode(nodeId);
   node.totalSlashAmount = node.totalSlashAmount.plus(event.params.amount);
-  node.lastUpdated = timestamp.toI32();
+  node.lastUpdated = slashedAt.toI32();
   node.save();
 
   const validator = getOrCreateValidator(validatorId);
   validator.totalSlashAmount = validator.totalSlashAmount.plus(event.params.amount);
-  validator.lastUpdated = timestamp.toI32();
+  validator.lastUpdated = slashedAt.toI32();
   validator.save();
 
   updateAgentDaily(agentId, day, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI, event.params.amount);
   updateNodeDaily(nodeId, day, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI, event.params.amount);
   updateValidatorDaily(validatorId, day, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI, event.params.amount);
 
-  updateAgentWindows(agentId, day, timestamp);
-  updateNodeWindows(nodeId, day, timestamp);
-  updateValidatorWindows(validatorId, day, timestamp);
+  updateAgentWindows(agentId, day, slashedAt);
+  updateNodeWindows(nodeId, day, slashedAt);
+  updateValidatorWindows(validatorId, day, slashedAt);
 }

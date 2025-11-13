@@ -1,6 +1,6 @@
 {
   "$schema": "https://agi.alpha/schemas/dashboard/v1.json",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "title": "AGI Alpha Node KPI Control Plane",
   "description": "Validator-weighted α-WU KPIs with ENS-gated health posture telemetry.",
   "domains": ["slo", "validation", "leaderboard"],
@@ -39,78 +39,42 @@
       "title": "α-WU Acceptance Rate · 7d",
       "metric": "agi_alpha_node_alpha_wu_acceptance_rate",
       "labels": { "window": "7d" },
-      "yAxis": {
-        "unit": "ratio",
-        "min": 0,
-        "max": 1
-      }
+      "yAxis": { "unit": "ratio", "min": 0, "max": 1 }
     },
     {
       "type": "timeseries",
       "title": "α-WU Acceptance Rate · 30d",
       "metric": "agi_alpha_node_alpha_wu_acceptance_rate",
       "labels": { "window": "30d" },
-      "yAxis": {
-        "unit": "ratio",
-        "min": 0,
-        "max": 1
-      }
+      "yAxis": { "unit": "ratio", "min": 0, "max": 1 }
     },
     {
       "type": "timeseries",
-      "title": "Slash Adjusted Yield · 7d",
-      "metric": "agi_alpha_node_alpha_wu_slash_adjusted_yield",
+      "title": "Validator-Weighted Quality · 7d",
+      "metric": "agi_alpha_node_alpha_wu_quality",
       "labels": { "window": "7d" },
-      "yAxis": {
-        "unit": "ratio",
-        "min": 0
-      }
+      "yAxis": { "unit": "score", "min": 0, "max": 100 }
     },
     {
       "type": "timeseries",
-      "title": "Slash Adjusted Yield · 30d",
-      "metric": "agi_alpha_node_alpha_wu_slash_adjusted_yield",
+      "title": "Validator-Weighted Quality · 30d",
+      "metric": "agi_alpha_node_alpha_wu_quality",
       "labels": { "window": "30d" },
-      "yAxis": {
-        "unit": "ratio",
-        "min": 0
-      }
+      "yAxis": { "unit": "score", "min": 0, "max": 100 }
     },
     {
       "type": "timeseries",
-      "title": "α-WU On-Time p95 · 7d",
+      "title": "α-WU On-Time p95",
       "metric": "agi_alpha_node_alpha_wu_on_time_p95_seconds",
       "labels": { "window": "7d" },
-      "yAxis": {
-        "unit": "seconds",
-        "min": 0
-      }
+      "yAxis": { "unit": "seconds", "min": 0 }
     },
     {
       "type": "timeseries",
-      "title": "α-WU On-Time p95 · 30d",
-      "metric": "agi_alpha_node_alpha_wu_on_time_p95_seconds",
-      "labels": { "window": "30d" },
-      "yAxis": {
-        "unit": "seconds",
-        "min": 0
-      }
-    },
-    {
-      "type": "bar",
-      "title": "Validator Weighted Quality · 7d",
-      "metric": "agi_alpha_node_alpha_wu_quality",
-      "labels": { "window": "7d", "dimension": "validator" },
-      "groupBy": "key",
-      "sort": "desc"
-    },
-    {
-      "type": "bar",
-      "title": "Validator Weighted Quality · 30d",
-      "metric": "agi_alpha_node_alpha_wu_quality",
-      "labels": { "window": "30d", "dimension": "validator" },
-      "groupBy": "key",
-      "sort": "desc"
+      "title": "Slash Adjusted Yield",
+      "metric": "agi_alpha_node_alpha_wu_slash_adjusted_yield",
+      "labels": { "window": "7d" },
+      "yAxis": { "unit": "ratio", "min": 0 }
     },
     {
       "type": "table",
