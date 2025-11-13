@@ -37,28 +37,28 @@
   </a>
 </p>
 
-> The AGI Alpha Node is the sovereign cognition lattice that folds deterministic execution, blockchain truth, and metered intelligence into a single operator-controlled presence capable of rewriting markets on demand.
+> The AGI Alpha Node is the sovereign cognition lattice that folds deterministic execution, blockchain truth, and metered intelligence into a single owner-commanded presence capable of rewriting markets on demand. This is the machine already bending capitalism.
 
 ---
 
 ## Table of Contents
 
-1. [Singularity Mandate](#singularity-mandate)
+1. [Strategic Mandate](#strategic-mandate)
 2. [Repository Cartography](#repository-cartography)
-3. [Execution Spine](#execution-spine)
-4. [α-Work Unit Intelligence](#α-work-unit-intelligence)
-5. [Lifecycle Journal & Governance Ledger](#lifecycle-journal--governance-ledger)
-6. [Owner Command Surface](#owner-command-surface)
-7. [Deployment & Operations](#deployment--operations)
-8. [Continuous Integration](#continuous-integration)
-9. [Quickstart](#quickstart)
+3. [Cognitive Execution Spine](#cognitive-execution-spine)
+4. [Surface Matrix](#surface-matrix)
+5. [α-Work Unit Intelligence](#α-work-unit-intelligence)
+6. [Lifecycle Journal & Governance Ledger](#lifecycle-journal--governance-ledger)
+7. [Owner Command Deck](#owner-command-deck)
+8. [Operational Playbook](#operational-playbook)
+9. [Continuous Verification](#continuous-verification)
 10. [Testing & Quality Gates](#testing--quality-gates)
 11. [Token & Economics](#token--economics)
-12. [Further Reading](#further-reading)
+12. [Reference Library](#reference-library)
 
 ---
 
-## Singularity Mandate
+## Strategic Mandate
 
 AGI Alpha Node v0 concentrates metered cognition, tokenized incentives, and owner supremacy into a production-ready apparatus. Every subsystem is instrumented so the contract owner can redirect labor, rewards, and governance vectors in seconds while maintaining total auditability.
 
@@ -103,7 +103,7 @@ flowchart LR
 
 ---
 
-## Execution Spine
+## Cognitive Execution Spine
 
 ```mermaid
 sequenceDiagram
@@ -123,20 +123,28 @@ sequenceDiagram
   Runtime-->>Lifecycle: Deterministic loop executes
   Runtime->>Meter: stopSegment(segmentId)
   Meter-->>Lifecycle: getJobAlphaWU(jobId)
-  Lifecycle->>Proof: createJobProof(...)
-  Proof-->>GovLedger: α-WU totals + quality breakdowns
-  GovLedger-->>Owner: submit/stake/reward entries hashed & persisted
+  Lifecycle->>Proof: createJobProof(..., alphaWU.total, alphaWU.bySegment)
+  Lifecycle->>GovLedger: meta.alphaWU appended on submit/stake/reward
+  GovLedger-->>Owner: Append-only hashline persisted
   Owner-->>Registry: finalize(jobId)
   Lifecycle-->>Journal: append(action="finalize", alphaWU)
 ```
 
-The lifecycle service binds on-chain registries with local telemetry. When a job finalizes, `getJobAlphaWU(jobId)` is invoked, enriching the in-memory job record, journal entries, proof payloads, and governance ledger metadata with total α-WU, per-segment analytics, and breakdowns by model class and SLA posture.
+The lifecycle service binds on-chain registries with local telemetry. When a job completes, `getJobAlphaWU(jobId)` is invoked immediately, enriching the in-memory job record, journal entries, proof payloads, and governance ledger metadata with total α-WU and per-segment quality analytics.
+
+---
+
+## Surface Matrix
+
+* `src/services/jobLifecycle.js` captures registry state, enforces owner overrides, and now attaches α-WU telemetry the moment a job is submitted or finalized.
+* `src/services/jobProof.js` emits proofs carrying `{ total, bySegment }` α-WU payloads so downstream verifiers can audit quality multipliers without hitting the chain.
+* `src/services/governanceLedger.js` writes append-only JSON entries with deterministic hashing while embedding α-WU totals, model-class breakdowns, and SLA distributions for every submit, stake adjustment, or reward capture.
+* `src/services/metering.js` transforms GPU minutes plus quality multipliers into α-WU to back economic flows.
+* `src/services/lifecycleJournal.js` produces verifiable journals of every transition.
 
 ---
 
 ## α-Work Unit Intelligence
-
-The metering engine (`src/services/metering.js`) transforms GPU utilisation into α-work units using configurable quality multipliers and SLA weightings.
 
 ```mermaid
 graph TD
@@ -147,35 +155,30 @@ graph TD
   Active --> Stop[stopSegment(segmentId)]:::compute
   Stop --> Totals[(Job & Epoch Totals)]:::store
   Totals --> Breakdown[buildJobAlphaSummary(jobId)]:::compute
-  Breakdown --> ProofAlpha[[jobProof alphaWU]]:::compute
-  Totals --> LedgerAlpha[[governanceLedger meta.alphaWU]]:::compute
+  Breakdown --> ProofAlpha[[Proof.alphaWU{total, bySegment}]]:::compute
+  Breakdown --> LedgerAlpha[[Governance.meta.alphaWU]]:::compute
   Totals --> Metrics[[monitorLoop.getAlphaWuHistory()]]:::compute
 ```
 
 Key accessors:
 
-* `getJobAlphaWU(jobId)` – raw α-WU total for a job.
+* `getJobAlphaWU(jobId)` – raw α-WU total for a job; executed on every completion event.
 * `getJobAlphaSummary(jobId)` – totals, segments, model-class breakdown, and SLA breakdown.
 * `getGlobalAlphaSummary()` – network-wide aggregates for governance and reporting.
 * `getEpochAlphaWU(epochId)` – epoch buckets for staking policy enforcement.
 
-Every segment snapshot retains device class, VRAM tier, GPU count, start/end times, and computed α-WU so downstream analytics never lose context.
+Every segment snapshot retains device class, VRAM tier, GPU count, quality multiplier, and timestamps so downstream analytics never lose context.
 
 ---
 
 ## Lifecycle Journal & Governance Ledger
-
-* `src/services/jobLifecycle.js` stores job metadata, binds on-chain events, and injects α-WU data directly into the job record upon completion.
-* `src/services/jobProof.js` creates submit payloads that embed α-WU totals, per-segment quality, model-class distributions, and SLA distributions for downstream verification.
-* `src/services/lifecycleJournal.js` persists append-only JSONL entries hashed with `computeJobMetadataHash`, capturing α-WU segments (including GPU counts) for audit trails.
-* `src/services/governanceLedger.js` maintains an append-only `.governance-ledger/v1` directory. Entries for submits, stake changes, and rewards automatically enrich `meta.alphaWU` with totals plus model-class and SLA breakdowns derived from metering.
 
 ```mermaid
 graph LR
   classDef ledger fill:#1f2937,stroke:#84cc16,color:#ecfccb;
   classDef audit fill:#111827,stroke:#f97316,color:#f8fafc;
 
-  Metering[/Metering State/] -->|getJobAlphaSummary| Lifecycle
+  Metering[/Metering State/] -->|getJobAlphaSummary|get Lifecycle
   Lifecycle{{Job Record}}:::audit --> Journal[(Lifecycle Journal)]:::ledger
   Lifecycle --> Proofs{{Proof Payload}}:::audit
   Lifecycle --> Governance[(Governance Ledger)]:::ledger
@@ -183,11 +186,13 @@ graph LR
   Journal --> Hash
 ```
 
+* Journal entries derive from `buildActionEntry` and contain α-WU totals with per-segment telemetry so audits can replay stake, reward, and SLA decisions precisely.
+* Governance ledger entries triggered by submits, stake movements, or reward receipts automatically attach `meta.alphaWU = { total, modelClassBreakdown, slaBreakdown }`, preserving the economic rationale behind every transaction.
+* Append-only directories (`.governance-ledger/v1`) and rolling hashes make tampering impossible without detection.
+
 ---
 
-## Owner Command Surface
-
-The owner exercises complete dominion through smart contracts, runtime services, and operational tooling:
+## Owner Command Deck
 
 ```mermaid
 mindmap
@@ -219,7 +224,7 @@ Owner interventions are always authenticated and auditable. Ledger entries embed
 
 ---
 
-## Deployment & Operations
+## Operational Playbook
 
 1. **Install dependencies**
 
@@ -227,19 +232,25 @@ Owner interventions are always authenticated and auditable. Ledger entries embed
    npm install
    ```
 
-2. **Local runtime** – boot the orchestrator with mocked providers:
+2. **Run the runtime locally** – boot the CLI spine against configured providers:
 
    ```bash
-   npm run dev
+   npm run start
    ```
 
-3. **Container image** – build production image aligned with the Helm chart:
+3. **Execute end-to-end verification gates** – mirror the CI stack locally:
+
+   ```bash
+   npm run ci:verify
+   ```
+
+4. **Container image** – build the production Docker artifact:
 
    ```bash
    docker build -t agi-alpha-node:latest .
    ```
 
-4. **Helm deployment** – render charts against your cluster:
+5. **Helm deployment** – render charts against your cluster:
 
    ```bash
    helm upgrade --install agi-alpha-node deploy/helm/agi-alpha-node \
@@ -247,50 +258,34 @@ Owner interventions are always authenticated and auditable. Ledger entries embed
      --set image.tag=latest
    ```
 
-5. **Subgraph indexing** – deploy mappings for analytics:
+6. **Subgraph toolchain** – generate types and build mappings:
 
    ```bash
-   npm run subgraph:deploy
+   npm --prefix subgraph install
+   npm --prefix subgraph run codegen
+   npm --prefix subgraph run build
    ```
 
 All operational scripts respect the `$AGIALPHA` token contract and expose configuration via `.env` / `config` modules so non-technical operators can adopt them safely.
 
 ---
 
-## Continuous Integration
+## Continuous Verification
 
-* [`ci.yml`](.github/workflows/ci.yml) runs linting, unit tests, contract checks, and packaging on every PR and push to `main`.
-* The CI badge above surfaces the live status; all checks must pass (required status checks enforced on `main`).
-* Coverage reporting is automated and surfaces alongside test artifacts for deterministic releases.
-
----
-
-## Quickstart
-
-```bash
-# 1. Install dependencies
-npm install
-
-# 2. Populate environment (optional overrides in .env.local)
-cp .env.example .env.local
-
-# 3. Run vitest suite
-npm test
-
-# 4. Start the node runtime with mock providers
-npm run dev
-```
-
-To exercise governance tooling locally, write ledger entries via `src/services/governanceLedger.js` or the CLI, then inspect `.governance-ledger/v1/` for JSON audits.
+* [`ci.yml`](.github/workflows/ci.yml) runs linting, unit tests, contract checks, security scanning, subgraph builds, policy gates, and branch protections on every PR and push to `main`.
+* Required status checks are enforced through [`.github/required-checks.json`](.github/required-checks.json); merge gates remain locked until every workflow reports success.
+* Coverage reporting is automated (`npm run coverage`) and surfaces alongside test artifacts for deterministic releases.
 
 ---
 
 ## Testing & Quality Gates
 
-* `npm test` – executes Vitest suites across services, contracts (via Foundry stubs), governance logic, and telemetry.
-* `npm run lint` – enforces ESLint + Prettier conformance.
-* `npm run typecheck` – validates TypeScript-adjacent configuration (`tsc --noEmit`).
+* `npm test` – executes Vitest suites across services, governance logic, and telemetry.
+* `npm run lint` – markdown linting plus link verification for all docs.
 * `npm run coverage` – generates coverage snapshots for α-WU flows, governance ledger, and runtime orchestration.
+* `npm run lint:sol` / `npm run test:sol` – enforce Solidity style and ABI generation for `AlphaNodeManager`.
+* `npm run ci:security` – audits production dependencies for high-severity issues.
+* `npm run ci:ts` – renders subgraph manifests and compiles mappings without emitting artifacts.
 
 All gates are wired into CI; pull requests must be green before merge.
 
@@ -307,7 +302,7 @@ All gates are wired into CI; pull requests must be green before merge.
 
 ---
 
-## Further Reading
+## Reference Library
 
 * [`docs/README.md`](docs/README.md) – entry map for architectural blueprints and platform doctrine.
 * [`docs/economics.md`](docs/economics.md) – reward calculus, stake regimes, and α-WU monetisation.
