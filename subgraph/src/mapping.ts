@@ -19,6 +19,7 @@ import {
   ValidatorParticipation,
   QualityBucket,
   LatencyBucket,
+  SlashEvent,
 } from "../generated/schema";
 
 const ZERO_BI = BigInt.fromI32(0);
@@ -106,6 +107,7 @@ function getOrCreateWorkUnit(id: string): WorkUnit {
     entity.validationCount = ZERO_BI;
     entity.totalScore = ZERO_BI;
     entity.totalStake = ZERO_BI;
+    entity.totalSlashAmount = ZERO_BI;
     entity.validatorIds = new Array<string>();
   }
   return entity as WorkUnit;
@@ -614,6 +616,7 @@ export function handleAlphaWUMinted(event: AlphaWUMinted): void {
   workUnit.agent = agentId;
   workUnit.node = nodeId;
   workUnit.mintedAt = event.params.mintedAt.toI32();
+  workUnit.totalSlashAmount = ZERO_BI;
   workUnit.validatorIds = new Array<string>();
   workUnit.save();
 
@@ -755,25 +758,37 @@ export function handleSlashApplied(event: SlashApplied): void {
   const agentId = workUnit.agent;
   const nodeId = workUnit.node;
   const validatorId = event.params.validator.toHexString();
+  const slashAmount = event.params.amount;
 
   const agent = getOrCreateAgent(agentId);
-  agent.totalSlashAmount = agent.totalSlashAmount.plus(event.params.amount);
+  agent.totalSlashAmount = agent.totalSlashAmount.plus(slashAmount);
   agent.lastUpdated = slashedAt.toI32();
   agent.save();
 
   const node = getOrCreateNode(nodeId);
-  node.totalSlashAmount = node.totalSlashAmount.plus(event.params.amount);
+  node.totalSlashAmount = node.totalSlashAmount.plus(slashAmount);
   node.lastUpdated = slashedAt.toI32();
   node.save();
 
   const validator = getOrCreateValidator(validatorId);
-  validator.totalSlashAmount = validator.totalSlashAmount.plus(event.params.amount);
+  validator.totalSlashAmount = validator.totalSlashAmount.plus(slashAmount);
   validator.lastUpdated = slashedAt.toI32();
   validator.save();
 
-  updateAgentDaily(agentId, day, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI, event.params.amount);
-  updateNodeDaily(nodeId, day, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI, event.params.amount);
-  updateValidatorDaily(validatorId, day, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI, event.params.amount);
+  workUnit.totalSlashAmount = workUnit.totalSlashAmount.plus(slashAmount);
+  workUnit.save();
+
+  const slashId = event.transaction.hash.toHexString() + "-" + event.logIndex.toString();
+  const slashRecord = new SlashEvent(slashId);
+  slashRecord.workUnit = workUnitId;
+  slashRecord.validator = validatorId;
+  slashRecord.amount = slashAmount;
+  slashRecord.slashedAt = slashedAt.toI32();
+  slashRecord.save();
+
+  updateAgentDaily(agentId, day, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI, slashAmount);
+  updateNodeDaily(nodeId, day, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI, slashAmount);
+  updateValidatorDaily(validatorId, day, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI, ZERO_BI, slashAmount);
 
   updateAgentWindows(agentId, day, slashedAt);
   updateNodeWindows(nodeId, day, slashedAt);

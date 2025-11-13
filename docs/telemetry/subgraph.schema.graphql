@@ -55,6 +55,7 @@ type WorkUnit @entity {
   validationCount: BigInt!
   totalScore: BigInt!
   totalStake: BigInt!
+  totalSlashAmount: BigInt!
   validatorIds: [String!]!
   participations: [ValidatorParticipation!]! @derivedFrom(field: "workUnit")
 }
@@ -168,4 +169,12 @@ type LatencyBucket @entity {
   day: Int!
   bucket: Int!
   count: BigInt!
+}
+
+type SlashEvent @entity(immutable: true) {
+  id: ID!
+  workUnit: WorkUnit!
+  validator: Validator!
+  amount: BigInt!
+  slashedAt: Int!
 }

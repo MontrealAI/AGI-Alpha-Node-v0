@@ -289,6 +289,19 @@ query NodeProduction($windowDays: Int!) {
 }
 ```
 
+#### Recent slash events (live audit feed)
+
+```graphql
+query RecentSlashes($limit: Int!) {
+  slashEvents(first: $limit, orderBy: slashedAt, orderDirection: desc) {
+    workUnit { id }
+    validator { id }
+    amount
+    slashedAt
+  }
+}
+```
+
 Execute queries with any GraphQL client or via cURL:
 
 ```bash

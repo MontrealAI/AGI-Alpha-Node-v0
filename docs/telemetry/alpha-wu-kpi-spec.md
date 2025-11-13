@@ -69,7 +69,8 @@ The Graph schema in [`subgraph/schema.graphql`](../../subgraph/schema.graphql)
 extends the raw events into usable analytics windows:
 
 - `WorkUnit` entities capture agent/node ownership, timestamps, and validator
-  rosters for each mint.
+  rosters for each mint alongside cumulative `totalSlashAmount` so SAY can be
+  recomputed per unit.
 - `ValidatorParticipation` tracks stake-weighted scoring per validator.
 - Daily metric entities (`AgentDailyMetric`, `NodeDailyMetric`,
   `ValidatorDailyMetric`) accumulate counts, scores, stake, and slash totals.
@@ -79,6 +80,8 @@ extends the raw events into usable analytics windows:
   so dashboards can filter by freshness without recomputing aggregations.
 - Histogram entities (`QualityBucket`, `LatencyBucket`) keep the raw
   distributions needed to recompute medians and p95s deterministically.
+- `SlashEvent` entities persist every `SlashApplied` log with validator,
+  amount, and timestamp which powers historical dashboards and auditing.
 
 These structures make the four KPIs available per agent, node, and validator
 without off-chain joins.
