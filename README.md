@@ -244,6 +244,16 @@ All pull requests and the `main` branch are protected by a comprehensive CI suit
 3. **Security & Policy:** `npm audit`, health gate verification, and branch policy checks.
 4. **Coverage:** Automated coverage reporting via CI badge above.
 
+The branch protection document lists the exact gate names enforced on PRs:
+
+* `Lint Markdown & Links`
+* `Unit & Integration Tests`
+* `Coverage Report`
+* `Docker Build & Smoke Test`
+* `Solidity Lint & Compile`
+* `Subgraph TypeScript Build`
+* `Dependency Security Scan`
+
 A green badge on this README reflects the current status of all required checks. The workflow blocks merges unless every gate is satisfied.
 
 ---
