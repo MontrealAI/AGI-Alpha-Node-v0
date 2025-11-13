@@ -76,6 +76,58 @@ export function cloneDefaultWorkUnitConfig() {
   };
 }
 
+function resolveWeightTable(candidate, fallback) {
+  if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) {
+    return candidate;
+  }
+  return fallback;
+}
+
+function safeLookup(weightTable, key, dimension) {
+  if (!key) {
+    return 1;
+  }
+  if (!weightTable || typeof weightTable !== 'object') {
+    return 1;
+  }
+  if (!(key in weightTable)) {
+    return 1;
+  }
+  const raw = weightTable[key];
+  const numeric = typeof raw === 'number' ? raw : Number(raw);
+  if (!Number.isFinite(numeric)) {
+    throw new Error(`work unit weight ${dimension}.${key} must be finite`);
+  }
+  if (numeric < 0) {
+    throw new Error(`work unit weight ${dimension}.${key} cannot be negative`);
+  }
+  return numeric;
+}
+
+export function calculateQualityMultiplier(segment = {}, config = {}) {
+  const {
+    modelClass = null,
+    vramTier = null,
+    slaProfile = null,
+    deviceClass = null
+  } = segment;
+
+  const candidateWeights = config && typeof config === 'object' ? config.weights : undefined;
+  const modelWeights = resolveWeightTable(candidateWeights?.modelClass, MODEL_CLASS_WEIGHTS);
+  const vramWeights = resolveWeightTable(candidateWeights?.vramTier, VRAM_TIER_WEIGHTS);
+  const slaWeights = resolveWeightTable(candidateWeights?.slaProfile, SLA_WEIGHTS);
+  const benchmarkWeights = resolveWeightTable(candidateWeights?.benchmark, BENCHMARK_WEIGHTS);
+
+  const components = [
+    safeLookup(modelWeights, modelClass, 'modelClass'),
+    safeLookup(vramWeights, vramTier, 'vramTier'),
+    safeLookup(slaWeights, slaProfile, 'slaProfile'),
+    safeLookup(benchmarkWeights, deviceClass, 'benchmark')
+  ];
+
+  return components.reduce((product, weight) => product * weight, 1);
+}
+
 export function computeAlphaWorkUnits({ gpuMinutes = 0, qualityMultiplier = 1 }) {
   const minutes = Number(gpuMinutes) || 0;
   const multiplier = Number(qualityMultiplier) || 0;

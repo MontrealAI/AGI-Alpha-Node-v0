@@ -33,6 +33,31 @@ The base unit (`α-WU = 1`) is defined in
 [`src/constants/workUnits.js`](../src/constants/workUnits.js) and can be
 re-weighted through configuration.
 
+Programmatic consumers can generate deterministic quality multipliers using
+[`calculateQualityMultiplier`](../src/constants/workUnits.js) and feed the
+result into [`computeAlphaWorkUnits`](../src/constants/workUnits.js):
+
+```js
+import {
+  calculateQualityMultiplier,
+  computeAlphaWorkUnits
+} from '../src/constants/workUnits.js';
+
+const qualityMultiplier = calculateQualityMultiplier({
+  modelClass: 'LLM_70B',
+  vramTier: 'TIER_80',
+  slaProfile: 'LOW_LATENCY_ENCLAVE',
+  deviceClass: 'H100-80GB'
+});
+
+const alphaWU = computeAlphaWorkUnits({ gpuMinutes: 20, qualityMultiplier });
+```
+
+Custom configurations returned from
+[`cloneDefaultWorkUnitConfig`](../src/constants/workUnits.js) can be passed as a
+second argument to `calculateQualityMultiplier` to apply bespoke weights while
+preserving deterministic validation rules.
+
 ## Canonical Weights
 
 | Dimension | Enum | Default Weight |

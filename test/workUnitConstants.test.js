@@ -10,6 +10,7 @@ import {
   BENCHMARK_WEIGHTS,
   DEFAULT_WORK_UNIT_CONFIG,
   cloneDefaultWorkUnitConfig,
+  calculateQualityMultiplier,
   computeAlphaWorkUnits,
   normalizeAlphaWorkUnitSegment
 } from '../src/constants/workUnits.js';
@@ -29,6 +30,42 @@ describe('work unit constants', () => {
   it('computes alpha work units using gpu minutes and multiplier', () => {
     expect(computeAlphaWorkUnits({ gpuMinutes: 20, qualityMultiplier: 28.014 })).toBeCloseTo(560.28, 2);
     expect(computeAlphaWorkUnits({ gpuMinutes: '15', qualityMultiplier: '2' })).toBe(30);
+  });
+
+  it('calculates quality multipliers using canonical tables', () => {
+    const multiplier = calculateQualityMultiplier({
+      modelClass: MODEL_CLASSES.LLM_70B,
+      vramTier: VRAM_TIERS.TIER_80,
+      slaProfile: SLA_PROFILES.LOW_LATENCY_ENCLAVE,
+      deviceClass: 'H100-80GB'
+    });
+    expect(multiplier).toBeCloseTo(4.2 * 2.3 * 2.0 * 1.45, 5);
+
+    const fallbackMultiplier = calculateQualityMultiplier({
+      modelClass: 'UNKNOWN',
+      vramTier: undefined,
+      slaProfile: null,
+      deviceClass: 'Unlisted'
+    });
+    expect(fallbackMultiplier).toBe(1);
+  });
+
+  it('honors custom configuration weights when provided', () => {
+    const config = cloneDefaultWorkUnitConfig();
+    config.weights.modelClass.LLM_8B = 1.25;
+    config.weights.benchmark['A100-80GB'] = 1.1;
+
+    const multiplier = calculateQualityMultiplier(
+      {
+        modelClass: MODEL_CLASSES.LLM_8B,
+        vramTier: VRAM_TIERS.TIER_24,
+        slaProfile: SLA_PROFILES.STANDARD,
+        deviceClass: 'A100-80GB'
+      },
+      config
+    );
+
+    expect(multiplier).toBeCloseTo(1.25 * VRAM_TIER_WEIGHTS[VRAM_TIERS.TIER_24] * 1 * 1.1, 5);
   });
 
   it('rejects negative alpha work unit parameters', () => {
