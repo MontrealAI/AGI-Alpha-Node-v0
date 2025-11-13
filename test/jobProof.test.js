@@ -1,14 +1,20 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { Interface, keccak256, solidityPacked, toUtf8Bytes, zeroPadValue, hexlify } from 'ethers';
 import {
   JOB_REGISTRY_ABI,
   buildProofSubmissionTx,
   createJobProof
 } from '../src/services/jobProof.js';
+import { resetMetering, startSegment, stopSegment } from '../src/services/metering.js';
+import { MODEL_CLASSES, SLA_PROFILES } from '../src/constants/workUnits.js';
 
 const jobRegistryInterface = new Interface(JOB_REGISTRY_ABI);
 
 describe('job proof attestation', () => {
+  beforeEach(() => {
+    resetMetering();
+  });
+
   it('creates deterministic commitments from inputs', () => {
     const jobId = 'climate-sim-42';
     const result = JSON.stringify({ status: 'complete', accuracy: 0.9821 });
@@ -32,16 +38,20 @@ describe('job proof attestation', () => {
     expect(proof.metadata).toBe(expectedMetadata);
     expect(proof.resultHash).toBe(expectedResultHash);
     expect(proof.commitment).toBe(expectedCommitment);
+    expect(proof.resultUri).toBe('');
+    expect(proof.alphaWU.total).toBe(0);
+    expect(proof.alphaWU.bySegment).toHaveLength(0);
   });
 
-  it('builds submitProof transaction payloads', () => {
+  it('builds submitProof transaction payloads', () => { 
     const registry = '0x0000000000000000000000000000000000000aaa';
     const proof = createJobProof({
       jobId: 'market-dive-7',
       result: 'alpha yield=42.3%',
       operator: '0x0000000000000000000000000000000000000bee',
       timestamp: '1720000100',
-      metadata: 'epoch:77'
+      metadata: 'epoch:77',
+      resultUri: 'ipfs://alpha/market-dive-7'
     });
 
     const tx = buildProofSubmissionTx({
@@ -60,6 +70,7 @@ describe('job proof attestation', () => {
     expect(decoded[2]).toBe(proof.resultHash);
     expect(decoded[3]).toBe('ipfs://alpha/market-dive-7');
     expect(decoded[4]).toBe(proof.metadata);
+    expect(proof.resultUri).toBe('ipfs://alpha/market-dive-7');
   });
 
   it('throws when commitment inputs are incomplete', () => {
@@ -71,5 +82,31 @@ describe('job proof attestation', () => {
         resultHash: '0x01'
       })
     ).toThrow();
+  });
+
+  it('embeds α-WU breakdowns from metering state into local proof objects', () => {
+    const jobLabel = 'swarm-oracle-77';
+    const normalizedJobId = zeroPadValue(keccak256(toUtf8Bytes(jobLabel)), 32);
+    const { segmentId } = startSegment({
+      jobId: normalizedJobId,
+      deviceInfo: { deviceClass: 'H100-80GB', vramTier: 'TIER_80', gpuCount: 2 },
+      modelClass: MODEL_CLASSES.RESEARCH_AGENT,
+      slaProfile: SLA_PROFILES.HIGH_REDUNDANCY,
+      startedAt: new Date('2024-02-01T00:00:00Z')
+    });
+    stopSegment(segmentId, { endedAt: new Date('2024-02-01T00:08:00Z') });
+
+    const proof = createJobProof({
+      jobId: jobLabel,
+      result: 'ok',
+      operator: '0x0000000000000000000000000000000000000abc',
+      metadata: { checksum: '0xabc' },
+      resultUri: 'ipfs://proofs/swarm-oracle-77'
+    });
+
+    expect(proof.alphaWU.total).toBeGreaterThan(0);
+    expect(proof.alphaWU.bySegment).toHaveLength(1);
+    expect(proof.alphaWU.modelClassBreakdown[MODEL_CLASSES.RESEARCH_AGENT]).toBeGreaterThan(0);
+    expect(proof.resultUri).toBe('ipfs://proofs/swarm-oracle-77');
   });
 });

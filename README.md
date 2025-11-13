@@ -45,13 +45,14 @@
 3. [Deterministic Execution Lattice](#deterministic-execution-lattice)
 4. [Metering Conductor](#metering-conductor)
 5. [Device & SLA Intelligence](#device--sla-intelligence)
-6. [Smart-Contract Sovereignty](#smart-contract-sovereignty)
-7. [Telemetry & Insight Weave](#telemetry--insight-weave)
-8. [Deployment & Operations](#deployment--operations)
-9. [Continuous Integration](#continuous-integration)
-10. [Quickstart](#quickstart)
-11. [Testing & Quality Gates](#testing--quality-gates)
-12. [Further Reading](#further-reading)
+6. [Lifecycle Journal & Governance Synthesis](#lifecycle-journal--governance-synthesis)
+7. [Smart-Contract Sovereignty](#smart-contract-sovereignty)
+8. [Telemetry & Insight Weave](#telemetry--insight-weave)
+9. [Deployment & Operations](#deployment--operations)
+10. [Continuous Integration](#continuous-integration)
+11. [Quickstart](#quickstart)
+12. [Testing & Quality Gates](#testing--quality-gates)
+13. [Further Reading](#further-reading)
 
 ---
 
@@ -145,13 +146,19 @@ graph TD
   Stop --> Totals[(Epoch Buckets & Job Totals)]:::store
   Totals --> Aggregates[getRecentEpochSummaries()]:::compute
   Aggregates --> Telemetry[[monitorLoop.getAlphaWuHistory()]]:::compute
-  Totals --> API[[getJobAlphaWU() / getEpochAlphaWU()]]:::compute
+  Totals --> API[[getJobAlphaWU() / getJobAlphaSummary() / getGlobalAlphaSummary() / getEpochAlphaWU()]]:::compute
 ```
 
 Usage highlights:
 
 ```js
-import { startSegment, stopSegment, getEpochAlphaWU } from './src/services/metering.js';
+import {
+  startSegment,
+  stopSegment,
+  getJobAlphaSummary,
+  getGlobalAlphaSummary,
+  getEpochAlphaWU
+} from './src/services/metering.js';
 
 const { segmentId, epochId } = startSegment({
   jobId: 'job-42',
@@ -167,6 +174,12 @@ console.log(segment.alphaWU); // Weighted α-work units for the loop
 
 const epoch = getEpochAlphaWU(epochId);
 console.table(epoch.alphaWU_by_job); // Rolling aggregates for telemetry and payouts
+
+const jobSummary = getJobAlphaSummary('job-42');
+console.table(jobSummary.modelClassBreakdown); // Quality-adjusted mix for proof + ledger
+
+const networkSummary = getGlobalAlphaSummary();
+console.log(networkSummary.total); // Platform-wide cognitive throughput
 ```
 
 Weights and epoch cadence are derived from [`WORK_UNITS`](src/config/schema.js) with defaults declared in [`src/constants/workUnits.js`](src/constants/workUnits.js). Override weights by exporting `WORK_UNITS` JSON (validated by schema) to immediately tune economics.
@@ -181,6 +194,50 @@ Weights and epoch cadence are derived from [`WORK_UNITS`](src/config/schema.js) 
 * **`getSlaProfile(jobConfig, runtimeConfig)`** normalizes SLA hints from job metadata, tags (`sla:LOW_LATENCY_ENCLAVE`), runtime overrides, or environment defaults.
 
 These helpers keep `bindExecutionLoopMetering` fully deterministic—segments inherit device benchmarks and SLA weights without manual intervention.
+
+---
+
+## Lifecycle Journal & Governance Synthesis
+
+Completion telemetry now flows through a triad of metering, journaling, and governance ledgers so every α-WU is provably accounted for when the owner executes policy changes.
+
+```mermaid
+flowchart TB
+  classDef ledger fill:#111827,stroke:#84cc16,stroke-width:2px,color:#ecfccb;
+  classDef journal fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#e0f2fe;
+  classDef service fill:#1e1b4b,stroke:#a855f7,stroke-width:2px,color:#ede9fe;
+  classDef control fill:#1f2937,stroke:#f97316,stroke-width:2px,color:#f8fafc;
+
+  Metering[[metering.stopSegment()]]:::service --> AlphaSummary[[getJobAlphaSummary()]]:::service
+  AlphaSummary --> Lifecycle[[jobLifecycle.finalize()]]:::journal
+  Lifecycle --> Journal[[lifecycleJournal.append()]]:::journal
+  AlphaSummary --> Proof[[createJobProof()]]:::service
+  Proof --> Governance[[recordGovernanceAction()]]:::ledger
+  Governance --> Owner[[Owner CLI/API Submit, Stake, Reward]]:::control
+```
+
+Key integrations:
+
+* **Lifecycle enrichment:** `jobLifecycle` automatically calls `getJobAlphaWU` / `getJobAlphaSummary` during finalization. The resulting `alphaWU` object (totals, model-class distribution, SLA distribution, per-segment detail) is cached on the job record and hashed into every journal entry for tamper-evident provenance.
+* **Proof payloads:** `createJobProof` now emits `{ resultUri, alphaWU }` alongside deterministic commitments so validators, auditors, or zk pipelines can validate the quality mix attached to a commitment before it touches chain.
+* **Ledger augmentation:** Every governance ledger entry whose `meta.method` contains `submit`, `stake`, or `reward` is auto-enriched with either job-scoped or global α-WU rollups. Stake moves and reward receipts are therefore contextualized with the exact cognitive throughput that motivated them.
+
+Programmatic access:
+
+```js
+import {
+  getJobAlphaSummary,
+  getGlobalAlphaSummary
+} from './src/services/metering.js';
+
+const jobAlpha = getJobAlphaSummary('0x…jobId');
+console.log(jobAlpha.total, jobAlpha.modelClassBreakdown);
+
+const networkAlpha = getGlobalAlphaSummary();
+console.table(networkAlpha.slaBreakdown);
+```
+
+Ledger entries written via CLI (`agi-alpha-node governance …`) or the API server will always embed these structures, making compliance, auditing, and revenue attribution immediate even under extreme operational tempo.
 
 ---
 
