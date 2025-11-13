@@ -1,4 +1,4 @@
-# AGI Alpha Node v0 · HyperSovereign Cognition Mesh ⚡
+# AGI Alpha Node v0 · Owner-Dominion Cognition Engine ⚡
 
 <!-- markdownlint-disable MD013 MD033 -->
 <p align="center">
@@ -6,7 +6,7 @@
     <source srcset="1.alpha.node.agi.eth.svg" type="image/svg+xml" />
     <img
       src="1.alpha.node.agi.eth.png"
-      alt="AGI Alpha Node Insignia"
+      alt="AGI Alpha Node Crest"
       width="256"
       loading="lazy"
       decoding="async"
@@ -34,42 +34,39 @@
   </a>
 </p>
 
-> A sovereign cognition spine that fuses deterministic execution, tokenized economics, and metered intelligence into a single command lattice under absolute owner control.
+> A sovereign cognition spine that binds deterministic execution, tokenized incentives, and metered intelligence into an operator-controlled command lattice that will not yield.
 
 ---
 
 ## Table of Contents
 
-1. [Singularity Mission](#singularity-mission)
-2. [System Constellation](#system-constellation)
-3. [Deterministic Execution Lattice](#deterministic-execution-lattice)
-4. [Metering Conductor](#metering-conductor)
-5. [Device & SLA Intelligence](#device--sla-intelligence)
-6. [Lifecycle Journal & Governance Synthesis](#lifecycle-journal--governance-synthesis)
-7. [Smart-Contract Sovereignty](#smart-contract-sovereignty)
-8. [Telemetry & Insight Weave](#telemetry--insight-weave)
-9. [Deployment & Operations](#deployment--operations)
-10. [Continuous Integration](#continuous-integration)
-11. [Quickstart](#quickstart)
-12. [Testing & Quality Gates](#testing--quality-gates)
-13. [Further Reading](#further-reading)
+1. [Mission Singularity](#mission-singularity)
+2. [Repository Topology](#repository-topology)
+3. [Cognitive Flow Orchestration](#cognitive-flow-orchestration)
+4. [α-Work Unit Intelligence](#α-work-unit-intelligence)
+5. [Lifecycle Journal & Governance Ledger](#lifecycle-journal--governance-ledger)
+6. [Sovereign Smart-Contract Surface](#sovereign-smart-contract-surface)
+7. [Deployment & Operations](#deployment--operations)
+8. [Continuous Integration](#continuous-integration)
+9. [Quickstart](#quickstart)
+10. [Testing & Quality Gates](#testing--quality-gates)
+11. [Token & Economics](#token--economics)
+12. [Further Reading](#further-reading)
 
 ---
 
-## Singularity Mission
+## Mission Singularity
 
-AGI Alpha Node v0 is engineered as a production-grade cognition mesh that continuously arbitrages global inefficiencies. The runtime synchronizes blockchain truth, GPU enclaves, metered α-work units, and governance levers so the contract owner can bend the network to any strategy in real time. Every module is designed for immediate execution by a single operator while sustaining planetary scale throughput.
+AGI Alpha Node v0 is engineered as the cognition engine that continuously arbitrages global inefficiencies. The runtime synchronizes blockchain truth, GPU enclaves, metered α-work units, and governance levers so the contract owner can bend the network to any strategy on demand. Every subsystem is hardened for immediate production launch by a single operator.
 
-* **Canonical Token:** `$AGIALPHA` (18 decimals) is fixed at [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) and hard-coded across runtime, contracts, and config validation.
-* **Owner Totality:** Contracts and CLI expose pause/resume, validator curation, ENS authority rotation, treasury extraction, and SLA mutation in seconds.
+* **Canonical Token:** `$AGIALPHA` (18 decimals) is anchored at [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) and enforced across runtime, contracts, and configuration schema.
+* **Owner Totality:** Contracts and CLI expose pause/resume, validator curation, ENS authority rotation, treasury extraction, SLA tuning, and stake control in seconds.
 * **Deterministic Metering:** Every deterministic execution loop is measured, weighted, and aggregated into α-work units for rewards, dashboards, and governance triggers.
-* **Operator UX:** Container images, Helm charts, Prometheus exporters, and Grafana atlases ensure a non-technical operator can deploy and audit safely.
+* **Operator UX:** Container images, Helm charts, Prometheus exporters, Grafana atlases, and GitHub Actions all align so a non-technical owner can deploy and audit safely.
 
 ---
 
-## System Constellation
-
-The repository is organized as a constellation of tightly coupled surfaces. The diagram below highlights the major components and how data flows through them.
+## Repository Topology
 
 ```mermaid
 flowchart LR
@@ -81,18 +78,20 @@ flowchart LR
 
   Runtime[[src/index.js · CLI Spine]]:::runtime --> Orchestrator[[src/orchestrator/ · Control Loops]]:::service
   Orchestrator --> Metering[[src/services/metering.js · α-WU Meter]]:::service
-  Orchestrator --> ExecutionContext[[src/services/executionContext.js · Device/SLA Lens]]:::service
+  Orchestrator --> Lifecycle[[src/services/jobLifecycle.js · Registry Binding]]:::service
+  Lifecycle --> Journal[[src/services/lifecycleJournal.js · Append-Only Ledger]]:::ledger
+  Lifecycle --> Proofs[[src/services/jobProof.js · Commitment Engine]]:::service
+  Lifecycle --> Governance[[src/services/governanceLedger.js · Policy Ledger]]:::ledger
   Orchestrator --> Telemetry[[src/telemetry/ · Metrics Exporters]]:::telemetry
-  Orchestrator --> Docs[[docs/ · Economic Blueprints]]:::telemetry
-  Orchestrator --> Contracts[[contracts/ · Sovereign Ledger]]:::ledger
   Runtime --> Deploy[[deploy/ · Helm + Manifests]]:::ops
-  Runtime --> Scripts[[scripts/ · CI + Policy Gates]]:::ops
-  Contracts --> Subgraph[[subgraph/ · Indexer Surface]]:::telemetry
+  Runtime --> Contracts[[contracts/ · AlphaNodeManager]]:::ledger
+  Contracts --> Subgraph[[subgraph/ · Graph Protocol Surface]]:::telemetry
+  Runtime --> Docs[[docs/ · Economics & Runbooks]]:::ops
 ```
 
 | Surface | Description |
 | --- | --- |
-| [`src/`](src) | Node.js runtime, deterministic execution loop, metering service, execution context helpers, telemetry exporters, and orchestration logic. |
+| [`src/`](src) | Node.js runtime, deterministic execution loop, metering service, lifecycle journal, governance ledger, telemetry exporters, and CLI entrypoint. |
 | [`contracts/`](contracts) | Solidity control plane anchored by `AlphaNodeManager` with owner-controlled pausing, validator curation, identity mesh, and stake custody. |
 | [`docs/`](docs) | Economics treatises, telemetry atlases, α-WU framework, and operator runbooks. |
 | [`deploy/`](deploy) | Helm chart, Kubernetes manifests, and operational automation. |
@@ -101,9 +100,7 @@ flowchart LR
 
 ---
 
-## Deterministic Execution Lattice
-
-The orchestrator binds job lifecycle events to metering and telemetry so each deterministic execution loop is observable, accountable, and owner-directed.
+## Cognitive Flow Orchestration
 
 ```mermaid
 sequenceDiagram
@@ -111,30 +108,32 @@ sequenceDiagram
   participant Registry as Job Registry
   participant Lifecycle as jobLifecycle
   participant Runtime as nodeRuntime
-  participant Meter as metering.start/stop
-  participant Telemetry as monitorLoop
+  participant Meter as metering
+  participant Journal as lifecycleJournal
+  participant Proof as jobProof
+  participant Ledger as governanceLedger
+  participant Owner as Contract Owner
 
   Registry-->>Lifecycle: JobAssigned(jobId)
   Lifecycle-->>Runtime: job:update(status="assigned")
   Runtime->>Meter: startSegment(jobId, deviceInfo, modelClass, slaProfile)
-  Runtime-->>Lifecycle: Deterministic execution loop engaged
-  Lifecycle-->>Runtime: job:update(status="submitted" | "finalized" | "failed")
+  Runtime-->>Lifecycle: Deterministic execution loop engages
   Runtime->>Meter: stopSegment(segmentId)
-  Meter-->>Telemetry: α-WU aggregates (job/device/SLA)
-  Telemetry-->>Owner: Prometheus gauges + dashboards
+  Meter-->>Lifecycle: α-WU totals & segments
+  Lifecycle->>Proof: createJobProof(jobId, result)
+  Proof-->>Ledger: α-WU totals + quality segments embedded
+  Ledger-->>Owner: Submit/Stake/Reward entries enriched with α-WU meta
+  Owner-->>Registry: finalize(jobId)
+  Lifecycle-->>Journal: append(action="finalize", alphaWU)
 ```
 
-Key orchestrator entry points:
-
-* [`bindExecutionLoopMetering`](src/orchestrator/nodeRuntime.js) wires lifecycle events to `startSegment` / `stopSegment`, ensuring every deterministic loop is measured.
-* [`startMonitorLoop`](src/orchestrator/monitorLoop.js) refreshes diagnostics, updates Prometheus gauges, and maintains a rolling α-WU history via `getRecentEpochSummaries`.
-* [`bootstrapContainer`](src/orchestrator/bootstrap.js) coordinates config loading, job lifecycle watchers, health gate state, metering binding, telemetry server, and optional monitor loop.
+Every job completion injects `getJobAlphaWU(jobId)` totals and per-segment quality into the cached job record, journal entries, proof objects, and governance ledger. Nothing proceeds without measured throughput.
 
 ---
 
-## Metering Conductor
+## α-Work Unit Intelligence
 
-The metering service (`src/services/metering.js`) captures GPU minutes, multiplies by configured quality weights, and emits α-work unit aggregates by job, device class, and SLA profile. It operates entirely in-memory for instantaneous feedback and feeds downstream telemetry.
+The metering service (`src/services/metering.js`) captures GPU minutes, multiplies by configured quality weights, and emits α-work unit aggregates by job, device class, and SLA profile. It operates entirely in-memory for instantaneous feedback and feeds downstream telemetry, proofs, and governance.
 
 ```mermaid
 graph TD
@@ -146,7 +145,7 @@ graph TD
   Stop --> Totals[(Epoch Buckets & Job Totals)]:::store
   Totals --> Aggregates[getRecentEpochSummaries()]:::compute
   Aggregates --> Telemetry[[monitorLoop.getAlphaWuHistory()]]:::compute
-  Totals --> API[[getJobAlphaWU() / getJobAlphaSummary() / getGlobalAlphaSummary() / getEpochAlphaWU()]]:::compute
+  Totals --> API[[getJobAlphaWU / getJobAlphaSummary / getGlobalAlphaSummary / getEpochAlphaWU]]:::compute
 ```
 
 Usage highlights:
@@ -176,28 +175,17 @@ const epoch = getEpochAlphaWU(epochId);
 console.table(epoch.alphaWU_by_job); // Rolling aggregates for telemetry and payouts
 
 const jobSummary = getJobAlphaSummary('job-42');
-console.table(jobSummary.modelClassBreakdown); // Quality-adjusted mix for proof + ledger
+console.table(jobSummary.bySegment); // Quality-adjusted mix for proofs and ledgers
 
 const networkSummary = getGlobalAlphaSummary();
 console.log(networkSummary.total); // Platform-wide cognitive throughput
 ```
 
-Weights and epoch cadence are derived from [`WORK_UNITS`](src/config/schema.js) with defaults declared in [`src/constants/workUnits.js`](src/constants/workUnits.js). Override weights by exporting `WORK_UNITS` JSON (validated by schema) to immediately tune economics.
+Weights and epoch cadence are derived from [`WORK_UNITS`](src/config/schema.js) with defaults declared in [`src/constants/workUnits.js`](src/constants/workUnits.js). Override weights via environment variables or JSON config to tune economics instantly.
 
 ---
 
-## Device & SLA Intelligence
-
-`src/services/executionContext.js` enriches metering with real-world hardware and SLA insights:
-
-* **`getDeviceInfo()`** inspects environment variables (`GPU_MODEL`, `GPU_VRAM_GB`, `GPU_COUNT`, `NODE_LABEL`, etc.) and classifies VRAM into canonical tiers.
-* **`getSlaProfile(jobConfig, runtimeConfig)`** normalizes SLA hints from job metadata, tags (`sla:LOW_LATENCY_ENCLAVE`), runtime overrides, or environment defaults.
-
-These helpers keep `bindExecutionLoopMetering` fully deterministic—segments inherit device benchmarks and SLA weights without manual intervention.
-
----
-
-## Lifecycle Journal & Governance Synthesis
+## Lifecycle Journal & Governance Ledger
 
 Completion telemetry now flows through a triad of metering, journaling, and governance ledgers so every α-WU is provably accounted for when the owner executes policy changes.
 
@@ -216,66 +204,45 @@ flowchart TB
   Governance --> Owner[[Owner CLI/API Submit, Stake, Reward]]:::control
 ```
 
-Key integrations:
+Highlights:
 
-* **Lifecycle enrichment:** `jobLifecycle` automatically calls `getJobAlphaWU` / `getJobAlphaSummary` during finalization. The resulting `alphaWU` object (totals, model-class distribution, SLA distribution, per-segment detail) is cached on the job record and hashed into every journal entry for tamper-evident provenance.
-* **Proof payloads:** `createJobProof` now emits `{ resultUri, alphaWU }` alongside deterministic commitments so validators, auditors, or zk pipelines can validate the quality mix attached to a commitment before it touches chain.
-* **Ledger augmentation:** Every governance ledger entry whose `meta.method` contains `submit`, `stake`, or `reward` is auto-enriched with either job-scoped or global α-WU rollups. Stake moves and reward receipts are therefore contextualized with the exact cognitive throughput that motivated them.
+* **Lifecycle enrichment:** `jobLifecycle` automatically calls `getJobAlphaWU` and `getJobAlphaSummary` during finalization. The resulting `alphaWU` object (totals, model-class distribution, SLA distribution, per-segment quality) is cached on the job record and hashed into every journal entry for tamper-evident provenance.
+* **Proof payloads:** `createJobProof` emits deterministic commitments plus `{ resultUri, alphaWU: { total, bySegment } }`, preserving quality multipliers per segment for auditors, validators, or zk pipelines before anything touches chain.
+* **Ledger augmentation:** Governance ledger entries whose `meta.method` includes `submit`, `stake`, or `reward` are auto-enriched with `{ total, modelClassBreakdown, slaBreakdown }`. Stake moves and reward receipts now carry the exact cognitive throughput that motivated them.
 
 Programmatic access:
 
 ```js
-import {
-  getJobAlphaSummary,
-  getGlobalAlphaSummary
-} from './src/services/metering.js';
+import { getJobAlphaSummary, getGlobalAlphaSummary } from './src/services/metering.js';
+import { recordGovernanceAction } from './src/services/governanceLedger.js';
 
 const jobAlpha = getJobAlphaSummary('0x…jobId');
 console.log(jobAlpha.total, jobAlpha.modelClassBreakdown);
 
-const networkAlpha = getGlobalAlphaSummary();
-console.table(networkAlpha.slaBreakdown);
+recordGovernanceAction({
+  payload: { to: '0x0', data: '0x' },
+  meta: {
+    contract: 'JobRegistry',
+    method: 'submitJob',
+    args: { jobId: '0x…jobId' }
+  }
+}); // alphaWU summary is appended automatically
 ```
 
-Ledger entries written via CLI (`agi-alpha-node governance …`) or the API server will always embed these structures, making compliance, auditing, and revenue attribution immediate even under extreme operational tempo.
+Ledger entries written via CLI (`agi-alpha-node governance …`) or the API server embed these structures automatically, giving compliance, auditing, and revenue attribution immediate clarity even under extreme operational tempo.
 
 ---
 
-## Smart-Contract Sovereignty
+## Sovereign Smart-Contract Surface
 
 The Solidity surface is tuned for absolute owner authority while maintaining protocol integrity.
 
 | Contract | Highlights | Owner Controls |
 | --- | --- | --- |
-| [`AlphaNodeManager.sol`](contracts/AlphaNodeManager.sol) | Ownable orchestrator for validators, staking, identity registry, and α-WU event emission. | Pause/unpause, curate validators, register/rotate ENS controllers, toggle identities, withdraw stake, and enforce minimums instantly. |
+| [`AlphaNodeManager.sol`](contracts/AlphaNodeManager.sol) | Ownable orchestrator for validators, staking, identity registry, and α-WU event emission. | Pause/unpause, curate validators, register/rotate ENS controllers, toggle identities, withdraw stake, apply slashes, and delegate mint/accept flows instantly. |
 | [`IAlphaWorkUnitEvents.sol`](contracts/interfaces/IAlphaWorkUnitEvents.sol) | Shared ABI for runtime, telemetry, and subgraph ingestion. | Emits `AlphaWUMinted`, `AlphaWUValidated`, `AlphaWUAccepted`, `SlashApplied`. |
 
 Every control surfaces through the CLI (see [`src/index.js`](src/index.js)) and is guarded by CI policy tests (`npm run ci:policy`). Treasury operations, validator rotations, and pause sequences are executable by a single owner wallet—no hidden multisig.
-
----
-
-## Telemetry & Insight Weave
-
-Prometheus exporters and Grafana atlases render the cognition field in real time.
-
-```mermaid
-stateDiagram-v2
-  classDef metric fill:#0f172a,stroke:#a855f7,color:#ede9fe;
-  classDef gate fill:#1f2937,stroke:#38bdf8,color:#e0f2fe;
-
-  [*] --> Diagnostics
-  Diagnostics --> αWUCache: monitorLoop.refreshAlphaWuHistory()
-  Diagnostics --> Prometheus: launchMonitoring()
-  αWUCache --> Prometheus
-  αWUCache --> Grafana
-  Prometheus --> OwnerAlerts
-  OwnerAlerts --> [*]
-```
-
-* Prometheus gauges and counters reside in [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js).
-* α-WU summaries (overall, by job, device class, and SLA) are emitted through `monitor.getAlphaWuHistory()` for dashboards or automated payouts.
-* Grafana JSON atlases live in [`docs/telemetry`](docs/telemetry) for immediate import.
-* Health gate state (`src/services/healthGate.js`) ensures telemetry reflects whether the node is ready or sealed.
 
 ---
 
@@ -287,33 +254,33 @@ stateDiagram-v2
 | [`deploy/helm/agi-alpha-node`](deploy/helm/agi-alpha-node) | Helm chart wiring ConfigMaps, secrets, Prometheus scraping, and rollout policies. |
 | [`scripts/`](scripts) | Health gate verification, subgraph manifest rendering, governance payload builders, branch policy enforcement. |
 
-Operational blueprint:
+Operational cadence:
 
 1. **Bootstrap** – `npm install && node src/index.js diagnostics` to validate ENS, staking, and governance posture.
 2. **Containerize** – Build/pull the Docker image, inject `.env` overrides, and deploy via Helm.
-3. **Observe** – Point Prometheus to `METRICS_PORT` (default `9464`) and import Grafana dashboards.
+3. **Observe** – Point Prometheus to `METRICS_PORT` (default `9464`) and import Grafana dashboards from [`docs/telemetry`](docs/telemetry).
 4. **Govern** – Use CLI governance commands or the API server (`src/network/apiServer.js`) to issue owner directives, rotate validators, or rebalance stakes.
 
-Owner retains unilateral ability to pause, resume, and mutate economic levers while telemetry confirms every action.
+Owner retains unilateral ability to pause, resume, and mutate economic levers while telemetry confirms every action in real time.
 
 ---
 
 ## Continuous Integration
 
-All commits and pull requests are validated by [`ci.yml`](.github/workflows/ci.yml) with required checks enforced on `main` and PR branches.
+All commits and pull requests are validated by [`ci.yml`](.github/workflows/ci.yml). Branch protection on `main` enforces a fully green pipeline before merges.
 
 | Check | Scope |
 | --- | --- |
-| `Lint Markdown & Links` | `npm run lint` (Markdown lint + link check) |
-| `Unit & Integration Tests` | `npm run test` (Vitest suite) |
-| `Coverage Report` | `npm run coverage` (c8 + Vitest) |
-| `Docker Build & Smoke Test` | Container build verification |
-| `Solidity Lint & Compile` | `npm run ci:solidity` (solhint + solcjs) |
-| `Subgraph TypeScript Build` | `npm run ci:ts` |
-| `Dependency Security Scan` | `npm run ci:security` |
-| `Policy & Branch Gates` | `npm run ci:policy` + `npm run ci:branch` |
+| `npm run lint` | Markdown lint (`markdownlint-cli2`) and link validation (`markdown-link-check`). |
+| `npm run test` | Vitest suites spanning orchestrator, metering, governance, telemetry, and contract adapters. |
+| `npm run coverage` | c8 coverage (text, lcov, JSON summary) for auditors and dashboards. |
+| `npm run ci:solidity` | `solhint` lint + `solcjs` compilation for Solidity integrity. |
+| `npm run ci:ts` | Subgraph TypeScript generation and build. |
+| `npm run ci:security` | `npm audit --omit=dev --audit-level=high` for dependency posture. |
+| `npm run ci:policy` | Health gate + governance policy verification. |
+| `npm run ci:branch` | Branch hygiene guard (enforces mainline protections). |
 
-The CI badge at the top of this README reflects the current status; merges are blocked until every gate is green.
+Run `npm run ci:verify` locally to execute the entire matrix before opening a pull request.
 
 ---
 
@@ -332,10 +299,11 @@ Inject configuration via environment variables or `.env` files:
 
 ```bash
 export RPC_URL="https://rpc.ankr.com/eth"
-export NODE_LABEL="1"
+export NODE_LABEL="alpha-node-1"
 export OPERATOR_ADDRESS="0x..."
 export GPU_MODEL="NVIDIA-H100"
 export GPU_VRAM_GB="80"
+export GPU_COUNT="2"
 export WORK_UNITS='{"weights":{"slaProfile":{"LOW_LATENCY_ENCLAVE":2.5}}}'
 node src/index.js jobs list
 ```
@@ -347,11 +315,20 @@ node src/index.js jobs list
 | Command | Purpose |
 | --- | --- |
 | `npm run lint` | Markdown linting + link validation across README and docs. |
-| `npm run test` | Vitest suite covering orchestrator, metering, governance, and telemetry modules. |
+| `npm run test` | Vitest suite covering orchestrator, metering, governance, telemetry, and ledger integrations. |
 | `npm run coverage` | Generates coverage reports (text, lcov, JSON summary). |
 | `npm run ci:verify` | Mirrors the GitHub Actions workflow locally. |
-| `npm run ci:solidity` | Solidity lint + compilation. |
+| `npm run ci:solidity` | Solidity lint + compilation for `AlphaNodeManager`. |
 | `npm run ci:ts` | Subgraph TypeScript generation and build. |
+
+---
+
+## Token & Economics
+
+* `$AGIALPHA` token contract: [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) (18 decimals).
+* Metering weights and epoch cadence are codified in [`src/constants/workUnits.js`](src/constants/workUnits.js) and validated via [`src/config/schema.js`](src/config/schema.js).
+* Subgraph package in [`subgraph/`](subgraph) mirrors on-chain α-WU events for analytics, payouts, and governance instrumentation.
+* Economics briefs in [`docs/economics.md`](docs/economics.md) outline the flywheel where more jobs → higher token demand → richer staking rewards → more nodes → compounding throughput.
 
 ---
 

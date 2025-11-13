@@ -73,6 +73,7 @@ describe('governance ledger α-WU enrichment', () => {
 
     const stored = JSON.parse(fs.readFileSync(filePath, 'utf8'));
     expect(stored.meta.alphaWU.total).toBeGreaterThan(0);
-    expect(stored.meta.alphaWU.bySegment.length).toBeGreaterThan(0);
+    expect(Object.keys(stored.meta.alphaWU.modelClassBreakdown).length).toBeGreaterThan(0);
+    expect(Object.keys(stored.meta.alphaWU.slaBreakdown).length).toBeGreaterThan(0);
   });
 });

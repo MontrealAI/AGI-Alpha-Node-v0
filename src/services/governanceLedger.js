@@ -31,6 +31,39 @@ function serialize(value) {
 
 const ALPHA_TRIGGER_METHODS = ['submit', 'stake', 'reward'];
 
+function toNumber(value) {
+  if (value === undefined || value === null) {
+    return 0;
+  }
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : 0;
+  }
+  if (typeof value === 'bigint') {
+    return Number(value);
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function sanitizeBreakdown(source = {}) {
+  return Object.fromEntries(
+    Object.entries(source ?? {})
+      .map(([label, value]) => [label, toNumber(value)])
+      .sort(([a], [b]) => a.localeCompare(b))
+  );
+}
+
+function sanitizeAlphaMeta(summary = null) {
+  if (!summary || typeof summary !== 'object') {
+    return { total: 0, modelClassBreakdown: {}, slaBreakdown: {} };
+  }
+  return {
+    total: toNumber(summary.total),
+    modelClassBreakdown: sanitizeBreakdown(summary.modelClassBreakdown),
+    slaBreakdown: sanitizeBreakdown(summary.slaBreakdown)
+  };
+}
+
 function shouldAttachAlpha(meta) {
   if (!meta || typeof meta !== 'object') {
     return false;
@@ -93,7 +126,8 @@ function enrichMetaWithAlpha(meta) {
     return meta;
   }
   const jobIdCandidate = normalizeJobIdentifier(extractJobId(meta));
-  const alphaWU = jobIdCandidate ? getJobAlphaSummary(jobIdCandidate) : getGlobalAlphaSummary();
+  const rawSummary = jobIdCandidate ? getJobAlphaSummary(jobIdCandidate) : getGlobalAlphaSummary();
+  const alphaWU = sanitizeAlphaMeta(rawSummary);
   return {
     ...meta,
     alphaWU
