@@ -177,6 +177,10 @@ function normalizeAlphaSummary(jobId) {
     );
   const modelClassBreakdown = normalizeBreakdown(summary?.modelClassBreakdown);
   const slaBreakdown = normalizeBreakdown(summary?.slaBreakdown);
+  const quality = {
+    modelClass: { ...modelClassBreakdown },
+    sla: { ...slaBreakdown }
+  };
   return {
     total,
     bySegment: segments,
@@ -186,10 +190,8 @@ function normalizeAlphaSummary(jobId) {
       modelClass: { ...modelClassBreakdown },
       sla: { ...slaBreakdown }
     },
-    quality: {
-      modelClass: { ...modelClassBreakdown },
-      sla: { ...slaBreakdown }
-    }
+    quality,
+    qualityBreakdown: quality
   };
 }
 
@@ -232,7 +234,8 @@ export function createJobProof({ jobId, result, operator, timestamp, metadata, r
     breakdown: alphaSummary.breakdown,
     modelClassBreakdown: alphaSummary.modelClassBreakdown,
     slaBreakdown: alphaSummary.slaBreakdown,
-    quality: alphaSummary.quality
+    quality: alphaSummary.quality,
+    qualityBreakdown: alphaSummary.quality
   };
 
   return {

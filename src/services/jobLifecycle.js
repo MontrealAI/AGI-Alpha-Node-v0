@@ -241,16 +241,22 @@ function cloneAlphaSummary(summary) {
     quality: {
       modelClass: { ...modelClassBreakdown },
       sla: { ...slaBreakdown }
+    },
+    qualityBreakdown: {
+      modelClass: { ...modelClassBreakdown },
+      sla: { ...slaBreakdown }
     }
   };
 }
 
-function buildJobAlphaSummary(jobId, logger = null) {
-  let total = 0;
-  try {
-    total = toNumber(getJobAlphaWU(jobId));
-  } catch (error) {
-    logger?.warn?.(error, 'Failed to compute α-WU total for job');
+function buildJobAlphaSummary(jobId, logger = null, { totalOverride } = {}) {
+  let total = totalOverride !== undefined ? toNumber(totalOverride) : 0;
+  if (totalOverride === undefined) {
+    try {
+      total = toNumber(getJobAlphaWU(jobId));
+    } catch (error) {
+      logger?.warn?.(error, 'Failed to compute α-WU total for job');
+    }
   }
   let summary = null;
   try {
@@ -265,6 +271,16 @@ function buildJobAlphaSummary(jobId, logger = null) {
     slaBreakdown: summary?.slaBreakdown ?? {}
   };
   return cloneAlphaSummary(base);
+}
+
+function resolveAlphaSummary(jobId, logger = null) {
+  let total = 0;
+  try {
+    total = getJobAlphaWU(jobId);
+  } catch (error) {
+    logger?.warn?.(error, 'Failed to resolve α-WU total for job');
+  }
+  return buildJobAlphaSummary(jobId, logger, { totalOverride: total });
 }
 
 function normalizeJobMetadata(job) {
@@ -443,7 +459,7 @@ export function createJobLifecycle({
       typeof sanitizedPatch.status === 'string' &&
       sanitizedPatch.status.toLowerCase() === 'finalized'
     ) {
-      sanitizedPatch.alphaWU = buildJobAlphaSummary(normalizedJobId, logger);
+      sanitizedPatch.alphaWU = resolveAlphaSummary(normalizedJobId, logger);
     }
     const merged = mergeJobRecord(existing, sanitizedPatch);
     jobs.set(normalizedJobId, merged);
@@ -704,7 +720,7 @@ export function createJobLifecycle({
       onUnavailable: methodUnavailable
     });
 
-    const alphaSummary = buildJobAlphaSummary(normalizedJobId, logger);
+    const alphaSummary = resolveAlphaSummary(normalizedJobId, logger);
     const updated = recordJob(normalizedJobId, {
       status: 'submitted',
       resultHash: proofPayload.resultHash,
@@ -753,7 +769,7 @@ export function createJobLifecycle({
       onUnavailable: methodUnavailable
     });
 
-    const alphaSummary = buildJobAlphaSummary(normalizedJobId, logger);
+    const alphaSummary = resolveAlphaSummary(normalizedJobId, logger);
     const updated = recordJob(normalizedJobId, {
       status: 'finalized',
       alphaWU: alphaSummary,
@@ -947,7 +963,7 @@ export function createJobLifecycle({
         const decoded = iface.decodeEventLog(submittedEvent, log.data, log.topics);
         const [jobId, client, worker, resultHash, resultUri] = decoded;
         const normalizedJobId = normalizeJobId(jobId);
-        const alphaSummary = buildJobAlphaSummary(normalizedJobId, logger);
+        const alphaSummary = resolveAlphaSummary(normalizedJobId, logger);
         recordJob(normalizedJobId, {
           client: client ?? null,
           worker: worker ?? null,
@@ -971,7 +987,7 @@ export function createJobLifecycle({
         const decoded = iface.decodeEventLog(finalizedEvent, log.data, log.topics);
         const [jobId, client, worker] = decoded;
         const normalizedJobId = normalizeJobId(jobId);
-        const alphaSummary = buildJobAlphaSummary(normalizedJobId, logger);
+        const alphaSummary = resolveAlphaSummary(normalizedJobId, logger);
         const updated = recordJob(normalizedJobId, {
           client: client ?? null,
           worker: worker ?? null,

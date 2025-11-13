@@ -53,13 +53,45 @@ function sanitizeBreakdown(source = {}) {
   );
 }
 
+function sanitizeSegments(segments = []) {
+  return segments
+    .map((segment) => ({
+      segmentId: segment.segmentId ?? null,
+      jobId: segment.jobId ?? null,
+      modelClass: segment.modelClass ?? null,
+      slaProfile: segment.slaProfile ?? null,
+      deviceClass: segment.deviceClass ?? null,
+      vramTier: segment.vramTier ?? null,
+      gpuCount: toNumber(segment.gpuCount),
+      startedAt: segment.startedAt ?? null,
+      endedAt: segment.endedAt ?? null,
+      gpuMinutes: toNumber(segment.gpuMinutes),
+      qualityMultiplier: toNumber(segment.qualityMultiplier),
+      alphaWU: toNumber(segment.alphaWU)
+    }))
+    .sort((a, b) => {
+      const aId = a.segmentId ?? '';
+      const bId = b.segmentId ?? '';
+      return aId.localeCompare(bId);
+    });
+}
+
 function sanitizeAlphaMeta(summary = null, { totalOverride = null } = {}) {
   if (!summary || typeof summary !== 'object') {
     return {
       total: toNumber(totalOverride),
+      bySegment: [],
       modelClassBreakdown: {},
       slaBreakdown: {},
+      breakdown: {
+        modelClass: {},
+        sla: {}
+      },
       quality: {
+        modelClass: {},
+        sla: {}
+      },
+      qualityBreakdown: {
         modelClass: {},
         sla: {}
       }
@@ -68,8 +100,10 @@ function sanitizeAlphaMeta(summary = null, { totalOverride = null } = {}) {
   const normalizedTotal = totalOverride !== null && totalOverride !== undefined ? totalOverride : summary.total;
   const modelClassBreakdown = sanitizeBreakdown(summary.modelClassBreakdown);
   const slaBreakdown = sanitizeBreakdown(summary.slaBreakdown);
+  const bySegment = sanitizeSegments(summary.bySegment ?? []);
   return {
     total: toNumber(normalizedTotal),
+    bySegment,
     modelClassBreakdown,
     slaBreakdown,
     breakdown: {
@@ -77,6 +111,10 @@ function sanitizeAlphaMeta(summary = null, { totalOverride = null } = {}) {
       sla: { ...slaBreakdown }
     },
     quality: {
+      modelClass: { ...modelClassBreakdown },
+      sla: { ...slaBreakdown }
+    },
+    qualityBreakdown: {
       modelClass: { ...modelClassBreakdown },
       sla: { ...slaBreakdown }
     }

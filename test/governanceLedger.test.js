@@ -45,11 +45,14 @@ describe('governance ledger α-WU enrichment', () => {
 
     const stored = JSON.parse(fs.readFileSync(filePath, 'utf8'));
     expect(stored.meta.alphaWU.total).toBeGreaterThan(0);
+    expect(stored.meta.alphaWU.bySegment.length).toBeGreaterThan(0);
     expect(Object.keys(stored.meta.alphaWU.modelClassBreakdown)).toContain(MODEL_CLASSES.LLM_8B);
     expect(Object.values(stored.meta.alphaWU.slaBreakdown).reduce((acc, value) => acc + Number(value), 0)).toBeGreaterThan(0);
     expect(Object.keys(stored.meta.alphaWU.breakdown.modelClass)).toContain(MODEL_CLASSES.LLM_8B);
     expect(Object.keys(stored.meta.alphaWU.quality.modelClass)).toContain(MODEL_CLASSES.LLM_8B);
     expect(Object.keys(stored.meta.alphaWU.quality.sla)).toContain(SLA_PROFILES.STANDARD);
+    expect(Object.keys(stored.meta.alphaWU.qualityBreakdown.modelClass)).toContain(MODEL_CLASSES.LLM_8B);
+    expect(Object.keys(stored.meta.alphaWU.qualityBreakdown.sla)).toContain(SLA_PROFILES.STANDARD);
   });
 
   it('falls back to global α-WU aggregates when no jobId is provided', () => {
@@ -81,5 +84,7 @@ describe('governance ledger α-WU enrichment', () => {
     expect(Object.keys(stored.meta.alphaWU.breakdown.modelClass).length).toBeGreaterThan(0);
     expect(Object.keys(stored.meta.alphaWU.quality.modelClass).length).toBeGreaterThan(0);
     expect(Object.keys(stored.meta.alphaWU.quality.sla).length).toBeGreaterThan(0);
+    expect(Object.keys(stored.meta.alphaWU.qualityBreakdown.modelClass).length).toBeGreaterThan(0);
+    expect(Object.keys(stored.meta.alphaWU.qualityBreakdown.sla).length).toBeGreaterThan(0);
   });
 });

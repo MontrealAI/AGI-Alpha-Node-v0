@@ -137,8 +137,8 @@ The lifecycle service binds on-chain registries with local telemetry. When a job
 ## Surface Matrix
 
 * `src/services/jobLifecycle.js` captures registry state, enforces owner overrides, and now attaches α-WU telemetry—sourced directly from `getJobAlphaWU(jobId)`—the moment a job is submitted or finalized, projecting the same data into lifecycle journals and emitted actions.
-* `src/services/jobProof.js` emits proofs carrying `{ total, bySegment, breakdown, quality }` α-WU payloads (plus dual `resultUri`/`resultURI` aliases) so downstream verifiers can audit model-class and SLA quality multipliers offline.
-* `src/services/governanceLedger.js` writes append-only JSON entries with deterministic hashing while embedding α-WU totals, model-class breakdowns, SLA distributions, `breakdown` mirrors, and the derived `quality` map for every submit, stake adjustment, or reward capture.
+* `src/services/jobProof.js` emits proofs carrying `{ total, bySegment, breakdown, quality, qualityBreakdown }` α-WU payloads (plus dual `resultUri`/`resultURI` aliases) so downstream verifiers can audit model-class and SLA quality multipliers offline.
+* `src/services/governanceLedger.js` writes append-only JSON entries with deterministic hashing while embedding α-WU totals, model-class breakdowns, SLA distributions, `breakdown` mirrors, and the derived `quality`/`qualityBreakdown` maps for every submit, stake adjustment, or reward capture.
 * `src/services/metering.js` transforms GPU minutes plus quality multipliers into α-WU to back economic flows.
 * `src/services/lifecycleJournal.js` produces verifiable journals of every transition.
 
@@ -186,8 +186,8 @@ graph LR
   Journal --> Hash
 ```
 
-* Journal entries derive from `buildActionEntry` and now surface `action.alphaWU.breakdown` plus per-segment telemetry so audits can replay stake, reward, and SLA decisions precisely.
-* Governance ledger entries triggered by submits, stake movements, or reward receipts automatically attach `meta.alphaWU = { total, modelClassBreakdown, slaBreakdown, breakdown, quality }`, preserving the economic rationale behind every transaction.
+* Journal entries derive from `buildActionEntry` and now surface `action.alphaWU.breakdown`/`qualityBreakdown` plus per-segment telemetry so audits can replay stake, reward, and SLA decisions precisely.
+* Governance ledger entries triggered by submits, stake movements, or reward receipts automatically attach `meta.alphaWU = { total, bySegment, modelClassBreakdown, slaBreakdown, breakdown, quality, qualityBreakdown }`, preserving the economic rationale behind every transaction.
 * Append-only directories (`.governance-ledger/v1`) and rolling hashes make tampering impossible without detection.
 
 ---
