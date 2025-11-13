@@ -146,15 +146,73 @@ export function stopSegment(segmentId, { endedAt = Date.now() } = {}) {
   const existingJobTotal = state.jobTotals.get(segment.jobId) ?? 0;
   state.jobTotals.set(segment.jobId, existingJobTotal + alphaWU);
 
-  const bucket = ensureBucket(segment.epochIndex, segment.epochId, segment.startedAt);
-  bucket.totalAlphaWU += alphaWU;
-  bucket.endedAt = segment.endedAt;
-  if (!bucket.startedAt || bucket.startedAt > segment.startedAt) {
-    bucket.startedAt = segment.startedAt;
+  const epochDurationSeconds = getEpochDurationSeconds();
+  const epochDurationMs = Number.isFinite(epochDurationSeconds) && epochDurationSeconds > 0
+    ? epochDurationSeconds * 1000
+    : null;
+  const totalDurationMs = Math.max(0, segment.endMs - segment.startMs);
+
+  if (!epochDurationMs || totalDurationMs === 0) {
+    const bucket = ensureBucket(segment.epochIndex, segment.epochId, segment.startedAt);
+    bucket.totalAlphaWU += alphaWU;
+    if (!bucket.startedAt || bucket.startedAt > segment.startedAt) {
+      bucket.startedAt = segment.startedAt;
+    }
+    if (!bucket.endedAt || bucket.endedAt < segment.endedAt) {
+      bucket.endedAt = segment.endedAt;
+    }
+    incrementMap(bucket.byJob, segment.jobId, alphaWU);
+    incrementMap(bucket.byDeviceClass, segment.deviceInfo.deviceClass ?? 'UNKNOWN', alphaWU);
+    incrementMap(bucket.bySlaProfile, segment.slaProfile ?? 'UNKNOWN', alphaWU);
+  } else {
+    let sliceStartMs = segment.startMs;
+    let accumulatedAlpha = 0;
+    let accumulatedGpuMinutes = 0;
+
+    while (sliceStartMs < segment.endMs) {
+      const epochIndex = computeEpochIndex(sliceStartMs);
+      const epochId = `epoch-${epochIndex}`;
+      const epochStartMs = epochIndex * epochDurationMs;
+      const epochEndMs = epochStartMs + epochDurationMs;
+      const sliceEndMs = Math.min(epochEndMs, segment.endMs);
+      const sliceDurationMs = Math.max(0, sliceEndMs - sliceStartMs);
+
+      if (sliceDurationMs === 0) {
+        sliceStartMs = sliceEndMs === sliceStartMs ? sliceStartMs + 1 : sliceEndMs;
+        continue;
+      }
+
+      const fraction = sliceDurationMs / totalDurationMs;
+
+      let sliceGpuMinutes = gpuMinutes * fraction;
+      let sliceAlphaWU = alphaWU * fraction;
+
+      if (sliceEndMs === segment.endMs) {
+        sliceGpuMinutes = Math.max(0, gpuMinutes - accumulatedGpuMinutes);
+        sliceAlphaWU = Math.max(0, alphaWU - accumulatedAlpha);
+      }
+
+      const sliceStartedAtIso = toIso(sliceStartMs);
+      const sliceEndedAtIso = toIso(sliceEndMs);
+      const bucket = ensureBucket(epochIndex, epochId, sliceStartedAtIso);
+
+      bucket.totalAlphaWU += sliceAlphaWU;
+      if (!bucket.startedAt || bucket.startedAt > sliceStartedAtIso) {
+        bucket.startedAt = sliceStartedAtIso;
+      }
+      if (!bucket.endedAt || bucket.endedAt < sliceEndedAtIso) {
+        bucket.endedAt = sliceEndedAtIso;
+      }
+
+      incrementMap(bucket.byJob, segment.jobId, sliceAlphaWU);
+      incrementMap(bucket.byDeviceClass, segment.deviceInfo.deviceClass ?? 'UNKNOWN', sliceAlphaWU);
+      incrementMap(bucket.bySlaProfile, segment.slaProfile ?? 'UNKNOWN', sliceAlphaWU);
+
+      accumulatedAlpha += sliceAlphaWU;
+      accumulatedGpuMinutes += sliceGpuMinutes;
+      sliceStartMs = sliceEndMs;
+    }
   }
-  incrementMap(bucket.byJob, segment.jobId, alphaWU);
-  incrementMap(bucket.byDeviceClass, segment.deviceInfo.deviceClass ?? 'UNKNOWN', alphaWU);
-  incrementMap(bucket.bySlaProfile, segment.slaProfile ?? 'UNKNOWN', alphaWU);
 
   return normalizeAlphaWorkUnitSegment({
     jobId: segment.jobId,
