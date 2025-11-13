@@ -172,10 +172,13 @@ describe('job lifecycle service', () => {
     expect(Object.keys(finalizedJob.alphaWU.modelClassBreakdown).length).toBeGreaterThan(0);
     expect(Object.keys(finalizedJob.alphaWU.slaBreakdown).length).toBeGreaterThan(0);
     expect(finalizedJob.alphaWU.bySegment[0].gpuCount).toBe(1);
+    expect(Object.keys(finalizedJob.alphaWU.quality.modelClass)).toContain(MODEL_CLASSES.LLM_8B);
+    expect(Object.keys(finalizedJob.alphaWU.quality.sla)).toContain(SLA_PROFILES.STANDARD);
 
     const finalizeEntry = journal.entries.find((entry) => entry.action?.type === 'finalize');
     expect(finalizeEntry?.job?.alphaWU?.total).toBeGreaterThan(0);
     expect(Object.keys(finalizeEntry?.job?.alphaWU?.modelClassBreakdown ?? {})).toContain(MODEL_CLASSES.LLM_8B);
+    expect(Object.keys(finalizeEntry?.job?.alphaWU?.quality?.modelClass ?? {})).toContain(MODEL_CLASSES.LLM_8B);
   });
 
   it('records alpha work unit events manually and surfaces metrics', () => {

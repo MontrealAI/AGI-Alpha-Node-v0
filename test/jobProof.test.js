@@ -39,8 +39,11 @@ describe('job proof attestation', () => {
     expect(proof.resultHash).toBe(expectedResultHash);
     expect(proof.commitment).toBe(expectedCommitment);
     expect(proof.resultUri).toBe('');
+    expect(proof.resultURI).toBe('');
     expect(proof.alphaWU.total).toBe(0);
     expect(proof.alphaWU.bySegment).toHaveLength(0);
+    expect(proof.alphaWU.quality.modelClass).toEqual({});
+    expect(proof.alphaWU.quality.sla).toEqual({});
   });
 
   it('builds submitProof transaction payloads', () => { 
@@ -71,6 +74,7 @@ describe('job proof attestation', () => {
     expect(decoded[3]).toBe('ipfs://alpha/market-dive-7');
     expect(decoded[4]).toBe(proof.metadata);
     expect(proof.resultUri).toBe('ipfs://alpha/market-dive-7');
+    expect(proof.resultURI).toBe('ipfs://alpha/market-dive-7');
   });
 
   it('throws when commitment inputs are incomplete', () => {
@@ -110,6 +114,9 @@ describe('job proof attestation', () => {
     expect(proof.alphaWU.bySegment[0].qualityMultiplier).toBeGreaterThan(0);
     expect(proof.alphaWU.bySegment[0].gpuCount).toBe(2);
     expect(proof.alphaWU.bySegment[0].slaProfile).toBe(SLA_PROFILES.HIGH_REDUNDANCY);
+    expect(Object.keys(proof.alphaWU.quality.modelClass)).toContain(MODEL_CLASSES.RESEARCH_AGENT);
+    expect(Object.keys(proof.alphaWU.quality.sla)).toContain(SLA_PROFILES.HIGH_REDUNDANCY);
     expect(proof.resultUri).toBe('ipfs://proofs/swarm-oracle-77');
+    expect(proof.resultURI).toBe('ipfs://proofs/swarm-oracle-77');
   });
 });

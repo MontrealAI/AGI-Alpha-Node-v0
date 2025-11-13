@@ -175,11 +175,17 @@ function normalizeAlphaSummary(jobId) {
         .map(([key, value]) => [key, toNumber(value)])
         .sort(([a], [b]) => a.localeCompare(b))
     );
+  const modelClassBreakdown = normalizeBreakdown(summary?.modelClassBreakdown);
+  const slaBreakdown = normalizeBreakdown(summary?.slaBreakdown);
   return {
     total,
     bySegment: segments,
-    modelClassBreakdown: normalizeBreakdown(summary?.modelClassBreakdown),
-    slaBreakdown: normalizeBreakdown(summary?.slaBreakdown)
+    modelClassBreakdown,
+    slaBreakdown,
+    quality: {
+      modelClass: { ...modelClassBreakdown },
+      sla: { ...slaBreakdown }
+    }
   };
 }
 
@@ -206,6 +212,7 @@ export function createJobProof({ jobId, result, operator, timestamp, metadata, r
 
   const encodedMetadata = encodeMetadata(metadata);
   const resultHash = deriveResultHash(result);
+  const normalizedResultUri = resultUri ?? '';
 
   const commitment = keccak256(
     solidityPacked(
@@ -217,7 +224,10 @@ export function createJobProof({ jobId, result, operator, timestamp, metadata, r
   const alphaSummary = normalizeAlphaSummary(normalizedJobId);
   const alphaWU = {
     total: alphaSummary.total,
-    bySegment: alphaSummary.bySegment
+    bySegment: alphaSummary.bySegment,
+    quality: alphaSummary.quality,
+    modelClassBreakdown: alphaSummary.modelClassBreakdown,
+    slaBreakdown: alphaSummary.slaBreakdown
   };
 
   return {
@@ -227,7 +237,8 @@ export function createJobProof({ jobId, result, operator, timestamp, metadata, r
     resultHash,
     metadata: encodedMetadata,
     commitment,
-    resultUri: resultUri ?? '',
+    resultUri: normalizedResultUri,
+    resultURI: normalizedResultUri,
     alphaWU
   };
 }
