@@ -4,6 +4,11 @@ import {
   AGIALPHA_TOKEN_CHECKSUM_ADDRESS,
   AGIALPHA_TOKEN_DECIMALS
 } from '../src/constants/token.js';
+import {
+  MODEL_CLASS_WEIGHTS,
+  VRAM_TIER_WEIGHTS,
+  SLA_WEIGHTS
+} from '../src/constants/workUnits.js';
 
 describe('config schema', () => {
   it('coerces boolean flags', () => {
@@ -113,5 +118,62 @@ describe('config schema', () => {
         OPERATOR_PRIVATE_KEY: 'invalid'
       })
     ).toThrow();
+  });
+
+  it('exposes default work unit configuration', () => {
+    const config = coerceConfig({ RPC_URL: 'https://rpc.ankr.com/eth' });
+    expect(config.WORK_UNITS.baseUnit).toBe(1);
+    expect(config.WORK_UNITS.weights.modelClass).toEqual(MODEL_CLASS_WEIGHTS);
+    expect(config.WORK_UNITS.weights.vramTier).toEqual(VRAM_TIER_WEIGHTS);
+    expect(config.WORK_UNITS.weights.slaProfile).toEqual(SLA_WEIGHTS);
+    expect(config.WORK_UNITS.epochDurationSeconds).toBeGreaterThan(0);
+  });
+
+  it('allows overriding work unit weights via JSON', () => {
+    const overrides = {
+      baseUnit: 2,
+      epochDurationSeconds: 1800,
+      weights: {
+        modelClass: { LLM_8B: 1.5 },
+        vramTier: { TIER_80: 3.2 },
+        slaProfile: { LOW_LATENCY_ENCLAVE: 2.5 }
+      }
+    };
+
+    const config = coerceConfig({
+      RPC_URL: 'https://rpc.ankr.com/eth',
+      WORK_UNITS: JSON.stringify(overrides)
+    });
+
+    expect(config.WORK_UNITS.baseUnit).toBe(2);
+    expect(config.WORK_UNITS.epochDurationSeconds).toBe(1800);
+    expect(config.WORK_UNITS.weights.modelClass.LLM_8B).toBe(1.5);
+    expect(config.WORK_UNITS.weights.modelClass.LLM_70B).toBe(MODEL_CLASS_WEIGHTS.LLM_70B);
+    expect(config.WORK_UNITS.weights.vramTier.TIER_80).toBe(3.2);
+    expect(config.WORK_UNITS.weights.slaProfile.LOW_LATENCY_ENCLAVE).toBe(2.5);
+  });
+
+  it('rejects invalid work unit weight overrides', () => {
+    expect(() =>
+      coerceConfig({
+        RPC_URL: 'https://rpc.ankr.com/eth',
+        WORK_UNITS: JSON.stringify({
+          weights: {
+            modelClass: { UNKNOWN: 2 }
+          }
+        })
+      })
+    ).toThrow(/unknown key/);
+
+    expect(() =>
+      coerceConfig({
+        RPC_URL: 'https://rpc.ankr.com/eth',
+        WORK_UNITS: JSON.stringify({
+          weights: {
+            slaProfile: { STANDARD: -1 }
+          }
+        })
+      })
+    ).toThrow(/cannot be negative/);
   });
 });

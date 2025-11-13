@@ -6,6 +6,13 @@ import {
   assertCanonicalAgialphaAddress,
   normalizeTokenAddress
 } from '../constants/token.js';
+import {
+  MODEL_CLASS_WEIGHTS,
+  VRAM_TIER_WEIGHTS,
+  SLA_WEIGHTS,
+  BENCHMARK_WEIGHTS,
+  cloneDefaultWorkUnitConfig
+} from '../constants/workUnits.js';
 
 const addressRegex = /^0x[a-fA-F0-9]{40}$/;
 
@@ -111,6 +118,133 @@ function parseProfileSpec(value) {
     throw new Error(`Unable to parse JOB_PROFILE_SPEC: ${error.message}`);
   }
 }
+
+function parseJsonLike(value, description) {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return undefined;
+    }
+    try {
+      return JSON.parse(trimmed);
+    } catch (error) {
+      throw new Error(`Unable to parse ${description}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  return value;
+}
+
+function coerceNumeric(value, { label, positive = false, integer = false }) {
+  if (value === undefined || value === null) {
+    throw new Error(`${label} must be provided`);
+  }
+  const numeric = typeof value === 'number' ? value : Number(String(value).trim());
+  if (!Number.isFinite(numeric)) {
+    throw new Error(`${label} must be numeric`);
+  }
+  if (positive && numeric <= 0) {
+    throw new Error(`${label} must be greater than zero`);
+  }
+  if (!positive && numeric < 0) {
+    throw new Error(`${label} cannot be negative`);
+  }
+  if (integer) {
+    if (!Number.isInteger(numeric)) {
+      throw new Error(`${label} must be an integer`);
+    }
+  }
+  return numeric;
+}
+
+function coerceWeightOverrides(raw, defaults, label) {
+  if (raw === undefined || raw === null) {
+    return { ...defaults };
+  }
+
+  const parsed = parseJsonLike(raw, `workUnits.weights.${label}`);
+  if (parsed === undefined) {
+    return { ...defaults };
+  }
+
+  if (typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error(`workUnits.weights.${label} must be an object or JSON map`);
+  }
+
+  const normalized = { ...defaults };
+  for (const [key, weight] of Object.entries(parsed)) {
+    if (!(key in defaults)) {
+      throw new Error(`workUnits.weights.${label} contains unknown key "${key}"`);
+    }
+    const numeric = coerceNumeric(weight, {
+      label: `workUnits.weights.${label}.${key}`,
+      positive: false,
+      integer: false
+    });
+    normalized[key] = numeric;
+  }
+  return normalized;
+}
+
+function coerceWorkUnitsConfig(rawValue) {
+  if (rawValue === undefined || rawValue === null) {
+    return cloneDefaultWorkUnitConfig();
+  }
+
+  const parsed = parseJsonLike(rawValue, 'WORK_UNITS');
+  if (parsed === undefined) {
+    return cloneDefaultWorkUnitConfig();
+  }
+
+  if (typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('WORK_UNITS must be an object or JSON specification');
+  }
+
+  const config = cloneDefaultWorkUnitConfig();
+
+  if (parsed.baseUnit !== undefined) {
+    config.baseUnit = coerceNumeric(parsed.baseUnit, { label: 'workUnits.baseUnit', positive: true });
+  }
+
+  if (parsed.epochDurationSeconds !== undefined) {
+    config.epochDurationSeconds = coerceNumeric(parsed.epochDurationSeconds, {
+      label: 'workUnits.epochDurationSeconds',
+      positive: true,
+      integer: true
+    });
+  }
+
+  if (parsed.weights !== undefined) {
+    if (typeof parsed.weights !== 'object' || Array.isArray(parsed.weights)) {
+      throw new Error('workUnits.weights must be an object or JSON specification');
+    }
+
+    config.weights.modelClass = coerceWeightOverrides(parsed.weights.modelClass, MODEL_CLASS_WEIGHTS, 'modelClass');
+    config.weights.vramTier = coerceWeightOverrides(parsed.weights.vramTier, VRAM_TIER_WEIGHTS, 'vramTier');
+    config.weights.slaProfile = coerceWeightOverrides(parsed.weights.slaProfile, SLA_WEIGHTS, 'slaProfile');
+
+    if (parsed.weights.benchmark !== undefined || Object.keys(BENCHMARK_WEIGHTS).length > 0) {
+      config.weights.benchmark = coerceWeightOverrides(
+        parsed.weights.benchmark,
+        BENCHMARK_WEIGHTS,
+        'benchmark'
+      );
+    }
+  }
+
+  return config;
+}
+
+const workUnitsSchema = z.union([z.undefined(), z.any()]).transform((value, ctx) => {
+  try {
+    return coerceWorkUnitsConfig(value);
+  } catch (error) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: error instanceof Error ? error.message : String(error)
+    });
+    return z.NEVER;
+  }
+});
 
 export const configSchema = z
   .object({
@@ -241,6 +375,7 @@ export const configSchema = z
         const trimmed = value.trim();
         return trimmed.length ? trimmed : undefined;
       }),
+    WORK_UNITS: workUnitsSchema,
     LIFECYCLE_LOG_DIR: z
       .string()
       .optional()

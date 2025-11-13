@@ -16,7 +16,7 @@
 
 <p align="center">
   <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml">
-    <img src="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml/badge.svg?branch=main" alt="Build" />
+    <img src="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml/badge.svg?branch=main" alt="Continuous Integration" />
   </a>
   <img src="https://img.shields.io/badge/Coverage-Automated-0e9aa7?logo=codecov&logoColor=white" alt="Coverage" />
   <img src="https://img.shields.io/badge/Node.js-20.x-43853d?logo=node.js&logoColor=white" alt="Runtime" />
@@ -34,264 +34,232 @@
   </a>
 </p>
 
-> The command spine for validator-weighted α-work units, ENS sovereignty, and on-chain telemetry—engineered to keep an iconic operator in total control.
+> The control plane that shapes global alpha: deterministic work units, ruthless telemetry, and total operator sovereignty in a single deployable lattice.
 
 ---
 
-## Table of Contents
+## Contents
 
-1. [Introduction](#introduction)
-2. [Architecture](#architecture)
-3. [Smart Contracts](#smart-contracts)
-4. [Telemetry](#telemetry)
-5. [Dashboards](#dashboards)
-6. [Deployment](#deployment)
-7. [Continuous Integration](#continuous-integration)
-8. [Testing & Validation](#testing--validation)
-9. [Governance](#governance)
+1. [Mission & Highlights](#mission--highlights)
+2. [Repository Topography](#repository-topography)
+3. [Runtime Lattice](#runtime-lattice)
+4. [α-WU Economics](#α-wu-economics)
+5. [Smart Contract Sovereignty](#smart-contract-sovereignty)
+6. [Telemetry & Insight Mesh](#telemetry--insight-mesh)
+7. [Deployment & Operations](#deployment--operations)
+8. [Governance & Owner Controls](#governance--owner-controls)
+9. [Continuous Integration](#continuous-integration)
 10. [Quickstart](#quickstart)
+11. [Testing & Quality Gates](#testing--quality-gates)
+12. [Further Reading](#further-reading)
 
 ---
 
-## Introduction
+## Mission & Highlights
 
-AGI Alpha Node v0 is the sovereign orchestration layer for validator-weighted α-work units (α-WU). It fuses CLI-level command, ENS-bound identity, smart contract automation, and telemetry streaming into a single futuristic runtime that the owner can pause, reconfigure, or redeploy in seconds.
+AGI Alpha Node v0 is the command spine for validator-weighted α-work units. It couples blockchain truth with high-intensity compute routing so that a single owner can steer a fleet of agents, enclaves, and validators in real time.
 
-* **Purpose:** Enforce deterministic lifecycle management for alpha job registries, validators, and treasury flows.
-* **Scope:** Repository spans the [Node.js runtime](src), [Solidity surfaces](contracts), [telemetry specs](docs/telemetry), and [deployment automation](deploy/helm/agi-alpha-node).
-* **Tone:** Iconic, powerful, and pragmatic—every artifact is wired to maximize operator leverage.
-
----
-
-## Architecture
-
-The runtime stitches CLI directives, orchestration services, and telemetry exporters into a layered control plane. Core modules live under [`src/`](src) with TypeScript-friendly JavaScript, job logic, and governance rails.
-
-```mermaid
-flowchart LR
-  classDef control fill:#111827,stroke:#4c1d95,stroke-width:2px,color:#f8fafc;
-  classDef runtime fill:#0f172a,stroke:#06b6d4,stroke-width:2px,color:#f8fafc;
-  classDef chain fill:#1f2937,stroke:#f97316,stroke-width:2px,color:#f8fafc;
-  classDef insight fill:#1a2e05,stroke:#84cc16,stroke-width:2px,color:#f8fafc;
-
-  Owner["Owner · Multisig / Hardware Wallet"]:::control --> CLI["CLI · src/index.js"]:::control
-  CLI --> Orchestrator["Orchestrator Core · src/orchestrator"]:::runtime
-  Orchestrator --> Lifecycle["Job Lifecycle Engine · src/services/jobLifecycle.js"]:::runtime
-  Orchestrator --> Governance["Governance Builders · src/services/governance.js"]:::control
-  Orchestrator --> Telemetry["Prometheus Exporter · src/telemetry/monitoring.js"]:::insight
-  Lifecycle --> Registry[("Job Registry Contracts")]:::chain
-  Governance --> Chain[("Protocol Surface")]:::chain
-  Telemetry --> Dashboards[["Grafana / KPI Boards"]]:::insight
-  Lifecycle --> Metrics[["α‑WU Metrics Cache"]]:::insight
-```
-
-### Highlights
-
-* **CLI Spine:** [`src/index.js`](src/index.js) dispatches commands for jobs, treasury, validators, and ENS guardianship.
-* **Services:** Job logic under [`src/services`](src/services) handles lifecycle, treasury, and governance mutations.
-* **Telemetry:** [`src/telemetry`](src/telemetry) exports Prometheus gauges and KPI caches aligned with on-chain events.
-* **Subgraph + Scripts:** [`subgraph/`](subgraph) mirrors the same event schema for indexers or downstream analytics.
+* **Unified Metering:** [`src/constants/workUnits.js`](src/constants/workUnits.js) defines α-WU from first principles and powers every on-chain reward, KPI, and treasury shift.
+* **Owner Supremacy:** [`contracts/AlphaNodeManager.sol`](contracts/AlphaNodeManager.sol) provides fine-grained ownership controls—pause, resume, reassign validators, rotate ENS identities, and redirect stakes instantly.
+* **Observability First:** Prometheus exporters, Grafana blueprints, and streaming KPIs render every alpha pulse visible.
+* **Battle-tested Delivery:** Container images, Helm charts, and CI enforcement ensure non-technical operators can deploy and audit the node safely.
 
 ---
 
-## Smart Contracts
-
-Contracts preserve validator weighting, slashing controls, and KPI event emission. Each surface is paired with interfaces used by the runtime and subgraph.
-
-| Contract / Spec | Purpose | Location |
-| --- | --- | --- |
-| `AlphaNodeManager` | Ownable control plane that gates validators, ENS identities, staking, and emits KPI events | [`contracts/AlphaNodeManager.sol`](contracts/AlphaNodeManager.sol) |
-| `IAlphaWorkUnitEvents` | Solidity interface defining `AlphaWUMinted`, `AlphaWUValidated`, `AlphaWUAccepted`, `SlashApplied` | [`contracts/interfaces/IAlphaWorkUnitEvents.sol`](contracts/interfaces/IAlphaWorkUnitEvents.sol) |
-| KPI Interface Mirror | Shared ABI for external registries and scripts | [`docs/telemetry/AlphaWorkUnitEvents.sol`](docs/telemetry/AlphaWorkUnitEvents.sol) |
-| Subgraph Schema | Canonical GraphQL surface for KPI feeds | [`docs/telemetry/subgraph.schema.graphql`](docs/telemetry/subgraph.schema.graphql) |
-
-```mermaid
-flowchart TD
-  classDef contract fill:#1f2937,stroke:#f59e0b,stroke-width:2px,color:#f8fafc;
-  classDef service fill:#0f172a,stroke:#22d3ee,stroke-width:2px,color:#e0f2fe;
-  classDef control fill:#1e293b,stroke:#34d399,stroke-width:2px,color:#ecfdf5;
-
-  Owner[[Owner Signer]]:::control --> Manager[(AlphaNodeManager)]:::contract
-  Manager --> Events[[AlphaWorkUnitEvents]]:::contract
-  Events --> LifecycleService["Lifecycle Service · src/services/jobLifecycle.js"]:::service
-  Events --> RewardsService["Rewards Service · src/services/rewards.js"]:::service
-```
-
-*Every emitted event is consumed by [`src/services/alphaWorkUnits.js`](src/services/alphaWorkUnits.js) and mirrored in the subgraph mappings to keep CLI, dashboards, and scripts in sync.*
-
----
-
-## Telemetry
-
-α-WU telemetry is normalized per validator stake, streamed to Prometheus, and mirrored into dashboards for multi-window KPIs.
-
-```mermaid
-sequenceDiagram
-  participant Agent as Agent
-  participant Registry as JobRegistry
-  participant Node as Alpha Node Runtime
-  participant Telemetry as Prometheus Exporter
-  participant Dashboard as KPI Dashboard
-
-  Agent->>Registry: submitJob()
-  Registry->>Node: AlphaWUMinted
-  Registry->>Node: AlphaWUValidated
-  Registry->>Node: AlphaWUAccepted
-  Registry->>Node: SlashApplied
-  Node->>Telemetry: KPIs (AR, VQS, OTC, SAY)
-  Node->>Dashboard: 7d / 30d leaderboards
-```
-
-| KPI | Formula | Gauge | Windows |
-| --- | --- | --- | --- |
-| Acceptance Rate (AR) | `accepted ÷ minted` | `agi_alpha_node_alpha_wu_acceptance_rate` | 7d · 30d · all |
-| Validator-Weighted Quality (VQS) | `median(score × normalized stake)` | `agi_alpha_node_alpha_wu_quality` | 7d · 30d · all |
-| On-Time Completion (OTC) | `p95(accepted.ts − minted.ts)` | `agi_alpha_node_alpha_wu_on_time_p95_seconds` | 7d · 30d · all |
-| Slashing-Adjusted Yield (SAY) | `(accepted − slashes) ÷ stake` | `agi_alpha_node_alpha_wu_slash_adjusted_yield` | 7d · 30d · all |
-
-The telemetry exporter defined in [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) pulls data from the KPI cache [`src/telemetry/alphaMetrics.js`](src/telemetry/alphaMetrics.js), ensuring dashboards and CLI outputs share identical calculations.
-
----
-
-## Dashboards
-
-Grafana JSON blueprints in [`docs/telemetry`](docs/telemetry) provide instant visualization of KPI envelopes, validator health, and governance readiness.
-
-```mermaid
-flowchart LR
-  classDef chain fill:#1f2937,stroke:#f59e0b,stroke-width:2px,color:#f8fafc;
-  classDef runtime fill:#0f172a,stroke:#22d3ee,stroke-width:2px,color:#e0f2fe;
-  classDef insight fill:#111827,stroke:#9333ea,stroke-width:2px,color:#fef9ff;
-  classDef command fill:#1e293b,stroke:#34d399,stroke-width:2px,color:#ecfdf5;
-
-  OnChain[(AGI Jobs Surface)]:::chain --> Events[[IAlphaWorkUnitEvents]]:::chain
-  Events --> Indexer[[Subgraph Indexer · subgraph/]]:::runtime
-  Events --> Streamer[[Realtime Stream · src/services/alphaWorkUnits.js]]:::runtime
-  Indexer --> KPICache[[Rolling KPI Cache]]:::insight
-  Streamer --> KPICache
-  KPICache --> Prometheus[[Prometheus Exporter]]:::insight
-  KPICache --> Dashboards[[Grafana JSON Blueprints]]:::insight
-  KPICache --> CLI[[CLI `jobs alpha-kpi`]]:::command
-  Prometheus --> Owner[[Owner Alerts]]:::command
-  Dashboards --> Owner
-  CLI --> Owner
-```
-
-* **Blueprints:** [`docs/telemetry/dashboard.json`](docs/telemetry/dashboard.json) and [`docs/telemetry/alpha-work-unit-dashboard.json`](docs/telemetry/alpha-work-unit-dashboard.json).
-* **Control Hierarchy:** Dashboards are fed exclusively by the KPI cache, so CLI leaderboards, Prometheus gauges, and Grafana tiles always agree.
-
----
-
-## Deployment
-
-Deployment artifacts cover container images, Helm charts, and scripts for spinning new validator spines.
+## Repository Topography
 
 | Surface | Description |
 | --- | --- |
-| [`Dockerfile`](Dockerfile) | Production Node.js 20 image with telemetry exporters and CLI baked in. |
-| [`deploy/helm/agi-alpha-node`](deploy/helm/agi-alpha-node) | Helm chart with ConfigMaps for CLI configs, Prometheus scraping, and ENS secrets. |
-| [`scripts/`](scripts) | Helper scripts for RPC bootstrapping, KPI ingestion, and ENS health checks. |
+| [`src/`](src) | Node.js runtime, orchestration services, telemetry exporters, and config schema. |
+| [`contracts/`](contracts) | Solidity control plane for validators, staking, and work unit events. |
+| [`docs/`](docs) | Economics papers, telemetry references, and the new [`α-WU framework`](docs/alpha-wu.md). |
+| [`deploy/`](deploy) | Helm chart, Kubernetes manifests, and operational bootstrapping. |
+| [`scripts/`](scripts) | Automation for CI gates, subgraph rendering, and governance verification. |
+| [`subgraph/`](subgraph) | Graph Protocol mappings aligned with on-chain KPI events. |
 
-### Control hierarchy
+```mermaid
+flowchart LR
+  classDef compute fill:#0f172a,stroke:#22d3ee,stroke-width:2px,color:#e0f2fe;
+  classDef chain fill:#111827,stroke:#f97316,stroke-width:2px,color:#f8fafc;
+  classDef ops fill:#1e1b4b,stroke:#a855f7,stroke-width:2px,color:#ede9fe;
+  classDef insight fill:#0f172a,stroke:#84cc16,stroke-width:2px,color:#ecfccb;
+
+  Runtime[[src/ · Runtime Spine]]:::compute --> Contracts[(contracts/ · Sovereign Ledger)]:::chain
+  Runtime --> Telemetry[[docs/telemetry · Insight Atlases]]:::insight
+  Runtime --> Deploy[(deploy/ · Ops Blueprints)]:::ops
+  Contracts --> Subgraph[[subgraph/ · Indexer Surface]]:::insight
+  Deploy --> Scripts[[scripts/ · Automation]]:::ops
+```
+
+---
+
+## Runtime Lattice
+
+The runtime weaves CLI commands, orchestration daemons, and streaming telemetry into a coherent sovereignty mesh.
 
 ```mermaid
 flowchart TD
-  classDef ops fill:#0f172a,stroke:#06b6d4,stroke-width:2px,color:#f8fafc;
-  classDef env fill:#1f2937,stroke:#f59e0b,stroke-width:2px,color:#f8fafc;
-  classDef control fill:#111827,stroke:#4c1d95,stroke-width:2px,color:#f8fafc;
+  classDef control fill:#0f172a,stroke:#06b6d4,stroke-width:2px,color:#e0f2fe;
+  classDef service fill:#111827,stroke:#f59e0b,stroke-width:2px,color:#f8fafc;
+  classDef ledger fill:#1f2937,stroke:#84cc16,stroke-width:2px,color:#ecfccb;
+  classDef insight fill:#1e1b4b,stroke:#a855f7,stroke-width:2px,color:#ede9fe;
 
-  Repo[[Repo · main]]:::control --> Docker[(Docker Image)]:::ops
-  Docker --> Helm[(Helm Chart)]:::ops
-  Helm --> Cluster[(Kubernetes / Validator Fleet)]:::env
-  Cluster --> Observability[[Prometheus / Grafana]]:::env
-  Cluster --> OwnerConsole[[Owner Console / CLI]]:::control
+  Owner[Owner Console]:::control --> CLI[CLI Spine · src/index.js]:::control
+  CLI --> Orchestrator[Job Orchestrator · src/orchestrator/]:::service
+  Orchestrator --> Lifecycle[Lifecycle Engine · src/services/jobLifecycle.js]:::service
+  Orchestrator --> Governance[Governance Builders · src/services/governance.js]:::service
+  Lifecycle --> Registry[(Job Registry Contracts)]:::ledger
+  Governance --> Chain[(Protocol Contracts)]:::ledger
+  Lifecycle --> Metrics[[Alpha KPI Cache · src/telemetry/alphaMetrics.js]]:::insight
+  Metrics --> Prometheus[[Prometheus Exporter · src/telemetry/monitoring.js]]:::insight
+  Metrics --> Dashboards[[Grafana Atlases · docs/telemetry]]:::insight
 ```
 
-*Helm values map directly to environment variables consumed by [`src/config`](src/config), allowing deterministic promotions across fleets.*
+*Commands fire from [`src/index.js`](src/index.js) and traverse the orchestrator, ensuring deterministic application of policy, treasury directives, and ENS guardianship.*
+
+---
+
+## α-WU Economics
+
+α-work units are the canonical ledger for all compute accomplished by the node. They combine GPU minutes, workload classification, VRAM tier, SLA profile, and benchmark multipliers into a single metric.
+
+* **Base Unit:** `ALPHA_WU = 1` within [`src/constants/workUnits.js`](src/constants/workUnits.js).
+* **Configurable Weights:** The `WORK_UNITS` block in [`src/config/schema.js`](src/config/schema.js) accepts JSON overrides to adjust model class, VRAM, SLA, and benchmark weights—invalid or negative entries are rejected.
+* **Documentation:** Refer to the dedicated [α-WU framework](docs/alpha-wu.md) for canonical tables and worked examples (including 20-minute 80 GB, 70B low-latency enclave jobs).
+* **Ledger Impact:** KPI dashboards, staking rewards, and treasury routing all derive from these weights; adjust them to express bespoke economics without touching code.
+
+Example override:
+
+```bash
+export WORK_UNITS='{"baseUnit":1.5,"epochDurationSeconds":1800,"weights":{"modelClass":{"LLM_70B":5.0}}}'
+```
+
+---
+
+## Smart Contract Sovereignty
+
+The Solidity surface is tailored for absolute owner control while honoring canonical $AGIALPHA staking.
+
+| Contract | Role | Owner Controls |
+| --- | --- | --- |
+| [`AlphaNodeManager.sol`](contracts/AlphaNodeManager.sol) | Ownable orchestrator for validators, staking, and α-WU event emission. | Pause / unpause, assign validators, register ENS identities, rotate controllers, set identity status, revoke identities, and manage stake flows. |
+| [`IAlphaWorkUnitEvents.sol`](contracts/interfaces/IAlphaWorkUnitEvents.sol) | Shared ABI for runtime, subgraph, and off-chain analytics. | Emits `AlphaWUMinted`, `AlphaWUValidated`, `AlphaWUAccepted`, and `SlashApplied`. |
+
+*The canonical $AGIALPHA token (18 decimals) is fixed at [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa); schema validation enforces this checksum for every deployment.*
+
+---
+
+## Telemetry & Insight Mesh
+
+Prometheus gauges, Grafana atlases, and CLI KPIs share the same α-WU cache so that every vantage point remains synchronized.
+
+```mermaid
+sequenceDiagram
+  participant Agent as Agent Swarm
+  participant Registry as Job Registry
+  participant Runtime as Alpha Node Runtime
+  participant Telemetry as Prometheus Exporter
+  participant Dash as Grafana Atlases
+
+  Agent->>Registry: submitJob()
+  Registry-->>Runtime: AlphaWUMinted / Validated / Accepted / SlashApplied
+  Runtime->>Telemetry: α-WU Gauges & Counters
+  Runtime->>Dash: Leaderboards + Epoch Feeds
+  Telemetry->>Owner: Alerts / Webhooks
+```
+
+* Gauges live in [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js).
+* Grafana JSON atlases reside in [`docs/telemetry`](docs/telemetry).
+* KPI calculations reuse [`src/telemetry/alphaMetrics.js`](src/telemetry/alphaMetrics.js) for deterministic reporting across CLI, Prometheus, and dashboards.
+
+---
+
+## Deployment & Operations
+
+| Surface | Highlights |
+| --- | --- |
+| [`Dockerfile`](Dockerfile) | Node.js 20 production image with CLI, telemetry exporters, and healthchecks baked in. |
+| [`deploy/helm/agi-alpha-node`](deploy/helm/agi-alpha-node) | Helm chart orchestrating ConfigMaps, Prometheus scraping, ENS secrets, and rollout policies. |
+| [`scripts/`](scripts) | Tooling for verifying health gates, rendering subgraph manifests, and simulating KPI flows. |
+
+Operational recommendations:
+
+1. Build or pull the Docker image and supply environment overrides via Kubernetes secrets or `.env` files.
+2. Apply the Helm chart with enforced `WORK_UNITS` overrides if the economics differ from the canonical tables.
+3. Wire Prometheus to scrape the exporter endpoint (`METRICS_PORT`, default `9464`).
+4. Forward Grafana dashboards using the JSON atlases for immediate visualization.
+
+---
+
+## Governance & Owner Controls
+
+The owner address wields complete authority over runtime parameters and can adjust business levers without redeploying contracts.
+
+* **Pausing:** `pause()` and `unpause()` freeze or resume validator activity instantly.
+* **Validator Registry:** `setValidator(address,bool)` approves or revokes operators.
+* **Identity Mesh:** Register ENS nodes, rotate controllers, and toggle activation through `registerIdentity`, `updateIdentityController`, and `setIdentityStatus`.
+* **Stake Custody:** Deposit or withdraw stakes, enforce minimums via configuration, and align treasury shares with `ROLE_SHARE_TARGETS`.
+* **Work Unit Policy:** Tune α-WU economics through `WORK_UNITS` configuration; the runtime validates inputs before bootstrapping.
 
 ---
 
 ## Continuous Integration
 
-Quality gates live in [`./.github/workflows/ci.yml`](.github/workflows/ci.yml) and enforce formatting, lint, test, coverage, Solidity, TypeScript, and Docker validation jobs in a single workflow.
+All pull requests and the `main` branch are protected by a comprehensive CI suite defined in [`.github/workflows/ci.yml`](.github/workflows/ci.yml). Required checks (codified in [`.github/required-checks.json`](.github/required-checks.json)) enforce:
 
-| Job | Purpose |
-| --- | --- |
-| `lint` | Markdown linting, link checks, branch policy enforcement. |
-| `test` | Unit and integration tests for the Node runtime. |
-| `solidity` | Lint and compile contracts. |
-| `typescript` | Build the subgraph TypeScript bundle. |
-| `coverage` | Generate and upload coverage artefacts. |
-| `docker-smoke` | Build the container image and run CLI smoke tests. |
+1. **Linting:** Markdown + link lint, Solidity lint, TypeScript/JS generation gates.
+2. **Testing:** Vitest unit suite, Solidity compilation, subgraph build validation.
+3. **Security & Policy:** `npm audit`, health gate verification, and branch policy checks.
+4. **Coverage:** Automated coverage reporting via CI badge above.
 
-**Badges** for build and coverage are pinned above, both sourced from the same workflow.
-
----
-
-## Testing & Validation
-
-The full testing playbook—including Solidity, TypeScript, script, and subgraph simulations—is captured in [`docs/testing.md`](docs/testing.md). Highlights:
-
-* **Unit & Integration:** `npm test` exercises orchestrator services, telemetry modules, and ENS gating smoke scenarios.
-* **Solidity:** `npx vitest run test/alphaNodeManager.contract.test.js` compiles against Anvil and verifies owner-only flows plus identity helpers.
-* **Script Guardrails:** `npx vitest run test/scripts.*.test.js` ensures manifest rendering and ENS policy scripts will pass in CI.
-* **Subgraph Simulation:** `npm run simulate:subgraph` deploys `AlphaNodeManager`, emits KPI events, and validates that Graph metrics respond as expected.
-
-Use the guide to interpret Vitest output, solc diagnostics, and guardrail failures before opening PRs.
-
----
-
-## Governance
-
-Governance primitives keep ownership programmable but uncompromising.
-
-* **ENS & Identity:** [`src/services/ensGuide.js`](src/services/ensGuide.js) and [`src/services/ensVerifier.js`](src/services/ensVerifier.js) enforce ENS resolution for `alpha.node.agi.eth` before orchestrator tasks unlock.
-* **Rewards & Treasury Controls:** [`src/services/rewards.js`](src/services/rewards.js) binds payouts to multisig approvals enforced on-chain via `AlphaNodeManager`.
-* **Emergency Pauses:** [`src/services/governance.js`](src/services/governance.js) exposes pause/resume hooks wired to registry contracts.
-* **Validator Council:** Stake-weighted KPIs determine validator reputation, directly influencing governance proposals.
+A green badge on this README reflects the current status of all required checks. The workflow blocks merges unless every gate is satisfied.
 
 ---
 
 ## Quickstart
 
-1. **Install dependencies**
+```bash
+npm install
+npm run start -- --help                 # Explore CLI commands
+npm run lint                            # Markdown + link linting
+npm run test                            # Vitest suite
+npm run ci:verify                       # Full CI pipeline locally
+```
 
-   ```bash
-   npm install
-   ```
+To supply configuration overrides, create a `.env` file or export variables:
 
-2. **Configure environment**
-
-   ```bash
-   cp deploy/docker/node.env.example .env
-   # set RPC, registry, telemetry, and ENS values
-   ```
-
-3. **Run tests and lint**
-
-   ```bash
-   npm run lint && npm test
-   ```
-
-4. **Stream KPIs from a registry**
-
-   ```bash
-   node src/index.js jobs alpha-kpi \
-     --registry 0xRegistry \
-     --rpc https://rpc.example \
-     --windows 7d,30d \
-     --events data/alpha-events.json
-   ```
-
-5. **Build and run the container**
-
-   ```bash
-   docker build -t agi-alpha-node .
-   docker run --env-file .env agi-alpha-node
-   ```
-
-Every command surfaces deterministic output, reinforcing the iconic control hierarchy expected from an AGI Alpha Node operator.
+```bash
+export RPC_URL="https://rpc.ankr.com/eth"
+export OPERATOR_ADDRESS="0x..."
+export WORK_UNITS='{"weights":{"slaProfile":{"LOW_LATENCY_ENCLAVE":2.5}}}'
+node src/index.js jobs list
+```
 
 ---
 
-*License: [MIT](LICENSE)*
+## Testing & Quality Gates
+
+| Command | Purpose |
+| --- | --- |
+| `npm run lint` | Markdown linting + link verification across docs and README. |
+| `npm run test` | Executes the Vitest suite, including configuration schema validation. |
+| `npm run coverage` | Generates coverage reports (text, lcov, JSON). |
+| `npm run ci:verify` | Mirrors the GitHub Actions workflow locally for pre-flight validation. |
+| `npm run ci:solidity` | Runs Solidity lint and compilation gates. |
+| `npm run ci:ts` | Builds and validates the subgraph manifest. |
+
+---
+
+## Further Reading
+
+* [$AGIALPHA Token Constants](src/constants/token.js)
+* [α-WU Canonical Framework](docs/alpha-wu.md)
+* [Telemetry Atlases](docs/telemetry)
+* [Economics Treatise](docs/economics.md)
+* [Manifesto](docs/manifesto.md)
+
+---
+
+### License
+
+Released under the [MIT License](LICENSE).
