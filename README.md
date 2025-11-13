@@ -26,7 +26,7 @@
   <a href="deploy/helm/agi-alpha-node">
     <img src="https://img.shields.io/badge/Helm-Chart-0ea5e9?logo=helm&logoColor=white" alt="Helm" />
   </a>
-  <a href="subgraph/README.md">
+  <a href="docs/subgraph-deployment.md">
     <img src="https://img.shields.io/badge/Subgraph-Indexed-663399?logo=thegraph&logoColor=white" alt="Graph Protocol" />
   </a>
   <a href="https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa">
@@ -96,7 +96,7 @@ flowchart LR
 | --- | --- |
 | [`src/`](src) | Node.js runtime, deterministic execution loop, α-WU metering, lifecycle orchestration, governance ledger, telemetry exporters, and CLI entrypoint. |
 | [`contracts/`](contracts) | Solidity management plane centred on `AlphaNodeManager` with owner-controlled pausing, validator curation, stake custody, and treasury extraction. |
-| [`docs/`](docs) | Economics treatises, telemetry atlases, staking mechanics, and operator runbooks. |
+| [`docs/`](docs) | Economics treatises, telemetry atlases, staking mechanics, and operator runbooks (see [`docs/README.md`](docs/README.md)). |
 | [`deploy/`](deploy) | Helm chart, Kubernetes manifests, Docker image build context, and operational automation. |
 | [`scripts/`](scripts) | CI gates, governance tooling, policy verification, and simulation harnesses. |
 | [`subgraph/`](subgraph) | Graph Protocol mappings for α-WU emissions, governance events, and leaderboard analytics. |
@@ -301,7 +301,7 @@ All gates are wired into CI; pull requests must be green before merge.
 | Component | Description |
 | --- | --- |
 | `$AGIALPHA` Contract | [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) (18 decimals). |
-| Staking Mechanics | Defined within `contracts/AlphaNodeManager.sol` and mirrored in `docs/economics/`. Supports owner-directed stake adjustments, reward routing, and slashing. |
+| Staking Mechanics | Defined within `contracts/AlphaNodeManager.sol` and mirrored in [`docs/economics.md`](docs/economics.md). Supports owner-directed stake adjustments, reward routing, and slashing. |
 | Reward Flow | Metered α-WU totals inform reward weights. Governance ledger captures every reward receipt with α-WU telemetry. |
 | Supply Flywheel | More jobs → higher α-WU yield → greater $AGIALPHA demand → expanded validator fleet → accelerated innovation loops. |
 
@@ -309,9 +309,9 @@ All gates are wired into CI; pull requests must be green before merge.
 
 ## Further Reading
 
-* [`docs/architecture/`](docs/architecture) – deep dives into orchestrator loops and security posture.
-* [`docs/economics/`](docs/economics) – reward calculus, stake regimes, and α-WU monetisation.
-* [`docs/runbooks/`](docs/runbooks) – operational drills, incident response, and validator onboarding.
-* [`subgraph/README.md`](subgraph/README.md) – analytics and indexing guidance.
+* [`docs/README.md`](docs/README.md) – entry map for architectural blueprints and platform doctrine.
+* [`docs/economics.md`](docs/economics.md) – reward calculus, stake regimes, and α-WU monetisation.
+* [`docs/operator-runbook.md`](docs/operator-runbook.md) – operational drills, incident response, and validator onboarding.
+* [`docs/subgraph-deployment.md`](docs/subgraph-deployment.md) – analytics and indexing guidance.
 
 The AGI Alpha Node is engineered as the decisive cognition engine—relentlessly harvesting alpha, scaling through autonomous agents, and granting its owner complete command over an ever-expanding intelligence economy.
