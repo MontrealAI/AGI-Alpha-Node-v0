@@ -177,13 +177,13 @@ function normalizeAlphaSummary(jobId) {
     );
   const modelClassBreakdown = normalizeBreakdown(summary?.modelClassBreakdown);
   const slaBreakdown = normalizeBreakdown(summary?.slaBreakdown);
-  const breakdown = {
-    modelClass: { ...modelClassBreakdown },
-    sla: { ...slaBreakdown }
-  };
   const quality = {
     modelClass: { ...modelClassBreakdown },
     sla: { ...slaBreakdown }
+  };
+  const breakdown = {
+    modelClass: { ...quality.modelClass },
+    sla: { ...quality.sla }
   };
   return {
     total,
@@ -193,8 +193,8 @@ function normalizeAlphaSummary(jobId) {
     breakdown,
     quality,
     qualityBreakdown: {
-      modelClass: { ...modelClassBreakdown },
-      sla: { ...slaBreakdown }
+      modelClass: { ...quality.modelClass },
+      sla: { ...quality.sla }
     }
   };
 }
