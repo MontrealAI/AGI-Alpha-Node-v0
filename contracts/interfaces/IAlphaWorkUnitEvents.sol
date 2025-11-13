@@ -7,7 +7,10 @@ pragma solidity ^0.8.20;
 ///      four α-WU KPIs (acceptance rate, validator-weighted quality, on-time completion,
 ///      and slashing-adjusted yield) without auxiliary oracles. Runtime implementations
 ///      should enforce ENS name-gating via an IdentityRegistry so only authorised
-///      agents, validators, and nodes emit these logs.
+///      agents, validators, and nodes emit these logs. The recommended allow-list is
+///      the set of subnames delegated beneath `*.agent.agi.eth`, `*.alpha.agent.agi.eth`,
+///      `*.node.agi.eth`, `*.alpha.node.agi.eth`, `*.club.agi.eth`, and
+///      `*.alpha.club.agi.eth`.
 interface IAlphaWorkUnitEvents {
     /// @notice Emitted whenever a new alpha work unit is minted for an agent.
     /// @param id Canonical identifier for the alpha work unit (bytes32).

@@ -40,9 +40,10 @@ Runtime registries should emit the events defined in
 - `SlashApplied(id, validator, amount, slashedAt)`
 
 Implementations must gate event emission through ENS subnames such as
-`*.agent.agi.eth` and `*.alpha.node.agi.eth` by consulting the shared identity
-registry. This ensures only authorised agents, validators, and nodes can
-generate KPI-impacting telemetry.
+`*.agent.agi.eth`, `*.alpha.agent.agi.eth`, `*.node.agi.eth`,
+`*.alpha.node.agi.eth`, `*.club.agi.eth`, and `*.alpha.club.agi.eth` by
+consulting the shared identity registry. This ensures only authorised agents,
+validators, nodes, and operator clubs can generate KPI-impacting telemetry.
 
 ## Indexing Model
 
@@ -71,6 +72,8 @@ read-only dashboard contract. It enumerates:
 - Prometheus-backed widgets for AR, VQS, OTC, and SAY time series.
 - Tables backed by the subgraph for stake-weighted leaderboards.
 - A health gate widget wired to the ENS-gated telemetry toggle.
+- A latency SLO card targeting 30 minute p95 completion and a bar chart
+  rendering validator quality distributions.
 
 The payload conforms to
 [`docs/telemetry/dashboard.schema.json`](./dashboard.schema.json) so CI can

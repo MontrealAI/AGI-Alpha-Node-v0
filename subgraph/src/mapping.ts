@@ -399,7 +399,7 @@ function updateAgentWindows(agentId: string, day: i32, timestamp: BigInt): void 
       aggregate.stakeSum = ZERO_BI;
       aggregate.slashAmount = ZERO_BI;
       aggregate.acceptanceRate = ZERO_BD;
-      aggregate.qualityScore = ZERO_BD;
+      aggregate.validatorWeightedQuality = ZERO_BD;
       aggregate.onTimeP95Seconds = 0;
       aggregate.slashingAdjustedYield = ZERO_BD;
       aggregate.updatedAt = 0;
@@ -433,7 +433,7 @@ function updateAgentWindows(agentId: string, day: i32, timestamp: BigInt): void 
     aggregate.stakeSum = stakeTotal;
     aggregate.slashAmount = slashTotal;
     aggregate.acceptanceRate = computeAcceptanceRate(acceptedTotal, mintedTotal);
-    aggregate.qualityScore = computeQualityMedian(OWNER_AGENT, agentId, day, window);
+    aggregate.validatorWeightedQuality = computeQualityMedian(OWNER_AGENT, agentId, day, window);
     aggregate.onTimeP95Seconds = computeLatencyP95(OWNER_AGENT, agentId, day, window);
     aggregate.slashingAdjustedYield = computeSlashingAdjustedYield(acceptedTotal, slashTotal, stakeTotal);
     aggregate.updatedAt = timestamp.toI32();
@@ -456,7 +456,7 @@ function updateNodeWindows(nodeId: string, day: i32, timestamp: BigInt): void {
       aggregate.stakeSum = ZERO_BI;
       aggregate.slashAmount = ZERO_BI;
       aggregate.acceptanceRate = ZERO_BD;
-      aggregate.qualityScore = ZERO_BD;
+      aggregate.validatorWeightedQuality = ZERO_BD;
       aggregate.onTimeP95Seconds = 0;
       aggregate.slashingAdjustedYield = ZERO_BD;
       aggregate.updatedAt = 0;
@@ -490,7 +490,7 @@ function updateNodeWindows(nodeId: string, day: i32, timestamp: BigInt): void {
     aggregate.stakeSum = stakeTotal;
     aggregate.slashAmount = slashTotal;
     aggregate.acceptanceRate = computeAcceptanceRate(acceptedTotal, mintedTotal);
-    aggregate.qualityScore = computeQualityMedian(OWNER_NODE, nodeId, day, window);
+    aggregate.validatorWeightedQuality = computeQualityMedian(OWNER_NODE, nodeId, day, window);
     aggregate.onTimeP95Seconds = computeLatencyP95(OWNER_NODE, nodeId, day, window);
     aggregate.slashingAdjustedYield = computeSlashingAdjustedYield(acceptedTotal, slashTotal, stakeTotal);
     aggregate.updatedAt = timestamp.toI32();
@@ -513,7 +513,7 @@ function updateValidatorWindows(validatorId: string, day: i32, timestamp: BigInt
       aggregate.stakeSum = ZERO_BI;
       aggregate.slashAmount = ZERO_BI;
       aggregate.acceptanceRate = ZERO_BD;
-      aggregate.qualityScore = ZERO_BD;
+      aggregate.validatorWeightedQuality = ZERO_BD;
       aggregate.onTimeP95Seconds = 0;
       aggregate.slashingAdjustedYield = ZERO_BD;
       aggregate.updatedAt = 0;
@@ -547,7 +547,7 @@ function updateValidatorWindows(validatorId: string, day: i32, timestamp: BigInt
     aggregate.stakeSum = stakeTotal;
     aggregate.slashAmount = slashTotal;
     aggregate.acceptanceRate = computeAcceptanceRate(acceptedTotal, mintedTotal);
-    aggregate.qualityScore = computeQualityMedian(OWNER_VALIDATOR, validatorId, day, window);
+    aggregate.validatorWeightedQuality = computeQualityMedian(OWNER_VALIDATOR, validatorId, day, window);
     aggregate.onTimeP95Seconds = computeLatencyP95(OWNER_VALIDATOR, validatorId, day, window);
     aggregate.slashingAdjustedYield = computeSlashingAdjustedYield(acceptedTotal, slashTotal, stakeTotal);
     aggregate.updatedAt = timestamp.toI32();

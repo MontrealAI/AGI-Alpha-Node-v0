@@ -114,7 +114,7 @@ type AgentMetricWindow @entity {
   stakeSum: BigInt!
   slashAmount: BigInt!
   acceptanceRate: BigDecimal!
-  qualityScore: BigDecimal!
+  validatorWeightedQuality: BigDecimal!
   onTimeP95Seconds: Int!
   slashingAdjustedYield: BigDecimal!
   updatedAt: Int!
@@ -130,7 +130,7 @@ type NodeMetricWindow @entity {
   stakeSum: BigInt!
   slashAmount: BigInt!
   acceptanceRate: BigDecimal!
-  qualityScore: BigDecimal!
+  validatorWeightedQuality: BigDecimal!
   onTimeP95Seconds: Int!
   slashingAdjustedYield: BigDecimal!
   updatedAt: Int!
@@ -146,7 +146,7 @@ type ValidatorMetricWindow @entity {
   stakeSum: BigInt!
   slashAmount: BigInt!
   acceptanceRate: BigDecimal!
-  qualityScore: BigDecimal!
+  validatorWeightedQuality: BigDecimal!
   onTimeP95Seconds: Int!
   slashingAdjustedYield: BigDecimal!
   updatedAt: Int!

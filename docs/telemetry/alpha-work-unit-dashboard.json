@@ -1,7 +1,9 @@
 {
-  "version": "1.1.0",
+  "$schema": "https://agi.alpha/schemas/dashboard/v1.json",
+  "version": "1.2.0",
   "title": "α‑WU KPI Flight Deck",
   "description": "Read-only dashboard blueprint exposing acceptance, quality, latency, and yield for alpha work units.",
+  "domains": ["slo", "validation", "leaderboard"],
   "datasources": [
     {
       "type": "prometheus",
@@ -16,59 +18,96 @@
   ],
   "widgets": [
     {
+      "type": "status",
+      "title": "Telemetry Health Gate",
+      "datasource": "alpha-node-telemetry",
+      "metric": "agi_alpha_node_health_gate_state",
+      "labels": { "state": "ready" },
+      "mode": "state",
+      "thresholds": {
+        "warning": 0.5,
+        "critical": 0.1
+      }
+    },
+    {
+      "type": "status",
+      "title": "Cycle Time SLO",
+      "description": "p95 mint→accept latency target 30 minutes (1 800s).",
+      "datasource": "alpha-node-telemetry",
+      "metric": "agi_alpha_node_alpha_wu_on_time_p95_seconds",
+      "labels": { "window": "7d" },
+      "mode": "slo",
+      "thresholds": {
+        "target": 1800,
+        "warning": 2700,
+        "critical": 3600
+      }
+    },
+    {
       "type": "stat",
       "title": "Acceptance Rate · 7d",
-      "source": "alpha-node-telemetry",
+      "datasource": "alpha-node-telemetry",
       "query": "agi_alpha_node_alpha_wu_acceptance_rate{window=\"7d\"}",
       "format": "percent",
       "thresholds": {
-        "good": 0.9,
-        "warn": 0.75
+        "target": 0.9,
+        "warning": 0.75
       }
     },
     {
       "type": "stat",
       "title": "Acceptance Rate · 30d",
-      "source": "alpha-node-telemetry",
+      "datasource": "alpha-node-telemetry",
       "query": "agi_alpha_node_alpha_wu_acceptance_rate{window=\"30d\"}",
       "format": "percent",
       "thresholds": {
-        "good": 0.92,
-        "warn": 0.78
+        "target": 0.92,
+        "warning": 0.78
       }
     },
     {
       "type": "stat",
       "title": "p95 Completion Latency · 7d",
-      "source": "alpha-node-telemetry",
+      "datasource": "alpha-node-telemetry",
       "query": "agi_alpha_node_alpha_wu_on_time_p95_seconds{window=\"7d\"}",
       "format": "duration"
     },
     {
       "type": "stat",
       "title": "p95 Completion Latency · 30d",
-      "source": "alpha-node-telemetry",
+      "datasource": "alpha-node-telemetry",
       "query": "agi_alpha_node_alpha_wu_on_time_p95_seconds{window=\"30d\"}",
       "format": "duration"
     },
     {
       "type": "stat",
       "title": "Slashing-Adjusted Yield · 7d",
-      "source": "alpha-node-telemetry",
+      "datasource": "alpha-node-telemetry",
       "query": "agi_alpha_node_alpha_wu_slash_adjusted_yield{window=\"7d\"}",
       "format": "percent"
     },
     {
       "type": "stat",
       "title": "Slashing-Adjusted Yield · 30d",
-      "source": "alpha-node-telemetry",
+      "datasource": "alpha-node-telemetry",
       "query": "agi_alpha_node_alpha_wu_slash_adjusted_yield{window=\"30d\"}",
       "format": "percent"
     },
     {
+      "type": "bar",
+      "title": "Validator Quality Distribution · 7d",
+      "datasource": "alpha-wu-subgraph",
+      "query": "{ qualityBuckets(first: 20, where: { ownerType: VALIDATOR, day: 7 }) { bucket stake } }",
+      "groupBy": "bucket",
+      "transform": {
+        "normalize": "percentage",
+        "valueField": "stake"
+      }
+    },
+    {
       "type": "table",
       "title": "Validator Weighted Quality · 7d",
-      "source": "alpha-node-telemetry",
+      "datasource": "alpha-node-telemetry",
       "query": "agi_alpha_node_alpha_wu_quality{window=\"7d\",dimension=\"validator\"}",
       "columns": [
         { "header": "Validator", "field": "key" },
@@ -78,7 +117,7 @@
     {
       "type": "table",
       "title": "Slashing-Adjusted Yield by Node · 7d",
-      "source": "alpha-wu-subgraph",
+      "datasource": "alpha-wu-subgraph",
       "query": "{ nodeMetricWindows(first: 10, orderBy: slashingAdjustedYield, orderDirection: desc, where: { windowDays: 7 }) { node { id } acceptanceRate slashingAdjustedYield } }",
       "columns": [
         { "header": "Node", "field": "node.id" },
@@ -89,7 +128,7 @@
     {
       "type": "table",
       "title": "Slashing-Adjusted Yield by Agent · 7d",
-      "source": "alpha-wu-subgraph",
+      "datasource": "alpha-wu-subgraph",
       "query": "{ agentMetricWindows(first: 10, orderBy: slashingAdjustedYield, orderDirection: desc, where: { windowDays: 7 }) { agent { id } acceptanceRate slashingAdjustedYield } }",
       "columns": [
         { "header": "Agent", "field": "agent.id" },
@@ -100,7 +139,7 @@
     {
       "type": "line",
       "title": "Acceptance Trend · 30d",
-      "source": "alpha-wu-subgraph",
+      "datasource": "alpha-wu-subgraph",
       "query": "{ nodeMetricWindows(where: { windowDays: 30 }, orderBy: updatedAt, orderDirection: desc, first: 30) { node { id } updatedAt acceptanceRate } }",
       "xField": "updatedAt",
       "yField": "acceptanceRate",

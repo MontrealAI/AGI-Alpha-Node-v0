@@ -69,7 +69,7 @@ sequenceDiagram
 | `AlphaWUAccepted` | `bytes32 id`, `uint256 acceptedAt` | Final acceptance cutover. |
 | `SlashApplied` | `bytes32 id`, `address validator`, `uint256 amount`, `uint256 slashedAt` | Penalty adjustments captured on-chain. |
 
-ENS name-gating is enforced by [`scripts/verify-health-gate.mjs`](../../scripts/verify-health-gate.mjs) so only whitelisted subnames (`*.agent.agi.eth`, `*.alpha.node.agi.eth`, …) can toggle telemetry flows.
+ENS name-gating is enforced by [`scripts/verify-health-gate.mjs`](../../scripts/verify-health-gate.mjs) so only whitelisted subnames (`*.agent.agi.eth`, `*.alpha.agent.agi.eth`, `*.node.agi.eth`, `*.alpha.node.agi.eth`, `*.club.agi.eth`, `*.alpha.club.agi.eth`) can toggle telemetry flows.
 
 ---
 
@@ -104,7 +104,7 @@ flowchart TD
 `subgraph/schema.graphql` materialises the raw ingredients needed for the four KPIs across **agents**, **nodes**, and **validators**. Windowed aggregates expose:
 
 - `acceptanceRate`
-- `qualityScore` (stake-weighted median derived from 0-100 quality histograms)
+- `validatorWeightedQuality` (stake-weighted median derived from 0-100 quality histograms)
 - `onTimeP95Seconds` (latency histogram quantile)
 - `slashingAdjustedYield`
 
@@ -162,7 +162,7 @@ For on-chain indexing, map each event to an entity:
 Two JSON blueprints are maintained:
 
 1. [`dashboard.json`](./dashboard.json) — Grafana/Chronograf ready, used in CI smoke tests.
-2. [`alpha-work-unit-dashboard.json`](./alpha-work-unit-dashboard.json) — Extended analytics with validator leaderboards.
+2. [`alpha-work-unit-dashboard.json`](./alpha-work-unit-dashboard.json) — Extended analytics with validator leaderboards, ENS-gated health tiles, and latency SLO callouts.
 
 ```mermaid
 graph LR
@@ -172,7 +172,7 @@ graph LR
   ExtendedSpec --> Superset{{Superset}}
 ```
 
-Each blueprint mirrors gauges defined in [`src/telemetry/alphaMetrics.js`](../../src/telemetry/alphaMetrics.js). CI will fail if schema files drift thanks to `npm run lint` and `npm test` coverage.
+Each blueprint mirrors gauges defined in [`src/telemetry/alphaMetrics.js`](../../src/telemetry/alphaMetrics.js). CI will fail if schema files drift thanks to `npm run lint` and `npm test` coverage. The extended deck also visualises the stake-weighted quality histogram as a bar widget so validators can track distribution tails.
 
 ### Dashboard schema contract
 
@@ -230,12 +230,12 @@ Widgets can point directly at the deterministic KPI subgraph (`alphaSubgraph` da
 query ValidatorQuality($windowDays: Int!) {
   validators: validatorMetricWindows(
     first: 10
-    orderBy: qualityScore
+    orderBy: validatorWeightedQuality
     orderDirection: desc
     where: { windowDays: $windowDays }
   ) {
     validator { id }
-    qualityScore
+    validatorWeightedQuality
     acceptanceRate
     onTimeP95Seconds
   }
@@ -279,7 +279,7 @@ Execute queries with any GraphQL client or via cURL:
 ```bash
 curl -X POST https://api.thegraph.com/subgraphs/name/agi/alpha-work-units \
   -H 'content-type: application/json' \
-  -d '{"query":"query ($windowDays: Int!) { validators: validatorMetricWindows(first: 10, orderBy: qualityScore, orderDirection: desc, where: { windowDays: $windowDays }) { validator { id } qualityScore acceptanceRate onTimeP95Seconds }}","variables":{"windowDays":7}}'
+  -d '{"query":"query ($windowDays: Int!) { validators: validatorMetricWindows(first: 10, orderBy: validatorWeightedQuality, orderDirection: desc, where: { windowDays: $windowDays }) { validator { id } validatorWeightedQuality acceptanceRate onTimeP95Seconds }}","variables":{"windowDays":7}}'
 ```
 
 ### Agent/Node customization playbook
