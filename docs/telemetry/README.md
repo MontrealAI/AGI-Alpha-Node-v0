@@ -25,11 +25,12 @@
 
 1. [Mission](#mission)
 2. [Event Spine](#event-spine)
-3. [KPI Computation](#kpi-computation)
-4. [Prometheus Surfaces](#prometheus-surfaces)
-5. [CLI & Subgraph Tooling](#cli--subgraph-tooling)
-6. [Dashboard Blueprints](#dashboard-blueprints)
-7. [Deployment Checklist](#deployment-checklist)
+3. [KPI Contract Snapshot](#kpi-contract-snapshot)
+4. [KPI Computation](#kpi-computation)
+5. [Prometheus Surfaces](#prometheus-surfaces)
+6. [CLI & Subgraph Tooling](#cli--subgraph-tooling)
+7. [Dashboard Blueprints](#dashboard-blueprints)
+8. [Deployment Checklist](#deployment-checklist)
 
 ---
 
@@ -69,6 +70,12 @@ sequenceDiagram
 | `SlashApplied` | `bytes32 id`, `address validator`, `uint256 amount`, `uint256 slashedAt` | Penalty adjustments captured on-chain. |
 
 ENS name-gating is enforced by [`scripts/verify-health-gate.mjs`](../../scripts/verify-health-gate.mjs) so only whitelisted subnames (`*.agent.agi.eth`, `*.alpha.node.agi.eth`, …) can toggle telemetry flows.
+
+---
+
+## KPI Contract Snapshot
+
+Need the short version? [The α‑WU KPI contract](./alpha-wu-kpi-spec.md) condenses the four metrics, event surface, indexing model, and dashboard blueprint into a single checklist. It links the Solidity interface, subgraph schema, and dashboard JSON spec added to this repo so operators can wire telemetry without hunting through source files.
 
 ---
 
