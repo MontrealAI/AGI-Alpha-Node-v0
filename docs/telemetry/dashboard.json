@@ -161,7 +161,7 @@
       "transform": {
         "select": "windows",
         "variables": {
-          "windowStart": "{{ nowSubHours(24) }}"
+          "windowStart": {{ nowSubHours(24) }}
         }
       }
     }
