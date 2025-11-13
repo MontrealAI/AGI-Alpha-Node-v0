@@ -1,39 +1,171 @@
-type AlphaWorkUnit @entity {
-  """keccak256 identifier emitted by AlphaWUMinted"""
-  id: Bytes!
-  agent: Bytes
-  node: Bytes
-  mintedAt: BigInt!
-  acceptedAt: BigInt
-  validations: [AlphaValidation!]! @derivedFrom(field: "workUnit")
-  slashes: [AlphaSlash!]! @derivedFrom(field: "workUnit")
+# α-WU KPI Subgraph Schema (documentation snapshot)
+
+enum HistogramOwner {
+  AGENT
+  NODE
+  VALIDATOR
 }
 
-type AlphaValidation @entity {
+type Agent @entity {
   id: ID!
-  workUnit: AlphaWorkUnit!
-  validator: Bytes!
+  totalWorkUnits: BigInt!
+  totalAccepted: BigInt!
+  totalValidations: BigInt!
+  totalSlashAmount: BigInt!
+  totalStake: BigInt!
+  lastUpdated: Int!
+  workUnits: [WorkUnit!]! @derivedFrom(field: "agent")
+  dailyMetrics: [AgentDailyMetric!]! @derivedFrom(field: "agent")
+  metricWindows: [AgentMetricWindow!]! @derivedFrom(field: "agent")
+}
+
+type Node @entity {
+  id: ID!
+  totalWorkUnits: BigInt!
+  totalAccepted: BigInt!
+  totalValidations: BigInt!
+  totalSlashAmount: BigInt!
+  totalStake: BigInt!
+  lastUpdated: Int!
+  workUnits: [WorkUnit!]! @derivedFrom(field: "node")
+  dailyMetrics: [NodeDailyMetric!]! @derivedFrom(field: "node")
+  metricWindows: [NodeMetricWindow!]! @derivedFrom(field: "node")
+}
+
+type Validator @entity {
+  id: ID!
+  totalWorkUnits: BigInt!
+  totalAccepted: BigInt!
+  totalValidations: BigInt!
+  totalSlashAmount: BigInt!
+  totalStake: BigInt!
+  lastUpdated: Int!
+  participations: [ValidatorParticipation!]! @derivedFrom(field: "validator")
+  dailyMetrics: [ValidatorDailyMetric!]! @derivedFrom(field: "validator")
+  metricWindows: [ValidatorMetricWindow!]! @derivedFrom(field: "validator")
+}
+
+type WorkUnit @entity {
+  id: ID!
+  agent: Agent!
+  node: Node!
+  mintedAt: Int!
+  acceptedAt: Int
+  lastValidatedAt: Int
+  validationCount: BigInt!
+  totalScore: BigInt!
+  totalStake: BigInt!
+  validatorIds: [String!]!
+  participations: [ValidatorParticipation!]! @derivedFrom(field: "workUnit")
+}
+
+type ValidatorParticipation @entity {
+  id: ID!
+  workUnit: WorkUnit!
+  validator: Validator!
   stake: BigInt!
   score: BigInt!
-  timestamp: BigInt!
+  lastValidatedAt: Int!
 }
 
-type AlphaSlash @entity {
+type AgentDailyMetric @entity {
   id: ID!
-  workUnit: AlphaWorkUnit!
-  validator: Bytes!
-  amount: BigInt!
-  timestamp: BigInt!
+  agent: Agent!
+  day: Int!
+  mintedCount: BigInt!
+  acceptedCount: BigInt!
+  validationCount: BigInt!
+  scoreSum: BigInt!
+  stakeSum: BigInt!
+  slashAmount: BigInt!
 }
 
-type KPIWindow @entity {
+type NodeDailyMetric @entity {
   id: ID!
-  label: String!
-  fromTimestamp: BigInt!
-  toTimestamp: BigInt!
+  node: Node!
+  day: Int!
+  mintedCount: BigInt!
+  acceptedCount: BigInt!
+  validationCount: BigInt!
+  scoreSum: BigInt!
+  stakeSum: BigInt!
+  slashAmount: BigInt!
+}
+
+type ValidatorDailyMetric @entity {
+  id: ID!
+  validator: Validator!
+  day: Int!
+  mintedCount: BigInt!
+  acceptedCount: BigInt!
+  validationCount: BigInt!
+  scoreSum: BigInt!
+  stakeSum: BigInt!
+  slashAmount: BigInt!
+}
+
+type AgentMetricWindow @entity {
+  id: ID!
+  agent: Agent!
+  windowDays: Int!
+  mintedCount: BigInt!
+  acceptedCount: BigInt!
+  validationCount: BigInt!
+  stakeSum: BigInt!
+  slashAmount: BigInt!
   acceptanceRate: BigDecimal!
-  validatorWeightedQuality: BigDecimal!
-  onTimeP95Seconds: BigInt!
+  qualityScore: BigDecimal!
+  onTimeP95Seconds: Int!
   slashingAdjustedYield: BigDecimal!
-  sampleSize: BigInt!
+  updatedAt: Int!
+}
+
+type NodeMetricWindow @entity {
+  id: ID!
+  node: Node!
+  windowDays: Int!
+  mintedCount: BigInt!
+  acceptedCount: BigInt!
+  validationCount: BigInt!
+  stakeSum: BigInt!
+  slashAmount: BigInt!
+  acceptanceRate: BigDecimal!
+  qualityScore: BigDecimal!
+  onTimeP95Seconds: Int!
+  slashingAdjustedYield: BigDecimal!
+  updatedAt: Int!
+}
+
+type ValidatorMetricWindow @entity {
+  id: ID!
+  validator: Validator!
+  windowDays: Int!
+  mintedCount: BigInt!
+  acceptedCount: BigInt!
+  validationCount: BigInt!
+  stakeSum: BigInt!
+  slashAmount: BigInt!
+  acceptanceRate: BigDecimal!
+  qualityScore: BigDecimal!
+  onTimeP95Seconds: Int!
+  slashingAdjustedYield: BigDecimal!
+  updatedAt: Int!
+}
+
+type QualityBucket @entity {
+  id: ID!
+  ownerType: HistogramOwner!
+  owner: String!
+  day: Int!
+  bucket: Int!
+  stake: BigInt!
+}
+
+type LatencyBucket @entity {
+  id: ID!
+  ownerType: HistogramOwner!
+  owner: String!
+  day: Int!
+  bucket: Int!
+  count: BigInt!
 }

@@ -3,6 +3,9 @@ pragma solidity ^0.8.20;
 
 /// @title Alpha Work Unit Event Interface
 /// @notice Canonical event surface emitted by AGI Alpha Node compatible registries.
+/// @dev Events are intentionally minimal so downstream subgraphs and telemetry exporters
+///      can derive acceptance, validator quality, latency, and yield KPIs without any
+///      off-chain oracles. Identities should be ENS-gated via the runtime IdentityRegistry.
 interface IAlphaWorkUnitEvents {
     /// @notice Emitted whenever a new alpha work unit is minted for an agent.
     /// @param id Canonical identifier for the alpha work unit (bytes32).
