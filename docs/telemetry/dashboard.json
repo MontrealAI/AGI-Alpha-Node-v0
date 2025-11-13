@@ -1,6 +1,6 @@
 {
   "$schema": "https://agi.alpha/schemas/dashboard/v1.json",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "title": "AGI Alpha Node KPI Control Plane",
   "description": "Validator-weighted α-WU KPIs with ENS-gated health posture telemetry.",
   "domains": ["slo", "validation", "leaderboard"],
@@ -39,165 +39,93 @@
       "title": "α-WU Acceptance Rate · 7d",
       "metric": "agi_alpha_node_alpha_wu_acceptance_rate",
       "labels": { "window": "7d" },
-      "yAxis": {
-        "unit": "ratio",
-        "min": 0,
-        "max": 1
-      }
+      "yAxis": { "unit": "ratio", "min": 0, "max": 1 }
     },
     {
       "type": "timeseries",
       "title": "α-WU Acceptance Rate · 30d",
       "metric": "agi_alpha_node_alpha_wu_acceptance_rate",
       "labels": { "window": "30d" },
-      "yAxis": {
-        "unit": "ratio",
-        "min": 0,
-        "max": 1
-      }
+      "yAxis": { "unit": "ratio", "min": 0, "max": 1 }
     },
     {
       "type": "timeseries",
-      "title": "Slash Adjusted Yield · 7d",
-      "metric": "agi_alpha_node_alpha_wu_slash_adjusted_yield",
+      "title": "Validator-Weighted Quality · 7d",
+      "metric": "agi_alpha_node_alpha_wu_quality_score",
       "labels": { "window": "7d" },
-      "yAxis": {
-        "unit": "ratio",
-        "min": 0
-      }
+      "yAxis": { "unit": "score", "min": 0, "max": 100 }
     },
     {
       "type": "timeseries",
-      "title": "Slash Adjusted Yield · 30d",
-      "metric": "agi_alpha_node_alpha_wu_slash_adjusted_yield",
+      "title": "Validator-Weighted Quality · 30d",
+      "metric": "agi_alpha_node_alpha_wu_quality_score",
       "labels": { "window": "30d" },
-      "yAxis": {
-        "unit": "ratio",
-        "min": 0
-      }
+      "yAxis": { "unit": "score", "min": 0, "max": 100 }
     },
     {
       "type": "timeseries",
-      "title": "α-WU On-Time p95 · 7d",
+      "title": "α-WU On-Time p95",
       "metric": "agi_alpha_node_alpha_wu_on_time_p95_seconds",
       "labels": { "window": "7d" },
-      "yAxis": {
-        "unit": "seconds",
-        "min": 0
-      }
+      "yAxis": { "unit": "seconds", "min": 0 }
     },
     {
       "type": "timeseries",
-      "title": "α-WU On-Time p95 · 30d",
-      "metric": "agi_alpha_node_alpha_wu_on_time_p95_seconds",
-      "labels": { "window": "30d" },
-      "yAxis": {
-        "unit": "seconds",
-        "min": 0
-      }
-    },
-    {
-      "type": "bar",
-      "title": "Validator Weighted Quality · 7d",
-      "metric": "agi_alpha_node_alpha_wu_quality",
-      "labels": { "window": "7d", "dimension": "validator" },
-      "groupBy": "key",
-      "sort": "desc"
-    },
-    {
-      "type": "bar",
-      "title": "Validator Weighted Quality · 30d",
-      "metric": "agi_alpha_node_alpha_wu_quality",
-      "labels": { "window": "30d", "dimension": "validator" },
-      "groupBy": "key",
-      "sort": "desc"
+      "title": "Slash Adjusted Yield",
+      "metric": "agi_alpha_node_alpha_wu_slash_adjusted_yield",
+      "labels": { "window": "7d" },
+      "yAxis": { "unit": "ratio", "min": 0 }
     },
     {
       "type": "table",
-      "title": "Slash Adjusted Yield by Node · 7d",
-      "metric": "agi_alpha_node_alpha_wu_breakdown",
-      "labels": {
-        "window": "7d",
-        "dimension": "node",
-        "metric": "slashingAdjustedYield"
+      "title": "Slash Adjusted Yield · Top Nodes (30d)",
+      "datasource": "alphaSubgraph",
+      "query": "query NodeYield($windowSeconds: BigInt!) {\n  metrics: alphaWorkAggregates(first: 10, orderBy: slashingAdjustedYield, orderDirection: desc, where: {entity: NODE, windowSeconds: $windowSeconds}) {\n    entityId\n    mintedCount\n    acceptedCount\n    slashingAdjustedYield\n  }\n}",
+      "transform": {
+        "variables": { "windowSeconds": "2592000" }
       },
       "columns": [
-        { "key": "key", "label": "Node", "format": "hash" },
-        { "key": "value", "label": "SAY", "format": "percent" },
-        { "key": "accepted", "label": "Accepted", "format": "integer" },
-        { "key": "minted", "label": "Minted", "format": "integer" }
+        { "key": "entityId", "label": "Node", "format": "hash" },
+        { "key": "slashingAdjustedYield", "label": "SAY", "format": "percent" },
+        { "key": "acceptedCount", "label": "Accepted", "format": "integer" },
+        { "key": "mintedCount", "label": "Minted", "format": "integer" }
       ],
-      "sort": { "field": "value", "direction": "desc" }
+      "sort": { "field": "slashingAdjustedYield", "direction": "desc" }
     },
     {
       "type": "table",
-      "title": "Slash Adjusted Yield by Node · 30d",
-      "metric": "agi_alpha_node_alpha_wu_breakdown",
-      "labels": {
-        "window": "30d",
-        "dimension": "node",
-        "metric": "slashingAdjustedYield"
+      "title": "Acceptance Rate · Agents (7d)",
+      "datasource": "alphaSubgraph",
+      "query": "query AgentAcceptance($windowSeconds: BigInt!) {\n  metrics: alphaWorkAggregates(first: 10, orderBy: acceptanceRate, orderDirection: desc, where: {entity: AGENT, windowSeconds: $windowSeconds}) {\n    entityId\n    acceptanceRate\n    mintedCount\n    acceptedCount\n    slashingAdjustedYield\n  }\n}",
+      "transform": {
+        "variables": { "windowSeconds": "604800" }
       },
       "columns": [
-        { "key": "key", "label": "Node", "format": "hash" },
-        { "key": "value", "label": "SAY", "format": "percent" },
-        { "key": "accepted", "label": "Accepted", "format": "integer" },
-        { "key": "minted", "label": "Minted", "format": "integer" }
+        { "key": "entityId", "label": "Agent", "format": "hash" },
+        { "key": "acceptanceRate", "label": "Acceptance", "format": "percent" },
+        { "key": "acceptedCount", "label": "Accepted", "format": "integer" },
+        { "key": "mintedCount", "label": "Minted", "format": "integer" },
+        { "key": "slashingAdjustedYield", "label": "SAY", "format": "percent" }
       ],
-      "sort": { "field": "value", "direction": "desc" }
-    },
-    {
-      "type": "table",
-      "title": "Slash Adjusted Yield by Agent · 7d",
-      "metric": "agi_alpha_node_alpha_wu_breakdown",
-      "labels": {
-        "window": "7d",
-        "dimension": "agent",
-        "metric": "slashingAdjustedYield"
-      },
-      "columns": [
-        { "key": "key", "label": "Agent", "format": "hash" },
-        { "key": "value", "label": "SAY", "format": "percent" },
-        { "key": "accepted", "label": "Accepted", "format": "integer" },
-        { "key": "minted", "label": "Minted", "format": "integer" }
-      ],
-      "sort": { "field": "value", "direction": "desc" }
-    },
-    {
-      "type": "table",
-      "title": "Slash Adjusted Yield by Agent · 30d",
-      "metric": "agi_alpha_node_alpha_wu_breakdown",
-      "labels": {
-        "window": "30d",
-        "dimension": "agent",
-        "metric": "slashingAdjustedYield"
-      },
-      "columns": [
-        { "key": "key", "label": "Agent", "format": "hash" },
-        { "key": "value", "label": "SAY", "format": "percent" },
-        { "key": "accepted", "label": "Accepted", "format": "integer" },
-        { "key": "minted", "label": "Minted", "format": "integer" }
-      ],
-      "sort": { "field": "value", "direction": "desc" }
+      "sort": { "field": "acceptanceRate", "direction": "desc" }
     },
     {
       "type": "leaderboard",
-      "title": "Validation Health Leaders · 24h",
+      "title": "Validation Health Leaders",
       "datasource": "alphaSubgraph",
-      "query": "query ValidationLeaderboard($windowStart: BigInt!) {\n  validators: alphaValidators(first: 10, orderBy: stakeWeightedScore, orderDirection: desc, where: {windowStart_gte: $windowStart}) {\n    id\n    address\n    stakeWeightedScore\n    validations\n    medianLatencySeconds\n  }\n}",
-      "columns": [
-        { "key": "address", "label": "Validator", "format": "hash" },
-        { "key": "stakeWeightedScore", "label": "Stake Weighted Score", "format": "number" },
-        { "key": "validations", "label": "Validations", "format": "integer" },
-        { "key": "medianLatencySeconds", "label": "Median Latency", "format": "duration" }
-      ],
-      "rankingField": "stakeWeightedScore",
-      "limit": 10,
+      "query": "query ValidatorQuality($windowSeconds: BigInt!) {\n  metrics: alphaWorkAggregates(first: 10, orderBy: validatorWeightedQuality, orderDirection: desc, where: {entity: VALIDATOR, windowSeconds: $windowSeconds}) {\n    entityId\n    validatorWeightedQuality\n    acceptanceRate\n    onTimeP95Seconds\n    validationCount\n  }\n}",
       "transform": {
-        "variables": {
-          "windowStart": "{{ nowSubHours(24) }}"
-        }
-      }
+        "variables": { "windowSeconds": "604800" }
+      },
+      "columns": [
+        { "key": "entityId", "label": "Validator", "format": "hash" },
+        { "key": "validatorWeightedQuality", "label": "Quality", "format": "number" },
+        { "key": "acceptanceRate", "label": "Acceptance", "format": "percent" },
+        { "key": "onTimeP95Seconds", "label": "p95", "format": "duration" },
+        { "key": "validationCount", "label": "Validations", "format": "integer" }
+      ],
+      "rankingField": "validatorWeightedQuality",
+      "limit": 10
     }
   ]
 }

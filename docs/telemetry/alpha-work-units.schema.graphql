@@ -1,42 +1,92 @@
 """
-Graph schema for indexing alpha work unit KPIs.
+Graph schema for indexing α-work unit KPIs derived directly from the event interface.
+"""
+
+enum AlphaWorkEntity {
+  AGENT
+  NODE
+  VALIDATOR
+}
+
+"""
+Every α-work unit minted by the protocol.
 """
 type AlphaWorkUnit @entity {
   id: Bytes!
-  agent: Bytes
-  node: Bytes
+  agent: Bytes!
+  node: Bytes!
   mintedAt: BigInt!
   acceptedAt: BigInt
   validatorCount: Int!
+  acceptanceLatencySeconds: BigInt
   validations: [AlphaWorkValidation!]! @derivedFrom(field: "workUnit")
   slashes: [AlphaWorkSlash!]! @derivedFrom(field: "workUnit")
 }
 
+"""
+Individual validator scoring events for an α-work unit.
+"""
 type AlphaWorkValidation @entity {
   id: Bytes!
   workUnit: AlphaWorkUnit!
   validator: Bytes!
   stake: BigInt!
   score: BigInt!
-  timestamp: BigInt!
+  validatedAt: BigInt!
 }
 
+"""
+Slashing adjustments attributed to a validator on a given α-work unit.
+"""
 type AlphaWorkSlash @entity {
   id: Bytes!
   workUnit: AlphaWorkUnit!
   validator: Bytes!
   amount: BigInt!
-  timestamp: BigInt!
+  slashedAt: BigInt!
 }
 
+"""
+Rolling KPI aggregates over a fixed window for a specific entity.
+"""
 type AlphaWorkAggregate @entity {
   id: ID!
+  entity: AlphaWorkEntity!
+  entityId: Bytes!
   windowSeconds: BigInt!
-  entityType: String!
-  entityId: Bytes
+  mintedCount: BigInt!
+  acceptedCount: BigInt!
+  validationCount: BigInt!
+  slashCount: BigInt!
+  stakeSum: BigInt!
+  slashAmount: BigInt!
   acceptanceRate: BigDecimal!
   validatorWeightedQuality: BigDecimal!
   onTimeP95Seconds: BigDecimal!
   slashingAdjustedYield: BigDecimal!
   updatedAt: BigInt!
+}
+
+"""
+Histogram bucket for stake-weighted validator quality scores.
+"""
+type AlphaQualityBucket @entity {
+  id: ID!
+  entity: AlphaWorkEntity!
+  entityId: Bytes!
+  day: Int!
+  bucket: Int!
+  stake: BigInt!
+}
+
+"""
+Histogram bucket for α-work unit completion latency in seconds.
+"""
+type AlphaLatencyBucket @entity {
+  id: ID!
+  entity: AlphaWorkEntity!
+  entityId: Bytes!
+  day: Int!
+  bucket: Int!
+  count: BigInt!
 }

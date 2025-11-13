@@ -63,10 +63,10 @@ sequenceDiagram
 
 | Event | Field Summary | Purpose |
 | ----- | ------------- | ------- |
-| `AlphaWUMinted` | `bytes32 id`, `address agent`, `address node`, `uint256 timestamp` | Birth of an α‑work unit. |
-| `AlphaWUValidated` | `bytes32 id`, `address validator`, `uint256 stake`, `uint256 score`, `uint256 timestamp` | Stake-weighted validator scoring. |
-| `AlphaWUAccepted` | `bytes32 id`, `uint256 timestamp` | Final acceptance cutover. |
-| `SlashApplied` | `bytes32 id`, `address validator`, `uint256 amount`, `uint256 timestamp` | Penalty adjustments captured on-chain. |
+| `AlphaWUMinted` | `bytes32 id`, `address agent`, `address node`, `uint256 mintedAt` | Birth of an α‑work unit. |
+| `AlphaWUValidated` | `bytes32 id`, `address validator`, `uint256 stake`, `uint256 score`, `uint256 validatedAt` | Stake-weighted validator scoring. |
+| `AlphaWUAccepted` | `bytes32 id`, `uint256 acceptedAt` | Final acceptance cutover. |
+| `SlashApplied` | `bytes32 id`, `address validator`, `uint256 amount`, `uint256 slashedAt` | Penalty adjustments captured on-chain. |
 
 ENS name-gating is enforced by [`scripts/verify-health-gate.mjs`](../../scripts/verify-health-gate.mjs) so only whitelisted subnames (`*.agent.agi.eth`, `*.alpha.node.agi.eth`, …) can toggle telemetry flows.
 

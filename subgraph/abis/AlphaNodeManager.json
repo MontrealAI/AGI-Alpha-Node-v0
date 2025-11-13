@@ -23,7 +23,7 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "timestamp",
+        "name": "mintedAt",
         "type": "uint256"
       }
     ],
@@ -60,7 +60,7 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "timestamp",
+        "name": "validatedAt",
         "type": "uint256"
       }
     ],
@@ -79,7 +79,7 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "timestamp",
+        "name": "acceptedAt",
         "type": "uint256"
       }
     ],
@@ -110,7 +110,7 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "timestamp",
+        "name": "slashedAt",
         "type": "uint256"
       }
     ],
