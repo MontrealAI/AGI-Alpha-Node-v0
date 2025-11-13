@@ -1,4 +1,10 @@
-# AGI Alpha Node Subgraph schema
+# AGI Alpha Node KPI Subgraph schema
+
+enum HistogramOwner {
+  AGENT
+  NODE
+  VALIDATOR
+}
 
 type Agent @entity(immutable: false) {
   id: ID!
@@ -6,6 +12,7 @@ type Agent @entity(immutable: false) {
   totalAccepted: BigInt!
   totalValidations: BigInt!
   totalSlashAmount: BigInt!
+  totalStake: BigInt!
   lastUpdated: Int!
   workUnits: [WorkUnit!]! @derivedFrom(field: "agent")
   dailyMetrics: [AgentDailyMetric!]! @derivedFrom(field: "agent")
@@ -18,10 +25,24 @@ type Node @entity(immutable: false) {
   totalAccepted: BigInt!
   totalValidations: BigInt!
   totalSlashAmount: BigInt!
+  totalStake: BigInt!
   lastUpdated: Int!
   workUnits: [WorkUnit!]! @derivedFrom(field: "node")
   dailyMetrics: [NodeDailyMetric!]! @derivedFrom(field: "node")
   metricWindows: [NodeMetricWindow!]! @derivedFrom(field: "node")
+}
+
+type Validator @entity(immutable: false) {
+  id: ID!
+  totalWorkUnits: BigInt!
+  totalAccepted: BigInt!
+  totalValidations: BigInt!
+  totalSlashAmount: BigInt!
+  totalStake: BigInt!
+  lastUpdated: Int!
+  participations: [ValidatorParticipation!]! @derivedFrom(field: "validator")
+  dailyMetrics: [ValidatorDailyMetric!]! @derivedFrom(field: "validator")
+  metricWindows: [ValidatorMetricWindow!]! @derivedFrom(field: "validator")
 }
 
 type WorkUnit @entity(immutable: false) {
@@ -34,6 +55,17 @@ type WorkUnit @entity(immutable: false) {
   validationCount: BigInt!
   totalScore: BigInt!
   totalStake: BigInt!
+  validatorIds: [String!]!
+  participations: [ValidatorParticipation!]! @derivedFrom(field: "workUnit")
+}
+
+type ValidatorParticipation @entity(immutable: false) {
+  id: ID!
+  workUnit: WorkUnit!
+  validator: Validator!
+  stake: BigInt!
+  score: BigInt!
+  lastValidatedAt: Int!
 }
 
 type AgentDailyMetric @entity(immutable: false) {
@@ -60,6 +92,18 @@ type NodeDailyMetric @entity(immutable: false) {
   slashAmount: BigInt!
 }
 
+type ValidatorDailyMetric @entity(immutable: false) {
+  id: ID!
+  validator: Validator!
+  day: Int!
+  mintedCount: BigInt!
+  acceptedCount: BigInt!
+  validationCount: BigInt!
+  scoreSum: BigInt!
+  stakeSum: BigInt!
+  slashAmount: BigInt!
+}
+
 type AgentMetricWindow @entity(immutable: false) {
   id: ID!
   agent: Agent!
@@ -67,8 +111,12 @@ type AgentMetricWindow @entity(immutable: false) {
   mintedCount: BigInt!
   acceptedCount: BigInt!
   validationCount: BigInt!
-  averageScore: BigDecimal!
+  stakeSum: BigInt!
   slashAmount: BigInt!
+  acceptanceRate: BigDecimal!
+  qualityScore: BigDecimal!
+  onTimeP95Seconds: Int!
+  slashingAdjustedYield: BigDecimal!
   updatedAt: Int!
 }
 
@@ -79,7 +127,45 @@ type NodeMetricWindow @entity(immutable: false) {
   mintedCount: BigInt!
   acceptedCount: BigInt!
   validationCount: BigInt!
-  averageScore: BigDecimal!
+  stakeSum: BigInt!
   slashAmount: BigInt!
+  acceptanceRate: BigDecimal!
+  qualityScore: BigDecimal!
+  onTimeP95Seconds: Int!
+  slashingAdjustedYield: BigDecimal!
   updatedAt: Int!
+}
+
+type ValidatorMetricWindow @entity(immutable: false) {
+  id: ID!
+  validator: Validator!
+  windowDays: Int!
+  mintedCount: BigInt!
+  acceptedCount: BigInt!
+  validationCount: BigInt!
+  stakeSum: BigInt!
+  slashAmount: BigInt!
+  acceptanceRate: BigDecimal!
+  qualityScore: BigDecimal!
+  onTimeP95Seconds: Int!
+  slashingAdjustedYield: BigDecimal!
+  updatedAt: Int!
+}
+
+type QualityBucket @entity(immutable: false) {
+  id: ID!
+  ownerType: HistogramOwner!
+  owner: String!
+  day: Int!
+  bucket: Int!
+  stake: BigInt!
+}
+
+type LatencyBucket @entity(immutable: false) {
+  id: ID!
+  ownerType: HistogramOwner!
+  owner: String!
+  day: Int!
+  bucket: Int!
+  count: BigInt!
 }

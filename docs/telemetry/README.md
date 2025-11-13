@@ -94,6 +94,15 @@ flowchart TD
 | **On-Time Completion (OTC)** | `p95(accepted.ts − minted.ts)` | Tune validator SLAs with `buildValidatorThresholdTx`. |
 | **Slashing-Adjusted Yield (SAY)** | `(accepted − slashUnits) ÷ stake` | Rebalance role shares through `RewardEngine` builders. |
 
+`subgraph/schema.graphql` materialises the raw ingredients needed for the four KPIs across **agents**, **nodes**, and **validators**. Windowed aggregates expose:
+
+- `acceptanceRate`
+- `qualityScore` (stake-weighted median derived from 0-100 quality histograms)
+- `onTimeP95Seconds` (latency histogram quantile)
+- `slashingAdjustedYield`
+
+Daily metrics retain mint/accept/validation counts, slash totals, and stake sums so that alternate windows (e.g. 14d) can be recomputed off-chain without resyncing the chain.
+
 Outputs feed into [`src/telemetry/alphaMetrics.js`](../../src/telemetry/alphaMetrics.js), which normalizes data for Prometheus gauges and CLI renderers.
 
 ---
@@ -132,10 +141,12 @@ For on-chain indexing, map each event to an entity:
 
 | Entity | Source Event | Notes |
 | ------ | ------------ | ----- |
-| `AlphaWorkUnit` | `AlphaWUMinted` / `AlphaWUAccepted` | Stores minted + accepted timestamps. |
-| `AlphaValidation` | `AlphaWUValidated` | Accumulates stake, score, validator identity. |
-| `AlphaSlash` | `SlashApplied` | Maintains penalty history for SAY calculation. |
-| `KPIWindow` | Derived | Rolling window snapshot (7d/30d/all). |
+| `WorkUnit` | `AlphaWUMinted` / `AlphaWUAccepted` | Captures agent/node ownership, timestamps, and validator roster. |
+| `ValidatorParticipation` | `AlphaWUValidated` | Tracks which validators touched the work unit plus their stake-weighted score. |
+| `QualityBucket` | `AlphaWUValidated` | Maintains 0-100 score histograms per agent/node/validator/day for stake-weighted medians. |
+| `LatencyBucket` | `AlphaWUAccepted` | Keeps latency histograms so p95 is derivable without replaying events. |
+| `AgentDailyMetric` / `NodeDailyMetric` / `ValidatorDailyMetric` | All | Daily minted/accepted/validation counts, stake sums, and slash totals. |
+| `AgentMetricWindow` / `NodeMetricWindow` / `ValidatorMetricWindow` | Derived | Rolling window KPI snapshots (7d/30d by default). |
 
 ---
 
@@ -206,21 +217,20 @@ For non-React front-ends, fetch the JSON once and hydrate an existing Grafana pa
 
 Widgets can point directly at the deterministic KPI subgraph (`alphaSubgraph` datasource). The following GraphQL snippets cover common tasks:
 
-#### Validator quality leaderboard (24h window)
+#### Validator quality leaderboard (rolling 24h proxy)
 
 ```graphql
-query ValidationLeaderboard($windowStart: BigInt!) {
-  validators: alphaValidators(
+query ValidatorQuality($windowDays: Int!) {
+  validators: validatorMetricWindows(
     first: 10
-    orderBy: stakeWeightedScore
+    orderBy: qualityScore
     orderDirection: desc
-    where: { windowStart_gte: $windowStart }
+    where: { windowDays: $windowDays }
   ) {
-    id
-    address
-    stakeWeightedScore
-    validations
-    medianLatencySeconds
+    validator { id }
+    qualityScore
+    acceptanceRate
+    onTimeP95Seconds
   }
 }
 ```
@@ -228,13 +238,14 @@ query ValidationLeaderboard($windowStart: BigInt!) {
 #### Agent acceptance rate SLO (7d window)
 
 ```graphql
-query AgentAcceptance($agent: Bytes!, $from: BigInt!, $to: BigInt!) {
-  windows: kpiWindows(
-    where: { agent: $agent, window: "7d", start_gte: $from, end_lte: $to }
+query AgentAcceptance($agent: ID!) {
+  windows: agentMetricWindows(
+    first: 1
+    where: { agent: $agent, windowDays: 7 }
   ) {
     acceptanceRate
     onTimeP95Seconds
-    slashAdjustedYield
+    slashingAdjustedYield
   }
 }
 ```
@@ -242,12 +253,16 @@ query AgentAcceptance($agent: Bytes!, $from: BigInt!, $to: BigInt!) {
 #### Minted vs. accepted totals by node (30d window)
 
 ```graphql
-query NodeProduction($window: String!) {
-  nodes: nodeBreakdowns(where: { window: $window }) {
-    node
-    minted
-    accepted
-    slashAdjustedYield
+query NodeProduction($windowDays: Int!) {
+  nodes: nodeMetricWindows(
+    where: { windowDays: $windowDays }
+    orderBy: acceptanceRate
+    orderDirection: desc
+  ) {
+    node { id }
+    mintedCount
+    acceptedCount
+    slashingAdjustedYield
   }
 }
 ```
@@ -257,7 +272,7 @@ Execute queries with any GraphQL client or via cURL:
 ```bash
 curl -X POST https://api.thegraph.com/subgraphs/name/agi/alpha-work-units \
   -H 'content-type: application/json' \
-  -d '{"query":"query ($windowStart: BigInt!) { validators: alphaValidators(first: 10, orderBy: stakeWeightedScore, orderDirection: desc, where: { windowStart_gte: $windowStart }) { address stakeWeightedScore validations medianLatencySeconds }}","variables":{"windowStart":"1696291200"}}'
+  -d '{"query":"query ($windowDays: Int!) { validators: validatorMetricWindows(first: 10, orderBy: qualityScore, orderDirection: desc, where: { windowDays: $windowDays }) { validator { id } qualityScore acceptanceRate onTimeP95Seconds }}","variables":{"windowDays":7}}'
 ```
 
 ### Agent/Node customization playbook

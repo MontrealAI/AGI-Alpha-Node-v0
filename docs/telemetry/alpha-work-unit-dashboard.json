@@ -1,7 +1,7 @@
 {
-  "version": "1.0.0",
-  "title": "AGI Alpha Work Unit Observatory",
-  "description": "Read-only dashboard blueprint for visualising alpha work unit KPIs across agents, nodes, and validators.",
+  "version": "1.1.0",
+  "title": "α‑WU KPI Flight Deck",
+  "description": "Read-only dashboard blueprint exposing acceptance, quality, latency, and yield for alpha work units.",
   "datasources": [
     {
       "type": "prometheus",
@@ -22,8 +22,8 @@
       "query": "agi_alpha_node_alpha_wu_acceptance_rate{window=\"7d\"}",
       "format": "percent",
       "thresholds": {
-        "good": 0.8,
-        "warn": 0.6
+        "good": 0.9,
+        "warn": 0.75
       }
     },
     {
@@ -33,8 +33,8 @@
       "query": "agi_alpha_node_alpha_wu_acceptance_rate{window=\"30d\"}",
       "format": "percent",
       "thresholds": {
-        "good": 0.85,
-        "warn": 0.65
+        "good": 0.92,
+        "warn": 0.78
       }
     },
     {
@@ -67,7 +67,7 @@
     },
     {
       "type": "table",
-      "title": "Validator Weighted Quality",
+      "title": "Validator Weighted Quality · 7d",
       "source": "alpha-node-telemetry",
       "query": "agi_alpha_node_alpha_wu_quality{window=\"7d\",dimension=\"validator\"}",
       "columns": [
@@ -77,48 +77,34 @@
     },
     {
       "type": "table",
-      "title": "Slash Adjusted Yield by Node · 7d",
-      "source": "alpha-node-telemetry",
-      "query": "agi_alpha_node_alpha_wu_breakdown{window=\"7d\",dimension=\"node\",metric=\"slashingAdjustedYield\"}",
+      "title": "Slashing-Adjusted Yield by Node · 7d",
+      "source": "alpha-wu-subgraph",
+      "query": "{ nodeMetricWindows(first: 10, orderBy: slashingAdjustedYield, orderDirection: desc, where: { windowDays: 7 }) { node { id } acceptanceRate slashingAdjustedYield } }",
       "columns": [
-        { "header": "Node", "field": "key" },
-        { "header": "Yield", "field": "value", "format": "decimal" }
+        { "header": "Node", "field": "node.id" },
+        { "header": "Acceptance", "field": "acceptanceRate", "format": "percent" },
+        { "header": "SAY", "field": "slashingAdjustedYield", "format": "decimal" }
       ]
     },
     {
       "type": "table",
-      "title": "Slash Adjusted Yield by Node · 30d",
-      "source": "alpha-node-telemetry",
-      "query": "agi_alpha_node_alpha_wu_breakdown{window=\"30d\",dimension=\"node\",metric=\"slashingAdjustedYield\"}",
+      "title": "Slashing-Adjusted Yield by Agent · 7d",
+      "source": "alpha-wu-subgraph",
+      "query": "{ agentMetricWindows(first: 10, orderBy: slashingAdjustedYield, orderDirection: desc, where: { windowDays: 7 }) { agent { id } acceptanceRate slashingAdjustedYield } }",
       "columns": [
-        { "header": "Node", "field": "key" },
-        { "header": "Yield", "field": "value", "format": "decimal" }
+        { "header": "Agent", "field": "agent.id" },
+        { "header": "Acceptance", "field": "acceptanceRate", "format": "percent" },
+        { "header": "SAY", "field": "slashingAdjustedYield", "format": "decimal" }
       ]
     },
     {
-      "type": "bar",
-      "title": "Top Agents by Slashing Adjusted Yield · 7d",
-      "source": "alpha-wu-subgraph",
-      "query": "{ aggregates(first:10, where:{entityType:\"agent\", windowSeconds:604800}, orderBy: slashingAdjustedYield, orderDirection:desc) { entityId slashingAdjustedYield } }",
-      "xField": "entityId",
-      "yField": "slashingAdjustedYield"
-    },
-    {
-      "type": "bar",
-      "title": "Top Agents by Slashing Adjusted Yield · 30d",
-      "source": "alpha-wu-subgraph",
-      "query": "{ aggregates(first:10, where:{entityType:\"agent\", windowSeconds:2592000}, orderBy: slashingAdjustedYield, orderDirection:desc) { entityId slashingAdjustedYield } }",
-      "xField": "entityId",
-      "yField": "slashingAdjustedYield"
-    },
-    {
       "type": "line",
-      "title": "Acceptance Rate Trend · 30d",
+      "title": "Acceptance Trend · 30d",
       "source": "alpha-wu-subgraph",
-      "query": "{ aggregates(where:{entityType:\"node\", windowSeconds:2592000}) { entityId acceptanceRate updatedAt } }",
+      "query": "{ nodeMetricWindows(where: { windowDays: 30 }, orderBy: updatedAt, orderDirection: desc, first: 30) { node { id } updatedAt acceptanceRate } }",
       "xField": "updatedAt",
       "yField": "acceptanceRate",
-      "groupField": "entityId"
+      "groupField": "node.id"
     }
   ]
 }
