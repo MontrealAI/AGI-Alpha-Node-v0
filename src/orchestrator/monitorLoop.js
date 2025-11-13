@@ -3,6 +3,7 @@ import { runNodeDiagnostics, launchMonitoring } from './nodeRuntime.js';
 import { formatTokenAmount } from '../utils/formatters.js';
 import { loadOfflineSnapshot } from '../services/offlineSnapshot.js';
 import { applyAlphaWorkUnitMetricsToTelemetry } from '../telemetry/alphaMetrics.js';
+import { getRecentEpochSummaries } from '../services/metering.js';
 
 function assertPositiveInteger(value, name) {
   if (!Number.isFinite(value) || value <= 0 || Math.floor(value) !== value) {
@@ -156,6 +157,23 @@ export async function startMonitorLoop({
   let shuttingDown = false;
   let timer = null;
   let pendingResolve = null;
+  const alphaWuHistory = [];
+
+  const refreshAlphaWuHistory = () => {
+    const summaries = getRecentEpochSummaries({ limit: 24 });
+    alphaWuHistory.length = 0;
+    summaries.forEach((entry) => {
+      alphaWuHistory.push({
+        epochId: entry.epochId,
+        totalAlphaWU: entry.totalAlphaWU,
+        startedAt: entry.startedAt,
+        endedAt: entry.endedAt,
+        alphaWU_by_job: entry.alphaWU_by_job,
+        alphaWU_by_deviceClass: entry.alphaWU_by_deviceClass,
+        alphaWU_by_slaProfile: entry.alphaWU_by_slaProfile
+      });
+    });
+  };
 
   const wait = () =>
     new Promise((resolve) => {
@@ -249,6 +267,8 @@ export async function startMonitorLoop({
           updateTelemetryGauges(telemetryServer, diagnostics, healthGate);
         }
 
+        refreshAlphaWuHistory();
+
         const actionSummary = diagnostics.ownerDirectives?.actions
           ?.map((action) => action.type)
           .join(', ');
@@ -282,6 +302,7 @@ export async function startMonitorLoop({
     loopPromise: loop,
     stop,
     getTelemetry: () => telemetryServer,
-    getIterations: () => iterationsCompleted
+    getIterations: () => iterationsCompleted,
+    getAlphaWuHistory: () => alphaWuHistory.map((entry) => ({ ...entry }))
   };
 }
