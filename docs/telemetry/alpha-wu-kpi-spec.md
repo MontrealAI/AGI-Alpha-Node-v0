@@ -49,7 +49,7 @@ validators, nodes, and operator clubs can generate KPI-impacting telemetry.
 | ----- | -------------------- |
 | `AlphaWUMinted` | Acceptance Rate (AR), On-Time Completion (OTC) |
 | `AlphaWUValidated` | Validator-Weighted Quality Score (VQS) |
-| `AlphaWUAccepted` | Acceptance Rate (AR), On-Time Completion (OTC), Slashing-Adjusted Yield (SAY) |
+| `AlphaWUAccepted` | AR / OTC / SAY |
 | `SlashApplied` | Slashing-Adjusted Yield (SAY) |
 
 ## Indexing Model
