@@ -72,6 +72,10 @@ function sanitizeAlphaMeta(summary = null, { totalOverride = null } = {}) {
     total: toNumber(normalizedTotal),
     modelClassBreakdown,
     slaBreakdown,
+    breakdown: {
+      modelClass: { ...modelClassBreakdown },
+      sla: { ...slaBreakdown }
+    },
     quality: {
       modelClass: { ...modelClassBreakdown },
       sla: { ...slaBreakdown }

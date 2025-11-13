@@ -171,6 +171,8 @@ describe('job lifecycle service', () => {
     expect(finalizedJob.alphaWU.bySegment.length).toBeGreaterThan(0);
     expect(Object.keys(finalizedJob.alphaWU.modelClassBreakdown).length).toBeGreaterThan(0);
     expect(Object.keys(finalizedJob.alphaWU.slaBreakdown).length).toBeGreaterThan(0);
+    expect(Object.keys(finalizedJob.alphaWU.breakdown.modelClass)).toContain(MODEL_CLASSES.LLM_8B);
+    expect(Object.keys(finalizedJob.alphaWU.breakdown.sla)).toContain(SLA_PROFILES.STANDARD);
     expect(finalizedJob.alphaWU.bySegment[0].gpuCount).toBe(1);
     expect(Object.keys(finalizedJob.alphaWU.quality.modelClass)).toContain(MODEL_CLASSES.LLM_8B);
     expect(Object.keys(finalizedJob.alphaWU.quality.sla)).toContain(SLA_PROFILES.STANDARD);
@@ -179,6 +181,7 @@ describe('job lifecycle service', () => {
     expect(finalizeEntry?.job?.alphaWU?.total).toBeGreaterThan(0);
     expect(Object.keys(finalizeEntry?.job?.alphaWU?.modelClassBreakdown ?? {})).toContain(MODEL_CLASSES.LLM_8B);
     expect(Object.keys(finalizeEntry?.job?.alphaWU?.quality?.modelClass ?? {})).toContain(MODEL_CLASSES.LLM_8B);
+    expect(Object.keys(finalizeEntry?.action?.alphaWU?.breakdown?.modelClass ?? {})).toContain(MODEL_CLASSES.LLM_8B);
   });
 
   it('records alpha work unit events manually and surfaces metrics', () => {
