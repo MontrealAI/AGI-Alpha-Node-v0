@@ -1,4 +1,10 @@
 # AGI Alpha Node KPI Subgraph schema
+#
+# Four event families (`AlphaWUMinted`, `AlphaWUValidated`, `AlphaWUAccepted`,
+# and `SlashApplied`) fully determine the acceptance, quality, latency, and
+# yield KPIs. This schema projects those logs into deterministic entities so
+# roll-ups, dashboards, and operators can recompute α‑WU performance without
+# bespoke ETL pipelines.
 
 """Enumerates which principal owns a histogram bucket (agent, node, validator)."""
 enum HistogramOwner {
