@@ -159,17 +159,20 @@ For on-chain indexing, map each event to an entity:
 
 ## Dashboard Blueprints
 
-Two JSON blueprints are maintained:
+Two JSON blueprints are maintained (plus a minimal stub for quick pilots):
 
 1. [`dashboard.json`](./dashboard.json) — Grafana/Chronograf ready, used in CI smoke tests.
 2. [`alpha-work-unit-dashboard.json`](./alpha-work-unit-dashboard.json) — Extended analytics with validator leaderboards, ENS-gated health tiles, and latency SLO callouts.
+3. [`alpha-wu-dashboard.min.json`](./alpha-wu-dashboard.min.json) — Minimal KPI quartet for drop-in observability with zero customisation.
 
 ```mermaid
 graph LR
   Prometheus[(Prometheus)] -->|JSON| DashboardSpec[[dashboard.json]]
   Prometheus -->|JSON| ExtendedSpec[[alpha-work-unit-dashboard.json]]
+  Prometheus -->|JSON| MinimalSpec[[alpha-wu-dashboard.min.json]]
   DashboardSpec --> Grafana{{Grafana}}
   ExtendedSpec --> Superset{{Superset}}
+  MinimalSpec --> Lightweight{{Any Static Renderer}}
 ```
 
 Each blueprint mirrors gauges defined in [`src/telemetry/alphaMetrics.js`](../../src/telemetry/alphaMetrics.js). CI will fail if schema files drift thanks to `npm run lint` and `npm test` coverage. The extended deck also visualises the stake-weighted quality histogram as a bar widget so validators can track distribution tails.

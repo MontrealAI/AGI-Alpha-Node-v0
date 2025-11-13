@@ -5,12 +5,13 @@ pragma solidity ^0.8.20;
 /// @notice Canonical event surface emitted by AGI Alpha Node compatible registries.
 /// @dev Events intentionally expose just enough data for the telemetry mesh to derive the
 ///      four α-WU KPIs (acceptance rate, validator-weighted quality, on-time completion,
-///      and slashing-adjusted yield) without auxiliary oracles. Runtime implementations
-///      should enforce ENS name-gating via an IdentityRegistry so only authorised
-///      agents, validators, and nodes emit these logs. The recommended allow-list is
-///      the set of subnames delegated beneath `*.agent.agi.eth`, `*.alpha.agent.agi.eth`,
-///      `*.node.agi.eth`, `*.alpha.node.agi.eth`, `*.club.agi.eth`, and
-///      `*.alpha.club.agi.eth`.
+///      and slashing-adjusted yield) without auxiliary oracles.
+/// @custom:ens Runtime implementations must enforce ENS name-gating via an
+///             IdentityRegistry so only authorised agents, validators, and nodes emit
+///             these logs. Recommended allow-list: `*.agent.agi.eth`,
+///             `*.alpha.agent.agi.eth`, `*.node.agi.eth`, `*.alpha.node.agi.eth`,
+///             `*.club.agi.eth`, and `*.alpha.club.agi.eth`.
+/// @custom:section alpha-wu-telemetry
 interface IAlphaWorkUnitEvents {
     /// @notice Emitted whenever a new alpha work unit is minted for an agent.
     /// @param id Canonical identifier for the alpha work unit (bytes32).

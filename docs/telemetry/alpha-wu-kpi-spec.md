@@ -112,7 +112,8 @@ or allow list contract is required to enforce telemetry hygiene.
 ## Dashboard Blueprint
 
 [`docs/telemetry/dashboard.json`](./dashboard.json) serves as the minimal
-read-only dashboard contract. It enumerates:
+read-only dashboard contract, and [`alpha-wu-dashboard.min.json`](./alpha-wu-dashboard.min.json)
+offers a four-widget starter for rapid pilots. They enumerate:
 
 - Prometheus-backed widgets for AR, VQS, OTC, and SAY time series.
 - Tables backed by the subgraph for stake-weighted leaderboards.
@@ -131,7 +132,8 @@ validate any future edits with `npx ajv-cli validate`.
 2. **Index** — Deploy the subgraph using
    [`subgraph/subgraph.yaml`](../../subgraph/subgraph.yaml) and point dashboards
    at the resulting endpoint.
-3. **Dashboards** — Load `dashboard.json` or the extended
+3. **Dashboards** — Load `dashboard.json`, the minimal
+   [`alpha-wu-dashboard.min.json`](./alpha-wu-dashboard.min.json), or the extended
    [`alpha-work-unit-dashboard.json`](./alpha-work-unit-dashboard.json) into
    Grafana/Superset for live visibility.
 4. **CI guardrails** — Use the identity registry and ENS name-gates to restrict
@@ -143,7 +145,8 @@ validate any future edits with `npx ajv-cli validate`.
 - **Publish a KPI subgraph** — Ship a Foundry script or hosted subgraph that
   materialises rolling 7/30-day windows for AR, VQS, OTC, and SAY across agents,
   nodes, and validators using the schema above.
-- **Expose a read-only dashboard** — Base implementations on
+- **Expose a read-only dashboard** — Base implementations on the minimal
+  [`alpha-wu-dashboard.min.json`](./alpha-wu-dashboard.min.json) or the extended
   [`alpha-work-unit-dashboard.json`](./alpha-work-unit-dashboard.json) so the
   owner can monitor leaderboards, latency SLOs, and validation health without
   mutating production data sources.
