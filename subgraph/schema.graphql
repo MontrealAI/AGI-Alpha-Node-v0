@@ -1,11 +1,13 @@
 # AGI Alpha Node KPI Subgraph schema
 
+"""Enumerates which principal owns a histogram bucket (agent, node, validator)."""
 enum HistogramOwner {
   AGENT
   NODE
   VALIDATOR
 }
 
+"""Aggregated alpha work unit statistics for an agent identity."""
 type Agent @entity(immutable: false) {
   id: ID!
   totalWorkUnits: BigInt!
@@ -19,6 +21,7 @@ type Agent @entity(immutable: false) {
   metricWindows: [AgentMetricWindow!]! @derivedFrom(field: "agent")
 }
 
+"""Aggregated alpha work unit statistics for a node identity."""
 type Node @entity(immutable: false) {
   id: ID!
   totalWorkUnits: BigInt!
@@ -32,6 +35,7 @@ type Node @entity(immutable: false) {
   metricWindows: [NodeMetricWindow!]! @derivedFrom(field: "node")
 }
 
+"""Validator level counters with stake, quality, and slashing totals."""
 type Validator @entity(immutable: false) {
   id: ID!
   totalWorkUnits: BigInt!
@@ -45,6 +49,7 @@ type Validator @entity(immutable: false) {
   metricWindows: [ValidatorMetricWindow!]! @derivedFrom(field: "validator")
 }
 
+"""Represents a single minted alpha work unit and its validation state."""
 type WorkUnit @entity(immutable: false) {
   id: ID!
   agent: Agent!
@@ -59,6 +64,7 @@ type WorkUnit @entity(immutable: false) {
   participations: [ValidatorParticipation!]! @derivedFrom(field: "workUnit")
 }
 
+"""Join entity linking validators to the work units they reviewed."""
 type ValidatorParticipation @entity(immutable: false) {
   id: ID!
   workUnit: WorkUnit!
@@ -68,6 +74,7 @@ type ValidatorParticipation @entity(immutable: false) {
   lastValidatedAt: Int!
 }
 
+"""Daily agent-level totals used for recomputing rolling KPI windows."""
 type AgentDailyMetric @entity(immutable: false) {
   id: ID!
   agent: Agent!
@@ -80,6 +87,7 @@ type AgentDailyMetric @entity(immutable: false) {
   slashAmount: BigInt!
 }
 
+"""Daily node-level totals used for recomputing rolling KPI windows."""
 type NodeDailyMetric @entity(immutable: false) {
   id: ID!
   node: Node!
@@ -92,6 +100,7 @@ type NodeDailyMetric @entity(immutable: false) {
   slashAmount: BigInt!
 }
 
+"""Daily validator-level totals used for recomputing rolling KPI windows."""
 type ValidatorDailyMetric @entity(immutable: false) {
   id: ID!
   validator: Validator!
@@ -104,6 +113,7 @@ type ValidatorDailyMetric @entity(immutable: false) {
   slashAmount: BigInt!
 }
 
+"""Rolling KPI snapshot for an agent (e.g. 7-day or 30-day window)."""
 type AgentMetricWindow @entity(immutable: false) {
   id: ID!
   agent: Agent!
@@ -122,6 +132,7 @@ type AgentMetricWindow @entity(immutable: false) {
   updatedAt: Int!
 }
 
+"""Rolling KPI snapshot for a node (e.g. 7-day or 30-day window)."""
 type NodeMetricWindow @entity(immutable: false) {
   id: ID!
   node: Node!
@@ -140,6 +151,7 @@ type NodeMetricWindow @entity(immutable: false) {
   updatedAt: Int!
 }
 
+"""Rolling KPI snapshot for a validator (e.g. 7-day or 30-day window)."""
 type ValidatorMetricWindow @entity(immutable: false) {
   id: ID!
   validator: Validator!
@@ -158,6 +170,7 @@ type ValidatorMetricWindow @entity(immutable: false) {
   updatedAt: Int!
 }
 
+"""Stake-weighted quality histogram bucket for KPI median calculations."""
 type QualityBucket @entity(immutable: false) {
   id: ID!
   ownerType: HistogramOwner!
@@ -167,6 +180,7 @@ type QualityBucket @entity(immutable: false) {
   stake: BigInt!
 }
 
+"""Latency histogram bucket supporting p95 cycle-time computation."""
 type LatencyBucket @entity(immutable: false) {
   id: ID!
   ownerType: HistogramOwner!
