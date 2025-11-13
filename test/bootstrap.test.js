@@ -5,7 +5,8 @@ vi.mock('../src/config/env.js', () => ({
 }));
 
 vi.mock('../src/orchestrator/nodeRuntime.js', () => ({
-  runNodeDiagnostics: vi.fn()
+  runNodeDiagnostics: vi.fn(),
+  bindExecutionLoopMetering: vi.fn(() => ({ detach: vi.fn() }))
 }));
 
 vi.mock('../src/orchestrator/monitorLoop.js', () => ({
@@ -56,7 +57,7 @@ vi.mock('../src/services/lifecycleJournal.js', () => ({
 
 import { bootstrapContainer } from '../src/orchestrator/bootstrap.js';
 import { loadConfig } from '../src/config/env.js';
-import { runNodeDiagnostics } from '../src/orchestrator/nodeRuntime.js';
+import { runNodeDiagnostics, bindExecutionLoopMetering } from '../src/orchestrator/nodeRuntime.js';
 import { startMonitorLoop } from '../src/orchestrator/monitorLoop.js';
 import { loadOfflineSnapshot } from '../src/services/offlineSnapshot.js';
 import { handleStakeActivation } from '../src/orchestrator/stakeActivator.js';
@@ -195,5 +196,8 @@ describe('bootstrapContainer', () => {
     expect(lifecycleInstance.discover).toHaveBeenCalled();
     expect(lifecycleInstance.watch).toHaveBeenCalled();
     expect(lifecycleInstance.stop).toHaveBeenCalled();
+    expect(bindExecutionLoopMetering).toHaveBeenCalledWith(
+      expect.objectContaining({ jobLifecycle: lifecycleInstance })
+    );
   });
 });

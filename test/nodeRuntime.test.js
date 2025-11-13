@@ -30,13 +30,25 @@ vi.mock('../src/services/governanceStatus.js', () => ({
   fetchGovernanceStatus: vi.fn()
 }));
 
+vi.mock('../src/services/metering.js', () => ({
+  startSegment: vi.fn(() => ({ segmentId: 'segment-1', startedAt: new Date().toISOString(), epochId: 'epoch-0' })),
+  stopSegment: vi.fn(() => ({ alphaWU: 12 }))
+}));
+
+vi.mock('../src/services/executionContext.js', () => ({
+  getDeviceInfo: vi.fn(() => ({ deviceClass: 'A100-80GB', vramTier: 'TIER_80', gpuCount: 1 })),
+  getSlaProfile: vi.fn(() => 'STANDARD')
+}));
+
 import { verifyNodeOwnership } from '../src/services/ensVerifier.js';
 import { getStakeStatus, validateStakeThreshold, evaluateStakeConditions } from '../src/services/staking.js';
 import { projectEpochRewards } from '../src/services/rewards.js';
 import { deriveOwnerDirectives } from '../src/services/controlPlane.js';
 import { derivePerformanceProfile } from '../src/services/performance.js';
-import { runNodeDiagnostics } from '../src/orchestrator/nodeRuntime.js';
+import { runNodeDiagnostics, bindExecutionLoopMetering } from '../src/orchestrator/nodeRuntime.js';
 import { fetchGovernanceStatus } from '../src/services/governanceStatus.js';
+import { startSegment, stopSegment } from '../src/services/metering.js';
+import { getDeviceInfo, getSlaProfile } from '../src/services/executionContext.js';
 
 describe('runNodeDiagnostics', () => {
 const logger = {
@@ -314,5 +326,40 @@ afterEach(() => {
     expect(diagnostics.ownerDirectives.priority).toBe('warning');
     expect(diagnostics.ownerDirectives.actions[0].type).toBe('stake-top-up');
     expect(diagnostics.runtimeMode).toBe('offline-snapshot');
+  });
+});
+
+describe('bindExecutionLoopMetering', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('starts and stops metering segments as job status changes', () => {
+    const listeners = new Map();
+    const logger = { child: () => logger, debug: vi.fn(), warn: vi.fn() };
+    const jobLifecycle = {
+      on: vi.fn((event, handler) => {
+        listeners.set(event, handler);
+        return () => listeners.delete(event);
+      }),
+      off: vi.fn()
+    };
+
+    const binding = bindExecutionLoopMetering({ jobLifecycle, logger });
+    expect(jobLifecycle.on).toHaveBeenCalledWith('job:update', expect.any(Function));
+
+    const handler = listeners.get('job:update');
+    handler({ jobId: 'job-42', status: 'assigned', tags: ['model:LLM_8B'] });
+    expect(getDeviceInfo).toHaveBeenCalled();
+    expect(getSlaProfile).toHaveBeenCalledWith(expect.objectContaining({ jobId: 'job-42' }));
+    expect(startSegment).toHaveBeenCalledWith(
+      expect.objectContaining({ jobId: 'job-42', modelClass: 'LLM_8B', slaProfile: expect.any(String) })
+    );
+
+    handler({ jobId: 'job-42', status: 'submitted' });
+    expect(stopSegment).toHaveBeenCalledWith('segment-1');
+
+    binding.detach();
+    expect(jobLifecycle.on).toHaveBeenCalledTimes(1);
   });
 });

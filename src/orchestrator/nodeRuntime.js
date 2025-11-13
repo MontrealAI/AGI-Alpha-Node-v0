@@ -14,6 +14,9 @@ import {
   buildOfflineRewardsProjection
 } from '../services/offlineSnapshot.js';
 import { derivePerformanceProfile } from '../services/performance.js';
+import { startSegment, stopSegment } from '../services/metering.js';
+import { getDeviceInfo, getSlaProfile } from '../services/executionContext.js';
+import { MODEL_CLASSES } from '../constants/workUnits.js';
 
 export async function runNodeDiagnostics({
   rpcUrl,
@@ -365,4 +368,122 @@ export async function launchMonitoring({
     }
   }
   return telemetry;
+}
+
+const LOOP_STATUSES = new Set(['assigned', 'executing', 'running']);
+const COMPLETION_STATUSES = new Set(['submitted', 'validated', 'finalized', 'failed', 'cancelled']);
+const KNOWN_MODEL_CLASSES = new Set(Object.values(MODEL_CLASSES));
+
+function normaliseStatus(status) {
+  if (!status && status !== 0) {
+    return null;
+  }
+  return String(status).toLowerCase();
+}
+
+function deriveModelClass(job) {
+  const candidates = [];
+  if (job?.modelClass) candidates.push(job.modelClass);
+  if (job?.metadata?.modelClass) candidates.push(job.metadata.modelClass);
+  if (Array.isArray(job?.tags)) {
+    for (const tag of job.tags) {
+      if (!tag && tag !== 0) continue;
+      const value = String(tag).trim();
+      if (!value) continue;
+      const match = value.match(/model(?:class)?\s*[:=]\s*([^\s]+)/i);
+      if (match) {
+        candidates.push(match[1]);
+      } else {
+        candidates.push(value);
+      }
+    }
+  }
+  for (const candidate of candidates) {
+    if (!candidate && candidate !== 0) continue;
+    const normalized = String(candidate).replace(/[^a-zA-Z0-9]/g, '_').toUpperCase();
+    if (KNOWN_MODEL_CLASSES.has(normalized)) {
+      return normalized;
+    }
+  }
+  return null;
+}
+
+export function bindExecutionLoopMetering({
+  jobLifecycle,
+  logger = pino({ level: 'info', name: 'execution-meter' }),
+  deviceInfo = null
+} = {}) {
+  if (!jobLifecycle?.on || !jobLifecycle?.off) {
+    return { detach: () => {} };
+  }
+
+  const meteringLogger = typeof logger.child === 'function' ? logger.child({ subsystem: 'metering' }) : logger;
+  const resolvedDeviceInfo = deviceInfo ?? getDeviceInfo();
+  const activeSegments = new Map();
+
+  const handleJobUpdate = (job) => {
+    const jobId = job?.jobId ?? job?.id ?? null;
+    const status = normaliseStatus(job?.status);
+    if (!jobId || !status) {
+      return;
+    }
+
+    if (LOOP_STATUSES.has(status)) {
+      if (activeSegments.has(jobId)) {
+        return;
+      }
+      try {
+        const segment = startSegment({
+          jobId,
+          deviceInfo: resolvedDeviceInfo,
+          modelClass: deriveModelClass(job),
+          slaProfile: getSlaProfile(job)
+        });
+        activeSegments.set(jobId, segment.segmentId);
+        meteringLogger?.debug?.({ jobId, segmentId: segment.segmentId, status }, 'Metering segment started');
+      } catch (error) {
+        meteringLogger?.warn?.(error, 'Failed to start metering segment');
+      }
+      return;
+    }
+
+    if (COMPLETION_STATUSES.has(status)) {
+      const segmentId = activeSegments.get(jobId);
+      if (!segmentId) {
+        return;
+      }
+      try {
+        const stopped = stopSegment(segmentId);
+        meteringLogger?.debug?.(
+          { jobId, segmentId, status, alphaWU: stopped?.alphaWU ?? null },
+          'Metering segment completed'
+        );
+      } catch (error) {
+        meteringLogger?.warn?.(error, 'Failed to stop metering segment');
+      } finally {
+        activeSegments.delete(jobId);
+      }
+    }
+  };
+
+  const unsubscribe = jobLifecycle.on('job:update', handleJobUpdate);
+
+  return {
+    detach: () => {
+      try {
+        unsubscribe?.();
+      } catch (error) {
+        meteringLogger?.warn?.(error, 'Failed to detach metering listener');
+      }
+      for (const [jobId, segmentId] of activeSegments.entries()) {
+        try {
+          stopSegment(segmentId);
+          meteringLogger?.debug?.({ jobId, segmentId }, 'Metering segment stopped during detach');
+        } catch (error) {
+          meteringLogger?.warn?.(error, 'Failed to stop metering segment during detach');
+        }
+      }
+      activeSegments.clear();
+    }
+  };
 }

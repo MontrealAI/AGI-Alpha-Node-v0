@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { startMonitorLoop } from '../src/orchestrator/monitorLoop.js';
 import { runNodeDiagnostics, launchMonitoring } from '../src/orchestrator/nodeRuntime.js';
+import { startSegment, stopSegment, resetMetering } from '../src/services/metering.js';
 
 const mockDiagnostics = {
   verification: { nodeName: '1.alpha.node.agi.eth' },
@@ -129,6 +130,7 @@ describe('monitorLoop', () => {
   const logger = { info: vi.fn(), error: vi.fn(), warn: vi.fn() };
 
   beforeEach(() => {
+    resetMetering();
     runNodeDiagnostics.mockClear();
     launchMonitoring.mockClear();
     telemetryMock.server.close.mockClear();
@@ -160,6 +162,8 @@ describe('monitorLoop', () => {
   });
 
   it('runs for the specified number of iterations', async () => {
+    const { segmentId } = startSegment({ jobId: 'sample', deviceInfo: { gpuCount: 1 } });
+    stopSegment(segmentId, { endedAt: new Date(Date.now() + 60_000) });
     const monitor = await startMonitorLoop({
       config,
       intervalSeconds: 60,
@@ -177,6 +181,7 @@ describe('monitorLoop', () => {
       performance: mockDiagnostics.performance,
       runtimeMode: 'online'
     });
+    expect(monitor.getAlphaWuHistory()).toBeInstanceOf(Array);
   });
 
   it('stops gracefully when stop is invoked', async () => {

@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import pino from 'pino';
 import { loadConfig } from '../config/env.js';
-import { runNodeDiagnostics } from './nodeRuntime.js';
+import { runNodeDiagnostics, bindExecutionLoopMetering } from './nodeRuntime.js';
 import { startMonitorLoop } from './monitorLoop.js';
 import { formatTokenAmount } from '../utils/formatters.js';
 import { AGIALPHA_TOKEN_DECIMALS, AGIALPHA_TOKEN_SYMBOL } from '../constants/token.js';
@@ -143,6 +143,7 @@ export async function bootstrapContainer({
 
   let jobLifecycle = null;
   let stopJobWatchers = null;
+  let executionBinding = null;
   if (config.JOB_REGISTRY_ADDRESS) {
     try {
       const lifecycleJournal = createLifecycleJournal({ directory: config.LIFECYCLE_LOG_DIR ?? '.agi/lifecycle' });
@@ -162,6 +163,10 @@ export async function bootstrapContainer({
       });
       await jobLifecycle.discover();
       stopJobWatchers = jobLifecycle.watch();
+      executionBinding = bindExecutionLoopMetering({
+        jobLifecycle,
+        logger: typeof logger.child === 'function' ? logger.child({ subsystem: 'execution-loop' }) : logger
+      });
     } catch (error) {
       logger.error(error, 'Failed to initialize job lifecycle');
       throw error;
@@ -181,6 +186,7 @@ export async function bootstrapContainer({
     });
   } catch (error) {
     logger.error(error, 'Failed to start agent API server');
+    executionBinding?.detach?.();
     stopJobWatchers?.();
     jobLifecycle?.stop();
     throw error;
@@ -248,6 +254,7 @@ export async function bootstrapContainer({
     if (apiServer) {
       await apiServer.stop();
     }
+    executionBinding?.detach?.();
     stopJobWatchers?.();
     jobLifecycle?.stop();
     throw error;
@@ -273,6 +280,7 @@ export async function bootstrapContainer({
     if (apiServer) {
       await apiServer.stop();
     }
+    executionBinding?.detach?.();
     stopJobWatchers?.();
     jobLifecycle?.stop();
     return {
@@ -315,6 +323,7 @@ export async function bootstrapContainer({
     if (apiServer) {
       await apiServer.stop();
     }
+    executionBinding?.detach?.();
     stopJobWatchers?.();
     jobLifecycle?.stop();
     throw error;
@@ -327,6 +336,7 @@ export async function bootstrapContainer({
     apiServer,
     jobLifecycle,
     stopJobWatchers,
+    executionBinding,
     healthGate
   };
 }
