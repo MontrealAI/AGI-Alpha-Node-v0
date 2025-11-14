@@ -42,13 +42,14 @@
 3. [Alpha Work Unit Fabric](#alpha-work-unit-fabric)
 4. [Epoch Intelligence & Determinism](#epoch-intelligence--determinism)
 5. [Operations & Governance Command](#operations--governance-command)
-6. [Observability & Diagnostics](#observability--diagnostics)
+6. [Telemetry & Metrics](#telemetry--metrics)
 7. [Token & Economic Flywheel](#token--economic-flywheel)
-8. [Operational Playbook](#operational-playbook)
-9. [Quality Gates & Test Suites](#quality-gates--test-suites)
-10. [CI Enforcement & Branch Protection](#ci-enforcement--branch-protection)
-11. [Repository Atlas](#repository-atlas)
-12. [Reference Library](#reference-library)
+8. [Integration with AGI Jobs Protocol](#integration-with-agi-jobs-protocol)
+9. [Operational Playbook](#operational-playbook)
+10. [Quality Gates & Test Suites](#quality-gates--test-suites)
+11. [CI Enforcement & Branch Protection](#ci-enforcement--branch-protection)
+12. [Repository Atlas](#repository-atlas)
+13. [Reference Library](#reference-library)
 
 ---
 
@@ -263,17 +264,37 @@ classDiagram
 
 ---
 
-## Observability & Diagnostics
+## Telemetry & Metrics
+
+The node’s telemetry plane mirrors everything the cognition lattice does—no hidden state, no lag. Metrics, status APIs, and the governance ledger draw from the same deterministic α-WU ledger, so dashboards, alerts, and settlements stay perfectly in phase.
+
+### α-WU Telemetry
+
+- Prometheus gauges and counters are registered in [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js), including `alpha_wu_total`, `alpha_wu_epoch`, optional `alpha_wu_per_job`, and the higher-level `agi_alpha_node_alpha_wu_*` acceptance/latency series. These are the exact metrics documented in the runbook at [`docs/alpha-wu.md`](docs/alpha-wu.md#interpreting-%CE%B1-wu-telemetry).【F:src/telemetry/monitoring.js†L173-L252】【F:docs/alpha-wu.md†L136-L169】
+- `recordAlphaWorkUnitSegment` writes into those instruments as soon as a segment is sealed, so lifetime totals, per-job gauges, and epoch seeds are updated in lockstep with the ledger.【F:src/telemetry/monitoring.js†L34-L88】
+- `updateAlphaWorkUnitEpochMetrics` refreshes epoch gauges after every monitor loop sweep, preserving deterministic totals across restarts and horizontal scale.【F:src/telemetry/monitoring.js†L90-L120】
+
+### Metrics Surfaces
 
 | Surface | Location | Key Signals |
 | --- | --- | --- |
-| Prometheus | [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) | `alpha_wu_total`, `alpha_wu_epoch`, `alpha_wu_per_job`, health gate posture, agent utilization. |
-| Status API `/status` | [`src/network/apiServer.js`](src/network/apiServer.js) | Node readiness, lifetime α-WU, latest epoch totals. |
-| Status API `/status/diagnostics` | [`src/network/apiServer.js`](src/network/apiServer.js) | Ordered epoch rollups with per-job/device/SLA breakdowns. |
-| Governance ledger | [`src/services/governanceLedger.js`](src/services/governanceLedger.js) | JSON entries including serialized α-WU metadata for every submit/stake/reward action. |
-| CLI diagnostics | [`src/index.js`](src/index.js) | Commands to inspect runtime posture, render payloads, or launch monitor loops. |
+| Prometheus | [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) | `alpha_wu_total`, `alpha_wu_epoch`, `alpha_wu_per_job`, acceptance/yield gauges, health gate posture. |
+| Status API `/status` | [`src/network/apiServer.js`](src/network/apiServer.js) | Node readiness, lifetime α-WU, last epoch fingerprint. |
+| Status API `/status/diagnostics` | [`src/network/apiServer.js`](src/network/apiServer.js) | Sliding epoch rollups with per-job/device/SLA breakdowns and totals. |
+| Governance ledger | [`src/services/governanceLedger.js`](src/services/governanceLedger.js) | Immutable JSON entries embedding α-WU metadata for every apply/submit/finalize. |
+| CLI diagnostics | [`src/index.js`](src/index.js) | Commands to render payloads, monitor loops, and orchestrate telemetry resets. |
 
-All numeric outputs are normalized: α-WU totals round to two decimals, GPU minutes to four, and breakdowns are lexicographically ordered to make diffing trivial.
+All numeric outputs are normalized via the same rounding helpers used in the metering engine, keeping α-WU at two decimals and GPU minutes at four for diff-friendly auditing.【F:src/services/metering.js†L261-L324】
+
+### Status APIs
+
+The HTTP control plane projects the live α-WU ledger for humans and bots alike.【F:src/network/apiServer.js†L932-L1007】
+
+- `GET /status` → quick readiness check with lifetime α-WU and the latest epoch fingerprint.
+- `GET /status/diagnostics` → rolling 24-epoch export with pre-aggregated breakdowns by job, device class, and SLA profile.
+- `GET /jobs` and `GET /jobs/:id` → lifecycle overlays that show the same job payloads the metering subsystem is digesting.
+
+Dashboards, alerting rules, or downstream oracles can rely on these surfaces without additional normalization—the data is already ledger-accurate.
 
 ---
 
@@ -282,6 +303,23 @@ All numeric outputs are normalized: α-WU totals round to two decimals, GPU minu
 - **Token** — `$AGIALPHA` (18 decimals) is anchored at [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa).
 - **Flywheel** — more jobs generate more α-WU → demand for staking increases → rewards deepen → additional agents join → network accelerates toward civilization-scale efficiency.
 - **Swarm alignment** — metering and lifecycle tests validate that α-WU proofs, governance ledger entries, and telemetry remain consistent; there is no informational drift between compute, chain, and owner dashboards.
+
+---
+
+## Integration with AGI Jobs Protocol
+
+The runtime was built to plug directly into the AGI Jobs Protocol surfaces, keeping every lifecycle event, governance action, and α-WU ledger entry synchronized.
+
+- [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js) subscribes to on-chain `JobCreated`/`JobFinalized` signals, normalizes payloads, and emits high-fidelity events that both the orchestrator and governance subsystems consume.【F:src/services/jobLifecycle.js†L1-L200】
+- [`bindExecutionLoopMetering`](src/orchestrator/nodeRuntime.js) latches onto lifecycle updates so metering segments start and stop exactly when the protocol reports execution windows, guaranteeing that α-WU reflects canonical job timing.【F:src/orchestrator/nodeRuntime.js†L414-L470】
+- [`src/services/governanceLedger.js`](src/services/governanceLedger.js) and [`src/network/apiServer.js`](src/network/apiServer.js) expose the same job records to operators, validators, and downstream automation, ensuring off-chain actors always read protocol-aligned state.【F:src/services/governanceLedger.js†L1-L200】【F:src/network/apiServer.js†L932-L1007】
+- [`docs/alpha-wu.md`](docs/alpha-wu.md) documents the α-WU computation rules so protocol-side auditors and partner nodes can independently derive the same totals before settling rewards.【F:docs/alpha-wu.md†L1-L213】
+
+### α-WU Settlements
+
+When epochs roll, [`buildEpochPayload`](src/services/oracleExport.js) produces deterministic JSON snapshots (`totals`, `byJob`, `byProvider`, `byDeviceClass`, `bySlaProfile`) ready for oracle submission or settlement smart contracts.【F:src/services/oracleExport.js†L1-L223】 Those exports, combined with the lifetime metrics and `/status` diagnostics, are designed to back future AGI Jobs Protocol reward curves: α-WU becomes the settlement currency, `$AGIALPHA` remains the staking collateral, and the owner exercises total control over validator rotations, pauses, and slash decisions straight from [`AlphaNodeManager.sol`](contracts/AlphaNodeManager.sol).【F:contracts/AlphaNodeManager.sol†L1-L160】
+
+This integration path gives the protocol a provable, owner-directed metering spine—exactly the infrastructure required to anchor on-chain payouts, cross-venue accounting, and bonded enforcement.
 
 ---
 
