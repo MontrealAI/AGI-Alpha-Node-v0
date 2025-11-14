@@ -95,6 +95,30 @@ function cloneValue(value) {
   return value;
 }
 
+function toFiniteNumber(value, fallback = 0) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : fallback;
+}
+
+function normaliseBreakdownEntries(entries = {}) {
+  return Object.fromEntries(
+    Object.entries(entries)
+      .map(([key, value]) => [key, toFiniteNumber(value, 0)])
+      .filter(([, value]) => Number.isFinite(value))
+      .sort(([a], [b]) => a.localeCompare(b))
+  );
+}
+
+function mergeAlphaBreakdown(target, source = {}) {
+  for (const [key, value] of Object.entries(source)) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) {
+      continue;
+    }
+    target[key] = (target[key] ?? 0) + numeric;
+  }
+}
+
 function sanitizeActions(actions) {
   if (actions === undefined) {
     return null;
@@ -932,12 +956,12 @@ export function startAgentApi({
       }
 
       if (req.method === 'GET' && req.url === '/status') {
-        const lifetimeAlphaWU = getLifetimeAlphaWU();
+        const lifetimeAlphaWU = toFiniteNumber(getLifetimeAlphaWU(), 0);
         const [lastEpochSummary] = getRecentEpochSummaries({ limit: 1 });
         const lastEpoch = lastEpochSummary
           ? {
-              id: lastEpochSummary.epochId,
-              alphaWU: Number(lastEpochSummary.totalAlphaWU ?? 0)
+              id: lastEpochSummary.epochId ?? null,
+              alphaWU: toFiniteNumber(lastEpochSummary.totalAlphaWU, 0)
             }
           : null;
         jsonResponse(res, 200, {
@@ -945,7 +969,46 @@ export function startAgentApi({
           offlineMode,
           alphaWU: {
             lastEpoch,
-            lifetimeAlphaWU: Number(lifetimeAlphaWU ?? 0)
+            lifetimeAlphaWU
+          }
+        });
+        return;
+      }
+
+      if (req.method === 'GET' && req.url === '/status/diagnostics') {
+        const lifetimeAlphaWU = toFiniteNumber(getLifetimeAlphaWU(), 0);
+        const summaries = getRecentEpochSummaries({ limit: 24 });
+        const totalsByJob = {};
+        const totalsByDeviceClass = {};
+        const totalsBySlaProfile = {};
+
+        const epochs = summaries.map((summary) => {
+          const epoch = {
+            id: summary?.epochId ?? null,
+            alphaWU: toFiniteNumber(summary?.totalAlphaWU, 0),
+            startedAt: summary?.startedAt ?? null,
+            endedAt: summary?.endedAt ?? null,
+            byJob: normaliseBreakdownEntries(summary?.alphaWU_by_job ?? {}),
+            byDeviceClass: normaliseBreakdownEntries(summary?.alphaWU_by_deviceClass ?? {}),
+            bySlaProfile: normaliseBreakdownEntries(summary?.alphaWU_by_slaProfile ?? {})
+          };
+          mergeAlphaBreakdown(totalsByJob, epoch.byJob);
+          mergeAlphaBreakdown(totalsByDeviceClass, epoch.byDeviceClass);
+          mergeAlphaBreakdown(totalsBySlaProfile, epoch.bySlaProfile);
+          return epoch;
+        });
+
+        jsonResponse(res, 200, {
+          status: 'ok',
+          offlineMode,
+          alphaWU: {
+            lifetimeAlphaWU,
+            epochs,
+            totals: {
+              byJob: normaliseBreakdownEntries(totalsByJob),
+              byDeviceClass: normaliseBreakdownEntries(totalsByDeviceClass),
+              bySlaProfile: normaliseBreakdownEntries(totalsBySlaProfile)
+            }
           }
         });
         return;
