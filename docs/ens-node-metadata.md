@@ -26,7 +26,7 @@ operator.
   - Description: Default ETH payout address for settlement.
   - Source: `NODE_PAYOUT_ETH_ADDRESS` (fallback `OPERATOR_ADDRESS`).
 - `AGIALPHA`
-  - Description: AGIALPHA token settlement or staking address.
+  - Description: AGIALPHA token settlement or staking address (18 decimals).
   - Source: `NODE_PAYOUT_AGIALPHA_ADDRESS` (fallback `NODE_PAYOUT_ETH_ADDRESS`).
 
 ## JSON Template Helper
