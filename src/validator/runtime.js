@@ -1,6 +1,6 @@
 import pino from 'pino';
 import { getAddress } from 'ethers';
-import { createAlphaWorkUnitValidator } from '../validation/alphaWuValidator.js';
+import { createAlphaWorkUnitValidator } from '../validation/alpha_wu_validator.js';
 import { createValidatorLoop } from './validatorLoop.js';
 import { createAlphaWuSource } from './sources/index.js';
 import { createValidationResultSink } from './sinks/index.js';

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { signAlphaWu } from '../src/crypto/signing.js';
-import { createAlphaWorkUnitValidator } from '../src/validation/alphaWuValidator.js';
+import { createAlphaWorkUnitValidator } from '../src/validation/alpha_wu_validator.js';
 import { createValidatorLoop } from '../src/validator/validatorLoop.js';
 import { createInMemoryAlphaWuSource } from '../src/validator/sources/memorySource.js';
 import { createInMemoryValidationSink } from '../src/validator/sinks/memorySink.js';
