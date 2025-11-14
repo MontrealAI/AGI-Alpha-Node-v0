@@ -137,6 +137,40 @@ Highlights:
 - **Weight orchestration** — model class, VRAM tier, SLA profile, and benchmark weights are all enforced in [`test/metering.test.js`](test/metering.test.js).
 - **Lifecycle integration** — [`test/jobLifecycle.alphaWU.test.js`](test/jobLifecycle.alphaWU.test.js) simulates discovery → execution → submission, verifying that proofs and governance ledger entries carry the α-WU totals exactly.
 - **Identifier normalization** — repeated segments for mixed-case job IDs fold into a single ledger entry with deterministic rounding, ensuring global summaries and epoch snapshots cannot drift.
+- **Benchmark fallback** — unmapped device classes gracefully default to a neutral multiplier while keeping α-WU rounding fixed at two decimals, preventing unverified hardware from distorting totals.
+
+### α-WU Weight Tables
+
+The deterministic metering engine pulls its multipliers from [`src/constants/workUnits.js`](src/constants/workUnits.js), ensuring everyone computes the same α-WU totals regardless of runtime. Weight values are locked in with object freezes so configuration drift is impossible at runtime.
+
+| Model Class (`MODEL_CLASSES`) | Weight |
+| --- | --- |
+| `LLM_8B` | `1.0` |
+| `LLM_70B` | `4.2` |
+| `DIFFUSION_XL` | `1.8` |
+| `MULTIMODAL_ROUTER` | `2.6` |
+| `RESEARCH_AGENT` | `2.1` |
+
+| VRAM Tier (`VRAM_TIERS`) | Weight |
+| --- | --- |
+| `TIER_16` | `1.0` |
+| `TIER_24` | `1.35` |
+| `TIER_48` | `1.85` |
+| `TIER_80` | `2.3` |
+
+| SLA Profile (`SLA_PROFILES`) | Weight |
+| --- | --- |
+| `STANDARD` | `1.0` |
+| `LOW_LATENCY_ENCLAVE` | `2.0` |
+| `HIGH_REDUNDANCY` | `1.7` |
+| `TRUSTED_EXECUTION` | `2.4` |
+
+| Benchmark Device (`BENCHMARK_WEIGHTS`) | Weight |
+| --- | --- |
+| `A100-80GB` | `1.0` |
+| `H100-80GB` | `1.45` |
+| `MI300X-192GB` | `1.55` |
+| _Unlisted hardware_ | `1.0` fallback |
 
 ### Hyper-Operational Journey
 
@@ -178,6 +212,28 @@ journey
 | `registerIdentity(bytes32,address)` / `updateIdentityController` / `setIdentityStatus` / `revokeIdentity` | Exclusive | Curate ENS identities for trusted agents and nodes, preserving revocation history. |
 | `stake(uint256)` / `withdrawStake(address,uint256)` | Owner approves withdrawals; agents require active identity | Liquidity management of the canonical `$AGIALPHA` staking pool. |
 | `recordAlphaWUMint` / `recordAlphaWUAcceptance` / `applySlash` | Owner override alongside validator rules | Direct intervention in alpha issuance, acceptance, and slashing with timestamped events. |
+
+```mermaid
+classDiagram
+  class Owner
+  class AlphaNodeManager {
+    +pause()
+    +unpause()
+    +setValidator(address,bool)
+    +registerIdentity(bytes32,address)
+    +updateIdentityController(bytes32,address)
+    +setIdentityStatus(bytes32,bool)
+    +revokeIdentity(bytes32)
+    +recordAlphaWUMint(bytes32,address,address)
+    +recordAlphaWUAcceptance(bytes32)
+    +applySlash(bytes32,address,uint256)
+  }
+  class Validator
+  class Agent
+  Owner --> AlphaNodeManager : onlyOwner
+  Validator --> AlphaNodeManager : recordAlphaWUValidation()
+  Agent --> AlphaNodeManager : recordAlphaWUMint()
+```
 
 ---
 
