@@ -92,6 +92,18 @@ function sanitizeNumber(value) {
   return Number.parseFloat(value.toFixed(8));
 }
 
+function normaliseLabel(value) {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed ? trimmed.toLowerCase() : null;
+  }
+  const stringified = String(value).trim();
+  return stringified ? stringified.toLowerCase() : null;
+}
+
 export function buildEpochPayload({ epochId = null, fromTs, toTs } = {}) {
   const fromMs = parseTimestamp(fromTs, 'fromTs');
   const toMs = parseTimestamp(toTs, 'toTs');
@@ -100,6 +112,7 @@ export function buildEpochPayload({ epochId = null, fromTs, toTs } = {}) {
   }
 
   const nodeLabel = resolveNodeLabel();
+  const normalizedNodeLabel = normaliseLabel(nodeLabel);
   const snapshot = getSegmentsSnapshot();
 
   let totalAlpha = 0;
@@ -108,6 +121,13 @@ export function buildEpochPayload({ epochId = null, fromTs, toTs } = {}) {
   const slaTotals = new Map();
 
   for (const segment of snapshot) {
+    const normalizedProviderLabel = normaliseLabel(
+      segment?.providerLabel ?? segment?.deviceInfo?.providerLabel ?? null
+    );
+    if (!normalizedProviderLabel || normalizedProviderLabel !== normalizedNodeLabel) {
+      continue;
+    }
+
     const startMs = segment.startedAt ? Date.parse(segment.startedAt) : null;
     const endMs = segment.endedAt ? Date.parse(segment.endedAt) : startMs;
     if (startMs === null || Number.isNaN(startMs) || endMs === null || Number.isNaN(endMs)) {

@@ -69,6 +69,38 @@ describe('oracle epoch export', () => {
     expect(payload.breakdown.bySlaProfile[SLA_PROFILES.HIGH_REDUNDANCY]).toBeCloseTo(expectedJob2Alpha, 6);
   });
 
+  it('filters segments that do not match the active node label', () => {
+    const matchingSegment = startSegment({
+      jobId: 'job-allow',
+      deviceInfo: { providerLabel: 'oracle-alpha', deviceClass: 'A100-80GB' },
+      startedAt: new Date('2024-01-01T00:00:00Z')
+    });
+    const matchingResult = stopSegment(matchingSegment.segmentId, {
+      endedAt: new Date('2024-01-01T00:10:00Z')
+    });
+
+    const rogueSegment = startSegment({
+      jobId: 'job-deny',
+      deviceInfo: { providerLabel: 'rogue-node', deviceClass: 'H100-80GB' },
+      startedAt: new Date('2024-01-01T00:00:00Z')
+    });
+    stopSegment(rogueSegment.segmentId, {
+      endedAt: new Date('2024-01-01T00:10:00Z')
+    });
+
+    const payload = buildEpochPayload({
+      epochId: 'epoch-filter',
+      fromTs: WINDOW_START,
+      toTs: WINDOW_END
+    });
+
+    expect(payload.totals.alphaWU).toBeCloseTo(Number(matchingResult.alphaWU), 6);
+    expect(payload.breakdown.byJob['job-allow'].alphaWU).toBeCloseTo(Number(matchingResult.alphaWU), 6);
+    expect(payload.breakdown.byJob).not.toHaveProperty('job-deny');
+    expect(payload.breakdown.byDeviceClass['A100-80GB']).toBeCloseTo(payload.totals.alphaWU, 6);
+    expect(payload.breakdown.byDeviceClass['H100-80GB']).toBeUndefined();
+  });
+
   it('rejects invalid windows', () => {
     expect(() => buildEpochPayload({ fromTs: null, toTs: WINDOW_END })).toThrow(/fromTs/);
     expect(() => buildEpochPayload({ fromTs: WINDOW_START, toTs: WINDOW_START })).toThrow(/greater than/);
