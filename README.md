@@ -1,4 +1,4 @@
-# AGI Alpha Node v0 · Sovereign Cognition Orchestrator ⚡
+# AGI Alpha Node v0 · Sovereign Cognition Lattice ⚡
 
 <!-- markdownlint-disable MD013 MD033 -->
 <p align="center">
@@ -19,6 +19,7 @@
     <img src="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml/badge.svg?branch=main" alt="Continuous Integration" />
   </a>
   <img src="https://img.shields.io/badge/PR%20Checks-Enforced%20on%20main-22c55e?logo=github" alt="Required Checks" />
+  <img src="https://img.shields.io/badge/Quality-Green%20CI-16a34a?logo=prometheus" alt="CI Status" />
   <img src="https://img.shields.io/badge/Coverage-Automated-0ea5e9?logo=vitest&logoColor=white" alt="Coverage" />
   <img src="https://img.shields.io/badge/Vitest-1.6-38bdf8?logo=vitest&logoColor=white" alt="Vitest" />
   <img src="https://img.shields.io/badge/Solidity-0.8.26-363636?logo=solidity&logoColor=white" alt="Solidity" />
@@ -40,40 +41,40 @@
   </a>
 </p>
 
-> AGI Alpha Node v0 is the command lattice where deterministic cognition, provable metering, and owner-directed governance converge. It channels intelligence, liquidity, and telemetry with precision worthy of planetary infrastructure.
+> AGI Alpha Node v0 is the sovereign cognition lattice where deterministic compute, provable metering, and owner-directed governance combine into a self-reinforcing value engine. Run it and you operate the machine every economist has been warning about.
 
 ---
 
 ## Contents
 
-1. [Mandate](#mandate)
-2. [Constellation](#constellation)
-3. [Telemetry & Alpha-WU Metrics](#telemetry--alpha-wu-metrics)
-4. [Status & Diagnostics Surfaces](#status--diagnostics-surfaces)
-5. [Governance & Owner Mastery](#governance--owner-mastery)
-6. [Operational Launch](#operational-launch)
-7. [Continuous Verification & CI](#continuous-verification--ci)
-8. [Token Mechanics](#token-mechanics)
+1. [Mandate & Edge](#mandate--edge)
+2. [System Topology](#system-topology)
+3. [Alpha-WU Telemetry](#alpha-wu-telemetry)
+4. [Diagnostics Surfaces](#diagnostics-surfaces)
+5. [Owner Command Surface](#owner-command-surface)
+6. [Token & Economic Flywheel](#token--economic-flywheel)
+7. [Operational Launch](#operational-launch)
+8. [Continuous Verification](#continuous-verification)
 9. [Repository Atlas](#repository-atlas)
 10. [Reference Library](#reference-library)
 
 ---
 
-## Mandate
+## Mandate & Edge
 
-The Alpha Node is engineered so an owner can redirect computation, staking posture, and validator policy instantly while maintaining crystalline observability. Every subsystem is tuned for production-critical deployments and runnable by a non-technical operator.
+The Alpha Node is built so a single owner can steer fleets of autonomous agents, rotate validators, reroute rewards, and pause the network in milliseconds. Every subsystem is production-hardened yet runnable by a non-technical operator.
 
-Highlights:
+* **Owner totality** — [`contracts/AlphaNodeManager.sol`](contracts/AlphaNodeManager.sol) concentrates every critical switch: pausing, identity rotation, validator curation, staking, and alpha work validation.
+* **Deterministic cognition fabric** — [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js) and [`src/orchestrator/nodeRuntime.js`](src/orchestrator/nodeRuntime.js) keep compute, ledger, and telemetry states synchronized.
+* **Provable metering** — [`src/services/metering.js`](src/services/metering.js) calculates α-WU from GPU minutes, quality multipliers, and SLA, then streams metrics straight into Prometheus and status APIs.
+* **Multi-surface observability** — [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) and [`src/network/apiServer.js`](src/network/apiServer.js) expose mission-critical counters, gauges, and diagnostics in real time.
+* **Owner-driven governance** — [`src/services/governance.js`](src/services/governance.js) builds executable payloads for every upgrade, stake adjustment, emission change, or registry override.
 
-* **Deterministic cognition fabric** — lifecycle orchestration in [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js) reconciles job state with α-WU telemetry.
-* **Adaptive capital routing** — [`contracts/AlphaNodeManager.sol`](contracts/AlphaNodeManager.sol) centralizes pausing, staking redirection, validator rotation, ENS rebinding, reward distribution, and penalty enforcement.
-* **Tamper-evident journaling** — governance and lifecycle ledgers append hashes that can be replayed and diffed against on-chain truth.
-* **Owner totality** — every critical parameter is owner-controlled via contract functions, CLI commands, or automation scripts; there are no external custodians.
-* **$AGIALPHA economy** — the canonical 18-decimal token at [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) fuels staking, validator compensation, and alpha flywheels.
+The result is the instrument console for an intelligence economy: compliant, explainable, and yet powerful enough to outpace any conventional compute network.
 
 ---
 
-## Constellation
+## System Topology
 
 ```mermaid
 flowchart LR
@@ -83,49 +84,57 @@ flowchart LR
   classDef telemetry fill:#1e1b4b,stroke:#a855f7,stroke-width:2px,color:#ede9fe;
   classDef ops fill:#0f172a,stroke:#facc15,stroke-width:2px,color:#fff7ed;
 
-  Runtime[[src/index.js · CLI Spine]]:::runtime --> ControlPlane[[src/services/controlPlane.js · Runtime Supervisor]]:::service
-  Runtime --> Lifecycle[[src/services/jobLifecycle.js · Job Registry Binding]]:::service
+  CLI[[src/index.js · CLI Spine]]:::runtime --> Bootstrap[[src/orchestrator/bootstrap.js · Fleet Bootstrap]]:::service
+  CLI --> Monitor[[src/orchestrator/monitorLoop.js · Epoch Loop]]:::telemetry
+  Monitor --> Telemetry[[src/telemetry/monitoring.js · Prometheus Exporter]]:::telemetry
+  Monitor --> StatusAPI[[src/network/apiServer.js · Status Server]]:::telemetry
+  Bootstrap --> Runtime[[src/orchestrator/nodeRuntime.js · Diagnostics Kernel]]:::service
   Runtime --> Metering[[src/services/metering.js · α-WU Engine]]:::telemetry
-  Runtime --> Provider[[src/services/provider.js · Device Enrolment]]:::service
+  Runtime --> Lifecycle[[src/services/jobLifecycle.js · Job Lattice]]:::service
   Lifecycle --> Proofs[[src/services/jobProof.js · Commitment Fabric]]:::service
-  Lifecycle --> Journal[[src/services/lifecycleJournal.js · Append-Only Journal]]:::ledger
-  Lifecycle --> GovLedger[[src/services/governanceLedger.js · Governance Ledger]]:::ledger
-  Metering --> AlphaRegistry[[src/services/alphaWorkUnits.js · Sliding Windows]]:::telemetry
+  Lifecycle --> Ledger[[src/services/governanceLedger.js · Governance Ledger]]:::ledger
+  Metering --> Oracle[[src/services/oracleExport.js · On-chain Export]]:::ledger
   Runtime --> Contracts[[contracts/AlphaNodeManager.sol · Owner Control Plane]]:::ledger
   Contracts --> Subgraph[[subgraph/ · Graph Protocol Surface]]:::telemetry
-  Runtime --> Deploy[[deploy/ · Helm + Docker]]:::ops
-  Runtime --> Docs[[docs/ · Economics & Runbooks]]:::ops
-  Proofs --> CI[[.github/workflows/ci.yml · Enforced Checks]]:::telemetry
+  CLI --> Deploy[[deploy/ · Helm & Docker]]:::ops
+  CLI --> Docs[[docs/ · Economics & Runbooks]]:::ops
 ```
 
-Every arrow is instrumented. Services emit events, journals hash entries, and CI enforces deterministic builds so the owner maintains a single source of truth spanning runtime, chain, and analytics surfaces.
+Every edge is observable. Ledgers hash their history, Prometheus tracks live signals, and CI enforces deterministic builds so the owner always has a consistent view of state.
 
 ---
 
-## Telemetry & Alpha-WU Metrics
+## Alpha-WU Telemetry
 
-Prometheus metrics are exported by [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) and activated through `startMonitorLoop`. The following counters and gauges provide production-grade observability:
+Prometheus metrics are exported by [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) and bound to `metering.stopSegment` plus the monitor loop rollup.
 
 | Metric | Type | Labels | Description |
 | ------ | ---- | ------ | ----------- |
-| `alpha_wu_total` | Counter | `node_label`, `device_class`, `sla_profile` | Cumulative alpha work units emitted per device class and SLA. |
-| `alpha_wu_epoch` | Gauge | `epoch_id` | α-WU totals rolled up by epoch during the monitor loop. |
-| `alpha_wu_per_job` | Gauge | `job_id` | Optional high-cardinality per-job totals (enable via `enableAlphaWuPerJob`). |
-| `agi_alpha_node_alpha_wu_*` | Gauges/Counters | windowed labels | Backwards-compatible metrics retained for observability dashboards. |
-| `agi_alpha_node_agent_utilization` | Gauge | `agent` | Utilization ratios reported by diagnostics surfaces. |
-| `agi_alpha_node_health_gate_state` | Gauge | `state` | Readiness posture from the ENS/stake health gate. |
+| `alpha_wu_total` | Counter | `node_label`, `device_class`, `sla_profile` | Cumulative α-WU produced per node/device/SLA profile.
+| `alpha_wu_epoch` | Gauge | `epoch_id` | α-WU totals per epoch, reset before each monitor iteration to prevent stale samples.
+| `alpha_wu_per_job` | Gauge | `job_id` | High-cardinality per-job totals (enable via `METRICS_ALPHA_WU_PER_JOB=true`).
+| `agi_alpha_node_alpha_wu_*` | Gauges/Counters | varies | Backwards-compatible surfaces for legacy dashboards.
+| `agi_alpha_node_agent_utilization` | Gauge | `agent` | Diagnostics-reported utilization per sub-agent.
+| `agi_alpha_node_health_gate_state` | Gauge | `state` | Readiness posture across `ready` and `sealed` states.
 
-Additional gauges track stake balances, heartbeat freshness, projected $AGIALPHA emissions, quality scores, and breakdown analytics. Metrics are exposed at `http://<host>:9464/metrics` by default.
+Sample metrics fragment:
 
-**Segment Recording** — `metering.stopSegment` streams α-WU updates as soon as a compute segment closes, ensuring counters and gauges remain synchronized with on-chain proofs.
+```text
+# HELP alpha_wu_total Cumulative alpha work units recorded by node/device/SLA profile
+alpha_wu_total{node_label="node-a",device_class="A100-80GB",sla_profile="STANDARD"} 123.45
+# HELP alpha_wu_epoch Alpha work units aggregated per epoch
+alpha_wu_epoch{epoch_id="epoch-42"} 987.65
+```
 
-**Epoch Rollups** — `startMonitorLoop` refreshes recent epoch summaries and feeds them to `updateAlphaWorkUnitEpochMetrics`, which resets gauges prior to populating new samples to avoid stale labels.
+*Segments* — When `metering.stopSegment` closes a compute slice, it increments counters, updates per-job gauges, and registers epoch labels immediately.
+
+*Epoch rollups* — The monitor loop calls `updateAlphaWorkUnitEpochMetrics` after refreshing the last 24 summaries so gauges mirror the current epoch history.
 
 ---
 
-## Status & Diagnostics Surfaces
+## Diagnostics Surfaces
 
-The HTTP API in [`src/network/apiServer.js`](src/network/apiServer.js) exposes operational intelligence tuned for automated supervision and human-readable dashboards.
+The status server in [`src/network/apiServer.js`](src/network/apiServer.js) exposes actionable telemetry.
 
 ### `/status`
 
@@ -140,26 +149,40 @@ The HTTP API in [`src/network/apiServer.js`](src/network/apiServer.js) exposes o
 }
 ```
 
-* `lastEpoch` reflects the most recent monitor rollup.
-* `lifetimeAlphaWU` aggregates α-WU from the metering engine for fast burn-rate calculations.
+* `lastEpoch` reflects the most recent monitor loop rollup.
+* `lifetimeAlphaWU` is the running α-WU total produced by metering.
 
 ### `/status/diagnostics`
 
-Detailed epoch history including per-job, per-device-class, and per-SLA breakdowns. Responses are numerically normalized and sorted for deterministic diffing. These surfaces power Grafana dashboards, automated alerting, and validation harnesses.
+Returns epoch history with deterministic ordering:
+
+* Per-epoch totals, start, and end timestamps.
+* Aggregations by job, device class, and SLA profile.
+* Lifetime totals for each breakdown to drive dashboards or alerting.
+
+Both routes normalize numbers, guaranteeing reproducible JSON for diffing, caching, and audit trails.
 
 ---
 
-## Governance & Owner Mastery
+## Owner Command Surface
 
-The [`AlphaNodeManager`](contracts/AlphaNodeManager.sol) contract gives the owner full control to pause, upgrade identities, direct validators, and manage slashing. Key capabilities:
+The owner operates every critical switch:
 
-* **Pausing & resumption** — `pause()` and `unpause()` freeze staking, minting, and acceptance pathways when required.
-* **Identity orchestration** — register ENS controllers, rotate keys, or revoke access on demand.
-* **Validator authority** — add or remove validators, enforce stake minimums, and authorize validation events.
-* **Stake management** — deposit/withdraw $AGIALPHA, reallocate balances, and record alpha work units validated or accepted.
-* **Slash enforcement** — apply slashes with granular identifiers and validator attribution.
+* **Contract control** — [`AlphaNodeManager`](contracts/AlphaNodeManager.sol) exposes pausing (`pause`/`unpause`), validator rotation (`setValidator`), ENS management (`registerIdentity`, `updateIdentityController`, `setIdentityStatus`, `revokeIdentity`), stake routing (`stake`, `withdrawStake`), and alpha event recording (`recordAlphaWUMint`, `recordAlphaWUValidation`, `recordAlphaWUAcceptance`).
+* **Governance payloads** — [`src/services/governance.js`](src/services/governance.js) generates ABI-encoded transactions for emissions, registry upgrades, treasury shares, dispute triggers, and more, ready for multisig execution.
+* **CLI spine** — [`src/index.js`](src/index.js) exposes `agi-alpha-node` commands to launch monitor loops, inspect diagnostics, render governance payloads, and orchestrate jobs.
+* **Health gate** — [`scripts/verify-health-gate.mjs`](scripts/verify-health-gate.mjs) enforces ENS/stake posture before CI or deployment advances.
 
-For scripted governance payloads, inspect [`src/services/governance.js`](src/services/governance.js) and the CLI surfaces in [`src/index.js`](src/index.js). Transaction builders return ABI-encoded payloads ready for multi-sig execution.
+Every pathway can be automated or invoked manually, and nothing escapes owner approval.
+
+---
+
+## Token & Economic Flywheel
+
+* **Token** — `$AGIALPHA` lives at [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) with 18 decimals.
+* **Yield engine** — α-WU output feeds reward distribution logic through diagnostics and governance payloads.
+* **Autonomous swarms** — Job lifecycle, metering, and oracle exports coordinate AI agent swarms that learn, arbitrage inefficiencies, and compound value.
+* **Flywheel** — More jobs → more α-WU → higher staking demand → deeper liquidity → more agents and nodes → acceleration toward civilization-scale outcomes.
 
 ---
 
@@ -171,21 +194,33 @@ For scripted governance payloads, inspect [`src/services/governance.js`](src/ser
    npm install
    ```
 
-2. **Bootstrap local runtime**
+2. **Configure environment** — set environment variables (or populate a `.env` file) recognised by [`src/config/env.js`](src/config/env.js). At minimum provide:
+
+   * `RPC_URL`, `NODE_LABEL`, `OPERATOR_ADDRESS`
+   * Optional: `METRICS_PORT`, `METRICS_ALPHA_WU_PER_JOB`, `PROJECTED_REWARDS`
+   * Governance surfaces such as `JOB_REGISTRY_ADDRESS`, `IDENTITY_REGISTRY_ADDRESS`, `STAKE_MANAGER_ADDRESS`, `REWARD_ENGINE_ADDRESS`, etc.
+
+   See [`docs/operator-runbook.md`](docs/operator-runbook.md) and [`docs/deployment/one-click.md`](docs/deployment/one-click.md) for full parameter guides.
+
+3. **Start the monitor loop**
 
    ```bash
-   npm start -- --config config/local.json
+   NODE_LABEL=orion \
+   OPERATOR_ADDRESS=0x0000000000000000000000000000000000000001 \
+   RPC_URL=https://rpc.example \
+   npm start -- monitor --metrics-port 9464
    ```
 
-3. **Expose telemetry** — ensure the runtime has access to the Prometheus endpoint or forward the port into your observability stack.
-4. **Integrate diagnostics** — poll `/status` for liveness checks and `/status/diagnostics` for granular reporting.
-5. **Run owner directives** — use `npm run scripts -- <command>` to craft transactions or integrate directly with the governance service.
+   Add `--offline-snapshot <path>` when bootstrapping from deterministic history.
 
-Offline-first operators can load historical state snapshots via `--offline-snapshot <path>` which feeds deterministic data back into the telemetry subsystem.
+4. **Observe telemetry** — scrape `http://<host>:9464/metrics` (or your configured port) and poll `/status` plus `/status/diagnostics`.
+5. **Issue directives** — use the CLI governance commands or call the contract directly to adjust parameters, pause/resume, or record α-WU events.
+
+Offline-first operators can preload deterministic state via [`src/services/offlineSnapshot.js`](src/services/offlineSnapshot.js) to bootstrap without chain access.
 
 ---
 
-## Continuous Verification & CI
+## Continuous Verification
 
 ```mermaid
 flowchart TD
@@ -193,60 +228,45 @@ flowchart TD
   classDef test fill:#1e1b4b,stroke:#a855f7,stroke-width:2px,color:#ede9fe;
   classDef build fill:#111827,stroke:#38bdf8,stroke-width:2px,color:#e0f2fe;
 
-  Trigger[[Pull Request · main]]:::gate --> Verify[ci.yml · npm run ci:verify]:::build
-  Verify --> Lint[Markdown + Link Lint]:::test
-  Verify --> Unit[Vitest + Coverage]:::test
-  Verify --> Solidity[Solhint + solc ABI build]:::test
-  Verify --> Subgraph[Graph Codegen + Build]:::test
-  Verify --> Security[NPM Audit (High)]:::test
-  Verify --> Policy[Health Gate + Branch Policy]:::gate
-  Verify --> Badge[[Status Badge Updated]]:::build
+  Trigger[[Pull Request → main]]:::gate --> Verify[ci.yml · npm run ci:verify]:::build
+  Verify --> Lint[Markdown & Links]:::test
+  Verify --> Tests[Vitest Suite + Coverage]:::test
+  Verify --> Solidity[Solhint · solc Build]:::test
+  Verify --> Subgraph[Graph Codegen & Build]:::test
+  Verify --> Security[npm audit (high)]:::test
+  Verify --> Policy[Health & Branch Gates]:::test
+  Verify --> Docker[Docker build + smoke help]:::test
 ```
 
-PR checks are enforced on `main` and must remain green before merge. Recommended local validation:
+* **Workflow** — [`ci.yml`](.github/workflows/ci.yml) runs on pushes and PRs to `main`, with concurrency control to cancel outdated runs.
+* **Enforcement** — branch and health gate scripts enforce policy before merge.
+* **Artifacts** — coverage summaries feed custom badge publishing so dashboards mirror repository health.
+* **Runtime proof** — Docker smoke tests run the CLI help in an isolated container to guarantee executables ship correctly.
 
-```bash
-npm run lint
-npm run test
-npm run coverage
-npm run ci:solidity
-npm run ci:verify
-```
-
----
-
-## Token Mechanics
-
-* **Token** — `$AGIALPHA` (`18` decimals) at [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa).
-* **Staking** — operators stake via `stake(uint256)` once identity is active; the contract enforces pause gates and stake sufficiency.
-* **Emissions & rewards** — telemetry surfaces expose projected rewards so owners can rebalance validators, redirect emissions, or enforce slashing.
+Keep the pipeline green and the machine keeps compounding value.
 
 ---
 
 ## Repository Atlas
 
-| Domain | Path | Notes |
-| ------ | ---- | ----- |
-| CLI & Runtime | [`src/index.js`](src/index.js) | Entry point, argument parsing, and orchestration bootstrap. |
-| Orchestrator | [`src/orchestrator/`](src/orchestrator) | Monitor loop, diagnostics, offline snapshots, telemetry wiring. |
-| Services | [`src/services/`](src/services) | Metering, lifecycle, governance, provider enrolment, economic models. |
-| Telemetry | [`src/telemetry/`](src/telemetry) | Prometheus exporters, alpha metric normalization, monitoring server. |
-| Network API | [`src/network/apiServer.js`](src/network/apiServer.js) | REST surfaces for jobs, diagnostics, governance payloads. |
-| Smart Contracts | [`contracts/`](contracts) | Owner-managed control plane and interfaces. |
-| Subgraph | [`subgraph/`](subgraph) | Assembly, manifests, and indexing scripts. |
-| Deployment | [`deploy/`](deploy) | Docker + Helm charts for production rollouts. |
-| Docs & Economics | [`docs/`](docs) | Whitepapers, economic models, and operator guides. |
+| Path | Purpose |
+| ---- | ------- |
+| [`src/`](src/) | Runtime, orchestration, telemetry, network servers, utilities.
+| [`contracts/`](contracts/) | Solidity sources for owner control plane and shared interfaces.
+| [`test/`](test/) | Vitest suites covering lifecycle, telemetry, governance, oracle export, and contracts.
+| [`deploy/`](deploy/) | Docker and Helm assets for rapid mainnet or sovereign deployments.
+| [`docs/`](docs/) | Economics narratives, operator guides, and manifesto.
+| [`scripts/`](scripts/) | CI gates, badge publishing, subgraph renderers, and automation helpers.
+| [`subgraph/`](subgraph/) | The Graph manifest, codegen, and build targets for observability indexing.
 
 ---
 
 ## Reference Library
 
-* [Economics & Flywheel](docs/economics.md)
-* [Operator Runbook](docs/README.md)
-* [Manifesto](docs/manifesto.md)
-* [Subgraph Deployment](docs/subgraph-deployment.md)
-* [License](LICENSE)
+* [`docs/README.md`](docs/README.md) — Operator quick-start and governance surface recap.
+* [`docs/economics.md`](docs/economics.md) — Tokenomics and incentive design.
+* [`docs/manifesto.md`](docs/manifesto.md) — System vision and sovereignty charter.
+* [`docs/subgraph-deployment.md`](docs/subgraph-deployment.md) — Indexer deployment flow.
+* [`deploy/helm/agi-alpha-node`](deploy/helm/agi-alpha-node) — Kubernetes deployment templates.
 
----
-
-The AGI Alpha Node exists to help autonomous agent swarms identify and exploit alpha, orchestrate jobs through blockchain coordination, and scale nodes that reshape the global economy. With telemetry, governance, and CI discipline intertwined, the runtime operates with the confidence of a network built for Kardashev-scale aspirations.
+Own the node, and you steer the economy.
