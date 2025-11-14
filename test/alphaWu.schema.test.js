@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import Ajv2020 from 'ajv/dist/2020.js';
+import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json' assert { type: 'json' };
 import { validateAlphaWu } from '../src/types/alphaWu.js';
 
 const schemaPath = new URL('../spec/alpha_wu.schema.json', import.meta.url);
@@ -34,6 +35,9 @@ describe('alpha-wu schema validation', () => {
   it('validates sample payload with JSON schema and zod schema', () => {
     const sample = buildSampleAlphaWu();
     const ajv = new Ajv2020({ strict: false, allErrors: true });
+    if (!ajv.getSchema('http://json-schema.org/draft-07/schema')) {
+      ajv.addMetaSchema(draft7MetaSchema);
+    }
     ajv.addFormat('date-time', {
       type: 'string',
       validate: (value) => Number.isFinite(Date.parse(value))
