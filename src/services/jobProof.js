@@ -236,11 +236,21 @@ export function createJobProof({ jobId, result, operator, timestamp, metadata, r
     total: alphaSummary.total,
     bySegment: alphaSummary.bySegment,
     modelClassBreakdown: alphaSummary.modelClassBreakdown,
-    slaBreakdown: alphaSummary.slaBreakdown,
-    breakdown: alphaSummary.breakdown,
-    quality: alphaSummary.quality,
-    qualityBreakdown: alphaSummary.qualityBreakdown
+    slaBreakdown: alphaSummary.slaBreakdown
   };
+  alphaWU.quality = {
+    modelClass: { ...alphaWU.modelClassBreakdown },
+    sla: { ...alphaWU.slaBreakdown }
+  };
+  alphaWU.breakdown = {
+    modelClass: { ...alphaWU.modelClassBreakdown },
+    sla: { ...alphaWU.slaBreakdown }
+  };
+  alphaWU.qualityBreakdown =
+    alphaSummary.qualityBreakdown ?? {
+      modelClass: { ...alphaWU.modelClassBreakdown },
+      sla: { ...alphaWU.slaBreakdown }
+    };
 
   return {
     jobId: normalizedJobId,
