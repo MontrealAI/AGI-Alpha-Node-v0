@@ -292,4 +292,27 @@ describe('metering service', () => {
     );
     expect(aggregatedEpochAlpha).toBeCloseTo(expectedTotal, 2);
   });
+
+  it('defaults benchmark multipliers to one for unmapped devices while keeping α-WU rounding stable', () => {
+    const { segmentId } = startSegment({
+      jobId: 'unknown-benchmark',
+      deviceInfo: { deviceClass: 'UNLISTED-GPU', vramTier: VRAM_TIERS.TIER_16, gpuCount: 1 },
+      modelClass: MODEL_CLASSES.LLM_8B,
+      slaProfile: SLA_PROFILES.STANDARD,
+      startedAt: new Date(START_TIME.getTime() + 180 * 60_000)
+    });
+
+    const result = stopSegment(segmentId, {
+      endedAt: new Date(START_TIME.getTime() + 190 * 60_000)
+    });
+
+    expect(result.qualityMultiplier).toBeCloseTo(1, 4);
+    expect(result.gpuMinutes).toBeCloseTo(10, 4);
+    expect(result.alphaWU).toBe(roundTo(result.gpuMinutes, 2));
+
+    const summary = getJobAlphaSummary('unknown-benchmark');
+    expect(summary.total).toBe(result.alphaWU);
+    expect(summary.bySegment[0].deviceClass).toBe('UNLISTED-GPU');
+    expect(summary.bySegment[0].qualityMultiplier).toBe(result.qualityMultiplier);
+  });
 });
