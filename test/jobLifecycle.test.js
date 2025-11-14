@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { zeroPadValue, keccak256, toUtf8Bytes } from 'ethers';
 import { createJobLifecycle } from '../src/services/jobLifecycle.js';
 import { resolveJobProfile, createInterfaceFromProfile } from '../src/services/jobProfiles.js';
+import { normalizeJobId } from '../src/services/jobProof.js';
 import { resetMetering, startSegment, stopSegment } from '../src/services/metering.js';
 import { MODEL_CLASSES, SLA_PROFILES } from '../src/constants/workUnits.js';
 import { verifyAlphaWu } from '../src/crypto/signing.js';
@@ -391,5 +392,53 @@ describe('job lifecycle service', () => {
         result: { ok: true }
       })
     ).rejects.toThrow(/alphaWu artifact is required/i);
+  });
+
+  it('rejects α-WU artifacts that reference a different job when telemetry disabled', async () => {
+    const telemetry = createAlphaWuTelemetry({ enabled: false });
+    const submitProof = vi.fn(async () => ({ hash: '0xsubmit' }));
+    const registry = {
+      submitProof,
+      connect() {
+        return this;
+      }
+    };
+    const lifecycle = createJobLifecycle({
+      alphaTelemetry: telemetry,
+      jobRegistryAddress: registryAddress,
+      defaultSigner: { address: '0x00000000000000000000000000000000000000bb' },
+      contractFactory: () => registry
+    });
+
+    const jobId = 'job-correct';
+    const normalizedJobId = normalizeJobId(jobId);
+    const mismatchedJobId = normalizeJobId('job-incorrect');
+    expect(mismatchedJobId).not.toBe(normalizedJobId);
+
+    const alphaWuArtifact = {
+      job_id: mismatchedJobId,
+      wu_id: 'wu-123',
+      role: 'executor',
+      alpha_wu_weight: 1,
+      model_runtime: { name: 'test-model', version: '1.0.0', runtime_type: 'container' },
+      inputs_hash: '0x' + '11'.repeat(32),
+      outputs_hash: '0x' + '22'.repeat(32),
+      wall_clock_ms: 1000,
+      cpu_sec: 1,
+      gpu_sec: null,
+      energy_kwh: null,
+      node_ens_name: 'node.test',
+      attestor_address: '0x' + '33'.repeat(20),
+      attestor_sig: '0x' + '44'.repeat(65),
+      created_at: new Date('2024-01-01T00:00:00Z').toISOString()
+    };
+
+    await expect(
+      lifecycle.submitExecutorResult(jobId, {
+        result: { ok: true },
+        alphaWu: alphaWuArtifact
+      })
+    ).rejects.toThrow(/does not belong to the submitted job/i);
+    expect(submitProof).not.toHaveBeenCalled();
   });
 });

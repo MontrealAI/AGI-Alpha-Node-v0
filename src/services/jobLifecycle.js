@@ -802,6 +802,15 @@ export function createJobLifecycle({
 
     if (alphaWu) {
       const suppliedAlphaWu = validateAlphaWu(alphaWu);
+      let suppliedAlphaWuJobId;
+      try {
+        suppliedAlphaWuJobId = normalizeJobId(suppliedAlphaWu.job_id);
+      } catch (error) {
+        throw new Error('Provided α-WU payload references an invalid job identifier');
+      }
+      if (suppliedAlphaWuJobId !== normalizedJobId) {
+        throw new Error('Provided α-WU payload does not belong to the submitted job');
+      }
       const signatureValid = verifyAlphaWu(suppliedAlphaWu, {
         expectedAddress: signedAlphaWu?.attestor_address ?? suppliedAlphaWu.attestor_address
       });
