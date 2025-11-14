@@ -205,14 +205,13 @@ The owner console spans CLI, API, and policy scripts. Every directive is evaluat
 
 | Capability | Function | Description |
 | --- | --- | --- |
-| Circuit breaker | `pause()` / `unpause()` | Halt or resume staking and α-WU recording instantly. |
-| Validator curation | `setValidator(address,bool)` | Activate or retire validators responsible for α-WU validation. |
-| Identity graph | `registerIdentity(bytes32,address)`<br/>`updateIdentityController(bytes32,address)`<br/>`setIdentityStatus(bytes32,bool)` | Bind ENS nodes to controllers, rotate operators, and toggle availability on command. |
-| Treasury flow | `stake(uint256)` / `withdrawStake(address,uint256)` | Pull or redirect $AGIALPHA as business logic evolves. |
-| Parameter rotation | `setSlaProfile(bytes32,uint256)`<br/>`setModelClass(bytes32,uint256)`<br/>`setDeviceClass(bytes32,uint256)` | Tune SLA weights, model multipliers, and hardware tiers without downtime. |
-| Rewards lifecycle | `recordReward(address,uint256)` / `slash(address,uint256)` | Route incentives or penalties based on ledger evidence. |
-| Parameter upgrades | `setLifecycleConfig(bytes32,bytes)` | Upload pre-encoded job policy bundles for instant runtime modulation. |
-| Emergency resets | `setRegistry(address)` + `pause()` | Shift registries or halt execution while keeping all ledger and journal anchors intact. |
+| Circuit breaker | `pause()` / `unpause()` | Halt or resume staking operations, α-WU attestations, and validator flows instantly. |
+| Validator curation | `setValidator(address,bool)` | Activate or retire validators entrusted with α-WU validation rights. |
+| Identity graph | `registerIdentity(bytes32,address)`<br/>`updateIdentityController(bytes32,address)`<br/>`setIdentityStatus(bytes32,bool)`<br/>`revokeIdentity(bytes32)` | Bind ENS nodes to controllers, rotate operators, toggle availability, and revoke identities without downtime. |
+| Stake and treasury flow | `stake(uint256)` / `withdrawStake(address,uint256)` | Direct $AGIALPHA staking inflows or reroute balances to owner-selected destinations. |
+| Alpha attestations | `recordAlphaWUMint(bytes32,address,address)`<br/>`recordAlphaWUValidation(bytes32,uint256,uint256)`<br/>`recordAlphaWUAcceptance(bytes32)` | Chronicle α-WU lifecycle events with owner overrides and validator accountability. |
+| Enforcement | `applySlash(bytes32,address,uint256)` | Penalize validators directly from the command plane when ledger evidence demands corrective action. |
+| State introspection | `getIdentity(address)` / `ensNodeController(bytes32)` | Audit current operator bindings and ENS controllers before issuing control directives. |
 
 The governance ledger and lifecycle journal mirror every invocation so owners maintain non-repudiable state.
 
@@ -233,16 +232,16 @@ The governance ledger and lifecycle journal mirror every invocation so owners ma
    npm start
    ```
 
-4. **Run health and governance diagnostics**
+4. **Run health diagnostics**
 
    ```bash
-   npm run verify:health-gate
-   npm run governance:status
+   node scripts/verify-health-gate.mjs
+   node scripts/verify-branch-gate.mjs
    ```
 
-5. **Execute owner directives** – craft payloads with `npm run governance:plan`, inspect diffs, then persist via `--execute --confirm` to guarantee ledger invariants. Ledger entries produced here embed α-WU snapshots for submissions, stake adjustments, and reward dispatch, aligning off-chain policy with on-chain truth.
+5. **Exercise governance flows** – import `createJobLifecycle` and `recordGovernanceAction` from `src/services/` to craft owner payloads. Each persisted entry automatically inherits α-WU telemetry for submissions, stake adjustments, and reward reception events, maintaining ledgers that match on-chain truth.
 
-6. **Replay ledgers** – parse `.agi/lifecycle/actions.jsonl` and `.governance-ledger/v1/*.json` for audit trails.
+6. **Replay ledgers** – inspect `.agi/lifecycle/actions.jsonl` and `.governance-ledger/v1/*.json` with any JSON tooling to surface hashes, α-WU breakdowns, and signature provenance.
 
 For containerized deployment, leverage `deploy/docker` for Compose stacks or `deploy/helm/agi-alpha-node` for Kubernetes clusters.
 
