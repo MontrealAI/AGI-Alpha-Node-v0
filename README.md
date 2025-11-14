@@ -40,14 +40,15 @@
 
 1. [Mission Profile](#mission-profile)
 2. [Cognition Mesh Architecture](#cognition-mesh-architecture)
-3. [α-WU Telemetry & Signing Fabric](#α-wu-telemetry--signing-fabric)
-4. [Epoch Intelligence & Determinism](#epoch-intelligence--determinism)
-5. [Operations & Governance Command](#operations--governance-command)
-6. [Telemetry, API & CLI](#telemetry-api--cli)
-7. [Quality Gates & Test Suites](#quality-gates--test-suites)
-8. [CI Enforcement & Branch Protection](#ci-enforcement--branch-protection)
-9. [Repository Atlas](#repository-atlas)
-10. [Reference Library](#reference-library)
+3. [Validator Pipeline & Attestations](#validator-pipeline--attestations)
+4. [α-WU Telemetry & Signing Fabric](#α-wu-telemetry--signing-fabric)
+5. [Epoch Intelligence & Determinism](#epoch-intelligence--determinism)
+6. [Operations & Governance Command](#operations--governance-command)
+7. [Telemetry, API & CLI](#telemetry-api--cli)
+8. [Quality Gates & Test Suites](#quality-gates--test-suites)
+9. [CI Enforcement & Branch Protection](#ci-enforcement--branch-protection)
+10. [Repository Atlas](#repository-atlas)
+11. [Reference Library](#reference-library)
 
 ---
 
@@ -74,6 +75,7 @@ flowchart LR
 
   CLI[[src/index.js<br/>Command Spine]]:::core --> Bootstrap[[src/orchestrator/bootstrap.js<br/>Cluster bootstrap]]:::service
   CLI --> Monitor[[src/orchestrator/monitorLoop.js<br/>Epoch watcher]]:::service
+  CLI --> Validator[[src/validator/runtime.js<br/>Validator runtime]]:::service
   Monitor --> Telemetry[[src/telemetry/monitoring.js<br/>Prometheus exporter]]:::observ
   Monitor --> StatusAPI[[src/network/apiServer.js<br/>Status surfaces]]:::observ
   Bootstrap --> Runtime[[src/orchestrator/nodeRuntime.js<br/>Diagnostics kernel]]:::service
@@ -82,6 +84,10 @@ flowchart LR
   Lifecycle --> Proofs[[src/services/jobProof.js<br/>Commitment fabric]]:::service
   Lifecycle --> Ledger[[src/services/governanceLedger.js<br/>Governance ledger]]:::ledger
   Lifecycle --> TelemetryWu[[src/telemetry/alphaWuTelemetry.js<br/>Signed telemetry context]]:::observ
+  Validator --> AlphaValidator[[src/validation/alphaWuValidator.js<br/>Signature & schema]]:::service
+  AlphaValidator --> Quorum[[src/settlement/quorumEngine.js<br/>Quorum engine]]:::ledger
+  Bootstrap --> Quorum
+  Quorum --> Lifecycle
   TelemetryWu --> Signing[[src/crypto/signing.js<br/>Attestor signature]]:::service
   Lifecycle --> AlphaStore[[spec/alpha_wu.schema.json<br/>Canonical schema]]:::ledger
   Metering --> Oracle[[src/services/oracleExport.js<br/>On-chain export]]:::ledger
@@ -91,6 +97,7 @@ flowchart LR
   TelemetryWu -->|feedback| Learning[[src/intelligence/learningLoop.js<br/>Policy gradients]]:::service
   Learning --> Planning[[src/intelligence/planning.js<br/>Strategy synthesis]]:::service
   Planning --> Lifecycle
+  Quorum --> StatusAPI
 ```
 
 Every edge is deterministic: segments are normalized, proofs replayable, and governance snapshots serialized with stable ordering. Owner operators see the exact internal state in real time.
@@ -110,6 +117,53 @@ stateDiagram-v2
   Governance --> Paused: Owner pause directive
   Paused --> Executing: Owner unpause directive
 ```
+
+---
+
+## Validator Pipeline & Attestations
+
+The validator sprint arms every node with an autonomous attestation circuit: α-WUs are revalidated through pluggable streams, emitted as signed `ValidationResult` artifacts, and collapsed into deterministic quorum outcomes that feed the orchestrator. The owner can flip between orchestrator-only, validator-only, or mixed duty cycles without rewriting configuration.
+
+- **Canonical validation contract** — `createAlphaWorkUnitValidator` reuses the canonical α-WU schema, re-verifies attestor signatures, enforces sanity checks (non-negative metrics, clock drift), and signs a structured `ValidationResult` with the validator’s EOA.【F:src/validation/alphaWuValidator.js†L1-L185】
+- **Pluggable ingestion** — `startValidatorRuntime` wires memory, file, HTTP, or message-queue sources into a streaming loop, couples them with an evented sink, and shares the validator address with upstream orchestration.【F:src/validator/runtime.js†L1-L61】【F:src/validator/sources/index.js†L1-L24】
+- **Asynchronous validator loop** — `createValidatorLoop` consumes the stream with backpressure-aware async iteration, isolates per-item failures, and guarantees sinks are closed on shutdown.【F:src/validator/validatorLoop.js†L1-L66】
+- **Quorum intelligence** — `createQuorumEngine` aggregates unique validator votes, tracks job-level status, emits acceptance/rejection events, and prepares for on-chain settlement without breaking determinism.【F:src/settlement/quorumEngine.js†L1-L160】
+- **Bootstrap integration** — `bootstrapContainer` inspects `NODE_ROLE`, boots validator-only nodes without ENS wiring, or—when mixed—subscribes the validator sink to the quorum engine and records acceptance/rejection in the lifecycle registry.【F:src/orchestrator/bootstrap.js†L82-L360】
+- **Graceful orchestration shutdown** — the `container` command now stops validator loops alongside monitor and API services so runtime transitions remain clean for operators.【F:src/index.js†L1138-L1215】
+- **Confidence harness** — dedicated tests cover schema enforcement (`alphaWuValidator.test`), loop orchestration (`validatorLoop.test`), and quorum behaviour (`quorumEngine.test`).【F:test/alphaWuValidator.test.js†L1-L78】【F:test/validatorLoop.test.js†L1-L84】【F:test/quorumEngine.test.js†L1-L98】
+
+### Validation flow
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Source as α-WU Source
+  participant Runtime as validator/runtime.js
+  participant Validator as alphaWuValidator.js
+  participant Quorum as quorumEngine.js
+  participant Orchestrator as bootstrapContainer()
+  participant Lifecycle as jobLifecycle()
+
+  Source->>Runtime: stream()
+  Runtime->>Validator: validate(alphaWu)
+  Validator-->>Runtime: signed ValidationResult
+  Runtime->>Quorum: publish(result)
+  Quorum-->>Orchestrator: settled event
+  Orchestrator->>Lifecycle: recordAlphaWorkUnitEvent()
+```
+
+### Validation configuration matrix
+
+| Variable | Default | Effect |
+| --- | --- | --- |
+| `NODE_ROLE` | `mixed` | Selects orchestrator, validator, or dual mode, allowing validator-only deployments without ENS prerequisites.【F:src/config/schema.js†L32-L120】【F:src/orchestrator/bootstrap.js†L99-L123】 |
+| `VALIDATION_MINIMUM_VOTES` | `3` | Votes required before the quorum engine settles a work unit.【F:src/config/schema.js†L396-L408】【F:src/settlement/quorumEngine.js†L111-L160】 |
+| `VALIDATION_QUORUM_BPS` | `6 667` | Valid vote threshold in basis points (≥2/3) for acceptance; failing ratios trigger rejection.【F:src/config/schema.js†L396-L408】【F:src/settlement/quorumEngine.js†L122-L130】 |
+| `VALIDATOR_SOURCE_TYPE` | `memory` | Selects `memory`, `file`, `http`, or `mq` source modules for α-WU ingestion.【F:src/config/schema.js†L396-L408】【F:src/validator/sources/index.js†L1-L24】 |
+| `VALIDATOR_SOURCE_PATH` | `undefined` | Optional path/URL used by file and HTTP sources.【F:src/config/schema.js†L396-L408】 |
+| `VALIDATOR_SINK_TYPE` | `memory` | Chooses the validation sink implementation (default in-memory bus).【F:src/config/schema.js†L396-L408】【F:src/validator/sinks/index.js†L1-L12】 |
+
+Validator-only nodes simply export `NODE_ROLE=validator` and provide a signing key (`VALIDATOR_PRIVATE_KEY` or `NODE_PRIVATE_KEY`); mixed nodes reuse the orchestrator’s pipeline while continuously validating attested work.【F:src/validation/alphaWuValidator.js†L29-L185】【F:src/orchestrator/bootstrap.js†L218-L360】
 
 ---
 

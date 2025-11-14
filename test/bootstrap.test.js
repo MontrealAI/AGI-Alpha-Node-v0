@@ -70,6 +70,7 @@ const baseConfig = {
   NODE_LABEL: '1',
   ENS_PARENT_DOMAIN: 'alpha.node.agi.eth',
   OPERATOR_ADDRESS: '0x0000000000000000000000000000000000000001',
+  NODE_ROLE: 'orchestrator',
   STAKE_MANAGER_ADDRESS: undefined,
   PLATFORM_INCENTIVES_ADDRESS: undefined,
   SYSTEM_PAUSE_ADDRESS: undefined,

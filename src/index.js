@@ -1194,8 +1194,11 @@ program
         return;
       }
 
-      const { monitor, apiServer } = result;
+      const { monitor, apiServer, validatorRuntime } = result;
       if (!monitor) {
+        if (validatorRuntime?.loopPromise) {
+          await validatorRuntime.loopPromise;
+        }
         if (apiServer) {
           await apiServer.stop();
         }
@@ -1205,6 +1208,9 @@ program
       const gracefulShutdown = async () => {
         logger.info('Shutting down container monitor loop');
         await monitor.stop();
+        if (validatorRuntime) {
+          await validatorRuntime.stop();
+        }
         if (apiServer) {
           await apiServer.stop();
         }
@@ -1215,6 +1221,9 @@ program
       process.on('SIGTERM', gracefulShutdown);
 
       await monitor.loopPromise;
+      if (validatorRuntime) {
+        await validatorRuntime.stop();
+      }
 
       if (runOnce) {
         process.off('SIGINT', gracefulShutdown);
@@ -1222,6 +1231,9 @@ program
         await monitor.stop();
         if (apiServer) {
           await apiServer.stop();
+        }
+        if (validatorRuntime) {
+          await validatorRuntime.stop();
         }
       }
     } catch (error) {

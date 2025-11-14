@@ -14,6 +14,8 @@ import { createJobLifecycle } from '../services/jobLifecycle.js';
 import { createLifecycleJournal } from '../services/lifecycleJournal.js';
 import { createHealthGate } from '../services/healthGate.js';
 import { createAlphaWuTelemetry } from '../telemetry/alphaWuTelemetry.js';
+import { startValidatorRuntime } from '../validator/runtime.js';
+import { createQuorumEngine } from '../settlement/quorumEngine.js';
 
 function assertConfigField(value, field) {
   if (!value) {
@@ -94,8 +96,39 @@ export async function bootstrapContainer({
 
   await hydrateOperatorPrivateKey(config, { logger });
 
+  const nodeRole = config.NODE_ROLE ?? 'mixed';
+  const orchestratorEnabled = ['orchestrator', 'executor', 'mixed'].includes(nodeRole);
+  const validatorEnabled = ['validator', 'mixed'].includes(nodeRole);
+
+  if (!orchestratorEnabled && !validatorEnabled) {
+    throw new Error('NODE_ROLE must enable at least one capability');
+  }
+
+  if (!orchestratorEnabled) {
+    const validatorLogger = typeof logger.child === 'function' ? logger.child({ subsystem: 'validator-runtime' }) : logger;
+    const validatorRuntime = validatorEnabled
+      ? await startValidatorRuntime({ config, logger: validatorLogger })
+      : null;
+    return {
+      config,
+      diagnostics: null,
+      monitor: null,
+      apiServer: null,
+      jobLifecycle: null,
+      stopJobWatchers: null,
+      executionBinding: null,
+      healthGate: null,
+      validatorRuntime
+    };
+  }
+
   assertConfigField(config.NODE_LABEL, 'NODE_LABEL');
   assertConfigField(config.OPERATOR_ADDRESS, 'OPERATOR_ADDRESS');
+
+  let validatorRuntime = null;
+  let quorumEngine = null;
+  let unsubscribeValidation = null;
+  const cleanupTasks = [];
 
   const healthGateLogger = typeof logger.child === 'function' ? logger.child({ subsystem: 'health-gate' }) : logger;
   const healthGate = createHealthGate({
@@ -182,6 +215,114 @@ export async function bootstrapContainer({
     }
   }
 
+  if (validatorEnabled) {
+    try {
+      const validatorLogger = typeof logger.child === 'function' ? logger.child({ subsystem: 'validator-runtime' }) : logger;
+      validatorRuntime = await startValidatorRuntime({ config, logger: validatorLogger });
+      const quorumLogger = typeof logger.child === 'function' ? logger.child({ subsystem: 'quorum-engine' }) : logger;
+      quorumEngine = createQuorumEngine({
+        quorumNumerator: config.VALIDATION_QUORUM_BPS,
+        quorumDenominator: 10_000,
+        minimumVotes: config.VALIDATION_MINIMUM_VOTES,
+        logger: quorumLogger
+      });
+
+      const settledHandler = (payload) => {
+        if (!jobLifecycle) {
+          return;
+        }
+        const timestampSeconds = Number.isFinite(Date.parse(payload.finalizedAt))
+          ? Math.floor(Date.parse(payload.finalizedAt) / 1000)
+          : Math.floor(Date.now() / 1000);
+        if (payload.status === 'accepted') {
+          try {
+            jobLifecycle.recordAlphaWorkUnitEvent('accepted', { id: payload.wuId, timestamp: timestampSeconds });
+          } catch (error) {
+            logger.warn?.(error, 'Failed to record α-WU acceptance event');
+          }
+        } else if (payload.status === 'rejected') {
+          try {
+            jobLifecycle.recordAlphaWorkUnitEvent('slashed', {
+              id: payload.wuId,
+              validator: null,
+              amount: 0,
+              timestamp: timestampSeconds
+            });
+          } catch (error) {
+            logger.warn?.(error, 'Failed to record α-WU rejection event');
+          }
+        }
+      };
+      quorumEngine.on('settled', settledHandler);
+      cleanupTasks.push(() => quorumEngine.off('settled', settledHandler));
+
+      if (jobLifecycle?.on) {
+        const mintHandler = (event) => {
+          if (!event || !event.unit?.id) {
+            return;
+          }
+          const normalizedType = event.type?.toLowerCase?.() ?? '';
+          if (normalizedType === 'mint' || normalizedType === 'minted') {
+            quorumEngine.registerWorkUnit({ wuId: event.unit.id, jobId: event.unit.id.split(':')[0] ?? null });
+          }
+        };
+        jobLifecycle.on('alpha-wu:event', mintHandler);
+        cleanupTasks.push(() => jobLifecycle.off?.('alpha-wu:event', mintHandler));
+      }
+
+      const subscription = validatorRuntime.sink.subscribe(({ result }) => {
+        quorumEngine.ingest(result);
+        if (jobLifecycle) {
+          const timestampSeconds = Number.isFinite(Date.parse(result.created_at))
+            ? Math.floor(Date.parse(result.created_at) / 1000)
+            : Math.floor(Date.now() / 1000);
+          try {
+            jobLifecycle.recordAlphaWorkUnitEvent('validated', {
+              id: result.wu_id,
+              validator: result.validator_address,
+              score: result.is_valid ? 1 : 0,
+              timestamp: timestampSeconds
+            });
+          } catch (error) {
+            logger.warn?.(error, 'Failed to record α-WU validation event');
+          }
+        }
+      });
+      unsubscribeValidation = () => {
+        subscription?.();
+      };
+      cleanupTasks.push(() => unsubscribeValidation?.());
+
+      const originalStop = validatorRuntime.stop?.bind(validatorRuntime);
+      if (originalStop) {
+        validatorRuntime.stop = async () => {
+          cleanupTasks.forEach((task) => {
+            try {
+              task?.();
+            } catch {
+              // ignore
+            }
+          });
+          await originalStop();
+        };
+      }
+    } catch (error) {
+      logger.error(error, 'Failed to initialize validator runtime');
+      executionBinding?.detach?.();
+      stopJobWatchers?.();
+      jobLifecycle?.stop();
+      await validatorRuntime?.stop?.();
+      cleanupTasks.forEach((task) => {
+        try {
+          task?.();
+        } catch {
+          // ignore
+        }
+      });
+      throw error;
+    }
+  }
+
   let apiServer = null;
   try {
     apiServer = startAgentApi({
@@ -198,6 +339,14 @@ export async function bootstrapContainer({
     executionBinding?.detach?.();
     stopJobWatchers?.();
     jobLifecycle?.stop();
+    cleanupTasks.forEach((task) => {
+      try {
+        task?.();
+      } catch {
+        // ignore
+      }
+    });
+    await validatorRuntime?.stop?.();
     throw error;
   }
 
@@ -266,6 +415,14 @@ export async function bootstrapContainer({
     executionBinding?.detach?.();
     stopJobWatchers?.();
     jobLifecycle?.stop();
+    cleanupTasks.forEach((task) => {
+      try {
+        task?.();
+      } catch {
+        // ignore
+      }
+    });
+    await validatorRuntime?.stop?.();
     throw error;
   }
 
@@ -292,13 +449,23 @@ export async function bootstrapContainer({
     executionBinding?.detach?.();
     stopJobWatchers?.();
     jobLifecycle?.stop();
+    cleanupTasks.forEach((task) => {
+      try {
+        task?.();
+      } catch {
+        // ignore
+      }
+    });
+    await validatorRuntime?.stop?.();
     return {
       config,
       diagnostics,
       monitor: null,
       apiServer: null,
       jobLifecycle: null,
-      healthGate
+      healthGate,
+      validatorRuntime,
+      quorumEngine
     };
   }
 
@@ -335,6 +502,14 @@ export async function bootstrapContainer({
     executionBinding?.detach?.();
     stopJobWatchers?.();
     jobLifecycle?.stop();
+    cleanupTasks.forEach((task) => {
+      try {
+        task?.();
+      } catch {
+        // ignore
+      }
+    });
+    await validatorRuntime?.stop?.();
     throw error;
   }
 
@@ -346,6 +521,8 @@ export async function bootstrapContainer({
     jobLifecycle,
     stopJobWatchers,
     executionBinding,
-    healthGate
+    healthGate,
+    validatorRuntime,
+    quorumEngine
   };
 }
