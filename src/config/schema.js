@@ -31,6 +31,22 @@ const privateKeyRegex = /^0x[a-fA-F0-9]{64}$/;
 
 const basisPointsSchema = z.coerce.number().int().min(0).max(10_000);
 
+const NODE_ROLES = ['orchestrator', 'executor', 'validator', 'mixed'];
+
+const nodeRoleSchema = z
+  .string()
+  .optional()
+  .transform((value) => {
+    if (!value) {
+      return 'mixed';
+    }
+    const normalized = value.toLowerCase().trim();
+    if (!NODE_ROLES.includes(normalized)) {
+      throw new Error(`NODE_ROLE must be one of ${NODE_ROLES.join(', ')}`);
+    }
+    return normalized;
+  });
+
 function coerceRoleShareTargets(value) {
   if (value === undefined || value === null) {
     return undefined;
@@ -249,6 +265,7 @@ const workUnitsSchema = z.union([z.undefined(), z.any()]).transform((value, ctx)
 export const configSchema = z
   .object({
     RPC_URL: z.string().url().default('https://rpc.ankr.com/eth'),
+    NODE_ROLE: nodeRoleSchema,
     ENS_PARENT_DOMAIN: z.string().min(3).default('alpha.node.agi.eth'),
     NODE_LABEL: z.string().min(1).optional(),
     OPERATOR_ADDRESS: z.string().regex(addressRegex).optional(),
@@ -377,6 +394,18 @@ export const configSchema = z
         return trimmed.length ? trimmed : undefined;
       }),
     WORK_UNITS: workUnitsSchema,
+    VALIDATION_MINIMUM_VOTES: z.coerce.number().int().min(1).default(3),
+    VALIDATION_QUORUM_BPS: z.coerce.number().int().min(1).max(10_000).default(6_667),
+    VALIDATOR_SOURCE_TYPE: z.string().optional().default('memory'),
+    VALIDATOR_SOURCE_PATH: z
+      .string()
+      .optional()
+      .transform((value) => {
+        if (!value) return undefined;
+        const trimmed = value.trim();
+        return trimmed.length ? trimmed : undefined;
+      }),
+    VALIDATOR_SINK_TYPE: z.string().optional().default('memory'),
     LIFECYCLE_LOG_DIR: z
       .string()
       .optional()
