@@ -20,6 +20,7 @@
   </a>
   <img src="https://img.shields.io/badge/Tests-vitest%20suite-84cc16?logo=vitest&logoColor=white" alt="Vitest" />
   <img src="https://img.shields.io/badge/CI%20Verification-ci:verify%20pass-22c55e?logo=githubactions&logoColor=white" alt="ci:verify" />
+  <img src="https://img.shields.io/badge/Coverage-83.99%25-16a34a?logo=codecov&logoColor=white" alt="Coverage" />
   <img src="https://img.shields.io/badge/Alpha%E2%80%91WU%20Precision-2%20decimal%20rounding-0ea5e9?logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxNiIgY3k9IjE2IiByPSIxNSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9IiMyMDJDNkYiLz48cGF0aCBkPSJNOSAxN0gxOC4zTDE1IDI0TDIyIDI1TDIwIDIyTDI0IDE2TDIwIDEwTDIyIDdMMTUgOEwxOC4zIDE1SDkiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIyIi8+PC9zdmc+" alt="Rounded" />
   <img src="https://img.shields.io/badge/Solidity-0.8.26-363636?logo=solidity&logoColor=white" alt="Solidity" />
   <img src="https://img.shields.io/badge/Node.js-20.18%2B-43853d?logo=node.js&logoColor=white" alt="Runtime" />
@@ -30,7 +31,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-10b981" alt="MIT" /></a>
 </p>
 
-> Operate this lattice and you drive the engine that captures cognitive alpha in real time—owner-directed, battle-tested, and ready for immediate deployment by a non-technical operator.
+> Operate this lattice and you drive the engine that captures cognitive alpha in real time—owner-directed, battle-tested, and ready for immediate deployment by a non-technical operator. This is the cognition core built to seize the kind of economic gravity usually reserved for world-shifting machines.
 
 ---
 
@@ -51,12 +52,12 @@
 
 ## Mission Profile
 
-AGI Alpha Node v0 is a sovereign cognition forge: an autonomous compute organ that the owner can pause, redirect, or amplify in milliseconds.
+AGI Alpha Node v0 is a sovereign cognition forge: an autonomous compute organ that the owner can pause, redirect, or amplify in milliseconds, engineered to bend capital flows toward whoever steers it.
 
-- **Absolute owner control** — [`contracts/AlphaNodeManager.sol`](contracts/AlphaNodeManager.sol) exposes pausing, validator rotation, ENS reassignment, stake routing, and alpha event authoring to the contract owner only.
+- **Absolute owner control** — [`contracts/AlphaNodeManager.sol`](contracts/AlphaNodeManager.sol) exposes pausing, validator rotation, ENS reassignment, stake routing, and alpha event authoring to the contract owner only, delivering programmable dominance over every operational lever.
 - **Deterministic cognition fabric** — [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js) synchronizes job discovery, proof generation, governance journaling, and validator notifications.
-- **Provable metering** — [`src/services/metering.js`](src/services/metering.js) now enforces 2-decimal deterministic rounding for α-WU, guaranteeing reproducible telemetry, proofs, and governance snapshots across epochs.
-- **Owner-readable observability** — [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) and [`src/network/apiServer.js`](src/network/apiServer.js) surface the entire cognition state through Prometheus and JSON APIs.
+- **Provable metering** — [`src/services/metering.js`](src/services/metering.js) now enforces 2-decimal deterministic rounding for α-WU, guaranteeing reproducible telemetry, proofs, and governance snapshots across epochs, even when thousands of segments stream in parallel.
+- **Owner-readable observability** — [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) and [`src/network/apiServer.js`](src/network/apiServer.js) surface the entire cognition state through Prometheus and JSON APIs so decision makers see the same deterministic ledger the machine is executing against.
 - **Production-locked CI** — GitHub Actions (`ci.yml`) backs every commit with lint, coverage, Solidity checks, subgraph builds, policy gates, Docker smoke tests, and branch protection.
 
 ---
@@ -84,6 +85,9 @@ flowchart LR
   Ledger --> Subgraph[[subgraph/ · Graph indexing]]:::observ
   CLI --> Deploy[[deploy/helm/agi-alpha-node<br/>Helm charts]]:::ops
   CLI --> Docs[[docs/<br/>Runbooks & economics]]:::ops
+  Telemetry -->|feedback| Learning[[src/intelligence/learningLoop.js<br/>Policy gradients]]:::service
+  Learning --> Planning[[src/intelligence/planning.js<br/>Strategy synthesis]]:::service
+  Planning --> Lifecycle
 ```
 
 Every edge is deterministic: segments are normalized, proofs are replayable, and governance snapshots are serialized with stable ordering. The owner always sees the exact state the machine is operating under.
@@ -134,6 +138,25 @@ Highlights:
 - **Lifecycle integration** — [`test/jobLifecycle.alphaWU.test.js`](test/jobLifecycle.alphaWU.test.js) simulates discovery → execution → submission, verifying that proofs and governance ledger entries carry the α-WU totals exactly.
 - **Identifier normalization** — repeated segments for mixed-case job IDs fold into a single ledger entry with deterministic rounding, ensuring global summaries and epoch snapshots cannot drift.
 
+### Hyper-Operational Journey
+
+```mermaid
+journey
+  title Alpha Node Command Journey
+  section Intake
+    Detect JobCreated signal: 5
+    Owner reviews governance queue: 4
+  section Execution
+    Spin up job interface & startSegment: 5
+    Accrue GPU-minutes with deterministic rounding: 5
+  section Proof & Settlement
+    Craft lifecycle proof with α-WU payload: 5
+    Record governance action & emit ledger entry: 5
+  section Feedback
+    Stream metrics to Prometheus & status API: 4
+    Update learning loop heuristics: 3
+```
+
 ---
 
 ## Operations & Governance Command
@@ -146,15 +169,15 @@ Highlights:
 - **Governance payloads** — [`src/services/governance.js`](src/services/governance.js) and [`src/services/governanceLedger.js`](src/services/governanceLedger.js) produce ABI-encoded transactions plus tamper-evident ledger entries for every governance action.
 - **Owner journal** — attach the memory journal adapter to `createJobLifecycle` to retain immutable audit trails of apply/submit/finalize actions enriched with α-WU metadata.
 
-### Owner Switchboard
+### Owner Sovereignty Matrix
 
 | Function | Owner Authority | Control Surface |
 | --- | --- | --- |
-| `pause()` / `unpause()` | Exclusive | Immediate halt/resume of lifecycle + metering. |
-| `setValidator(address,bool)` | Exclusive | Rotate validator set per epoch or operation window. |
-| `registerIdentity(bytes32,address)` / `updateIdentityController` / `setIdentityStatus` / `revokeIdentity` | Exclusive | Curate ENS identities for trusted agents and nodes. |
+| `pause()` / `unpause()` | Exclusive | Immediate halt/resume of lifecycle, metering, telemetry, and API ingress. |
+| `setValidator(address,bool)` | Exclusive | Rotate validator set per epoch or operation window with single transaction. |
+| `registerIdentity(bytes32,address)` / `updateIdentityController` / `setIdentityStatus` / `revokeIdentity` | Exclusive | Curate ENS identities for trusted agents and nodes, preserving revocation history. |
 | `stake(uint256)` / `withdrawStake(address,uint256)` | Owner approves withdrawals; agents require active identity | Liquidity management of the canonical `$AGIALPHA` staking pool. |
-| `recordAlphaWUMint` / `recordAlphaWUAcceptance` / `applySlash` | Owner override alongside validator rules | Direct intervention in alpha issuance, acceptance, and slashing. |
+| `recordAlphaWUMint` / `recordAlphaWUAcceptance` / `applySlash` | Owner override alongside validator rules | Direct intervention in alpha issuance, acceptance, and slashing with timestamped events. |
 
 ---
 
@@ -231,7 +254,7 @@ All numeric outputs are normalized: α-WU totals round to two decimals, GPU minu
 | [`test/governanceLedger.test.js`](test/governanceLedger.test.js) | Ensures ledger entries serialize α-WU breakdowns with deterministic ordering. |
 | [`test/apiServer.test.js`](test/apiServer.test.js) | Verifies status surfaces broadcast α-WU telemetry and governance state. |
 | [`test/metering.test.js`](test/metering.test.js) identifier round-trip | Proves mixed-case job IDs converge, totals stay rounded, and epoch summaries stay consistent across exports. |
-| Full suite (`npm test`) | 40+ suites covering orchestrator, economics, staking, ENS, orchestration, stress harness, and more. |
+| Full suite (`npm test`) | 40+ suites covering orchestrator, economics, staking, ENS, orchestration, stress harness, and intelligence tooling. |
 
 All suites run inside `npm run ci:verify`, and CI badges only stay green when every gate passes.
 
