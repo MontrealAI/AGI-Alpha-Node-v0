@@ -167,7 +167,7 @@ function sanitizeSegments(segments = []) {
     .sort((a, b) => {
       const aId = a.segmentId ?? '';
       const bId = b.segmentId ?? '';
-      return aId.localeCompare(bId);
+      return String(aId).localeCompare(String(bId));
     });
 }
 
