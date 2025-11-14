@@ -73,6 +73,7 @@ import { acknowledgeStakeAndActivate } from './services/stakeActivation.js';
 import { createJobLifecycle } from './services/jobLifecycle.js';
 import { createLifecycleJournal } from './services/lifecycleJournal.js';
 import { buildEpochPayload } from './services/oracleExport.js';
+import { buildEnsRecordTemplate } from './ens/ens_config.js';
 
 const program = new Command();
 
@@ -669,6 +670,24 @@ program
   .name('agi-alpha-node')
   .description('AGI Alpha Node sovereign runtime CLI')
   .version('1.1.0');
+
+program
+  .command('ens:records')
+  .description('Print ENS metadata template for the current node configuration')
+  .option('--pretty', 'Pretty-print JSON output', false)
+  .action((options) => {
+    let config;
+    try {
+      config = loadConfig();
+    } catch (error) {
+      console.error(chalk.red(`Failed to load configuration: ${error.message}`));
+      process.exitCode = 1;
+      return;
+    }
+    const template = buildEnsRecordTemplate({ config });
+    const payload = options.pretty ? JSON.stringify(template, null, 2) : JSON.stringify(template);
+    console.log(payload);
+  });
 
 program
   .command('ens-guide')

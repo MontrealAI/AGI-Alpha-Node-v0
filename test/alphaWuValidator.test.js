@@ -44,7 +44,8 @@ describe('alpha work unit validator', () => {
     const signedWu = await signAlphaWu(unsigned);
     const validator = createAlphaWorkUnitValidator({
       privateKey: validatorKey,
-      expectedAttestor: signedWu.attestor_address
+      expectedAttestor: signedWu.attestor_address,
+      nodeEnsName: 'validator.alpha.eth'
     });
 
     const result = await validator.validate(signedWu);
@@ -55,6 +56,7 @@ describe('alpha work unit validator', () => {
     expect(result.failure_reason).toBeNull();
     expect(result.validator_address).toMatch(/^0x[0-9a-fA-F]{40}$/);
     expect(result.validator_sig).toMatch(/^0x[0-9a-fA-F]{130}$/);
+    expect(result.node_ens_name).toBe('validator.alpha.eth');
     expect(verifyValidationResult(result, { expectedAddress: validator.validatorAddress })).toBe(true);
   });
 
@@ -65,7 +67,8 @@ describe('alpha work unit validator', () => {
 
     const validator = createAlphaWorkUnitValidator({
       privateKey: validatorKey,
-      expectedAttestor: signedWu.attestor_address
+      expectedAttestor: signedWu.attestor_address,
+      nodeEnsName: 'validator.alpha.eth'
     });
 
     const result = await validator.validate(tampered);
@@ -73,6 +76,7 @@ describe('alpha work unit validator', () => {
     expect(result.is_valid).toBe(false);
     expect(result.failure_reason).toContain('Signature verification failed');
     expect(result.validator_address).toBe(validator.validatorAddress);
+    expect(result.node_ens_name).toBe('validator.alpha.eth');
     expect(verifyValidationResult(result, { expectedAddress: validator.validatorAddress })).toBe(true);
   });
 });

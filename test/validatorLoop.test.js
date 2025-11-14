@@ -52,7 +52,8 @@ describe('validator loop', () => {
 
     const validator = createAlphaWorkUnitValidator({
       privateKey: validatorKey,
-      expectedAttestor: signedOne.attestor_address
+      expectedAttestor: signedOne.attestor_address,
+      nodeEnsName: 'loop.alpha.eth'
     });
 
     const captured = [];

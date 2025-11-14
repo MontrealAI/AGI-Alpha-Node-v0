@@ -49,6 +49,18 @@ vi.mock('../src/network/apiServer.js', () => ({
   startAgentApi: vi.fn(() => apiInstanceFactory())
 }));
 
+const verifierServerInstance = () => ({
+  listenPromise: Promise.resolve({ port: 8787 }),
+  stop: vi.fn(async () => {}),
+  metrics: {},
+  validator: { validate: vi.fn() },
+  server: { close: (cb) => cb && cb() }
+});
+
+vi.mock('../src/network/verifierServer.js', () => ({
+  startVerifierServer: vi.fn(() => verifierServerInstance())
+}));
+
 const lifecycleJournalMock = { append: vi.fn(), filePath: '/tmp/journal.ndjson' };
 
 vi.mock('../src/services/lifecycleJournal.js', () => ({
@@ -64,6 +76,7 @@ import { handleStakeActivation } from '../src/orchestrator/stakeActivator.js';
 import { createProvider, createWallet } from '../src/services/provider.js';
 import { createJobLifecycle } from '../src/services/jobLifecycle.js';
 import { startAgentApi } from '../src/network/apiServer.js';
+import { startVerifierServer } from '../src/network/verifierServer.js';
 
 const baseConfig = {
   RPC_URL: 'https://rpc.example',
@@ -77,6 +90,8 @@ const baseConfig = {
   DESIRED_MINIMUM_STAKE: undefined,
   AUTO_RESUME: false,
   METRICS_PORT: 9464,
+  VERIFIER_PORT: 8787,
+  VERIFIER_PUBLIC_BASE_URL: 'https://node.example',
   JOB_REGISTRY_PROFILE: 'v0',
   JOB_PROFILE_SPEC: null,
   LIFECYCLE_LOG_DIR: '.agi/lifecycle'
@@ -134,6 +149,7 @@ describe('bootstrapContainer', () => {
     createJobLifecycle.mockReturnValue(lifecycleInstance);
     apiInstance = apiInstanceFactory();
     startAgentApi.mockReturnValue(apiInstance);
+    startVerifierServer.mockClear();
   });
 
   afterEach(() => {
@@ -160,6 +176,7 @@ describe('bootstrapContainer', () => {
     expect(startMonitorLoop).not.toHaveBeenCalled();
     expect(handleStakeActivation).toHaveBeenCalled();
     expect(startAgentApi).toHaveBeenCalled();
+    expect(startVerifierServer).toHaveBeenCalled();
     expect(apiInstance.setOwnerDirectives).toHaveBeenCalledWith(diagnosticsMock.ownerDirectives);
   });
 

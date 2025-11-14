@@ -41,14 +41,15 @@
 1. [Mission Profile](#mission-profile)
 2. [Cognition Mesh Architecture](#cognition-mesh-architecture)
 3. [Validator Pipeline & Attestations](#validator-pipeline--attestations)
-4. [α-WU Telemetry & Signing Fabric](#α-wu-telemetry--signing-fabric)
-5. [Epoch Intelligence & Determinism](#epoch-intelligence--determinism)
-6. [Operations & Governance Command](#operations--governance-command)
-7. [Telemetry, API & CLI](#telemetry-api--cli)
-8. [Quality Gates & Test Suites](#quality-gates--test-suites)
-9. [CI Enforcement & Branch Protection](#ci-enforcement--branch-protection)
-10. [Repository Atlas](#repository-atlas)
-11. [Reference Library](#reference-library)
+4. [ENS Identity & Verifier Surface](#ens-identity--verifier-surface)
+5. [α-WU Telemetry & Signing Fabric](#α-wu-telemetry--signing-fabric)
+6. [Epoch Intelligence & Determinism](#epoch-intelligence--determinism)
+7. [Operations & Governance Command](#operations--governance-command)
+8. [Telemetry, API & CLI](#telemetry-api--cli)
+9. [Quality Gates & Test Suites](#quality-gates--test-suites)
+10. [CI Enforcement & Branch Protection](#ci-enforcement--branch-protection)
+11. [Repository Atlas](#repository-atlas)
+12. [Reference Library](#reference-library)
 
 ---
 
@@ -130,7 +131,45 @@ The validator sprint arms every node with an autonomous attestation circuit: α-
 - **Quorum intelligence** — `createQuorumEngine` aggregates unique validator votes, tracks job-level status, emits acceptance/rejection events, and prepares for on-chain settlement without breaking determinism.【F:src/settlement/quorumEngine.js†L1-L160】
 - **Bootstrap integration** — `bootstrapContainer` inspects `NODE_ROLE`, boots validator-only nodes without ENS wiring, or—when mixed—subscribes the validator sink to the quorum engine and records acceptance/rejection in the lifecycle registry.【F:src/orchestrator/bootstrap.js†L82-L360】
 - **Graceful orchestration shutdown** — the `container` command now stops validator loops alongside monitor and API services so runtime transitions remain clean for operators.【F:src/index.js†L1138-L1215】
-- **Confidence harness** — dedicated tests cover schema enforcement (`alphaWuValidator.test`), loop orchestration (`validatorLoop.test`), and quorum behaviour (`quorumEngine.test`).【F:test/alphaWuValidator.test.js†L1-L78】【F:test/validatorLoop.test.js†L1-L84】【F:test/quorumEngine.test.js†L1-L98】
+- **Confidence harness** — dedicated tests cover schema enforcement (`alphaWuValidator.test`), loop orchestration (`validatorLoop.test`), quorum behaviour (`quorumEngine.test`), and the verifier HTTP surface (`verifierServer.test`).【F:test/alphaWuValidator.test.js†L1-L92】【F:test/validatorLoop.test.js†L1-L88】【F:test/quorumEngine.test.js†L1-L112】【F:test/verifierServer.test.js†L1-L86】
+
+## ENS Identity & Verifier Surface
+
+Deterministic ENS metadata is now part of the node bootstrap. The config schema wires `NODE_ENS_NAME`, optional `ENS_RPC_URL`/`ENS_CHAIN_ID`, and dedicated payout fields so operators can pivot registry state while preserving canonical automation.【F:src/config/schema.js†L1-L420】
+
+- **Deterministic ENS helpers** — [`src/ens/ens_config.js`](src/ens/ens_config.js) exports `getNodeEnsName`, `getNodePayoutAddresses`, and `buildEnsRecordTemplate` with layered fallbacks across config, overrides, and derived labels.【F:src/ens/ens_config.js†L1-L200】
+- **Verified payout routing** — payout helpers validate `NODE_PAYOUT_ETH_ADDRESS`/`NODE_PAYOUT_AGIALPHA_ADDRESS`, defaulting to the operator address when unset so staking rewards always land under owner custody.【F:src/ens/ens_config.js†L64-L115】
+- **Authoritative ENS documentation** — [`docs/ens-node-metadata.md`](docs/ens-node-metadata.md) spells out required text/multicoin records (`agialpha_verifier`, `agialpha_health`, `agialpha_model`, `agialpha_commit`) for AGI Alpha nodes.【F:docs/ens-node-metadata.md†L1-L38】
+- **CLI template emitter** — `node src/index.js ens:records --pretty` prints the JSON ENS payload for the active config, including commit hash detection for auditors.【F:src/index.js†L640-L720】【F:src/ens/ens_config.js†L117-L188】
+- **Public verifier API** — [`src/network/verifierServer.js`](src/network/verifierServer.js) serves `/verifier/info`, `/verifier/health`, and `/verifier/validate`, echoing ENS metadata and returning signed `ValidationResult` payloads with `node_ens_name` embedded.【F:src/network/verifierServer.js†L1-L188】
+
+```mermaid
+graph TD
+  subgraph Config
+    cfgEns[NODE_ENS_NAME]
+    cfgPayout[NODE_PAYOUT_*<br/>addresses]
+    cfgUrl[VERIFIER_PUBLIC_BASE_URL]
+  end
+  subgraph ENS
+    text[Text Records<br/>agialpha_verifier<br/>agialpha_health<br/>agialpha_model]
+    coins[Coin Records<br/>ETH / AGIALPHA]
+  end
+  subgraph Verifier
+    info[(GET /verifier/info)]
+    health[(GET /verifier/health)]
+    validate[(POST /verifier/validate)]
+  end
+  cfgEns --> text
+  cfgUrl --> text
+  cfgPayout --> coins
+  cfgEns --> info
+  cfgPayout --> info
+  info --> validate
+  validate -->|signed ValidationResult
+with node_ens_name| Quorum[(Quorum Engine)]
+```
+
+The ENS/verifier feedback loop is CI-enforced: integration tests hit the HTTP endpoints with signed α-WUs and assert deterministic metadata, ensuring external agents can trust published ENS records.【F:test/verifierServer.test.js†L1-L86】
 
 ### Validation flow
 
@@ -238,14 +277,21 @@ agi-alpha-node jobs submit <jobId> \
   --result-file ./outputs/result.json \
   --metadata-file ./outputs/meta.json \
   --subdomain node --proof 0xdeadbeef
+
+# Emit the ENS metadata template for the active config
+agi-alpha-node ens:records --pretty
 ```
 
 `jobs submit` now routes through `submitExecutorResult`, producing signed α-WUs and echoing the attestor signature for transparency.【F:src/index.js†L1660-L1740】
+`ens:records` pipes `buildEnsRecordTemplate` so operators can paste deterministic ENS JSON straight into registrars or automated tooling.【F:src/index.js†L640-L720】【F:src/ens/ens_config.js†L117-L188】
 
 ### API Surface
 
 - `POST /jobs/:id/submit` requires `result` or `resultUri`, optionally accepts a pre-signed `alphaWu`. Response includes the ledger commitment and signed α-WU payload.【F:src/network/apiServer.js†L1630-L1680】
 - `GET /jobs` exposes cached lifecycle state, including α-WU totals and journal metadata.
+- `GET /verifier/info` mirrors ENS metadata (verifier URL, health URL, payout addresses) for public consumers.【F:src/network/verifierServer.js†L60-L112】
+- `GET /verifier/health` surfaces uptime, request totals, and last validation timestamp for external monitors.【F:src/network/verifierServer.js†L114-L135】
+- `POST /verifier/validate` accepts α-WU JSON, returns signed `ValidationResult` artifacts stamped with `node_ens_name`.【F:src/network/verifierServer.js†L137-L176】
 
 ### Programmatic Access
 
@@ -258,6 +304,11 @@ const submission = await lifecycle.submitExecutorResult(jobId, {
 });
 console.log(submission.alphaWu.attestor_sig); // Signed attestation
 const artifacts = lifecycle.getAlphaWUsForJob(jobId);
+
+// Produce ENS metadata JSON for registrars or automation
+import { buildEnsRecordTemplate } from './src/ens/ens_config.js';
+const ensRecords = buildEnsRecordTemplate();
+console.log(ensRecords.text_records.agialpha_verifier);
 ```
 
 ---
@@ -295,8 +346,11 @@ npm run ci:verify
 | [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js) | Job orchestrator with α-WU enforcement, submission APIs, and governance journal integration. |
 | [`src/orchestrator/nodeRuntime.js`](src/orchestrator/nodeRuntime.js) | Execution loop binding metering and telemetry to lifecycle events. |
 | [`src/network/apiServer.js`](src/network/apiServer.js) | REST surface exposing job state, submission, and governance hooks. |
+| [`src/network/verifierServer.js`](src/network/verifierServer.js) | Public verifier API referenced in ENS metadata. |
+| [`src/ens/ens_config.js`](src/ens/ens_config.js) | ENS helpers for node name, payout routing, and record templates. |
 | [`deploy/helm/agi-alpha-node`](deploy/helm/agi-alpha-node) | Production-ready Helm chart. |
 | [`docs/`](docs/) | Economics, governance, and operational playbooks. |
+| [`docs/ens-node-metadata.md`](docs/ens-node-metadata.md) | ENS record specification for AGI Alpha nodes. |
 | [`test/`](test/) | Vitest suites for lifecycle, telemetry, API, governance, and schema validation. |
 
 ---
