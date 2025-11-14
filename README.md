@@ -280,6 +280,21 @@ curl \
 
 Payloads are pure JSON (no bigint serialization artifacts) and remain stable across CLI and REST exports. Downstream consumers can hash the document to anchor proofs or feed automated staking distribution without fear of drift.
 
+#### Field Reference
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `epochId` | `string` | Deterministic identifier. Defaults to a SHA-256 digest of `{nodeLabel}|{from}|{to}` when not supplied. |
+| `nodeLabel` | `string` | The lowercase-normalized provider label used by metering segments (derived from `NODE_LABEL` / `PROVIDER_LABEL`). |
+| `window.from` / `window.to` | `ISO 8601 string` | Inclusive temporal bounds of the epoch window, rounded to millisecond precision. |
+| `totals.alphaWU` | `number` | Aggregate α-work units for the window, rounded to 8 decimal places for reproducibility. |
+| `breakdown.byJob[jobId].alphaWU` | `number` | α-WU assigned to `jobId` after fractional overlap adjustments. |
+| `breakdown.byJob[jobId].gpuMinutes` | `number` | GPU minutes attributed to `jobId` in the window. |
+| `breakdown.byDeviceClass[deviceClass]` | `number` | α-WU totals by hardware class (e.g., `A100-80GB`, `H100-80GB`). |
+| `breakdown.bySlaProfile[slaProfile]` | `number` | α-WU totals grouped by SLA profile (e.g., `STANDARD`, `HIGH_REDUNDANCY`). |
+
+Every field is sanitized to finite numeric ranges, ensuring that downstream indexers, notarization scripts, or bridge relays ingest a payload that is impossible to forge without diverging from the metering ledger.
+
 ---
 
 ## Lifecycle Journal & Governance Ledger
