@@ -20,7 +20,7 @@
   </a>
   <img src="https://img.shields.io/badge/Tests-vitest%20suite-84cc16?logo=vitest&logoColor=white" alt="Vitest" />
   <img src="https://img.shields.io/badge/CI%20Verification-ci:verify%20pass-22c55e?logo=githubactions&logoColor=white" alt="ci:verify" />
-  <img src="https://img.shields.io/badge/Coverage-83.99%25-16a34a?logo=codecov&logoColor=white" alt="Coverage" />
+  <img src="https://img.shields.io/badge/Coverage-83.12%25-16a34a?logo=codecov&logoColor=white" alt="Coverage" />
   <a href="spec/alpha_wu.schema.json"><img src="https://img.shields.io/badge/Alpha%E2%80%91WU%20Schema-draft%202020--12-0ea5e9?logo=json&logoColor=white" alt="Alpha-WU Schema" /></a>
   <img src="https://img.shields.io/badge/Telemetry-Signed%20&%20Verified-9333ea?logo=openssl&logoColor=white" alt="Signed Telemetry" />
   <img src="https://img.shields.io/badge/Solidity-0.8.26-363636?logo=solidity&logoColor=white" alt="Solidity" />
