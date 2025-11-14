@@ -238,6 +238,13 @@ node src/index.js oracle export-epoch \
   --out alpha-wu-epoch.json
 ```
 
+| Flag | Required | Description |
+| --- | --- | --- |
+| `--from <iso>` | ✅ | Inclusive epoch start. Accepts ISO 8601, Unix ms, or `Date` strings. |
+| `--to <iso>` | ✅ | Exclusive epoch end. Must be greater than `--from`; same formats accepted. |
+| `--epoch-id <id>` | ⛭ | Optional override for deterministic IDs when coordinating across relays. |
+| `--out <path>` | ⛭ | When omitted, payload is streamed to stdout for piping; otherwise writes to disk. |
+
 #### REST Export
 
 ```bash
