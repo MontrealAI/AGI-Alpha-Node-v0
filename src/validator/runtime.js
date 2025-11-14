@@ -39,6 +39,7 @@ export async function startValidatorRuntime({
   }
 
   const validator = createAlphaWorkUnitValidator({
+    privateKey: config.VALIDATOR_PRIVATE_KEY ?? config.OPERATOR_PRIVATE_KEY ?? null,
     expectedAttestor,
     maxFutureDriftMs: 10 * 60 * 1000,
     logger
