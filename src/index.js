@@ -72,6 +72,7 @@ import { loadOfflineSnapshot } from './services/offlineSnapshot.js';
 import { acknowledgeStakeAndActivate } from './services/stakeActivation.js';
 import { createJobLifecycle } from './services/jobLifecycle.js';
 import { createLifecycleJournal } from './services/lifecycleJournal.js';
+import { buildEpochPayload } from './services/oracleExport.js';
 
 const program = new Command();
 
@@ -1307,6 +1308,34 @@ program
         validator: formatTokenAmount(distribution.validator, decimals),
         treasury: formatTokenAmount(distribution.treasury, decimals)
       });
+    } catch (error) {
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
+  });
+
+const oracle = program.command('oracle').description('Oracle export and bridge tooling');
+
+oracle
+  .command('export-epoch')
+  .description('Export deterministic α-WU payload for an epoch window')
+  .requiredOption('--from <iso>', 'Epoch start (ISO timestamp)')
+  .requiredOption('--to <iso>', 'Epoch end (ISO timestamp)')
+  .option('--epoch-id <id>', 'Epoch identifier override')
+  .option('--out <path>', 'File destination (defaults to stdout)')
+  .action((options) => {
+    try {
+      const payload = buildEpochPayload({
+        epochId: options.epochId,
+        fromTs: options.from,
+        toTs: options.to
+      });
+      const serialized = `${JSON.stringify(payload, null, 2)}\n`;
+      if (options.out) {
+        fs.writeFileSync(options.out, serialized, 'utf8');
+      } else {
+        process.stdout.write(serialized);
+      }
     } catch (error) {
       console.error(chalk.red(error.message));
       process.exitCode = 1;

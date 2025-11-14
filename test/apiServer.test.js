@@ -4,6 +4,9 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { startAgentApi } from '../src/network/apiServer.js';
+import { loadConfig } from '../src/config/env.js';
+import { resetMetering, startSegment, stopSegment } from '../src/services/metering.js';
+import { MODEL_CLASSES, SLA_PROFILES, VRAM_TIERS } from '../src/constants/workUnits.js';
 
 const noopLogger = { info: () => {}, warn: () => {}, error: () => {} };
 const OWNER_TOKEN = 'test-owner-token';
@@ -22,6 +25,8 @@ describe('agent API server', () => {
   beforeEach(() => {
     jobsEmitter.removeAllListeners();
     ledgerDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agi-ledger-'));
+    resetMetering();
+    loadConfig({ NODE_LABEL: 'api-node' });
   });
 
   afterEach(async () => {
@@ -637,5 +642,37 @@ describe('agent API server', () => {
       body: JSON.stringify({ actions: { type: 'pause' } })
     });
     expect(invalidDirectives.status).toBe(400);
+  });
+
+  it('exports oracle epochs with governance token protection', async () => {
+    const start = new Date('2024-01-01T00:00:00Z');
+    const segment = startSegment({
+      jobId: 'oracle-job',
+      deviceInfo: { providerLabel: 'api-node', deviceClass: 'A100-80GB', vramTier: VRAM_TIERS.TIER_80, gpuCount: 1 },
+      modelClass: MODEL_CLASSES.LLM_8B,
+      slaProfile: SLA_PROFILES.STANDARD,
+      startedAt: start
+    });
+    stopSegment(segment.segmentId, { endedAt: new Date('2024-01-01T00:10:00Z') });
+
+    api = startAgentApi({ port: 0, logger: noopLogger, ownerToken: OWNER_TOKEN, ledgerRoot: ledgerDir });
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    const baseUrl = buildBaseUrl(api.server);
+
+    const unauthorized = await fetch(`${baseUrl}/oracle/epochs?from=${encodeURIComponent(start.toISOString())}&to=${encodeURIComponent(new Date('2024-01-01T00:15:00Z').toISOString())}`);
+    expect(unauthorized.status).toBe(401);
+
+    const authorized = await fetch(
+      `${baseUrl}/oracle/epochs?from=${encodeURIComponent(start.toISOString())}&to=${encodeURIComponent(new Date('2024-01-01T00:15:00Z').toISOString())}&epochId=epoch-api-test`,
+      {
+        headers: { Authorization: `Bearer ${OWNER_TOKEN}` }
+      }
+    );
+    expect(authorized.status).toBe(200);
+    const payload = await authorized.json();
+    expect(payload.epochId).toBe('epoch-api-test');
+    expect(payload.nodeLabel).toBe('api-node');
+    expect(payload.totals.alphaWU).toBeGreaterThan(0);
+    expect(payload.breakdown.byJob['oracle-job'].gpuMinutes).toBeGreaterThan(0);
   });
 });

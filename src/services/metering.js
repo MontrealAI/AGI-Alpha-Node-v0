@@ -22,6 +22,7 @@ function cloneSegmentForExport(segment) {
     jobId: segment.jobId,
     modelClass: segment.modelClass ?? null,
     slaProfile: segment.slaProfile ?? null,
+    providerLabel: segment.deviceInfo?.providerLabel ?? null,
     deviceClass: segment.deviceInfo?.deviceClass ?? null,
     vramTier: segment.deviceInfo?.vramTier ?? null,
     gpuCount: segment.deviceInfo?.gpuCount ?? null,
@@ -459,6 +460,18 @@ export function resetMetering() {
   state.jobTotals.clear();
   state.jobSegments.clear();
   state.epochBuckets.clear();
+}
+
+export function getSegmentsSnapshot() {
+  const segments = Array.from(state.jobSegments.values()).flatMap((entries) => cloneSegments(entries));
+  return segments.sort((a, b) => {
+    const aTime = a.startedAt ? Date.parse(a.startedAt) : 0;
+    const bTime = b.startedAt ? Date.parse(b.startedAt) : 0;
+    if (Number.isFinite(aTime) && Number.isFinite(bTime) && aTime !== bTime) {
+      return aTime - bTime;
+    }
+    return String(a.jobId ?? '').localeCompare(String(b.jobId ?? '')) || String(a.segmentId ?? '').localeCompare(String(b.segmentId ?? ''));
+  });
 }
 
 export function __getInternalState() {
