@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { signAlphaWu } from '../src/crypto/signing.js';
-import { createAlphaWorkUnitValidator, verifyValidationResult } from '../src/validation/alphaWuValidator.js';
+import { createAlphaWorkUnitValidator, verifyValidationResult } from '../src/validation/alpha_wu_validator.js';
 
 const attestorKey = '0x59c6995e998f97a5a0044966f0945386f0b0c9cc1fa50bdbeeb29f44cbeb2c82';
 const validatorKey = '0x8b3a350cf5c34c9194ca5b9ce735ffdac58fb5cae5be7c3f5e8c4b9f2e888d8f';

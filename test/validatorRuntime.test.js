@@ -22,7 +22,7 @@ const loop = {
 };
 const createValidatorLoopMock = vi.fn(() => loop);
 
-vi.mock('../src/validation/alphaWuValidator.js', () => ({
+vi.mock('../src/validation/alpha_wu_validator.js', () => ({
   createAlphaWorkUnitValidator: createAlphaWorkUnitValidatorMock
 }));
 

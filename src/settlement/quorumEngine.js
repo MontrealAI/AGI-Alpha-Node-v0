@@ -1,5 +1,5 @@
 import { EventEmitter } from 'node:events';
-import { validationResultSchema } from '../validation/alphaWuValidator.js';
+import { validationResultSchema } from '../validation/alpha_wu_validator.js';
 
 function deriveJobIdFromWorkUnit(wuId) {
   if (!wuId || typeof wuId !== 'string') {
