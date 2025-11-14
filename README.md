@@ -51,15 +51,22 @@
 5. [Owner Command Authority](#owner-command-authority)
 6. [Operational Playbook](#operational-playbook)
 7. [Continuous Verification](#continuous-verification)
-8. [Token Mechanics](#token-mechanics)
-9. [Repository Atlas](#repository-atlas)
-10. [Reference Library](#reference-library)
+8. [Governance Constellation](#governance-constellation)
+9. [Token Mechanics](#token-mechanics)
+10. [Repository Atlas](#repository-atlas)
+11. [Reference Library](#reference-library)
 
 ---
 
 ## Prime Directive
 
 AGI Alpha Node v0 operates as a production lattice for autonomous agent swarms. Every subsystem is tuned so the contract owner can redirect computation, staking posture, and governance in moments while preserving immaculate observability.
+
+The runtime fuses:
+
+* **Deterministic cognition fabric** – deterministic lifecycle orchestration that is continuously reconciled through α-WU telemetry.
+* **Adaptive capital routing** – treasury flows, staking thresholds, and validator activation governed from a single owner console.
+* **Tamper-evident journaling** – append-only lifecycle and governance ledgers with deterministic hashing, replay scripts, and automated badge-backed CI enforcement.
 
 * **Canonical Token:** `$AGIALPHA` (18 decimals) is immutably deployed at [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) and finances staking, settlement, and alpha extraction.
 * **Owner Totality:** The runtime, smart contracts, and orchestration surfaces expose parameter updates, pausing, validator rotation, ENS rebinding, ledger mutations, reward redirection, and SLA tuning without intermediaries.
@@ -84,6 +91,7 @@ flowchart LR
   Runtime --> Provider[[src/services/provider.js · Device Enrolment]]:::service
   Runtime --> Telemetry[[src/telemetry/ · Metrics Exporters]]:::telemetry
   Lifecycle --> Proofs[[src/services/jobProof.js · Commitment Fabric]]:::service
+  Proofs --> CI[[.github/workflows/ci.yml · Enforced Tests]]:::telemetry
   Lifecycle --> Journal[[src/services/lifecycleJournal.js · Append-Only Journal]]:::ledger
   Lifecycle --> GovLedger[[src/services/governanceLedger.js · Governance Ledger]]:::ledger
   Metering --> AlphaRegistry[[src/services/alphaWorkUnits.js · Sliding Windows]]:::service
@@ -166,6 +174,31 @@ Owners can replay both ledgers to reconstruct every governance and runtime decis
 
 ---
 
+## Governance Constellation
+
+```mermaid
+graph TD
+  classDef owner fill:#0b1120,stroke:#38bdf8,stroke-width:2px,color:#f8fafc;
+  classDef guard fill:#1f2937,stroke:#22c55e,stroke-width:2px,color:#ecfdf5;
+  classDef ledger fill:#1e293b,stroke:#f97316,stroke-width:2px,color:#fff7ed;
+  classDef chain fill:#111827,stroke:#a855f7,stroke-width:2px,color:#ede9fe;
+
+  Owner[Owner Console<br/>CLI + API + UI]:::owner --> Policy[Policy Scripts<br/>scripts/]:::guard
+  Policy --> HealthGates[Health Gates<br/>docs/operations/health-gates.md]:::guard
+  Policy --> LedgerWriter[Governance Ledger<br/>src/services/governanceLedger.js]:::ledger
+  LedgerWriter --> ProofBus[Proof Bus<br/>src/services/jobProof.js]:::ledger
+  ProofBus --> Registry[Job Registry Contracts<br/>contracts/]:::chain
+  Registry --> Subgraph[subgraph/Schema + Mappings]:::chain
+  Registry --> DeployStack[deploy/helm · docker-compose.yml]:::guard
+
+  LedgerWriter -->{Alpha-WU Snapshot}
+  Policy -->{Owner Overrides}
+```
+
+The owner console spans CLI, API, and policy scripts. Every directive is evaluated through health gates, recorded as an append-only ledger entry enriched with α-WU telemetry, mirrored to proof buses, and only then dispatched on-chain or across deployment stacks. This choreography guarantees total situational awareness while keeping the command path compact enough for single-operator control.
+
+---
+
 ## Owner Command Authority
 
 `contracts/AlphaNodeManager.sol` grants the contract owner total operational authority. Representative controls include:
@@ -178,6 +211,8 @@ Owners can replay both ledgers to reconstruct every governance and runtime decis
 | Treasury flow | `stake(uint256)` / `withdrawStake(address,uint256)` | Pull or redirect $AGIALPHA as business logic evolves. |
 | Parameter rotation | `setSlaProfile(bytes32,uint256)`<br/>`setModelClass(bytes32,uint256)`<br/>`setDeviceClass(bytes32,uint256)` | Tune SLA weights, model multipliers, and hardware tiers without downtime. |
 | Rewards lifecycle | `recordReward(address,uint256)` / `slash(address,uint256)` | Route incentives or penalties based on ledger evidence. |
+| Parameter upgrades | `setLifecycleConfig(bytes32,bytes)` | Upload pre-encoded job policy bundles for instant runtime modulation. |
+| Emergency resets | `setRegistry(address)` + `pause()` | Shift registries or halt execution while keeping all ledger and journal anchors intact. |
 
 The governance ledger and lifecycle journal mirror every invocation so owners maintain non-repudiable state.
 
@@ -198,12 +233,14 @@ The governance ledger and lifecycle journal mirror every invocation so owners ma
    npm start
    ```
 
-4. **Submit proofs** – use `src/services/jobProof.js` helpers or `agi-alpha-node submit --job <id>` (see `docs/operator-runbook.md`).
-5. **Inspect α-WU metrics**
+4. **Run health and governance diagnostics**
 
    ```bash
-   node scripts/inspect-alpha.mjs --job <jobId>
+   npm run verify:health-gate
+   npm run governance:status
    ```
+
+5. **Execute owner directives** – craft payloads with `npm run governance:plan`, inspect diffs, then persist via `--execute --confirm` to guarantee ledger invariants. Ledger entries produced here embed α-WU snapshots for submissions, stake adjustments, and reward dispatch, aligning off-chain policy with on-chain truth.
 
 6. **Replay ledgers** – parse `.agi/lifecycle/actions.jsonl` and `.governance-ledger/v1/*.json` for audit trails.
 
