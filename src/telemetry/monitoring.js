@@ -2,22 +2,28 @@ import http from 'node:http';
 import { collectDefaultMetrics, Counter, Gauge, Registry } from 'prom-client';
 
 const alphaWuMetricState = {
-  totalCounter: null,
-  epochGauge: null,
-  perJobGauge: null,
+  totalCounters: [],
+  epochGauges: [],
+  perJobGauges: [],
   perJobEnabled: false
 };
 
 function registerAlphaWuMetricHandles({
-  totalCounter = null,
-  epochGauge = null,
-  perJobGauge = null,
+  totalCounters = [],
+  epochGauges = [],
+  perJobGauges = [],
   perJobEnabled = false
 } = {}) {
-  alphaWuMetricState.totalCounter = totalCounter ?? null;
-  alphaWuMetricState.epochGauge = epochGauge ?? null;
-  alphaWuMetricState.perJobGauge = perJobGauge ?? null;
-  alphaWuMetricState.perJobEnabled = Boolean(perJobEnabled && perJobGauge);
+  alphaWuMetricState.totalCounters = Array.isArray(totalCounters)
+    ? totalCounters.filter(Boolean)
+    : [totalCounters].filter(Boolean);
+  alphaWuMetricState.epochGauges = Array.isArray(epochGauges)
+    ? epochGauges.filter(Boolean)
+    : [epochGauges].filter(Boolean);
+  alphaWuMetricState.perJobGauges = Array.isArray(perJobGauges)
+    ? perJobGauges.filter(Boolean)
+    : [perJobGauges].filter(Boolean);
+  alphaWuMetricState.perJobEnabled = Boolean(perJobEnabled && alphaWuMetricState.perJobGauges.length > 0);
 }
 
 function normaliseLabel(value, fallback = 'unknown') {
@@ -37,43 +43,50 @@ export function recordAlphaWorkUnitSegment({
   alphaWU,
   jobTotalAlphaWU
 }) {
-  if (!alphaWuMetricState.totalCounter && !alphaWuMetricState.perJobEnabled && !alphaWuMetricState.epochGauge) {
+  if (
+    alphaWuMetricState.totalCounters.length === 0 &&
+    !alphaWuMetricState.perJobEnabled &&
+    alphaWuMetricState.epochGauges.length === 0
+  ) {
     return;
   }
 
   const numericAlphaWu = Number(alphaWU ?? 0);
-  if (Number.isFinite(numericAlphaWu) && numericAlphaWu > 0 && alphaWuMetricState.totalCounter) {
-    alphaWuMetricState.totalCounter.inc(
-      {
-        node_label: normaliseLabel(nodeLabel),
-        device_class: normaliseLabel(deviceClass, 'UNKNOWN'),
-        sla_profile: normaliseLabel(slaProfile, 'UNKNOWN')
-      },
-      numericAlphaWu
-    );
+  if (Number.isFinite(numericAlphaWu) && numericAlphaWu > 0 && alphaWuMetricState.totalCounters.length > 0) {
+    const labels = {
+      node_label: normaliseLabel(nodeLabel),
+      device_class: normaliseLabel(deviceClass, 'UNKNOWN'),
+      sla_profile: normaliseLabel(slaProfile, 'UNKNOWN')
+    };
+    alphaWuMetricState.totalCounters.forEach((counter) => {
+      counter.inc(labels, numericAlphaWu);
+    });
   }
 
-  if (alphaWuMetricState.perJobEnabled && alphaWuMetricState.perJobGauge && jobId) {
+  if (alphaWuMetricState.perJobEnabled && jobId) {
     const jobTotal = Number(jobTotalAlphaWU ?? 0);
     if (Number.isFinite(jobTotal)) {
-      alphaWuMetricState.perJobGauge.set(
-        { job_id: normaliseLabel(jobId) },
-        jobTotal
-      );
+      const labels = { job_id: normaliseLabel(jobId) };
+      alphaWuMetricState.perJobGauges.forEach((gauge) => {
+        gauge.set(labels, jobTotal);
+      });
     }
   }
 
-  if (alphaWuMetricState.epochGauge && epochId && Number.isFinite(numericAlphaWu) && numericAlphaWu > 0) {
-    // epochGauge is populated via monitor loop rollups. Ensure the label is registered early
-    alphaWuMetricState.epochGauge.set({ epoch_id: normaliseLabel(epochId) }, 0);
+  if (alphaWuMetricState.epochGauges.length > 0 && epochId && Number.isFinite(numericAlphaWu) && numericAlphaWu > 0) {
+    const labels = { epoch_id: normaliseLabel(epochId) };
+    alphaWuMetricState.epochGauges.forEach((gauge) => {
+      // epochGauge is populated via monitor loop rollups. Ensure the label is registered early
+      gauge.set(labels, 0);
+    });
   }
 }
 
 export function updateAlphaWorkUnitEpochMetrics(summaries = []) {
-  if (!alphaWuMetricState.epochGauge) {
+  if (alphaWuMetricState.epochGauges.length === 0) {
     return;
   }
-  alphaWuMetricState.epochGauge.reset();
+  alphaWuMetricState.epochGauges.forEach((gauge) => gauge.reset());
   summaries.forEach((summary) => {
     if (!summary) return;
     const total = Number(summary.totalAlphaWU ?? 0);
@@ -81,7 +94,9 @@ export function updateAlphaWorkUnitEpochMetrics(summaries = []) {
       return;
     }
     const epochId = normaliseLabel(summary.epochId);
-    alphaWuMetricState.epochGauge.set({ epoch_id: epochId }, total);
+    alphaWuMetricState.epochGauges.forEach((gauge) => {
+      gauge.set({ epoch_id: epochId }, total);
+    });
   });
 }
 
@@ -189,21 +204,21 @@ export function startMonitoringServer({ port = 9464, logger, enableAlphaWuPerJob
     registers: [registry]
   });
 
-  const alphaWuTotalCounter = new Counter({
+  const alphaWuTotalCounterCompat = new Counter({
     name: 'agi_alpha_node_alpha_wu_total',
     help: 'Cumulative alpha work units recorded by node/device/SLA profile',
     labelNames: ['node_label', 'device_class', 'sla_profile'],
     registers: [registry]
   });
 
-  const alphaWuEpochGauge = new Gauge({
+  const alphaWuEpochGaugeCompat = new Gauge({
     name: 'agi_alpha_node_alpha_wu_epoch',
     help: 'Alpha work units aggregated per epoch',
     labelNames: ['epoch_id'],
     registers: [registry]
   });
 
-  const alphaWuPerJobGauge = enableAlphaWuPerJob
+  const alphaWuPerJobGaugeCompat = enableAlphaWuPerJob
     ? new Gauge({
         name: 'agi_alpha_node_alpha_wu_per_job',
         help: 'Alpha work units accumulated per job (high cardinality metric)',
@@ -212,10 +227,33 @@ export function startMonitoringServer({ port = 9464, logger, enableAlphaWuPerJob
       })
     : null;
 
+  const alphaWuTotalCounter = new Counter({
+    name: 'alpha_wu_total',
+    help: 'Cumulative alpha work units recorded by node/device/SLA profile',
+    labelNames: ['node_label', 'device_class', 'sla_profile'],
+    registers: [registry]
+  });
+
+  const alphaWuEpochGauge = new Gauge({
+    name: 'alpha_wu_epoch',
+    help: 'Alpha work units aggregated per epoch',
+    labelNames: ['epoch_id'],
+    registers: [registry]
+  });
+
+  const alphaWuPerJobGauge = enableAlphaWuPerJob
+    ? new Gauge({
+        name: 'alpha_wu_per_job',
+        help: 'Alpha work units accumulated per job (high cardinality metric)',
+        labelNames: ['job_id'],
+        registers: [registry]
+      })
+    : null;
+
   registerAlphaWuMetricHandles({
-    totalCounter: alphaWuTotalCounter,
-    epochGauge: alphaWuEpochGauge,
-    perJobGauge: alphaWuPerJobGauge,
+    totalCounters: [alphaWuTotalCounterCompat, alphaWuTotalCounter],
+    epochGauges: [alphaWuEpochGaugeCompat, alphaWuEpochGauge],
+    perJobGauges: [alphaWuPerJobGaugeCompat, alphaWuPerJobGauge].filter(Boolean),
     perJobEnabled: enableAlphaWuPerJob
   });
 
@@ -254,6 +292,9 @@ export function startMonitoringServer({ port = 9464, logger, enableAlphaWuPerJob
     alphaBreakdownGauge,
     alphaWuTotalCounter,
     alphaWuEpochGauge,
-    alphaWuPerJobGauge
+    alphaWuPerJobGauge,
+    alphaWuTotalCounterCompat,
+    alphaWuEpochGaugeCompat,
+    alphaWuPerJobGaugeCompat
   };
 }

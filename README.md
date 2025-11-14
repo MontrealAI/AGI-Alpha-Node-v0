@@ -322,7 +322,7 @@ The ledgers and journal align runtime decisions with on-chain state, forming an 
 
 ## Telemetry & Diagnostics
 
-Prometheus exports, diagnostics APIs, and the owner control plane converge on a unified α-WU signal. Metering events trigger counter increments, monitor loops roll up epochs, and REST consumers receive totals identical to dashboard gauges.
+Prometheus exports, diagnostics APIs, and the owner control plane converge on a unified α-WU signal. Metering events trigger counter increments, monitor loops roll up epochs, and REST consumers receive totals identical to dashboard gauges while legacy exporters remain intact for continuity.
 
 ```mermaid
 flowchart LR
@@ -330,30 +330,38 @@ flowchart LR
   classDef telemetry fill:#111827,stroke:#a855f7,stroke-width:2px,color:#f5f3ff;
   classDef api fill:#022c22,stroke:#10b981,stroke-width:2px,color:#d1fae5;
 
-  Metering[[metering.stopSegment]]:::meter --> MetricsCounter[(agi_alpha_node_alpha_wu_total)]:::telemetry
-  MetricsCounter --> EpochGauge[(agi_alpha_node_alpha_wu_epoch)]:::telemetry
-  MetricsCounter --> JobGauge[(agi_alpha_node_alpha_wu_per_job*)]:::telemetry
-  EpochGauge --> StatusAPI[[GET /status]]:::api
-  MetricsCounter --> Prometheus{{GET /metrics}}:::api
+  Metering[[metering.stopSegment]]:::meter --> LegacyCounter[(agi_alpha_node_alpha_wu_total)]:::telemetry
+  Metering --> CanonicalCounter[(alpha_wu_total)]:::telemetry
+  LegacyCounter --> LegacyEpoch[(agi_alpha_node_alpha_wu_epoch)]:::telemetry
+  CanonicalCounter --> CanonicalEpoch[(alpha_wu_epoch)]:::telemetry
+  LegacyCounter --> LegacyJob[(agi_alpha_node_alpha_wu_per_job*)]:::telemetry
+  CanonicalCounter --> CanonicalJob[(alpha_wu_per_job*)]:::telemetry
+  CanonicalEpoch --> StatusAPI[[GET /status]]:::api
+  CanonicalEpoch --> DiagnosticsAPI[[GET /status/diagnostics]]:::api
+  CanonicalCounter --> Prometheus{{GET /metrics}}:::api
 
-  class JobGauge optional;
+  class CanonicalJob optional;
+  class LegacyJob optional;
   classDef optional fill:#312e81,stroke:#facc15,stroke-width:2px,color:#fef3c7,stroke-dasharray: 5 5;
 ```
 
 | Metric | Type | Labels | Description |
 | --- | --- | --- | --- |
-| `agi_alpha_node_alpha_wu_total` | Counter | `node_label`, `device_class`, `sla_profile` | Cumulative α-WU attributed to each hardware/SLA tuple for the active node label. |
-| `agi_alpha_node_alpha_wu_epoch` | Gauge | `epoch_id` | Rolling totals per epoch as reconstructed by the monitor loop (24-epoch window). |
-| `agi_alpha_node_alpha_wu_per_job` | Gauge *(opt-in)* | `job_id` | High-cardinality per-job totals mirroring `metering.getJobAlphaWU(jobId)`; disabled by default. |
+| `alpha_wu_total` | Counter | `node_label`, `device_class`, `sla_profile` | Canonical α-WU accumulation for dashboards, SLOs, and capacity planning. |
+| `agi_alpha_node_alpha_wu_total` | Counter | `node_label`, `device_class`, `sla_profile` | Legacy-compatible mirror retained for existing dashboards. |
+| `alpha_wu_epoch` | Gauge | `epoch_id` | Rolling epoch totals computed by the monitor loop (last 24 epochs). |
+| `agi_alpha_node_alpha_wu_epoch` | Gauge | `epoch_id` | Backward compatible epoch gauge for legacy Prometheus scrapes. |
+| `alpha_wu_per_job` | Gauge *(opt-in)* | `job_id` | High-cardinality per-job totals mirroring `metering.getJobAlphaWU(jobId)`; disabled by default. |
+| `agi_alpha_node_alpha_wu_per_job` | Gauge *(opt-in)* | `job_id` | Compatibility gauge mirroring the canonical per-job signal. |
 
-> ℹ️ Enable the per-job gauge only when Prometheus cardinality budgets allow it:
+> ℹ️ Enable the per-job gauges only when Prometheus cardinality budgets allow it:
 
 ```bash
 export METRICS_ALPHA_WU_PER_JOB=1
 npm start
 ```
 
-The REST status surface mirrors the Prometheus totals:
+The REST status surfaces mirror the Prometheus truth:
 
 ```bash
 curl http://localhost:8080/status | jq
@@ -370,7 +378,19 @@ curl http://localhost:8080/status | jq
 }
 ```
 
-`/status` is safe for non-technical operators yet precise enough for automation. Dashboards that scrape `/metrics` and SRE probes that poll `/status` both consume the same α-WU truth source alongside existing stake, utilization, and health-gate gauges.
+```bash
+curl http://localhost:8080/status/diagnostics | jq '.alphaWU.totals'
+```
+
+```jsonc
+{
+  "byJob": { "job-telemetry": 10 },
+  "byDeviceClass": { "A100-80GB": 10 },
+  "bySlaProfile": { "STANDARD": 10 }
+}
+```
+
+`/status` is safe for non-technical operators yet precise enough for automation. `/status/diagnostics` expands the same α-WU ledger into epoch sequences and breakdowns so observability stacks, data rooms, or sovereign dashboards can reconcile totals without bespoke glue code. Dashboards that scrape `/metrics` and SRE probes that poll the status endpoints consume the same α-WU truth source alongside existing stake, utilization, and health-gate gauges.
 
 ---
 

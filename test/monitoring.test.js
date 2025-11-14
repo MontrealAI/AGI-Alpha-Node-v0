@@ -1,6 +1,10 @@
 import { describe, it, expect, afterEach, beforeEach } from 'vitest';
 import { setTimeout as delay } from 'node:timers/promises';
-import { startMonitoringServer } from '../src/telemetry/monitoring.js';
+import {
+  recordAlphaWorkUnitSegment,
+  startMonitoringServer,
+  updateAlphaWorkUnitEpochMetrics
+} from '../src/telemetry/monitoring.js';
 
 const noopLogger = { info: () => {}, warn: () => {}, error: () => {} };
 
@@ -29,7 +33,7 @@ describe('monitoring telemetry server', () => {
   });
 
   it('serves prometheus metrics populated by the gauges', async () => {
-    telemetry = startMonitoringServer({ port: 0, logger: noopLogger });
+    telemetry = startMonitoringServer({ port: 0, logger: noopLogger, enableAlphaWuPerJob: true });
     await waitForServer(telemetry.server);
 
     const { port } = telemetry.server.address();
@@ -51,6 +55,21 @@ describe('monitoring telemetry server', () => {
       3
     );
 
+    recordAlphaWorkUnitSegment({
+      nodeLabel: 'node-a',
+      deviceClass: 'A100-80GB',
+      slaProfile: 'STANDARD',
+      jobId: 'job-123',
+      epochId: 'epoch-1',
+      alphaWU: 5,
+      jobTotalAlphaWU: 5
+    });
+
+    updateAlphaWorkUnitEpochMetrics([
+      { epochId: 'epoch-1', totalAlphaWU: 5 },
+      { epochId: 'epoch-2', totalAlphaWU: 7 }
+    ]);
+
     // Allow Prometheus registry to observe the gauge updates.
     await delay(10);
 
@@ -71,6 +90,15 @@ describe('monitoring telemetry server', () => {
     expect(metrics).toContain('agi_alpha_node_alpha_wu_slash_adjusted_yield');
     expect(metrics).toContain('agi_alpha_node_alpha_wu_quality');
     expect(metrics).toContain('agi_alpha_node_alpha_wu_breakdown');
+    expect(metrics).toContain('agi_alpha_node_alpha_wu_total');
+    expect(metrics).toContain('alpha_wu_total');
+    expect(metrics).toContain('node_label="node-a"');
+    expect(metrics).toContain('agi_alpha_node_alpha_wu_epoch');
+    expect(metrics).toContain('alpha_wu_epoch');
+    expect(metrics).toContain('epoch_id="epoch-1"');
+    expect(metrics).toContain('agi_alpha_node_alpha_wu_per_job');
+    expect(metrics).toContain('alpha_wu_per_job');
+    expect(metrics).toContain('job_id="job-123"');
   });
 
   it('returns 404 for unknown routes', async () => {

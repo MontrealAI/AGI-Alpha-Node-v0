@@ -124,6 +124,54 @@ describe('agent API server', () => {
     expect(payload.error).toMatch(/not configured/i);
   });
 
+  it('reports alpha work unit telemetry through status endpoints', async () => {
+    api = startAgentApi({ port: 0, logger: noopLogger, ownerToken: OWNER_TOKEN, ledgerRoot: ledgerDir });
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    const baseUrl = buildBaseUrl(api.server);
+
+    const startedAt = new Date('2024-01-01T00:00:00.000Z');
+    const endedAt = new Date(startedAt.getTime() + 10 * 60 * 1000);
+    const { segmentId } = startSegment({
+      jobId: 'job-telemetry',
+      deviceInfo: { deviceClass: 'A100-80GB', gpuCount: 1 },
+      modelClass: MODEL_CLASSES.LLM_8B,
+      slaProfile: SLA_PROFILES.STANDARD,
+      startedAt
+    });
+    stopSegment(segmentId, { endedAt });
+
+    const statusResponse = await fetch(`${baseUrl}/status`);
+    expect(statusResponse.status).toBe(200);
+    const statusPayload = await statusResponse.json();
+    expect(statusPayload.alphaWU).toBeDefined();
+    expect(statusPayload.alphaWU.lifetimeAlphaWU).toBeGreaterThan(0);
+    expect(statusPayload.alphaWU.lastEpoch).not.toBeNull();
+    expect(statusPayload.alphaWU.lastEpoch.alphaWU).toBeGreaterThan(0);
+    expect(statusPayload.alphaWU.lastEpoch.id).toMatch(/^epoch-/);
+
+    const diagnosticsResponse = await fetch(`${baseUrl}/status/diagnostics`);
+    expect(diagnosticsResponse.status).toBe(200);
+    const diagnosticsPayload = await diagnosticsResponse.json();
+    expect(Array.isArray(diagnosticsPayload.alphaWU.epochs)).toBe(true);
+    expect(diagnosticsPayload.alphaWU.epochs.length).toBeGreaterThan(0);
+    const epoch = diagnosticsPayload.alphaWU.epochs[0];
+    expect(epoch.byJob['job-telemetry']).toBeGreaterThan(0);
+    expect(epoch.byDeviceClass['A100-80GB']).toBeGreaterThan(0);
+    expect(epoch.bySlaProfile[SLA_PROFILES.STANDARD]).toBeGreaterThan(0);
+    expect(diagnosticsPayload.alphaWU.totals.byJob['job-telemetry']).toBeCloseTo(
+      epoch.byJob['job-telemetry'],
+      5
+    );
+    expect(diagnosticsPayload.alphaWU.totals.byDeviceClass['A100-80GB']).toBeCloseTo(
+      epoch.byDeviceClass['A100-80GB'],
+      5
+    );
+    expect(diagnosticsPayload.alphaWU.totals.bySlaProfile[SLA_PROFILES.STANDARD]).toBeCloseTo(
+      epoch.bySlaProfile[SLA_PROFILES.STANDARD],
+      5
+    );
+  });
+
   it('exposes governance directives and crafts owner payloads', async () => {
     api = startAgentApi({ port: 0, logger: noopLogger, ownerToken: OWNER_TOKEN, ledgerRoot: ledgerDir });
     await new Promise((resolve) => setTimeout(resolve, 25));
