@@ -104,25 +104,56 @@ can plug hardware into the lattice without editing code. The computation chain
 is deliberately redundant—every hop revalidates inputs before moving forward so
 bad metadata cannot pollute the α-WU ledger.
 
+### Environment Surfaces → Deterministic Inputs
+
+* **Provider identity** (`PROVIDER_LABEL`, `NODE_LABEL`, `DEVICE_LABEL`) →
+  `providerLabel`
+  * Empty strings collapse to `null`, preserving ledger clarity when a label is
+    intentionally hidden.【F:src/services/executionContext.js†L52-L82】
+* **Device model** (`GPU_MODEL`, `GPU_NAME`, `GPU_TYPE`) → `deviceClass`
+  * SKU names remain unchanged so downstream policy can map canonical IDs.
+  * Missing data resolves to `null`, keeping segments tracked with safe
+    defaults in the ledger.【F:src/services/executionContext.js†L52-L82】
+  * Metering snapshots mirror the same normalization to prevent drift across
+    telemetry and settlements.【F:src/services/metering.js†L232-L324】
+* **VRAM tier** (`GPU_VRAM_GB`, `GPU_MEMORY_GB`) → `vramTier` / `vramGb`
+  * VRAM is parsed as a float, then mapped onto canonical tiers (`TIER_16` …
+    `TIER_80`). Invalid or negative values produce `null` so the meter never
+    trusts corrupted telemetry.【F:src/services/executionContext.js†L13-L50】
+* **GPU count** (`GPU_COUNT`, `GPU_INSTANCES`, `GPU_SLOTS`) → `gpuCount`
+  * Values are clamped to integers ≥ 1 so fractional or zero counts cannot leak
+    into α-WU totals.【F:src/services/executionContext.js†L52-L82】
+* **SLA defaults** (`DEFAULT_SLA_PROFILE`, runtime overrides, job tags) →
+  `slaProfile`
+  * Profiles are normalized via alias tables (`LOW_LATENCY`, `TE`, etc.).
+  * When overrides are absent they default to
+    `STANDARD`.【F:src/services/executionContext.js†L84-L140】
+
 ### Computation Pipeline (device → SLA → α-WU)
 
-1. **Ingest device profile** — [`getDeviceInfo`](../src/services/executionContext.js)
-   inspects `PROVIDER_LABEL`, `GPU_MODEL`, `GPU_VRAM_GB`, and `GPU_COUNT`
-   (including aliases) to normalize the provider label, resolve VRAM tiers, and
-   clamp GPU counts to safe defaults.【F:src/services/executionContext.js†L76-L104】
-2. **Derive SLA profile** — [`getSlaProfile`](../src/services/executionContext.js)
-   fuses job payload hints, runtime overrides, environment defaults, and tag
-   metadata to yield a deterministic SLA enum. When no override is provided the
-   profile falls back to `STANDARD`, preventing null multipliers.【F:src/services/executionContext.js†L106-L140】
-3. **Bind runtime segment** — [`bindExecutionLoopMetering`](../src/orchestrator/nodeRuntime.js)
-   hands both device info and SLA/model metadata into
+1. **Ingest device profile** —
+   [`getDeviceInfo`](../src/services/executionContext.js) inspects provider and
+   GPU environment variables (plus aliases) to normalize the device tuple before
+   any metering begins.【F:src/services/executionContext.js†L13-L82】
+2. **Derive SLA profile** —
+   [`getSlaProfile`](../src/services/executionContext.js) fuses job payload
+   hints, runtime overrides, environment defaults, and tag metadata to yield a
+    deterministic SLA enum. When no override is provided the profile falls back
+    to `STANDARD` by default.【F:src/services/executionContext.js†L84-L140】
+    This guard removes null multipliers.
+3. **Bind runtime segment** —
+   [`bindExecutionLoopMetering`](../src/orchestrator/nodeRuntime.js) hands both
+   device info and SLA/model metadata into
    [`startSegment`](../src/services/metering.js) the instant a lifecycle step
-   begins. Each segment is stamped with provider label, job ID, epoch index,
-   and SLA guarantee for later auditing.【F:src/orchestrator/nodeRuntime.js†L414-L470】【F:src/services/metering.js†L232-L274】
-4. **Compute deterministic α-WU** — [`stopSegment`](../src/services/metering.js)
-   closes the segment, multiplies rounded GPU-minutes by the quality multiplier
-   derived from the device/SLA/model tuple, and stores the result alongside the
-   ledger/telemetry updates.【F:src/services/metering.js†L275-L352】
+   begins. Each segment is stamped with provider label, job ID, and epoch index
+   for auditing.【F:src/orchestrator/nodeRuntime.js†L414-L470】
+    * Metering snapshots persist the SLA guarantees alongside device metadata so
+      telemetry stays aligned.【F:src/services/metering.js†L232-L324】
+4. **Compute deterministic α-WU** —
+   [`stopSegment`](../src/services/metering.js) closes the segment, multiplies
+   rounded GPU-minutes by the quality multiplier derived from the
+   device/SLA/model tuple, and stores the result alongside the telemetry
+   updates.【F:src/services/metering.js†L274-L352】
 
 Device metadata can be overridden per invocation by passing a `deviceInfo`
 object to `bindExecutionLoopMetering`, making blue/green hardware swaps instant
@@ -191,31 +222,46 @@ metrics. Each metric is emitted twice (`agi_alpha_node_*` for namespaced
 compatibility and the neutral `alpha_wu_*` series) so both legacy dashboards
 and modern ones can ingest the stream.【F:src/telemetry/monitoring.js†L173-L252】
 
+### Prometheus Metric Catalogue
+
 * **`agi_alpha_node_alpha_wu_total` / `alpha_wu_total`** — Counter keyed by
-  `node`; tracks lifetime α-WU and updates as segments close.【F:src/telemetry/monitoring.js†L34-L88】
+  `node`; increments whenever a segment closes, keeping lifetime α-WU accurate
+  to two decimals.【F:src/telemetry/monitoring.js†L34-L112】
 * **`agi_alpha_node_alpha_wu_epoch` / `alpha_wu_epoch`** — Gauge keyed by
-  `node` + `epochId`; mirrors metering buckets for Grafana parity.【F:src/telemetry/monitoring.js†L90-L142】
-* **`agi_alpha_node_alpha_wu_acceptance_rate`** — Gauge keyed by `window`;
-  sliding acceptance probability from the lifecycle engine.【F:src/telemetry/monitoring.js†L173-L220】
-* **`agi_alpha_node_alpha_wu_on_time_p95_seconds`** — Gauge keyed by `window`;
-  p95 completion latency for the active observation window.【F:src/telemetry/monitoring.js†L173-L220】
-* **`agi_alpha_node_alpha_wu_slash_adjusted_yield`** — Gauge keyed by
-  `window`; yield after slashing adjustments for treasury dashboards.【F:src/telemetry/monitoring.js†L173-L220】
-* **`agi_alpha_node_alpha_wu_quality`** — Gauge keyed by `window` +
-  `dimension` + `key`; quality per model/SLA/device cohort, matching weight
-  enums.【F:src/telemetry/monitoring.js†L221-L252】
-* **`agi_alpha_node_alpha_wu_breakdown`** — Gauge keyed by `window` +
-  `dimension` + `metric` + `key`; structured KPI slices (e.g., α-WU by SLA or
-  provider).【F:src/telemetry/monitoring.js†L221-L252】
+  `node` + `epochId`; mirrors the ledger’s epoch buckets for Grafana overlays
+  and paging playbooks.【F:src/telemetry/monitoring.js†L90-L176】
+* **`agi_alpha_node_alpha_wu_per_job`** —
+  Gauge keyed by `node` + `jobId`; keeps oracle parity totals.
+  Evidence:【F:src/telemetry/monitoring.js†L123-L176】
+* **`agi_alpha_node_alpha_wu_acceptance_rate`** —
+  Gauge keyed by `window`; reports acceptance probability.
+  Evidence:【F:src/telemetry/monitoring.js†L173-L220】
+* **`agi_alpha_node_alpha_wu_on_time_p95_seconds`** —
+  Gauge keyed by `window`; surfaces p95 completion latency.
+  Evidence:【F:src/telemetry/monitoring.js†L173-L220】
+* **`agi_alpha_node_alpha_wu_yield_per_minute`** —
+  Gauge keyed by `window`; measures α-WU-per-minute efficiency.
+  Evidence:【F:src/telemetry/monitoring.js†L173-L220】
+* **`agi_alpha_node_alpha_wu_backlog_seconds`** —
+  Gauge keyed by `window`; shows α-WU awaiting export.
+  Evidence:【F:src/telemetry/monitoring.js†L173-L220】
+* **`agi_alpha_node_alpha_wu_segments_open`** —
+  Gauge keyed by `node`; exposes the live segment count.
+  Evidence:【F:src/telemetry/monitoring.js†L123-L176】
+* **`agi_alpha_node_alpha_wu_quality`** —
+  Gauge keyed by `window`,`dimension`,`key`; projects per-dimension multipliers.
+  Evidence:【F:src/telemetry/monitoring.js†L221-L252】
+* **`agi_alpha_node_alpha_wu_breakdown`** —
+  Gauge keyed by `window`,`dimension`,`metric`,`key`; emits oracle-ready KPIs.
+  Evidence:【F:src/telemetry/monitoring.js†L221-L252】
 
-Dashboards can mix these metrics with the `/status` surfaces (below) to cross
-validate totals against exported JSON before funds move.
+All gauges and counters share the rounding helpers from the metering engine.
+Dashboards stay jitter-free.【F:src/services/metering.js†L261-L352】
 
-## Status API α-WU Fields
+### Status API α-WU Fields
 
-The HTTP control plane projects the live α-WU ledger for humans and bots
-alike.【F:src/network/apiServer.js†L948-L1007】 Use these surfaces to prove the
-numbers Prometheus is reporting:
+Both status endpoints project the live ledger without any additional
+transformation, making them safe for readiness probes and downstream automation.
 
 ```jsonc
 // GET /status
@@ -269,17 +315,28 @@ numbers Prometheus is reporting:
 }
 ```
 
-`/status` provides a fast heartbeat plus the latest epoch fingerprint, while
-`/status/diagnostics` aggregates the last 24 epochs and pre-computes breakdowns
-operators typically feed into Grafana or settlement dashboards.【F:src/network/apiServer.js†L948-L1007】
+Field meanings:
 
-## Oracle `export-epoch` JSON Schema
+* `status` — `ok` if the control plane is serving requests; non-200 responses
+  flag policy gate issues.【F:src/network/apiServer.js†L932-L1017】
+* `offlineMode` — mirrors orchestrator posture; `true` means the owner has
+  compute paused; telemetry ok.【F:src/network/apiServer.js†L900-L1017】
+* `alphaWU.lifetimeAlphaWU` — the canonical total from the ledger, identical to
+  the Prometheus counter.【F:src/network/apiServer.js†L948-L1007】
+* `alphaWU.lastEpoch` — most recent epoch fingerprint with deterministic `id`
+  and α-WU subtotal for fast SLA audits.【F:src/network/apiServer.js†L948-L968】
+* `alphaWU.epochs[]` — rolling 24-epoch export with sorted breakdowns that
+  mirror the oracle payload schema.【F:src/network/apiServer.js†L968-L1007】
 
-Settlement oracles call [`buildEpochPayload`](../src/services/oracleExport.js)
-with a `[fromTs, toTs]` window to receive a deterministic export. The payload
-is ready for direct submission to chain or off-chain clearinghouses.【F:src/services/oracleExport.js†L1-L204】【F:src/services/oracleExport.js†L205-L240】
+### Oracle `export-epoch` JSON Schema
 
-```json
+The oracle export script (`scripts/oracle-export-epoch.mjs`) uses
+`buildEpochPayload` to produce deterministic payloads for settlement smart
+contracts.【F:src/services/oracleExport.js†L1-L205】 The exporter validates time
+windows, normalizes provider labels, and sorts breakdown keys to guarantee
+byte-for-byte reproducibility.【F:src/services/oracleExport.js†L33-L180】
+
+```jsonc
 {
   "epochId": "epoch-4d4a0a9c6b51d3ac",
   "nodeLabel": "fra1-h100",
@@ -313,6 +370,13 @@ is ready for direct submission to chain or off-chain clearinghouses.【F:src/ser
 }
 ```
 
-Hashing is deterministic, GPU minutes are rounded to eight decimals, and
-provider labels are case-normalized so downstream contracts do not need
-additional validation.【F:src/services/oracleExport.js†L40-L120】【F:src/services/oracleExport.js†L205-L240】
+* **`epochId`** — Provided identifier or deterministic hash of the node label
+  and time window.
+  Collisions avoided.【F:src/services/oracleExport.js†L61-L90】
+* **`window`** — ISO-8601 timestamps validated by `parseTimestamp`; inverted or
+  malformed windows throw before export.【F:src/services/oracleExport.js†L1-L61】
+  Parsing guard active.【F:src/services/oracleExport.js†L97-L110】
+* **`totals.alphaWU`** — Rounded to eight decimals for byte-for-byte parity with
+  settlement contracts.【F:src/services/oracleExport.js†L122-L205】
+* **`breakdown.*`** — Sorted key/value objects so reproducible diffs and Merkle
+  proofs can be generated off-node.【F:src/services/oracleExport.js†L122-L205】
