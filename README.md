@@ -219,6 +219,77 @@ Validator-only nodes simply export `NODE_ROLE=validator` and provide a signing k
 
 Run `node src/index.js ens:records --pretty` after exporting the variables above to print the exact JSON payload that should be written into the ENS registrar, ensuring zero-drift metadata between automation and published records.【F:src/index.js†L640-L720】
 
+#### Verifier handshake drill
+
+Spin the verifier locally and interrogate its public surface to confirm the ENS payloads and signatures line up with configuration. The inline script below boots the server on an ephemeral port, queries `/verifier/info` and `/verifier/health`, and runs a validation round-trip against a signed α-WU sample, mirroring the automated integration tests:
+
+```bash
+node --input-type=module <<'NODE'
+import { Wallet } from 'ethers';
+import { startVerifierServer } from './src/network/verifierServer.js';
+import { signAlphaWu } from './src/crypto/signing.js';
+
+const validatorKey = '0x8b3a350cf5c34c9194ca5b9ce735ffdac58fb5cae5be7c3f5e8c4b9f2e888d8f';
+const attestorKey = '0x59c6995e998f97a5a0044966f0945386f0b0c9cc1fa50bdbeeb29f44cbeb2c82';
+const validator = new Wallet(validatorKey);
+const attestor = new Wallet(attestorKey);
+
+const config = {
+  NODE_ROLE: 'mixed',
+  NODE_ENS_NAME: 'orchestrator.alpha.node.agi.eth',
+  NODE_PAYOUT_ETH_ADDRESS: validator.address,
+  NODE_PAYOUT_AGIALPHA_ADDRESS: validator.address,
+  NODE_PRIMARY_MODEL: 'orchestrator-hypernet:v1',
+  VALIDATOR_PRIVATE_KEY: validatorKey,
+  OPERATOR_ADDRESS: attestor.address,
+  VERIFIER_PORT: 0,
+  VERIFIER_PUBLIC_BASE_URL: 'https://verifier.example'
+};
+
+const server = startVerifierServer({ config, port: 0 });
+const { port } = await server.listenPromise;
+const baseUrl = `http://127.0.0.1:${port}`;
+
+const info = await fetch(`${baseUrl}/verifier/info`).then((res) => res.json());
+console.log('info', info);
+
+const health = await fetch(`${baseUrl}/verifier/health`).then((res) => res.json());
+console.log('health', health);
+
+const sample = await signAlphaWu(
+  {
+    job_id: 'job-123',
+    wu_id: 'job-123:segment-0',
+    role: 'executor',
+    alpha_wu_weight: 5,
+    model_runtime: { name: 'LLM-8B', version: '1.0.0', runtime_type: 'container' },
+    inputs_hash: '0x' + 'aa'.repeat(32),
+    outputs_hash: '0x' + 'bb'.repeat(32),
+    wall_clock_ms: 3200,
+    cpu_sec: 150,
+    gpu_sec: 45,
+    energy_kwh: 1.5,
+    node_ens_name: config.NODE_ENS_NAME,
+    attestor_address: attestor.address,
+    attestor_sig: '0x',
+    created_at: new Date('2024-07-01T00:00:00Z').toISOString()
+  },
+  { privateKey: attestorKey }
+);
+
+const result = await fetch(`${baseUrl}/verifier/validate`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(sample)
+}).then((res) => res.json());
+
+console.log('validation', result);
+await server.stop();
+NODE
+```
+
+Expect the output to mirror the ENS record template (with deterministic `node_ens_name`, payout addresses, and `agialpha_*` text records) and to return a `validation` payload stamped with the validator address—just like the CI-backed verifier tests.【F:src/network/verifierServer.js†L1-L188】【F:test/verifierServer.test.js†L1-L92】
+
 ---
 
 ## α-WU Telemetry & Signing Fabric
