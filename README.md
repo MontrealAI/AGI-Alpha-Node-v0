@@ -204,6 +204,21 @@ sequenceDiagram
 
 Validator-only nodes simply export `NODE_ROLE=validator` and provide a signing key (`VALIDATOR_PRIVATE_KEY` or `NODE_PRIVATE_KEY`); mixed nodes reuse the orchestrator’s pipeline while continuously validating attested work.【F:src/validation/alpha_wu_validator.js†L29-L181】【F:src/orchestrator/bootstrap.js†L218-L360】
 
+### ENS & Verifier configuration quickstart
+
+| Variable | Default | Effect |
+| --- | --- | --- |
+| `NODE_ENS_NAME` | derived from `NODE_LABEL`.`ENS_PARENT_DOMAIN` | Canonical ENS name broadcast inside α-WUs, verifier payloads, and metadata templates.【F:src/ens/ens_config.js†L27-L115】 |
+| `ENS_RPC_URL` | unset | Optional dedicated RPC for ENS registration scripts and ownership checks; validated as URL to prevent malformed endpoints.【F:src/config/schema.js†L280-L308】 |
+| `ENS_CHAIN_ID` | unset | Explicit chain ID hint for ENS automation pipelines; coerced to positive integer during config load.【F:src/config/schema.js†L309-L327】 |
+| `NODE_PAYOUT_ETH_ADDRESS` | fallback `OPERATOR_ADDRESS` | ETH settlement address published via ENS multi-coin records and returned by `/verifier/info`.【F:src/ens/ens_config.js†L64-L106】【F:src/network/verifierServer.js†L60-L112】 |
+| `NODE_PAYOUT_AGIALPHA_ADDRESS` | fallback `NODE_PAYOUT_ETH_ADDRESS` | Dedicated $AGIALPHA payout route (18 decimals) surfaced to token swarms and ENS metadata.【F:src/ens/ens_config.js†L64-L115】 |
+| `NODE_PRIMARY_MODEL` | `agi-alpha-node-v0` | Declares runtime/model identity embedded into `agialpha_model` ENS text records and telemetry.【F:src/ens/ens_config.js†L117-L188】 |
+| `VERIFIER_PORT` | `8787` | Public HTTP port for the verifier service; endpoints map directly to ENS `agialpha_*` URLs.【F:src/config/schema.js†L360-L380】【F:src/network/verifierServer.js†L44-L188】 |
+| `VERIFIER_PUBLIC_BASE_URL` | unset | Absolute base URL mirrored into ENS text records and info responses; trailing slashes normalized automatically.【F:src/ens/ens_config.js†L117-L188】 |
+
+Run `node src/index.js ens:records --pretty` after exporting the variables above to print the exact JSON payload that should be written into the ENS registrar, ensuring zero-drift metadata between automation and published records.【F:src/index.js†L640-L720】
+
 ---
 
 ## α-WU Telemetry & Signing Fabric
