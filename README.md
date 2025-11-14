@@ -246,6 +246,8 @@ curl \
   "http://localhost:8080/oracle/epochs?from=2024-01-01T00:00:00Z&to=2024-01-01T00:15:00Z&epochId=epoch-2024-01-01-a"
 ```
 
+> **Operator signal:** Set `GOVERNANCE_API_TOKEN` in the node runtime environment (CLI or `npm start`) so the REST surface can authenticate every bridge request. Tokens are bearer-style HMAC secrets managed by the contract owner; rotate them at will without downtime.
+
 #### Sample Payload
 
 ```jsonc
@@ -358,6 +360,20 @@ The GitHub Actions workflow [`ci.yml`](.github/workflows/ci.yml) enforces eight 
 
 ```text
 lint → unit tests → coverage → solidity lint/build → subgraph codegen/build → npm audit → policy gates → branch policy
+```
+
+```mermaid
+flowchart LR
+  classDef gate fill:#0f172a,stroke:#22d3ee,stroke-width:2px,color:#e0f2fe;
+  classDef sentinel fill:#111827,stroke:#f97316,stroke-width:2px,color:#fff7ed;
+
+  Lint[Markdown & Link Lint]:::gate --> Tests[Vitest Suite]:::gate --> Coverage[Coverage Report]:::gate -->
+  Solidity[Solhint + solcjs]:::gate --> Subgraph[Graph Codegen/Build]:::gate --> Security[npm audit (high)]:::gate -->
+  Policy[Health Gate]:::sentinel --> Branch[Branch Policy]:::sentinel --> Merge{Protected Branch}
+
+  click Lint "https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions?query=workflow%3Aci" "Lint logs"
+  click Tests "https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions?query=workflow%3Aci" "Test matrix"
+  click Merge "https://github.com/MontrealAI/AGI-Alpha-Node-v0/settings/branches" "Branch protection"
 ```
 
 * **Branch protection** — the repository requires all checks to pass before merge. The `Required Checks` badge above reflects enforced status.
