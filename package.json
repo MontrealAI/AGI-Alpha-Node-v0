@@ -19,7 +19,7 @@
     "coverage": "c8 --reporter=text --reporter=lcov --reporter=json-summary vitest run",
     "precoverage": "node scripts/check-ajv-version.mjs",
     "lint:sol": "solhint --config .solhint.json \"contracts/**/*.sol\"",
-    "test:sol": "solcjs --base-path . --include-path node_modules --bin --abi contracts/AlphaNodeManager.sol",
+    "test:sol": "node scripts/run-solc.mjs",
     "ci:lint": "npm run lint",
     "ci:test": "npm run test",
     "ci:coverage": "npm run coverage",
