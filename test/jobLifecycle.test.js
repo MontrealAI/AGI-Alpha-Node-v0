@@ -1,9 +1,11 @@
-import { describe, expect, it, beforeEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { zeroPadValue, keccak256, toUtf8Bytes } from 'ethers';
 import { createJobLifecycle } from '../src/services/jobLifecycle.js';
 import { resolveJobProfile, createInterfaceFromProfile } from '../src/services/jobProfiles.js';
 import { resetMetering, startSegment, stopSegment } from '../src/services/metering.js';
 import { MODEL_CLASSES, SLA_PROFILES } from '../src/constants/workUnits.js';
+import { verifyAlphaWu } from '../src/crypto/signing.js';
+import { createAlphaWuTelemetry } from '../src/telemetry/alphaWuTelemetry.js';
 
 const registryAddress = '0x00000000000000000000000000000000000000aa';
 const v0Profile = resolveJobProfile('v0');
@@ -47,6 +49,12 @@ describe('job lifecycle service', () => {
     provider.getLogs.mockResolvedValue([]);
     provider.on.mockReset();
     provider.off.mockReset();
+    process.env.NODE_PRIVATE_KEY =
+      '0x59c6995e998f97a5a0044966f0945386f0b0c9cc1fa50bdbeeb29f44cbeb2c82';
+  });
+
+  afterEach(() => {
+    delete process.env.NODE_PRIVATE_KEY;
   });
 
   it('discovers jobs from JobCreated events and records snapshots', async () => {
@@ -146,7 +154,7 @@ describe('job lifecycle service', () => {
     await lifecycle.apply('job-7', { subdomain: 'node', proof: '0x1234' });
     expect(applyMock).toHaveBeenCalledWith(normalizedJobId, 'node', '0x1234');
 
-    const submission = await lifecycle.submit('job-7', {
+    const submission = await lifecycle.submitExecutorResult('job-7', {
       result: { ok: true },
       resultUri: 'ipfs://result'
     });
@@ -154,6 +162,8 @@ describe('job lifecycle service', () => {
     expect(submission.commitment).toMatch(/^0x/);
     expect(submission.resultHash).toMatch(/^0x/);
     expect(submission.validator).toBeNull();
+    expect(submission.alphaWu).toBeTruthy();
+    expect(verifyAlphaWu(submission.alphaWu)).toBe(true);
 
     stopSegment(segmentStart.segmentId, {
       endedAt: new Date('2024-01-01T00:15:00Z')
@@ -234,6 +244,7 @@ describe('job lifecycle service', () => {
     const contractFactory = vi.fn(() => ({
       target: registryAddress,
       interface: v2Interface,
+      applyForJob: vi.fn(async () => ({ hash: '0xapplyv2' })),
       submitWithValidator,
       finalizeWithValidator,
       notifyValidator,
@@ -249,6 +260,19 @@ describe('job lifecycle service', () => {
       profile: 'v2',
       contractFactory,
       journal
+    });
+
+    await lifecycle.apply('job-99', { subdomain: 'node', proof: '0x1234' });
+
+    const segment = startSegment({
+      jobId: normalizedJobId,
+      deviceInfo: { deviceClass: 'H100-80GB', vramTier: 'TIER_80', gpuCount: 2 },
+      modelClass: MODEL_CLASSES.LLM_70B,
+      slaProfile: SLA_PROFILES.LOW_LATENCY_ENCLAVE,
+      startedAt: new Date('2024-01-01T00:10:00Z')
+    });
+    stopSegment(segment.segmentId, {
+      endedAt: new Date('2024-01-01T00:22:00Z')
     });
 
     await lifecycle.submit('job-99', {
@@ -357,5 +381,15 @@ describe('job lifecycle service', () => {
 
     stop();
     expect(watchers.length).toBe(0);
+  });
+
+  it('rejects submissions that omit α-WU artifacts when telemetry disabled', async () => {
+    const telemetry = createAlphaWuTelemetry({ enabled: false });
+    const lifecycle = createJobLifecycle({ alphaTelemetry: telemetry });
+    await expect(
+      lifecycle.submitExecutorResult('job-missing', {
+        result: { ok: true }
+      })
+    ).rejects.toThrow(/alphaWu artifact is required/i);
   });
 });

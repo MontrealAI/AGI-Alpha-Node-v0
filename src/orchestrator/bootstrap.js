@@ -13,6 +13,7 @@ import { createProvider, createWallet } from '../services/provider.js';
 import { createJobLifecycle } from '../services/jobLifecycle.js';
 import { createLifecycleJournal } from '../services/lifecycleJournal.js';
 import { createHealthGate } from '../services/healthGate.js';
+import { createAlphaWuTelemetry } from '../telemetry/alphaWuTelemetry.js';
 
 function assertConfigField(value, field) {
   if (!value) {
@@ -144,6 +145,12 @@ export async function bootstrapContainer({
   let jobLifecycle = null;
   let stopJobWatchers = null;
   let executionBinding = null;
+  const telemetryLogger = typeof logger.child === 'function' ? logger.child({ subsystem: 'alpha-telemetry' }) : logger;
+  const alphaTelemetry = createAlphaWuTelemetry({
+    nodeEnsName: initialEnsName,
+    attestorAddress: config.OPERATOR_ADDRESS,
+    logger: telemetryLogger
+  });
   if (config.JOB_REGISTRY_ADDRESS) {
     try {
       const lifecycleJournal = createLifecycleJournal({ directory: config.LIFECYCLE_LOG_DIR ?? '.agi/lifecycle' });
@@ -159,13 +166,15 @@ export async function bootstrapContainer({
         profileOverrides: config.JOB_PROFILE_SPEC ?? null,
         journal: lifecycleJournal,
         logger,
-        healthGate
+        healthGate,
+        alphaTelemetry
       });
       await jobLifecycle.discover();
       stopJobWatchers = jobLifecycle.watch();
       executionBinding = bindExecutionLoopMetering({
         jobLifecycle,
-        logger: typeof logger.child === 'function' ? logger.child({ subsystem: 'execution-loop' }) : logger
+        logger: typeof logger.child === 'function' ? logger.child({ subsystem: 'execution-loop' }) : logger,
+        alphaTelemetry
       });
     } catch (error) {
       logger.error(error, 'Failed to initialize job lifecycle');

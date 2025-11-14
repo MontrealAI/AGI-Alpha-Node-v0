@@ -56,12 +56,13 @@ describe('agent API server', () => {
         return () => jobsEmitter.off(event, handler);
       }),
       apply: vi.fn(async () => ({ jobId: 'job-1', method: 'applyForJob', transactionHash: '0xapply' })),
-      submit: vi.fn(async () => ({
+      submitExecutorResult: vi.fn(async () => ({
         jobId: 'job-1',
         method: 'submitProof',
         transactionHash: '0xsubmit',
         commitment: '0xcommit',
-        resultHash: '0xhash'
+        resultHash: '0xhash',
+        alphaWu: { wu_id: 'segment-1', attestor_sig: '0x' + 'aa'.repeat(65) }
       })),
       finalize: vi.fn(async () => ({ jobId: 'job-1', method: 'finalize', transactionHash: '0xfinal' })),
       getMetrics: vi.fn(() => ({ discovered: 1, lastJobProvider: 'agi-jobs' }))
@@ -103,7 +104,7 @@ describe('agent API server', () => {
       body: JSON.stringify({ result: '{"ok":true}' })
     });
     expect(submitResponse.status).toBe(202);
-    expect(jobLifecycle.submit).toHaveBeenCalledWith(
+    expect(jobLifecycle.submitExecutorResult).toHaveBeenCalledWith(
       'job-1',
       expect.objectContaining({ result: expect.any(String) })
     );
