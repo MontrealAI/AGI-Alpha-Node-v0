@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadConfig } from '../src/config/env.js';
-import { resetMetering, startSegment, stopSegment } from '../src/services/metering.js';
+import * as metering from '../src/services/metering.js';
 import { buildEpochPayload } from '../src/services/oracleExport.js';
 import { MODEL_CLASSES, SLA_PROFILES, VRAM_TIERS } from '../src/constants/workUnits.js';
 
@@ -8,6 +8,8 @@ const WINDOW_START = '2024-01-01T00:00:00Z';
 const WINDOW_END = '2024-01-01T00:20:00Z';
 const WINDOW_START_ISO = new Date(WINDOW_START).toISOString();
 const WINDOW_END_ISO = new Date(WINDOW_END).toISOString();
+
+const { resetMetering, startSegment, stopSegment } = metering;
 
 describe('oracle epoch export', () => {
   beforeEach(() => {
@@ -117,5 +119,46 @@ describe('oracle epoch export', () => {
   it('rejects invalid windows', () => {
     expect(() => buildEpochPayload({ fromTs: null, toTs: WINDOW_END })).toThrow(/fromTs/);
     expect(() => buildEpochPayload({ fromTs: WINDOW_START, toTs: WINDOW_START })).toThrow(/greater than/);
+  });
+
+  it('sanitizes malformed metrics and labels', () => {
+    loadConfig({ NODE_LABEL: '  ORACLE-ALPHA  ' });
+    const snapshotSpy = vi.spyOn(metering, 'getSegmentsSnapshot').mockReturnValueOnce([
+      {
+        segmentId: 'seg-1',
+        jobId: ' job-trim ',
+        providerLabel: '  Oracle-Alpha ',
+        deviceClass: '  H100-80GB  ',
+        slaProfile: '  CRITICAL  ',
+        startedAt: WINDOW_START_ISO,
+        endedAt: WINDOW_END_ISO,
+        alphaWU: 'NaN',
+        gpuMinutes: 'oops'
+      },
+      {
+        segmentId: 'seg-2',
+        jobId: ' ',
+        providerLabel: 'ORACLE-ALPHA',
+        deviceClass: null,
+        slaProfile: undefined,
+        startedAt: WINDOW_START_ISO,
+        endedAt: WINDOW_END_ISO,
+        alphaWU: 5,
+        gpuMinutes: '12.5'
+      }
+    ]);
+
+    const payload = buildEpochPayload({ fromTs: WINDOW_START, toTs: WINDOW_END });
+
+    expect(payload.nodeLabel).toBe('ORACLE-ALPHA');
+    expect(payload.breakdown.byProvider['oracle-alpha'].alphaWU).toBeCloseTo(5, 6);
+    expect(payload.breakdown.byProvider['oracle-alpha'].gpuMinutes).toBeCloseTo(12.5, 6);
+    expect(payload.breakdown.byJob.UNKNOWN.alphaWU).toBeCloseTo(5, 6);
+    expect(payload.breakdown.byJob).not.toHaveProperty(' job-trim ');
+    expect(payload.breakdown.byDeviceClass.UNKNOWN).toBeCloseTo(5, 6);
+    expect(payload.breakdown.bySlaProfile.UNKNOWN).toBeCloseTo(5, 6);
+    expect(payload.totals.alphaWU).toBeCloseTo(5, 6);
+
+    snapshotSpy.mockRestore();
   });
 });

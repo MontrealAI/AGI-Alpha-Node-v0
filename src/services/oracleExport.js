@@ -77,6 +77,18 @@ function accumulateScalar(map, key, value) {
   map.set(key, current + value);
 }
 
+function sanitizeKey(value, { fallback = 'UNKNOWN', preserveCase = true } = {}) {
+  if (value === undefined || value === null) {
+    return fallback;
+  }
+  const raw = typeof value === 'string' ? value : String(value);
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return fallback;
+  }
+  return preserveCase ? trimmed : trimmed.toLowerCase();
+}
+
 function toSortedObject(map, mapper = (value) => value) {
   return Object.fromEntries(
     Array.from(map.entries())
@@ -111,7 +123,7 @@ export function buildEpochPayload({ epochId = null, fromTs, toTs } = {}) {
     throw new Error('toTs must be greater than fromTs');
   }
 
-  const nodeLabel = resolveNodeLabel();
+  const nodeLabel = sanitizeKey(resolveNodeLabel(), { fallback: 'unknown-node' });
   const normalizedNodeLabel = normaliseLabel(nodeLabel);
   const snapshot = getSegmentsSnapshot();
 
@@ -157,22 +169,29 @@ export function buildEpochPayload({ epochId = null, fromTs, toTs } = {}) {
       continue;
     }
 
-    const segmentAlpha = Number(segment.alphaWU ?? 0) * fraction;
-    const segmentGpu = Number(segment.gpuMinutes ?? 0) * fraction;
+    const rawAlpha = Number(segment?.alphaWU ?? 0);
+    const safeAlpha = Number.isFinite(rawAlpha) ? rawAlpha : 0;
+    const segmentAlpha = safeAlpha * fraction;
+
+    const rawGpu = Number(segment?.gpuMinutes ?? 0);
+    const safeGpu = Number.isFinite(rawGpu) ? rawGpu : 0;
+    const segmentGpu = safeGpu * fraction;
 
     totalAlpha += segmentAlpha;
 
-    const providerKey =
-      segment?.providerLabel ?? segment?.deviceInfo?.providerLabel ?? nodeLabel ?? 'unknown-node';
+    const providerKey = sanitizeKey(
+      segment?.providerLabel ?? segment?.deviceInfo?.providerLabel ?? nodeLabel,
+      { fallback: nodeLabel, preserveCase: false }
+    );
     accumulate(providerTotals, providerKey, segmentAlpha, segmentGpu);
 
-    const jobKey = segment.jobId ?? 'UNKNOWN';
+    const jobKey = sanitizeKey(segment?.jobId, { fallback: 'UNKNOWN' });
     accumulate(jobTotals, jobKey, segmentAlpha, segmentGpu);
 
-    const deviceKey = segment.deviceClass ?? 'UNKNOWN';
+    const deviceKey = sanitizeKey(segment?.deviceClass, { fallback: 'UNKNOWN' });
     accumulateScalar(deviceTotals, deviceKey, segmentAlpha);
 
-    const slaKey = segment.slaProfile ?? 'UNKNOWN';
+    const slaKey = sanitizeKey(segment?.slaProfile, { fallback: 'UNKNOWN' });
     accumulateScalar(slaTotals, slaKey, segmentAlpha);
   }
 
