@@ -101,22 +101,23 @@ function sanitizeAlphaMeta(summary = null, { totalOverride = null } = {}) {
   const modelClassBreakdown = sanitizeBreakdown(summary.modelClassBreakdown);
   const slaBreakdown = sanitizeBreakdown(summary.slaBreakdown);
   const bySegment = sanitizeSegments(summary.bySegment ?? []);
+  const quality = {
+    modelClass: { ...modelClassBreakdown },
+    sla: { ...slaBreakdown }
+  };
   return {
     total: toNumber(normalizedTotal),
     bySegment,
     modelClassBreakdown,
     slaBreakdown,
     breakdown: {
-      modelClass: { ...modelClassBreakdown },
-      sla: { ...slaBreakdown }
+      modelClass: { ...quality.modelClass },
+      sla: { ...quality.sla }
     },
-    quality: {
-      modelClass: { ...modelClassBreakdown },
-      sla: { ...slaBreakdown }
-    },
+    quality,
     qualityBreakdown: {
-      modelClass: { ...modelClassBreakdown },
-      sla: { ...slaBreakdown }
+      modelClass: { ...quality.modelClass },
+      sla: { ...quality.sla }
     }
   };
 }
