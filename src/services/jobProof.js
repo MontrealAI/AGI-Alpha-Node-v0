@@ -140,6 +140,37 @@ function toNumber(value) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function sanitizeBreakdown(source = {}) {
+  return Object.fromEntries(
+    Object.entries(source ?? {})
+      .map(([label, value]) => [label, toNumber(value)])
+      .sort(([a], [b]) => a.localeCompare(b))
+  );
+}
+
+function sanitizeSegments(segments = []) {
+  return segments
+    .map((segment) => ({
+      segmentId: segment.segmentId ?? null,
+      jobId: segment.jobId ?? null,
+      modelClass: segment.modelClass ?? null,
+      slaProfile: segment.slaProfile ?? null,
+      deviceClass: segment.deviceClass ?? null,
+      vramTier: segment.vramTier ?? null,
+      gpuCount: toNumber(segment.gpuCount),
+      gpuMinutes: toNumber(segment.gpuMinutes),
+      qualityMultiplier: toNumber(segment.qualityMultiplier),
+      alphaWU: toNumber(segment.alphaWU),
+      startedAt: segment.startedAt ?? null,
+      endedAt: segment.endedAt ?? null
+    }))
+    .sort((a, b) => {
+      const aId = a.segmentId ?? '';
+      const bId = b.segmentId ?? '';
+      return aId.localeCompare(bId);
+    });
+}
+
 function normalizeAlphaSummary(jobId) {
   let total = 0;
   try {
@@ -153,30 +184,9 @@ function normalizeAlphaSummary(jobId) {
   } catch {
     summary = null;
   }
-  const segments = Array.isArray(summary?.bySegment)
-    ? summary.bySegment.map((segment) => ({
-        segmentId: segment.segmentId ?? null,
-        jobId: segment.jobId ?? null,
-        modelClass: segment.modelClass ?? null,
-        slaProfile: segment.slaProfile ?? null,
-        deviceClass: segment.deviceClass ?? null,
-        vramTier: segment.vramTier ?? null,
-        gpuCount: segment.gpuCount ?? null,
-        gpuMinutes: toNumber(segment.gpuMinutes),
-        qualityMultiplier: toNumber(segment.qualityMultiplier),
-        alphaWU: toNumber(segment.alphaWU),
-        startedAt: segment.startedAt ?? null,
-        endedAt: segment.endedAt ?? null
-      }))
-    : [];
-  const normalizeBreakdown = (source = {}) =>
-    Object.fromEntries(
-      Object.entries(source)
-        .map(([key, value]) => [key, toNumber(value)])
-        .sort(([a], [b]) => a.localeCompare(b))
-    );
-  const modelClassBreakdown = normalizeBreakdown(summary?.modelClassBreakdown);
-  const slaBreakdown = normalizeBreakdown(summary?.slaBreakdown);
+  const segments = sanitizeSegments(summary?.bySegment ?? []);
+  const modelClassBreakdown = sanitizeBreakdown(summary?.modelClassBreakdown);
+  const slaBreakdown = sanitizeBreakdown(summary?.slaBreakdown);
   const quality = {
     modelClass: { ...modelClassBreakdown },
     sla: { ...slaBreakdown }
@@ -185,6 +195,16 @@ function normalizeAlphaSummary(jobId) {
     modelClass: { ...quality.modelClass },
     sla: { ...quality.sla }
   };
+  const qualityBreakdown = summary?.qualityBreakdown
+    ? {
+        modelClass: sanitizeBreakdown(summary.qualityBreakdown.modelClass),
+        sla: sanitizeBreakdown(summary.qualityBreakdown.sla)
+      }
+    : {
+        modelClass: { ...quality.modelClass },
+        sla: { ...quality.sla }
+      };
+
   return {
     total,
     bySegment: segments,
@@ -192,9 +212,26 @@ function normalizeAlphaSummary(jobId) {
     slaBreakdown,
     breakdown,
     quality,
-    qualityBreakdown: {
-      modelClass: { ...quality.modelClass },
-      sla: { ...quality.sla }
+    qualityBreakdown
+  };
+}
+
+function buildAlphaProofSnapshot(jobId) {
+  const summary = normalizeAlphaSummary(jobId);
+  const { total, bySegment, modelClassBreakdown, slaBreakdown, qualityBreakdown } = summary;
+  return {
+    total,
+    bySegment,
+    modelClassBreakdown,
+    slaBreakdown,
+    qualityBreakdown,
+    quality: {
+      modelClass: { ...qualityBreakdown.modelClass },
+      sla: { ...qualityBreakdown.sla }
+    },
+    breakdown: {
+      modelClass: { ...modelClassBreakdown },
+      sla: { ...slaBreakdown }
     }
   };
 }
@@ -231,26 +268,7 @@ export function createJobProof({ jobId, result, operator, timestamp, metadata, r
     )
   );
 
-  const alphaSummary = normalizeAlphaSummary(normalizedJobId);
-  const alphaWU = {
-    total: alphaSummary.total,
-    bySegment: alphaSummary.bySegment,
-    modelClassBreakdown: alphaSummary.modelClassBreakdown,
-    slaBreakdown: alphaSummary.slaBreakdown
-  };
-  alphaWU.quality = {
-    modelClass: { ...alphaWU.modelClassBreakdown },
-    sla: { ...alphaWU.slaBreakdown }
-  };
-  alphaWU.breakdown = {
-    modelClass: { ...alphaWU.modelClassBreakdown },
-    sla: { ...alphaWU.slaBreakdown }
-  };
-  alphaWU.qualityBreakdown =
-    alphaSummary.qualityBreakdown ?? {
-      modelClass: { ...alphaWU.modelClassBreakdown },
-      sla: { ...alphaWU.slaBreakdown }
-    };
+  const alphaWU = buildAlphaProofSnapshot(normalizedJobId);
 
   return {
     jobId: normalizedJobId,
