@@ -220,4 +220,76 @@ describe('metering service', () => {
     const lastCall = recordSpy.mock.calls[recordSpy.mock.calls.length - 1];
     expect(lastCall?.[0]?.alphaWU).toBe(result.alphaWU);
   });
+
+  it('normalizes job identifiers and accumulates totals deterministically', () => {
+    const firstStart = new Date(START_TIME.getTime() + 90 * 60_000);
+    const secondStart = new Date(START_TIME.getTime() + 120 * 60_000);
+
+    const firstSegment = startSegment({
+      jobId: 'CaseSensitive',
+      deviceInfo: { deviceClass: 'A100-80GB', vramTier: VRAM_TIERS.TIER_16, gpuCount: 1 },
+      modelClass: MODEL_CLASSES.LLM_8B,
+      slaProfile: SLA_PROFILES.STANDARD,
+      startedAt: firstStart
+    });
+    const firstResult = stopSegment(firstSegment.segmentId, {
+      endedAt: new Date(firstStart.getTime() + 9.333 * 60_000)
+    });
+
+    const secondSegment = startSegment({
+      jobId: 'casesensitive  ',
+      deviceInfo: { deviceClass: 'H100-80GB', vramTier: VRAM_TIERS.TIER_80, gpuCount: 2 },
+      modelClass: MODEL_CLASSES.RESEARCH_AGENT,
+      slaProfile: SLA_PROFILES.TRUSTED_EXECUTION,
+      startedAt: secondStart
+    });
+    const secondResult = stopSegment(secondSegment.segmentId, {
+      endedAt: new Date(secondStart.getTime() + 6.25 * 60_000)
+    });
+
+    const expectedTotal = roundTo(firstResult.alphaWU + secondResult.alphaWU, 2);
+
+    const summary = getJobAlphaSummary('CASEsensitive');
+    expect(summary.total).toBeCloseTo(expectedTotal, 2);
+    expect(summary.bySegment).toHaveLength(2);
+
+    const segmentTotal = roundTo(
+      summary.bySegment.reduce((acc, segment) => acc + segment.alphaWU, 0),
+      2
+    );
+    expect(segmentTotal).toBeCloseTo(expectedTotal, 2);
+
+    const modelBreakdownSum = roundTo(
+      Object.values(summary.modelClassBreakdown).reduce((acc, value) => acc + value, 0),
+      2
+    );
+    expect(modelBreakdownSum).toBeCloseTo(expectedTotal, 2);
+
+    const lifetimeAlpha = getLifetimeAlphaWU();
+    expect(lifetimeAlpha).toBeCloseTo(expectedTotal, 2);
+
+    const globalSummary = getGlobalAlphaSummary();
+    expect(globalSummary.total).toBeCloseTo(expectedTotal, 2);
+    expect(globalSummary.bySegment).toHaveLength(2);
+    expect(Object.keys(globalSummary.modelClassBreakdown)).toEqual([
+      MODEL_CLASSES.LLM_8B,
+      MODEL_CLASSES.RESEARCH_AGENT
+    ]);
+
+    const epochSummaries = getRecentEpochSummaries({ limit: 5 });
+    expect(epochSummaries.length).toBeGreaterThan(0);
+
+    const epochIds = epochSummaries.map((entry) => entry.epochId);
+    expect(epochIds).toContain(firstSegment.epochId);
+    expect(epochIds).toContain(secondSegment.epochId);
+
+    const aggregatedEpochAlpha = roundTo(
+      epochSummaries.reduce(
+        (acc, entry) => acc + (entry.alphaWU_by_job.casesensitive ?? 0),
+        0
+      ),
+      2
+    );
+    expect(aggregatedEpochAlpha).toBeCloseTo(expectedTotal, 2);
+  });
 });

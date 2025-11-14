@@ -26,6 +26,7 @@
   <a href="Dockerfile"><img src="https://img.shields.io/badge/Docker-Production%20Image-2496ed?logo=docker&logoColor=white" alt="Docker" /></a>
   <a href="deploy/helm/agi-alpha-node"><img src="https://img.shields.io/badge/Helm-Ready-0ea5e9?logo=helm&logoColor=white" alt="Helm" /></a>
   <a href="https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa"><img src="https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-ff3366?logo=ethereum&logoColor=white" alt="$AGIALPHA" /></a>
+  <img src="https://img.shields.io/badge/Owner%20Controls-Total%20Sovereignty-9333ea?logo=gnometerminal&logoColor=white" alt="Owner Command" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-10b981" alt="MIT" /></a>
 </p>
 
@@ -87,6 +88,22 @@ flowchart LR
 
 Every edge is deterministic: segments are normalized, proofs are replayable, and governance snapshots are serialized with stable ordering. The owner always sees the exact state the machine is operating under.
 
+### Deterministic Lifecycle State Machine
+
+```mermaid
+stateDiagram-v2
+  direction LR
+  [*] --> Discovered: JobCreated detected
+  Discovered --> Executing: startSegment()
+  Executing --> Executing: meter GPU minutes
+  Executing --> Proofing: stopSegment()
+  Proofing --> Governance: createJobProof()
+  Governance --> Journaled: recordGovernanceAction()
+  Journaled --> [*]: Owner finalize & archive
+  Governance --> Paused: Owner pause directive
+  Paused --> Executing: Owner unpause directive
+```
+
 ---
 
 ## Alpha Work Unit Fabric
@@ -115,6 +132,7 @@ Highlights:
 - **GPU-minute fidelity** — wall-clock duration × GPU count is rounded to 4 decimals, then multiplied by weighted quality to yield α-WU with 2-decimal determinism.
 - **Weight orchestration** — model class, VRAM tier, SLA profile, and benchmark weights are all enforced in [`test/metering.test.js`](test/metering.test.js).
 - **Lifecycle integration** — [`test/jobLifecycle.alphaWU.test.js`](test/jobLifecycle.alphaWU.test.js) simulates discovery → execution → submission, verifying that proofs and governance ledger entries carry the α-WU totals exactly.
+- **Identifier normalization** — repeated segments for mixed-case job IDs fold into a single ledger entry with deterministic rounding, ensuring global summaries and epoch snapshots cannot drift.
 
 ---
 
@@ -127,6 +145,16 @@ Highlights:
   - Route stake (`stake`, `withdrawStake`) and handle alpha events (mint, validate, accept, slash).
 - **Governance payloads** — [`src/services/governance.js`](src/services/governance.js) and [`src/services/governanceLedger.js`](src/services/governanceLedger.js) produce ABI-encoded transactions plus tamper-evident ledger entries for every governance action.
 - **Owner journal** — attach the memory journal adapter to `createJobLifecycle` to retain immutable audit trails of apply/submit/finalize actions enriched with α-WU metadata.
+
+### Owner Switchboard
+
+| Function | Owner Authority | Control Surface |
+| --- | --- | --- |
+| `pause()` / `unpause()` | Exclusive | Immediate halt/resume of lifecycle + metering. |
+| `setValidator(address,bool)` | Exclusive | Rotate validator set per epoch or operation window. |
+| `registerIdentity(bytes32,address)` / `updateIdentityController` / `setIdentityStatus` / `revokeIdentity` | Exclusive | Curate ENS identities for trusted agents and nodes. |
+| `stake(uint256)` / `withdrawStake(address,uint256)` | Owner approves withdrawals; agents require active identity | Liquidity management of the canonical `$AGIALPHA` staking pool. |
+| `recordAlphaWUMint` / `recordAlphaWUAcceptance` / `applySlash` | Owner override alongside validator rules | Direct intervention in alpha issuance, acceptance, and slashing. |
 
 ---
 
@@ -202,6 +230,7 @@ All numeric outputs are normalized: α-WU totals round to two decimals, GPU minu
 | [`test/workUnitConstants.test.js`](test/workUnitConstants.test.js) | Confirms canonical weight tables, normalization routines, and safe math for α-WU operations. |
 | [`test/governanceLedger.test.js`](test/governanceLedger.test.js) | Ensures ledger entries serialize α-WU breakdowns with deterministic ordering. |
 | [`test/apiServer.test.js`](test/apiServer.test.js) | Verifies status surfaces broadcast α-WU telemetry and governance state. |
+| [`test/metering.test.js`](test/metering.test.js) identifier round-trip | Proves mixed-case job IDs converge, totals stay rounded, and epoch summaries stay consistent across exports. |
 | Full suite (`npm test`) | 40+ suites covering orchestrator, economics, staking, ENS, orchestration, stress harness, and more. |
 
 All suites run inside `npm run ci:verify`, and CI badges only stay green when every gate passes.
