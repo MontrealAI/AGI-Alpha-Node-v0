@@ -208,6 +208,31 @@ All suites run inside `npm run ci:verify`, and CI badges only stay green when ev
 
 ---
 
+## CI Enforcement & Branch Protection
+
+```mermaid
+flowchart TB
+  classDef gate fill:#0b1120,stroke:#38bdf8,stroke-width:2px,color:#f8fafc;
+  classDef check fill:#1e293b,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef policy fill:#1f2937,stroke:#84cc16,stroke-width:2px,color:#ecfccb;
+
+  GitHub[[ci.yml<br/>GitHub Actions]]:::gate --> Lint{{lint:md + lint:links}}:::check
+  GitHub --> Tests{{vitest run<br/>+ coverage}}:::check
+  GitHub --> Solidity{{solhint + solcjs}}:::check
+  GitHub --> Subgraph{{codegen + build}}:::check
+  GitHub --> Security{{npm audit --omit=dev}}:::check
+  GitHub --> Policy{{verify-health-gate.mjs}}:::policy
+  GitHub --> Branch{{verify-branch-gate.mjs}}:::policy
+  Branch --> Protection[[Protected main + PR checks]]:::gate
+```
+
+- **Workflow definition** — [`/.github/workflows/ci.yml`](.github/workflows/ci.yml) fans out into linting, vitest, coverage, Solidity validation, subgraph compilation, security audits, and policy gates.
+- **Single command parity** — [`package.json`](package.json) exposes `npm run ci:verify`, executing the same stages locally (see [Operational Playbook](#operational-playbook)).
+- **Branch protection policy** — enable “Require status checks to pass before merging” and select `ci / ci` plus `ci:verify` to enforce the lattice on every PR targeting `main`.
+- **Visible proof** — the CI badge above links directly to the latest run so operators can confirm every gate is green before shipping cognition updates.
+
+---
+
 ## Repository Atlas
 
 | Path | Description |
