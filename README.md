@@ -213,7 +213,7 @@ const artifacts = lifecycle.getAlphaWUsForJob(jobId);
 - **Unit suites** — Vitest covers lifecycle flows, telemetry hashing, governance journaling, ENS verification, alpha work unit metrics, and API controls.【F:test/jobLifecycle.alphaWU.test.js†L1-L210】【F:test/apiServer.test.js†L1-L200】
 - **Schema validation** — Ajv-driven checks enforce the canonical α-WU schema on every run.【F:test/alphaWu.schema.test.js†L1-L42】
 - **Telemetry determinism** — deterministic clocks verify timing, CPU accounting, and hash stability.【F:test/alphaWuTelemetry.test.js†L1-L44】
-- **CLI smoke tests** — invocation patterns ensure non-technical operators can submit results without manual signing.
+- **CLI smoke tests** — invocation patterns ensure non-technical operators can submit results without manual signing.【F:test/scripts.gates.test.js†L1-L140】
 
 Run the full suite:
 
