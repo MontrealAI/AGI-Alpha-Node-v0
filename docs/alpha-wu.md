@@ -100,28 +100,33 @@ aggregated in 900-second epochs to feed Prometheus metrics and staking rewards.
 ## Environment-Derived Inputs
 
 Alpha metering is driven entirely by runtime environment metadata so operators
-can plug hardware into the lattice without editing code:
+can plug hardware into the lattice without editing code. The computation chain
+is deliberately redundant—every hop revalidates inputs before moving forward so
+bad metadata cannot pollute the α-WU ledger.
 
-1. [`getDeviceInfo`](../src/services/executionContext.js) inspects
-   `PROVIDER_LABEL`, `GPU_MODEL`, `GPU_VRAM_GB`, and `GPU_COUNT` (with numerous
-   aliases) to establish the provider label, device class, VRAM tier, and GPU
-   count. Non-finite values are discarded so the resulting object is safe for
-   deterministic math.【F:src/services/executionContext.js†L76-L96】
-2. [`bindExecutionLoopMetering`](../src/orchestrator/nodeRuntime.js) injects
-   the device info plus `modelClass` and `slaProfile` derived from the job
-   payload or default SLA into [`startSegment`](../src/services/metering.js),
-   ensuring every metered segment records who ran it and under which contract
-   guarantees.【F:src/orchestrator/nodeRuntime.js†L414-L467】【F:src/services/metering.js†L232-L274】
-3. [`stopSegment`](../src/services/metering.js) multiplies the measured
-   GPU-minutes by the quality multiplier returned from
-   `calculateQualityMultiplier`, which in turn evaluates the environment-backed
-   weights loaded through `getConfig().WORK_UNITS` (JSON, `.env`, or Helm). Any
-   unset dimension inherits the canonical defaults, guaranteeing deterministic
-   α-WU even when custom values are absent.【F:src/services/metering.js†L275-L324】
+### Computation Pipeline (device → SLA → α-WU)
+
+1. **Ingest device profile** — [`getDeviceInfo`](../src/services/executionContext.js)
+   inspects `PROVIDER_LABEL`, `GPU_MODEL`, `GPU_VRAM_GB`, and `GPU_COUNT`
+   (including aliases) to normalize the provider label, resolve VRAM tiers, and
+   clamp GPU counts to safe defaults.【F:src/services/executionContext.js†L76-L104】
+2. **Derive SLA profile** — [`getSlaProfile`](../src/services/executionContext.js)
+   fuses job payload hints, runtime overrides, environment defaults, and tag
+   metadata to yield a deterministic SLA enum. When no override is provided the
+   profile falls back to `STANDARD`, preventing null multipliers.【F:src/services/executionContext.js†L106-L140】
+3. **Bind runtime segment** — [`bindExecutionLoopMetering`](../src/orchestrator/nodeRuntime.js)
+   hands both device info and SLA/model metadata into
+   [`startSegment`](../src/services/metering.js) the instant a lifecycle step
+   begins. Each segment is stamped with provider label, job ID, epoch index,
+   and SLA guarantee for later auditing.【F:src/orchestrator/nodeRuntime.js†L414-L470】【F:src/services/metering.js†L232-L274】
+4. **Compute deterministic α-WU** — [`stopSegment`](../src/services/metering.js)
+   closes the segment, multiplies rounded GPU-minutes by the quality multiplier
+   derived from the device/SLA/model tuple, and stores the result alongside the
+   ledger/telemetry updates.【F:src/services/metering.js†L275-L352】
 
 Device metadata can be overridden per invocation by passing a `deviceInfo`
-object to `bindExecutionLoopMetering`, making blue/green hardware swaps
-instant and fully auditable.
+object to `bindExecutionLoopMetering`, making blue/green hardware swaps instant
+and fully auditable.【F:src/orchestrator/nodeRuntime.js†L414-L470】
 
 ## Configuration Surface
 
@@ -186,83 +191,128 @@ metrics. Each metric is emitted twice (`agi_alpha_node_*` for namespaced
 compatibility and the neutral `alpha_wu_*` series) so both legacy dashboards
 and modern ones can ingest the stream.【F:src/telemetry/monitoring.js†L173-L252】
 
+* **`agi_alpha_node_alpha_wu_total` / `alpha_wu_total`** — Counter keyed by
+  `node`; tracks lifetime α-WU and updates as segments close.【F:src/telemetry/monitoring.js†L34-L88】
+* **`agi_alpha_node_alpha_wu_epoch` / `alpha_wu_epoch`** — Gauge keyed by
+  `node` + `epochId`; mirrors metering buckets for Grafana parity.【F:src/telemetry/monitoring.js†L90-L142】
 * **`agi_alpha_node_alpha_wu_acceptance_rate`** — Gauge keyed by `window`;
-  surfaces the sliding acceptance probability emitted by the lifecycle engine.
-* **`agi_alpha_node_alpha_wu_on_time_p95_seconds`** — Gauge keyed by
-  `window`; captures p95 completion latency (seconds) for the active window.
+  sliding acceptance probability from the lifecycle engine.【F:src/telemetry/monitoring.js†L173-L220】
+* **`agi_alpha_node_alpha_wu_on_time_p95_seconds`** — Gauge keyed by `window`;
+  p95 completion latency for the active observation window.【F:src/telemetry/monitoring.js†L173-L220】
 * **`agi_alpha_node_alpha_wu_slash_adjusted_yield`** — Gauge keyed by
-  `window`; reflects reward yield after slashing adjustments.
-* **`agi_alpha_node_alpha_wu_quality`** — Gauge keyed by
-  `window`/`dimension`/`key`; partitions quality scores by model class, SLA, or
-  device cohort.
-* **`agi_alpha_node_alpha_wu_breakdown`** — Gauge keyed by
-  `window`/`dimension`/`metric`/`key`; outputs structured KPI slices like alpha
-  by SLA profile.
-* **`alpha_wu_total` / `agi_alpha_node_alpha_wu_total`** — Counter keyed by
-  `node_label`/`device_class`/`sla_profile`; tracks lifetime α-WU by hardware
-  signature.
-* **`alpha_wu_epoch` / `agi_alpha_node_alpha_wu_epoch`** — Gauge keyed by
-  `epoch_id`; refreshed via `updateAlphaWorkUnitEpochMetrics` after every
-  monitor sweep.
-* **`alpha_wu_per_job` / `agi_alpha_node_alpha_wu_per_job`*** — Optional gauge
-  keyed by `job_id`; surfaces high-cardinality per-job totals when explicitly
-  enabled.
+  `window`; yield after slashing adjustments for treasury dashboards.【F:src/telemetry/monitoring.js†L173-L220】
+* **`agi_alpha_node_alpha_wu_quality`** — Gauge keyed by `window` +
+  `dimension` + `key`; quality per model/SLA/device cohort, matching weight
+  enums.【F:src/telemetry/monitoring.js†L221-L252】
+* **`agi_alpha_node_alpha_wu_breakdown`** — Gauge keyed by `window` +
+  `dimension` + `metric` + `key`; structured KPI slices (e.g., α-WU by SLA or
+  provider).【F:src/telemetry/monitoring.js†L221-L252】
 
-*Per-job gauges are only emitted when `enableAlphaWuPerJob` is true to avoid
-cardinality explosions.【F:src/telemetry/monitoring.js†L208-L245】*
+Dashboards can mix these metrics with the `/status` surfaces (below) to cross
+validate totals against exported JSON before funds move.
 
-Use these series to power Grafana dashboards, alert on abnormal acceptance
-rates, or trigger staking policy adjustments.
+## Status API α-WU Fields
 
-## Status Surfaces
-
-The embedded HTTP API provides JSON mirrors of the α-WU ledger for automation
-and human review.【F:src/network/apiServer.js†L932-L1007】
-
-* `GET /status` — readiness snapshot exposing `offlineMode`,
-  `alphaWU.lifetimeAlphaWU`, and the latest epoch fingerprint.
-* `GET /status/diagnostics` — rolling 24-epoch feed with per-job,
-  per-device, and per-SLA breakdowns plus aggregated totals.
-
-All numeric fields are pre-rounded (GPU minutes to 4 decimals, α-WU to 2
-decimals) using the same helpers that feed the ledger and metrics pipelines, so
-status API consumers observe the exact values exported on-chain.【F:src/services/metering.js†L261-L324】
-
-## Oracle Export Schema
-
-`buildEpochPayload` packages α-WU production into a deterministic JSON payload
-ready for oracle relays or settlements.【F:src/services/oracleExport.js†L1-L223】
+The HTTP control plane projects the live α-WU ledger for humans and bots
+alike.【F:src/network/apiServer.js†L948-L1007】 Use these surfaces to prove the
+numbers Prometheus is reporting:
 
 ```jsonc
+// GET /status
 {
-  "epochId": "epoch-7f0b9d2a6b1f3c2d",
-  "nodeLabel": "validator-eu-west-2",
-  "window": {
-    "from": "2024-07-12T14:00:00.000Z",
-    "to": "2024-07-12T14:15:00.000Z"
-  },
-  "totals": {
-    "alphaWU": 812.42
-  },
-  "breakdown": {
-    "byProvider": {
-      "validator-eu-west-2": { "alphaWU": 812.42, "gpuMinutes": 54.12 }
-    },
-    "byJob": {
-      "0x-job-a": { "alphaWU": 600.12, "gpuMinutes": 40.01 },
-      "0x-job-b": { "alphaWU": 212.30, "gpuMinutes": 14.11 }
-    },
-    "byDeviceClass": {
-      "H100-80GB": 812.42
-    },
-    "bySlaProfile": {
-      "LOW_LATENCY_ENCLAVE": 812.42
+  "status": "ok",
+  "offlineMode": false,
+  "alphaWU": {
+    "lifetimeAlphaWU": 12894.72,
+    "lastEpoch": {
+      "id": "epoch-1844674407",
+      "alphaWU": 512.4
+    }
+  }
+}
+
+// GET /status/diagnostics
+{
+  "status": "ok",
+  "offlineMode": false,
+  "alphaWU": {
+    "lifetimeAlphaWU": 12894.72,
+    "epochs": [
+      {
+        "id": "epoch-1844674407",
+        "alphaWU": 512.4,
+        "startedAt": "2024-07-12T14:00:00.000Z",
+        "endedAt": "2024-07-12T14:15:00.000Z",
+        "byJob": {
+          "job-1": 212.4
+        },
+        "byDeviceClass": {
+          "H100-80GB": 512.4
+        },
+        "bySlaProfile": {
+          "LOW_LATENCY_ENCLAVE": 512.4
+        }
+      }
+    ],
+    "totals": {
+      "byJob": {
+        "job-1": 1024.8
+      },
+      "byDeviceClass": {
+        "H100-80GB": 12894.72
+      },
+      "bySlaProfile": {
+        "LOW_LATENCY_ENCLAVE": 6400.12
+      }
     }
   }
 }
 ```
 
-Epoch identifiers default to a SHA-256 fingerprint of the node label and time
-window, guaranteeing uniqueness even without upstream IDs. GPU minutes and
-α-WU totals are re-normalized to eight decimals for downstream finance systems,
-while string labels are trimmed and case-normalized before inclusion.
+`/status` provides a fast heartbeat plus the latest epoch fingerprint, while
+`/status/diagnostics` aggregates the last 24 epochs and pre-computes breakdowns
+operators typically feed into Grafana or settlement dashboards.【F:src/network/apiServer.js†L948-L1007】
+
+## Oracle `export-epoch` JSON Schema
+
+Settlement oracles call [`buildEpochPayload`](../src/services/oracleExport.js)
+with a `[fromTs, toTs]` window to receive a deterministic export. The payload
+is ready for direct submission to chain or off-chain clearinghouses.【F:src/services/oracleExport.js†L1-L204】【F:src/services/oracleExport.js†L205-L240】
+
+```json
+{
+  "epochId": "epoch-4d4a0a9c6b51d3ac",
+  "nodeLabel": "fra1-h100",
+  "window": {
+    "from": "2024-07-12T14:00:00.000Z",
+    "to": "2024-07-12T14:15:00.000Z"
+  },
+  "totals": {
+    "alphaWU": 512.4
+  },
+  "breakdown": {
+    "byProvider": {
+      "fra1-h100": {
+        "alphaWU": 512.4,
+        "gpuMinutes": 228.57142857
+      }
+    },
+    "byJob": {
+      "job-1": {
+        "alphaWU": 212.4,
+        "gpuMinutes": 94.28571428
+      }
+    },
+    "byDeviceClass": {
+      "H100-80GB": 512.4
+    },
+    "bySlaProfile": {
+      "LOW_LATENCY_ENCLAVE": 512.4
+    }
+  }
+}
+```
+
+Hashing is deterministic, GPU minutes are rounded to eight decimals, and
+provider labels are case-normalized so downstream contracts do not need
+additional validation.【F:src/services/oracleExport.js†L40-L120】【F:src/services/oracleExport.js†L205-L240】

@@ -270,9 +270,17 @@ The node’s telemetry plane mirrors everything the cognition lattice does—no 
 
 ### α-WU Telemetry
 
-- Prometheus gauges and counters are registered in [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js), including `alpha_wu_total`, `alpha_wu_epoch`, optional `alpha_wu_per_job`, and the higher-level `agi_alpha_node_alpha_wu_*` acceptance/latency series. These are the exact metrics documented in the runbook at [`docs/alpha-wu.md`](docs/alpha-wu.md#interpreting-%CE%B1-wu-telemetry).【F:src/telemetry/monitoring.js†L173-L252】【F:docs/alpha-wu.md†L136-L169】
+- Prometheus gauges and counters are registered in [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js), including `alpha_wu_total`, `alpha_wu_epoch`, optional `alpha_wu_per_job`, and the higher-level `agi_alpha_node_alpha_wu_*` acceptance/latency series. The expanded runbook enumerates every metric and label for dashboard parity at [`docs/alpha-wu.md`](docs/alpha-wu.md#interpreting-%CE%B1-wu-telemetry).【F:src/telemetry/monitoring.js†L173-L252】【F:docs/alpha-wu.md†L171-L210】
 - `recordAlphaWorkUnitSegment` writes into those instruments as soon as a segment is sealed, so lifetime totals, per-job gauges, and epoch seeds are updated in lockstep with the ledger.【F:src/telemetry/monitoring.js†L34-L88】
-- `updateAlphaWorkUnitEpochMetrics` refreshes epoch gauges after every monitor loop sweep, preserving deterministic totals across restarts and horizontal scale.【F:src/telemetry/monitoring.js†L90-L120】
+- `updateAlphaWorkUnitEpochMetrics` refreshes epoch gauges after every monitor loop sweep, preserving deterministic totals across restarts and horizontal scale.【F:src/telemetry/monitoring.js†L90-L142】
+- Status APIs mirror the same ledger: `GET /status` returns lifetime α-WU plus the latest epoch fingerprint, while `GET /status/diagnostics` streams the last 24 epochs with job/device/SLA breakdowns for Grafana, matching the JSON schemas documented in [`docs/alpha-wu.md`](docs/alpha-wu.md#status-api-%CE%B1-wu-fields).【F:src/network/apiServer.js†L948-L1007】【F:docs/alpha-wu.md†L212-L257】
+- Oracle exports stay deterministic via [`buildEpochPayload`](src/services/oracleExport.js), producing the same `breakdown` structure that Prometheus exposes—see [`docs/alpha-wu.md`](docs/alpha-wu.md#oracle-export-epoch-json-schema) for the exact payload the settlement layer consumes.【F:src/services/oracleExport.js†L1-L240】【F:docs/alpha-wu.md†L259-L300】
+
+#### Status & Oracle Surfaces
+
+- `/status` → lifetime α-WU + latest epoch metadata (used for lightweight probes and branch protection checks).【F:src/network/apiServer.js†L948-L968】
+- `/status/diagnostics` → rolling 24-epoch export with pre-aggregated totals for job/device/SLA dashboards.【F:src/network/apiServer.js†L968-L1007】
+- `scripts/oracle-export-epoch.mjs` (invokes `buildEpochPayload`) → deterministic JSON for future `$AGIALPHA` payouts or cross-venue settlements.【F:src/services/oracleExport.js†L1-L240】
 
 ### Metrics Surfaces
 
@@ -315,9 +323,9 @@ The runtime was built to plug directly into the AGI Jobs Protocol surfaces, keep
 - [`src/services/governanceLedger.js`](src/services/governanceLedger.js) and [`src/network/apiServer.js`](src/network/apiServer.js) expose the same job records to operators, validators, and downstream automation, ensuring off-chain actors always read protocol-aligned state.【F:src/services/governanceLedger.js†L1-L200】【F:src/network/apiServer.js†L932-L1007】
 - [`docs/alpha-wu.md`](docs/alpha-wu.md) documents the α-WU computation rules so protocol-side auditors and partner nodes can independently derive the same totals before settling rewards.【F:docs/alpha-wu.md†L1-L213】
 
-### α-WU Settlements
+### α-WU Settlement Spine
 
-When epochs roll, [`buildEpochPayload`](src/services/oracleExport.js) produces deterministic JSON snapshots (`totals`, `byJob`, `byProvider`, `byDeviceClass`, `bySlaProfile`) ready for oracle submission or settlement smart contracts.【F:src/services/oracleExport.js†L1-L223】 Those exports, combined with the lifetime metrics and `/status` diagnostics, are designed to back future AGI Jobs Protocol reward curves: α-WU becomes the settlement currency, `$AGIALPHA` remains the staking collateral, and the owner exercises total control over validator rotations, pauses, and slash decisions straight from [`AlphaNodeManager.sol`](contracts/AlphaNodeManager.sol).【F:contracts/AlphaNodeManager.sol†L1-L160】
+When epochs roll, [`buildEpochPayload`](src/services/oracleExport.js) produces deterministic JSON snapshots (`totals`, `byJob`, `byProvider`, `byDeviceClass`, `bySlaProfile`) ready for oracle submission or settlement smart contracts.【F:src/services/oracleExport.js†L1-L240】 The same schema now powers the runbook section on oracle exports so integrators can reproduce the payload byte-for-byte.【F:docs/alpha-wu.md†L259-L300】 Those exports, combined with the lifetime metrics and `/status` diagnostics, are designed to back future AGI Jobs Protocol reward curves: α-WU becomes the settlement currency, `$AGIALPHA` remains the staking collateral, and the owner exercises total control over validator rotations, pauses, and slash decisions straight from [`AlphaNodeManager.sol`](contracts/AlphaNodeManager.sol).【F:contracts/AlphaNodeManager.sol†L1-L176】【F:docs/alpha-wu.md†L212-L257】
 
 This integration path gives the protocol a provable, owner-directed metering spine—exactly the infrastructure required to anchor on-chain payouts, cross-venue accounting, and bonded enforcement.
 
