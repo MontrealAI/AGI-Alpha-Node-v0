@@ -221,6 +221,50 @@ describe('metering service', () => {
     expect(lastCall?.[0]?.alphaWU).toBe(result.alphaWU);
   });
 
+  it('splits segments across custom epoch durations and respects summary limits', () => {
+    loadConfig({
+      WORK_UNITS: JSON.stringify({
+        epochDurationSeconds: 600
+      })
+    });
+
+    const epochDurationSeconds = 600;
+    const { segmentId, epochId } = startSegment({
+      jobId: 'epoch-split',
+      deviceInfo: { deviceClass: 'A100-80GB', vramTier: VRAM_TIERS.TIER_16, gpuCount: 1 },
+      modelClass: MODEL_CLASSES.LLM_8B,
+      slaProfile: SLA_PROFILES.STANDARD,
+      startedAt: START_TIME
+    });
+
+    const result = stopSegment(segmentId, {
+      endedAt: new Date(START_TIME.getTime() + 15 * 60_000)
+    });
+
+    const baseEpochIndex = Math.floor(START_TIME.getTime() / (epochDurationSeconds * 1000));
+    const nextEpochIndex = baseEpochIndex + 1;
+    expect(epochId).toBe(`epoch-${baseEpochIndex}`);
+    expect(result.alphaWU).toBeCloseTo(15, 2);
+
+    const epochZero = getEpochAlphaWU(`epoch-${baseEpochIndex}`);
+    const epochOne = getEpochAlphaWU(`epoch-${nextEpochIndex}`);
+
+    expect(epochZero.totalAlphaWU).toBeCloseTo(10, 2);
+    expect(epochOne.totalAlphaWU).toBeCloseTo(5, 2);
+    expect(epochZero.alphaWU_by_job['epoch-split']).toBeCloseTo(10, 2);
+    expect(epochOne.alphaWU_by_job['epoch-split']).toBeCloseTo(5, 2);
+
+    const limitOne = getRecentEpochSummaries({ limit: 1 });
+    expect(limitOne).toHaveLength(1);
+    expect(limitOne[0].epochId).toBe(`epoch-${nextEpochIndex}`);
+    expect(limitOne[0].totalAlphaWU).toBeCloseTo(epochOne.totalAlphaWU, 2);
+
+    const limitTwo = getRecentEpochSummaries({ limit: 2 });
+    expect(limitTwo).toHaveLength(2);
+    expect(limitTwo[0].epochId).toBe(`epoch-${nextEpochIndex}`);
+    expect(limitTwo[1].epochId).toBe(`epoch-${baseEpochIndex}`);
+  });
+
   it('normalizes job identifiers and accumulates totals deterministically', () => {
     const firstStart = new Date(START_TIME.getTime() + 90 * 60_000);
     const secondStart = new Date(START_TIME.getTime() + 120 * 60_000);
