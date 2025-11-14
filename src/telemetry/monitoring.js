@@ -1,7 +1,91 @@
 import http from 'node:http';
-import { collectDefaultMetrics, Gauge, Registry } from 'prom-client';
+import { collectDefaultMetrics, Counter, Gauge, Registry } from 'prom-client';
 
-export function startMonitoringServer({ port = 9464, logger }) {
+const alphaWuMetricState = {
+  totalCounter: null,
+  epochGauge: null,
+  perJobGauge: null,
+  perJobEnabled: false
+};
+
+function registerAlphaWuMetricHandles({
+  totalCounter = null,
+  epochGauge = null,
+  perJobGauge = null,
+  perJobEnabled = false
+} = {}) {
+  alphaWuMetricState.totalCounter = totalCounter ?? null;
+  alphaWuMetricState.epochGauge = epochGauge ?? null;
+  alphaWuMetricState.perJobGauge = perJobGauge ?? null;
+  alphaWuMetricState.perJobEnabled = Boolean(perJobEnabled && perJobGauge);
+}
+
+function normaliseLabel(value, fallback = 'unknown') {
+  if (value === null || value === undefined) {
+    return fallback;
+  }
+  const stringValue = String(value).trim();
+  return stringValue.length > 0 ? stringValue : fallback;
+}
+
+export function recordAlphaWorkUnitSegment({
+  nodeLabel,
+  deviceClass,
+  slaProfile,
+  jobId,
+  epochId,
+  alphaWU,
+  jobTotalAlphaWU
+}) {
+  if (!alphaWuMetricState.totalCounter && !alphaWuMetricState.perJobEnabled && !alphaWuMetricState.epochGauge) {
+    return;
+  }
+
+  const numericAlphaWu = Number(alphaWU ?? 0);
+  if (Number.isFinite(numericAlphaWu) && numericAlphaWu > 0 && alphaWuMetricState.totalCounter) {
+    alphaWuMetricState.totalCounter.inc(
+      {
+        node_label: normaliseLabel(nodeLabel),
+        device_class: normaliseLabel(deviceClass, 'UNKNOWN'),
+        sla_profile: normaliseLabel(slaProfile, 'UNKNOWN')
+      },
+      numericAlphaWu
+    );
+  }
+
+  if (alphaWuMetricState.perJobEnabled && alphaWuMetricState.perJobGauge && jobId) {
+    const jobTotal = Number(jobTotalAlphaWU ?? 0);
+    if (Number.isFinite(jobTotal)) {
+      alphaWuMetricState.perJobGauge.set(
+        { job_id: normaliseLabel(jobId) },
+        jobTotal
+      );
+    }
+  }
+
+  if (alphaWuMetricState.epochGauge && epochId && Number.isFinite(numericAlphaWu) && numericAlphaWu > 0) {
+    // epochGauge is populated via monitor loop rollups. Ensure the label is registered early
+    alphaWuMetricState.epochGauge.set({ epoch_id: normaliseLabel(epochId) }, 0);
+  }
+}
+
+export function updateAlphaWorkUnitEpochMetrics(summaries = []) {
+  if (!alphaWuMetricState.epochGauge) {
+    return;
+  }
+  alphaWuMetricState.epochGauge.reset();
+  summaries.forEach((summary) => {
+    if (!summary) return;
+    const total = Number(summary.totalAlphaWU ?? 0);
+    if (!Number.isFinite(total)) {
+      return;
+    }
+    const epochId = normaliseLabel(summary.epochId);
+    alphaWuMetricState.epochGauge.set({ epoch_id: epochId }, total);
+  });
+}
+
+export function startMonitoringServer({ port = 9464, logger, enableAlphaWuPerJob = false } = {}) {
   const registry = new Registry();
   collectDefaultMetrics({ register: registry, prefix: 'agi_alpha_node_' });
 
@@ -105,6 +189,36 @@ export function startMonitoringServer({ port = 9464, logger }) {
     registers: [registry]
   });
 
+  const alphaWuTotalCounter = new Counter({
+    name: 'agi_alpha_node_alpha_wu_total',
+    help: 'Cumulative alpha work units recorded by node/device/SLA profile',
+    labelNames: ['node_label', 'device_class', 'sla_profile'],
+    registers: [registry]
+  });
+
+  const alphaWuEpochGauge = new Gauge({
+    name: 'agi_alpha_node_alpha_wu_epoch',
+    help: 'Alpha work units aggregated per epoch',
+    labelNames: ['epoch_id'],
+    registers: [registry]
+  });
+
+  const alphaWuPerJobGauge = enableAlphaWuPerJob
+    ? new Gauge({
+        name: 'agi_alpha_node_alpha_wu_per_job',
+        help: 'Alpha work units accumulated per job (high cardinality metric)',
+        labelNames: ['job_id'],
+        registers: [registry]
+      })
+    : null;
+
+  registerAlphaWuMetricHandles({
+    totalCounter: alphaWuTotalCounter,
+    epochGauge: alphaWuEpochGauge,
+    perJobGauge: alphaWuPerJobGauge,
+    perJobEnabled: enableAlphaWuPerJob
+  });
+
   const server = http.createServer(async (req, res) => {
     if (req.url === '/metrics') {
       const metrics = await registry.metrics();
@@ -137,6 +251,9 @@ export function startMonitoringServer({ port = 9464, logger }) {
     alphaOnTimeGauge,
     alphaYieldGauge,
     alphaQualityGauge,
-    alphaBreakdownGauge
+    alphaBreakdownGauge,
+    alphaWuTotalCounter,
+    alphaWuEpochGauge,
+    alphaWuPerJobGauge
   };
 }

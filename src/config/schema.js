@@ -281,6 +281,7 @@ export const configSchema = z
     JOB_REGISTRY_PROFILE: z.string().optional().default('v0'),
     JOB_PROFILE_SPEC: z.any().optional().transform((value) => parseProfileSpec(value)),
     METRICS_PORT: z.coerce.number().int().min(1024).max(65535).default(9464),
+    METRICS_ALPHA_WU_PER_JOB: booleanFlag.optional().default(false),
     API_PORT: z.coerce.number().int().min(1024).max(65535).default(8080),
     DRY_RUN: booleanFlag.optional().default(true),
     OPERATOR_PRIVATE_KEY: z

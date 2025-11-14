@@ -3,6 +3,7 @@ import { runNodeDiagnostics, launchMonitoring } from './nodeRuntime.js';
 import { formatTokenAmount } from '../utils/formatters.js';
 import { loadOfflineSnapshot } from '../services/offlineSnapshot.js';
 import { applyAlphaWorkUnitMetricsToTelemetry } from '../telemetry/alphaMetrics.js';
+import { updateAlphaWorkUnitEpochMetrics } from '../telemetry/monitoring.js';
 import { getRecentEpochSummaries } from '../services/metering.js';
 
 function assertPositiveInteger(value, name) {
@@ -173,6 +174,7 @@ export async function startMonitorLoop({
         alphaWU_by_slaProfile: entry.alphaWU_by_slaProfile
       });
     });
+    updateAlphaWorkUnitEpochMetrics(summaries);
   };
 
   const wait = () =>
@@ -261,7 +263,8 @@ export async function startMonitorLoop({
             performance: diagnostics.performance,
             runtimeMode: diagnostics.runtimeMode,
             logger,
-            healthGate
+            healthGate,
+            enableAlphaWuPerJob: Boolean(config.METRICS_ALPHA_WU_PER_JOB)
           });
         } else {
           updateTelemetryGauges(telemetryServer, diagnostics, healthGate);

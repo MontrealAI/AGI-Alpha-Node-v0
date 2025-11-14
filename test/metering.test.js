@@ -5,6 +5,7 @@ import {
   stopSegment,
   getJobAlphaWU,
   getJobAlphaSummary,
+  getLifetimeAlphaWU,
   getGlobalAlphaSummary,
   getEpochAlphaWU,
   getRecentEpochSummaries,
@@ -116,5 +117,6 @@ describe('metering service', () => {
     expect(globalSummary.total).toBeGreaterThan(0);
     expect(globalSummary.total).toBeCloseTo(summary.total, 5);
     expect(globalSummary.bySegment.length).toBeGreaterThanOrEqual(summary.bySegment.length);
+    expect(getLifetimeAlphaWU()).toBeCloseTo(globalSummary.total, 5);
   });
 });
