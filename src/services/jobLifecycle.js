@@ -460,7 +460,16 @@ export function createJobLifecycle({
     }
 
     if (COMPLETION_STATUSES.has(normalizedStatus)) {
-      sanitizedPatch.alphaWU = resolveAlphaSummary(normalizedJobId, logger);
+      let totalOverride;
+      try {
+        totalOverride = getJobAlphaWU(normalizedJobId);
+      } catch (error) {
+        logger?.warn?.(error, 'Failed to resolve α-WU total during job completion');
+        totalOverride = undefined;
+      }
+      sanitizedPatch.alphaWU = resolveAlphaSummary(normalizedJobId, logger, {
+        totalOverride
+      });
     }
 
     const merged = mergeJobRecord(existing, sanitizedPatch);

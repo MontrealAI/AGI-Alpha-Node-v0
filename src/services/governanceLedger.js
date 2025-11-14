@@ -97,27 +97,27 @@ function sanitizeAlphaMeta(summary = null, { totalOverride = null } = {}) {
       }
     };
   }
-  const normalizedTotal = totalOverride !== null && totalOverride !== undefined ? totalOverride : summary.total;
+  const normalizedTotal =
+    totalOverride !== null && totalOverride !== undefined ? totalOverride : summary.total;
   const modelClassBreakdown = sanitizeBreakdown(summary.modelClassBreakdown);
   const slaBreakdown = sanitizeBreakdown(summary.slaBreakdown);
   const bySegment = sanitizeSegments(summary.bySegment ?? []);
-  const quality = {
-    modelClass: { ...modelClassBreakdown },
-    sla: { ...slaBreakdown }
-  };
   return {
     total: toNumber(normalizedTotal),
     bySegment,
     modelClassBreakdown,
     slaBreakdown,
     breakdown: {
-      modelClass: { ...quality.modelClass },
-      sla: { ...quality.sla }
+      modelClass: { ...modelClassBreakdown },
+      sla: { ...slaBreakdown }
     },
-    quality,
+    quality: {
+      modelClass: { ...modelClassBreakdown },
+      sla: { ...slaBreakdown }
+    },
     qualityBreakdown: {
-      modelClass: { ...quality.modelClass },
-      sla: { ...quality.sla }
+      modelClass: { ...modelClassBreakdown },
+      sla: { ...slaBreakdown }
     }
   };
 }
