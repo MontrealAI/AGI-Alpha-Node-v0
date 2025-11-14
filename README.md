@@ -20,6 +20,8 @@
   </a>
   <img src="https://img.shields.io/badge/PR%20Checks-Enforced%20on%20main-22c55e?logo=github" alt="Required Checks" />
   <img src="https://img.shields.io/badge/Coverage-Automated-0ea5e9?logo=vitest&logoColor=white" alt="Coverage" />
+  <img src="https://img.shields.io/badge/Vitest-1.6-38bdf8?logo=vitest&logoColor=white" alt="Vitest" />
+  <img src="https://img.shields.io/badge/Solidity-0.8.26-363636?logo=solidity&logoColor=white" alt="Solidity" />
   <img src="https://img.shields.io/badge/Node.js-20.18%2B-43853d?logo=node.js&logoColor=white" alt="Runtime" />
   <a href="Dockerfile">
     <img src="https://img.shields.io/badge/Docker-Production%20Image-2496ed?logo=docker&logoColor=white" alt="Docker" />
@@ -47,13 +49,14 @@
 1. [Sovereign Mandate](#sovereign-mandate)
 2. [System Constellation](#system-constellation)
 3. [Alpha-WU Continuum](#alpha-wu-continuum)
-4. [Lifecycle Journal & Governance Ledger](#lifecycle-journal--governance-ledger)
-5. [Owner Mastery](#owner-mastery)
-6. [Operational Launch](#operational-launch)
-7. [Continuous Verification & CI](#continuous-verification--ci)
-8. [Token Mechanics](#token-mechanics)
-9. [Repository Atlas](#repository-atlas)
-10. [Reference Library](#reference-library)
+4. [Alpha Evidence Schema](#alpha-evidence-schema)
+5. [Lifecycle Journal & Governance Ledger](#lifecycle-journal--governance-ledger)
+6. [Owner Mastery](#owner-mastery)
+7. [Operational Launch](#operational-launch)
+8. [Continuous Verification & CI](#continuous-verification--ci)
+9. [Token Mechanics](#token-mechanics)
+10. [Repository Atlas](#repository-atlas)
+11. [Reference Library](#reference-library)
 
 ---
 
@@ -157,6 +160,46 @@ The same α-WU snapshot powers runtime state, proof commitments, and ledger entr
 ```
 
 `createJobProof` and `recordGovernanceAction` rely on `metering.getJobAlphaWU(jobId)` so completion events inherit the exact totals a validator observed. Journal snapshots embed the same data, ensuring every reward and policy change can be traced to concrete compute evidence.
+
+---
+
+## Alpha Evidence Schema
+
+To make the α-WU continuum actionable, every surface normalizes the evidence payload into the same schema. The structures below are produced automatically — no manual wiring is required:
+
+| Surface | Location | α-WU Payload | Notes |
+| --- | --- | --- | --- |
+| Runtime cache | [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js) | `job.alphaWU` appended on completion using `metering.getJobAlphaWU(jobId)` | Owner dashboards and journal entries read from this cache. |
+| Proof fabric | [`src/services/jobProof.js`](src/services/jobProof.js) | `alphaWU: { total, bySegment, modelClassBreakdown, slaBreakdown, quality, qualityBreakdown }` | Stays local yet cryptographically bound to the commitment payload. |
+| Governance ledger | [`src/services/governanceLedger.js`](src/services/governanceLedger.js) | `meta.alphaWU` persists totals plus per-segment and quality slices | Applies to submissions, stake motions, and reward flows while retaining append-only hashing. |
+
+```mermaid
+classDiagram
+  direction LR
+  class AlphaWU {
+    +float total
+    +Segment[] bySegment
+    +Record modelClassBreakdown
+    +Record slaBreakdown
+    +Record qualityModelClass
+    +Record qualitySla
+  }
+  class Segment {
+    +string segmentId
+    +string jobId
+    +string modelClass
+    +string slaProfile
+    +string deviceClass
+    +number gpuMinutes
+    +number qualityMultiplier
+    +number alphaWU
+  }
+  JobLifecycle --> AlphaWU : caches
+  JobProof --> AlphaWU : snapshots
+  GovernanceLedger --> AlphaWU : serializes
+```
+
+This schema guarantees that journals, proofs, and governance records describe the same computation. Operators can diff ledgers, replay α-WU totals, and reconcile `bySegment` slices against metering windows within seconds.
 
 ---
 
