@@ -37,6 +37,15 @@ Run the CLI to generate the JSON template for your current configuration:
 node src/index.js ens:records
 ```
 
+### Assisted ENS workflows
+
+- `node src/index.js ens-guide --label <label> --parent <domain> --address <operator>`
+  prints step-by-step instructions for delegating the node subdomain to the
+  operator wallet.
+- `node src/index.js verify-ens --label <label> --parent <domain> --address <operator>
+  [--rpc <url>]` resolves ENS ownership on-chain and confirms the expected
+  controller before publishing records.
+
 Example output:
 
 ```json

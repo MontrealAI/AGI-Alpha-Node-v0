@@ -46,4 +46,19 @@ describe('ENS config helpers', () => {
     expect(template.coin_addresses.ETH).toBe('0x0000000000000000000000000000000000000001');
     expect(template.coin_addresses.AGIALPHA).toBe('0x0000000000000000000000000000000000000002');
   });
+
+  it('normalizes trailing slash and resolves health URL from base URL', () => {
+    const template = buildEnsRecordTemplate({
+      config: {
+        NODE_ENS_NAME: 'validator.alpha.eth',
+        NODE_PAYOUT_ETH_ADDRESS: '0x0000000000000000000000000000000000000003',
+        VERIFIER_PUBLIC_BASE_URL: 'https://validator.alpha/',
+        NODE_PRIMARY_MODEL: 'validator:v1'
+      },
+      commitHash: '0xfeedface'
+    });
+
+    expect(template.text_records.agialpha_verifier).toBe('https://validator.alpha');
+    expect(template.text_records.agialpha_health).toBe('https://validator.alpha/verifier/health');
+  });
 });
