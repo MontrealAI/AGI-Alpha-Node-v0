@@ -268,8 +268,42 @@ export const configSchema = z
     NODE_ROLE: nodeRoleSchema,
     ENS_PARENT_DOMAIN: z.string().min(3).default('alpha.node.agi.eth'),
     NODE_LABEL: z.string().min(1).optional(),
+    NODE_ENS_NAME: z
+      .string()
+      .optional()
+      .transform((value) => {
+        if (!value) return undefined;
+        const normalized = value.trim().toLowerCase();
+        return normalized.length ? normalized : undefined;
+      }),
+    ENS_RPC_URL: z
+      .string()
+      .optional()
+      .transform((value) => {
+        if (!value) return undefined;
+        const trimmed = value.trim();
+        return trimmed.length ? trimmed : undefined;
+      })
+      .pipe(z.string().url().optional()),
+    ENS_CHAIN_ID: z
+      .union([z.string(), z.number()])
+      .optional()
+      .transform((value) => {
+        if (value === undefined || value === null) return undefined;
+        const numeric = Number(value);
+        if (!Number.isFinite(numeric)) {
+          throw new Error('ENS_CHAIN_ID must be numeric');
+        }
+        const int = Math.trunc(numeric);
+        if (int <= 0) {
+          throw new Error('ENS_CHAIN_ID must be greater than zero');
+        }
+        return int;
+      }),
     OPERATOR_ADDRESS: z.string().regex(addressRegex).optional(),
     PLATFORM_INCENTIVES_ADDRESS: z.string().regex(addressRegex).optional(),
+    NODE_PAYOUT_ETH_ADDRESS: z.string().regex(addressRegex).optional(),
+    NODE_PAYOUT_AGIALPHA_ADDRESS: z.string().regex(addressRegex).optional(),
     STAKE_MANAGER_ADDRESS: z.string().regex(addressRegex).optional(),
     REWARD_ENGINE_ADDRESS: z.string().regex(addressRegex).optional(),
     JOB_REGISTRY_ADDRESS: z.string().regex(addressRegex).optional(),
@@ -298,6 +332,20 @@ export const configSchema = z
     JOB_REGISTRY_PROFILE: z.string().optional().default('v0'),
     JOB_PROFILE_SPEC: z.any().optional().transform((value) => parseProfileSpec(value)),
     METRICS_PORT: z.coerce.number().int().min(1024).max(65535).default(9464),
+    VERIFIER_PORT: z.coerce.number().int().min(1024).max(65535).default(8787),
+    VERIFIER_PUBLIC_BASE_URL: z
+      .string()
+      .optional()
+      .transform((value) => {
+        if (!value) return undefined;
+        const trimmed = value.trim();
+        if (!trimmed) return undefined;
+        try {
+          return new URL(trimmed).toString().replace(/\/$/, '');
+        } catch (error) {
+          throw new Error(`VERIFIER_PUBLIC_BASE_URL must be a valid URL: ${error.message}`);
+        }
+      }),
     METRICS_ALPHA_WU_PER_JOB: booleanFlag.optional().default(false),
     API_PORT: z.coerce.number().int().min(1024).max(65535).default(8080),
     DRY_RUN: booleanFlag.optional().default(true),
@@ -347,6 +395,14 @@ export const configSchema = z
       .default(AGIALPHA_TOKEN_DECIMALS)
       .refine((value) => value === AGIALPHA_TOKEN_DECIMALS, {
         message: `${AGIALPHA_TOKEN_SYMBOL} uses fixed decimals ${AGIALPHA_TOKEN_DECIMALS}`
+      }),
+    NODE_PRIMARY_MODEL: z
+      .string()
+      .optional()
+      .transform((value) => {
+        if (!value) return undefined;
+        const trimmed = value.trim();
+        return trimmed.length ? trimmed : undefined;
       }),
     SYSTEM_PAUSE_ADDRESS: z.string().regex(addressRegex).optional(),
     DESIRED_MINIMUM_STAKE: z

@@ -20,6 +20,7 @@ describe('config schema', () => {
     const config = coerceConfig({ RPC_URL: 'https://rpc.ankr.com/eth' });
     expect(config.ENS_PARENT_DOMAIN).toBe('alpha.node.agi.eth');
     expect(config.METRICS_PORT).toBe(9464);
+    expect(config.VERIFIER_PORT).toBe(8787);
     expect(config.AGIALPHA_TOKEN_ADDRESS).toBe(AGIALPHA_TOKEN_CHECKSUM_ADDRESS);
     expect(config.AGIALPHA_TOKEN_DECIMALS).toBe(AGIALPHA_TOKEN_DECIMALS);
   });
@@ -104,13 +105,23 @@ describe('config schema', () => {
       AUTO_STAKE: 'true',
       STAKE_AMOUNT: '1750.5',
       INTERACTIVE_STAKE: 'false',
-      OFFLINE_SNAPSHOT_PATH: ' /data/snapshot.json '
+      OFFLINE_SNAPSHOT_PATH: ' /data/snapshot.json ',
+      NODE_ENS_NAME: 'Verifier.ALPHA.eth ',
+      NODE_PAYOUT_ETH_ADDRESS: '0x0000000000000000000000000000000000000001',
+      NODE_PAYOUT_AGIALPHA_ADDRESS: '0x0000000000000000000000000000000000000002',
+      VERIFIER_PUBLIC_BASE_URL: 'https://verifier.alpha',
+      ENS_CHAIN_ID: '1'
     });
     expect(config.OPERATOR_PRIVATE_KEY).toBe('0x'.padEnd(66, '1'));
     expect(config.AUTO_STAKE).toBe(true);
     expect(config.STAKE_AMOUNT).toBe('1750.5');
     expect(config.INTERACTIVE_STAKE).toBe(false);
     expect(config.OFFLINE_SNAPSHOT_PATH).toBe('/data/snapshot.json');
+    expect(config.NODE_ENS_NAME).toBe('verifier.alpha.eth');
+    expect(config.NODE_PAYOUT_ETH_ADDRESS).toBe('0x0000000000000000000000000000000000000001');
+    expect(config.NODE_PAYOUT_AGIALPHA_ADDRESS).toBe('0x0000000000000000000000000000000000000002');
+    expect(config.VERIFIER_PUBLIC_BASE_URL).toBe('https://verifier.alpha');
+    expect(config.ENS_CHAIN_ID).toBe(1);
 
     expect(() =>
       coerceConfig({

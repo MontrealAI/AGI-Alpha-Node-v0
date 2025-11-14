@@ -8,6 +8,7 @@ import { AGIALPHA_TOKEN_DECIMALS, AGIALPHA_TOKEN_SYMBOL } from '../constants/tok
 import { loadOfflineSnapshot } from '../services/offlineSnapshot.js';
 import { handleStakeActivation } from './stakeActivator.js';
 import { startAgentApi } from '../network/apiServer.js';
+import { startVerifierServer } from '../network/verifierServer.js';
 import { hydrateOperatorPrivateKey } from '../services/secretManager.js';
 import { createProvider, createWallet } from '../services/provider.js';
 import { createJobLifecycle } from '../services/jobLifecycle.js';
@@ -16,6 +17,7 @@ import { createHealthGate } from '../services/healthGate.js';
 import { createAlphaWuTelemetry } from '../telemetry/alphaWuTelemetry.js';
 import { startValidatorRuntime } from '../validator/runtime.js';
 import { createQuorumEngine } from '../settlement/quorumEngine.js';
+import { getNodeEnsName } from '../ens/ens_config.js';
 
 function assertConfigField(value, field) {
   if (!value) {
@@ -137,10 +139,12 @@ export async function bootstrapContainer({
     logger: healthGateLogger
   });
 
-  const derivedEnsName = config.NODE_LABEL && config.ENS_PARENT_DOMAIN
-    ? `${config.NODE_LABEL}.${config.ENS_PARENT_DOMAIN}`
-    : null;
-  const initialEnsName = config.HEALTH_GATE_OVERRIDE_ENS ?? derivedEnsName;
+  const canonicalEnsName = getNodeEnsName({ config });
+  const derivedEnsName = canonicalEnsName
+    ?? (config.NODE_LABEL && config.ENS_PARENT_DOMAIN
+      ? `${config.NODE_LABEL}.${config.ENS_PARENT_DOMAIN}`
+      : null);
+  const initialEnsName = config.HEALTH_GATE_OVERRIDE_ENS ?? canonicalEnsName ?? derivedEnsName;
   if (initialEnsName) {
     healthGate.setStatus({
       isHealthy: config.HEALTH_GATE_INITIAL_STATE,
@@ -180,7 +184,7 @@ export async function bootstrapContainer({
   let executionBinding = null;
   const telemetryLogger = typeof logger.child === 'function' ? logger.child({ subsystem: 'alpha-telemetry' }) : logger;
   const alphaTelemetry = createAlphaWuTelemetry({
-    nodeEnsName: initialEnsName,
+    nodeEnsName: canonicalEnsName ?? initialEnsName,
     attestorAddress: config.OPERATOR_ADDRESS,
     logger: telemetryLogger
   });
@@ -324,6 +328,7 @@ export async function bootstrapContainer({
   }
 
   let apiServer = null;
+  let verifierServer = null;
   try {
     apiServer = startAgentApi({
       port: config.API_PORT,
@@ -334,6 +339,11 @@ export async function bootstrapContainer({
       ledgerRoot: config.GOVERNANCE_LEDGER_ROOT ?? process.cwd(),
       healthGate
     });
+    verifierServer = startVerifierServer({
+      config,
+      logger: typeof logger.child === 'function' ? logger.child({ subsystem: 'verifier-server' }) : logger
+    });
+    await verifierServer.listenPromise;
   } catch (error) {
     logger.error(error, 'Failed to start agent API server');
     executionBinding?.detach?.();
@@ -347,6 +357,7 @@ export async function bootstrapContainer({
       }
     });
     await validatorRuntime?.stop?.();
+    await verifierServer?.stop?.();
     throw error;
   }
 
@@ -412,6 +423,7 @@ export async function bootstrapContainer({
     if (apiServer) {
       await apiServer.stop();
     }
+    await verifierServer?.stop?.();
     executionBinding?.detach?.();
     stopJobWatchers?.();
     jobLifecycle?.stop();
@@ -446,6 +458,7 @@ export async function bootstrapContainer({
     if (apiServer) {
       await apiServer.stop();
     }
+    await verifierServer?.stop?.();
     executionBinding?.detach?.();
     stopJobWatchers?.();
     jobLifecycle?.stop();
@@ -462,6 +475,7 @@ export async function bootstrapContainer({
       diagnostics,
       monitor: null,
       apiServer: null,
+      verifierServer: null,
       jobLifecycle: null,
       healthGate,
       validatorRuntime,
@@ -499,6 +513,7 @@ export async function bootstrapContainer({
     if (apiServer) {
       await apiServer.stop();
     }
+    await verifierServer?.stop?.();
     executionBinding?.detach?.();
     stopJobWatchers?.();
     jobLifecycle?.stop();
@@ -518,6 +533,7 @@ export async function bootstrapContainer({
     diagnostics,
     monitor,
     apiServer,
+    verifierServer,
     jobLifecycle,
     stopJobWatchers,
     executionBinding,

@@ -53,7 +53,8 @@ describe('quorum engine', () => {
     for (let i = 0; i < validatorKeys.length; i += 1) {
       const validator = createAlphaWorkUnitValidator({
         privateKey: validatorKeys[i],
-        expectedAttestor: signed.attestor_address
+        expectedAttestor: signed.attestor_address,
+        nodeEnsName: 'quorum.alpha.eth'
       });
       const result = await validator.validate(signed);
       engine.ingest(result);
@@ -73,15 +74,18 @@ describe('quorum engine', () => {
 
     const validatorSuccess = createAlphaWorkUnitValidator({
       privateKey: validatorKeys[0],
-      expectedAttestor: signed.attestor_address
+      expectedAttestor: signed.attestor_address,
+      nodeEnsName: 'quorum.alpha.eth'
     });
     const validatorFailure = createAlphaWorkUnitValidator({
       privateKey: validatorKeys[1],
-      expectedAttestor: '0x000000000000000000000000000000000000dead'
+      expectedAttestor: '0x000000000000000000000000000000000000dead',
+      nodeEnsName: 'quorum.alpha.eth'
     });
     const validatorFailureTwo = createAlphaWorkUnitValidator({
       privateKey: validatorKeys[2],
-      expectedAttestor: '0x000000000000000000000000000000000000dead'
+      expectedAttestor: '0x000000000000000000000000000000000000dead',
+      nodeEnsName: 'quorum.alpha.eth'
     });
 
     const validResult = await validatorSuccess.validate(signed);

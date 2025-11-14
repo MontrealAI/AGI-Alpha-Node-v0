@@ -22,6 +22,7 @@ export const validationResultSchema = z
     failure_reason: z.string().min(1).optional().nullable(),
     validator_address: z.string().regex(ADDRESS_REGEX),
     validator_sig: z.string().regex(SIGNATURE_REGEX),
+    node_ens_name: z.string().min(1).nullable(),
     created_at: isoDateTime
   })
   .strict();
@@ -72,7 +73,8 @@ export function createAlphaWorkUnitValidator({
   expectedAttestor = null,
   clock = () => Date.now(),
   maxFutureDriftMs = 5 * 60 * 1000,
-  logger = null
+  logger = null,
+  nodeEnsName = null
 } = {}) {
   const resolvedSigner = signer ?? buildSigner({ privateKey });
   const validatorAddress = getAddress(resolvedSigner.address);
@@ -147,6 +149,7 @@ export function createAlphaWorkUnitValidator({
       failure_reason: isValid ? null : evaluationErrors.join(' | '),
       validator_address: validatorAddress,
       validator_sig: '0x',
+      node_ens_name: nodeEnsName ?? null,
       created_at: createdAtIso
     };
 

@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { getNodeEnsName } from '../ens/ens_config.js';
 
 const DEFAULT_HASH_ALGO = process.env.TELEMETRY_HASH_ALGO || 'sha256';
 const ENABLED = process.env.TELEMETRY_ENABLED !== 'false';
@@ -85,7 +86,7 @@ export function deriveModelRuntimeFromJob(job = {}) {
 export function createAlphaWuTelemetry({
   enabled = ENABLED,
   hashAlgorithm = DEFAULT_HASH_ALGO,
-  nodeEnsName = process.env.NODE_ENS_NAME || process.env.NODE_LABEL || null,
+  nodeEnsName = getNodeEnsName(),
   attestorAddress = process.env.OPERATOR_ADDRESS || null,
   clock = () => Date.now(),
   cpuUsage = (start) => process.cpuUsage(start),

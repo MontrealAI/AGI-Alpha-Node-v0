@@ -4,6 +4,7 @@ import { createAlphaWorkUnitValidator } from '../validation/alpha_wu_validator.j
 import { createValidatorLoop } from './validatorLoop.js';
 import { createAlphaWuSource } from './sources/index.js';
 import { createValidationResultSink } from './sinks/index.js';
+import { getNodeEnsName } from '../ens/ens_config.js';
 
 function buildSourceOptions(config) {
   const type = (config.VALIDATOR_SOURCE_TYPE ?? 'memory').toLowerCase();
@@ -42,7 +43,8 @@ export async function startValidatorRuntime({
     privateKey: config.VALIDATOR_PRIVATE_KEY ?? config.OPERATOR_PRIVATE_KEY ?? null,
     expectedAttestor,
     maxFutureDriftMs: 10 * 60 * 1000,
-    logger
+    logger,
+    nodeEnsName: getNodeEnsName({ config })
   });
 
   const loop = createValidatorLoop({ source, validator, sink, logger });
