@@ -295,10 +295,19 @@ agi-alpha-node jobs submit <jobId> \
 
 # Emit the ENS metadata template for the active config
 agi-alpha-node ens:records --pretty
+
+# Generate ENS delegation steps for a node label
+agi-alpha-node ens-guide --label 1 --parent orchestrator.alpha.node.agi.eth \
+  --address 0xOperatorAddress
+
+# Verify ENS ownership matches operator expectations
+agi-alpha-node verify-ens --label 1 --parent orchestrator.alpha.node.agi.eth \
+  --address 0xOperatorAddress --rpc https://mainnet.rpc
 ```
 
 `jobs submit` now routes through `submitExecutorResult`, producing signed α-WUs and echoing the attestor signature for transparency.【F:src/index.js†L1660-L1740】
 `ens:records` pipes `buildEnsRecordTemplate` so operators can paste deterministic ENS JSON straight into registrars or automated tooling.【F:src/index.js†L640-L720】【F:src/ens/ens_config.js†L117-L188】
+`ens-guide` prints authoritative ENS subdomain steps, while `verify-ens` resolves ownership against on-chain data via the configured RPC, giving operators immediate confirmation before publishing metadata.【F:src/index.js†L720-L820】
 
 ### API Surface
 
