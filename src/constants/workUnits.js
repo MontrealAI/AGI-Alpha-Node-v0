@@ -1,5 +1,9 @@
 const freeze = Object.freeze;
 
+const ALPHA_WU_DECIMALS = 2;
+const GPU_MINUTE_DECIMALS = 4;
+const QUALITY_DECIMALS = 4;
+
 export const ALPHA_WU = 1;
 
 export const MODEL_CLASSES = freeze({
@@ -63,6 +67,18 @@ export const DEFAULT_WORK_UNIT_CONFIG = freeze({
   epochDurationSeconds: 900
 });
 
+export function roundTo(value, decimals = 2) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return 0;
+  }
+  if (decimals <= 0) {
+    return Math.round(numeric);
+  }
+  const factor = 10 ** decimals;
+  return Math.round((numeric + Number.EPSILON) * factor) / factor;
+}
+
 export function cloneDefaultWorkUnitConfig() {
   return {
     baseUnit: DEFAULT_WORK_UNIT_CONFIG.baseUnit,
@@ -125,7 +141,8 @@ export function calculateQualityMultiplier(segment = {}, config = {}) {
     safeLookup(benchmarkWeights, deviceClass, 'benchmark')
   ];
 
-  return components.reduce((product, weight) => product * weight, 1);
+  const product = components.reduce((acc, weight) => acc * weight, 1);
+  return roundTo(product, QUALITY_DECIMALS);
 }
 
 export function computeAlphaWorkUnits({ gpuMinutes = 0, qualityMultiplier = 1 }) {
@@ -134,7 +151,7 @@ export function computeAlphaWorkUnits({ gpuMinutes = 0, qualityMultiplier = 1 })
   if (minutes < 0 || multiplier < 0) {
     throw new Error('Alpha work units require non-negative gpuMinutes and qualityMultiplier');
   }
-  return minutes * multiplier;
+  return roundTo(minutes * multiplier, ALPHA_WU_DECIMALS);
 }
 
 export function normalizeAlphaWorkUnitSegment(segment = {}) {
@@ -148,8 +165,18 @@ export function normalizeAlphaWorkUnitSegment(segment = {}) {
     startedAt,
     endedAt,
     gpuMinutes = 0,
-    qualityMultiplier = 1
-  } = segment;
+    qualityMultiplier = 1,
+    alphaWU = null
+  } = segment ?? {};
+
+  const normalizedGpuMinutes = roundTo(gpuMinutes, GPU_MINUTE_DECIMALS);
+  const normalizedQualityMultiplier = roundTo(qualityMultiplier, QUALITY_DECIMALS);
+  const normalizedAlphaWU = alphaWU !== null && alphaWU !== undefined
+    ? roundTo(alphaWU, ALPHA_WU_DECIMALS)
+    : computeAlphaWorkUnits({
+        gpuMinutes: normalizedGpuMinutes,
+        qualityMultiplier: normalizedQualityMultiplier
+      });
 
   return {
     jobId: jobId ?? null,
@@ -160,8 +187,8 @@ export function normalizeAlphaWorkUnitSegment(segment = {}) {
     slaProfile: slaProfile ?? null,
     startedAt: startedAt ?? null,
     endedAt: endedAt ?? null,
-    gpuMinutes,
-    qualityMultiplier,
-    alphaWU: computeAlphaWorkUnits({ gpuMinutes, qualityMultiplier })
+    gpuMinutes: normalizedGpuMinutes,
+    qualityMultiplier: normalizedQualityMultiplier,
+    alphaWU: normalizedAlphaWU
   };
 }

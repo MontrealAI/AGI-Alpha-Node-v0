@@ -4,8 +4,13 @@ import { recordAlphaWorkUnitSegment } from '../telemetry/monitoring.js';
 import {
   calculateQualityMultiplier,
   computeAlphaWorkUnits,
-  normalizeAlphaWorkUnitSegment
+  normalizeAlphaWorkUnitSegment,
+  roundTo
 } from '../constants/workUnits.js';
+
+const ALPHA_DECIMALS = 2;
+const GPU_MINUTE_DECIMALS = 4;
+const QUALITY_DECIMALS = 4;
 
 const state = {
   activeSegments: new Map(),
@@ -14,6 +19,24 @@ const state = {
   epochBuckets: new Map(),
   totalAlphaWU: 0
 };
+
+function roundAlpha(value) {
+  return roundTo(value, ALPHA_DECIMALS);
+}
+
+function roundGpuMinutes(value) {
+  return roundTo(value, GPU_MINUTE_DECIMALS);
+}
+
+function roundQuality(value) {
+  return roundTo(value, QUALITY_DECIMALS);
+}
+
+function addRounded(base, delta, decimals = ALPHA_DECIMALS) {
+  const baseNumeric = Number(base) || 0;
+  const deltaNumeric = Number(delta) || 0;
+  return roundTo(baseNumeric + deltaNumeric, decimals);
+}
 
 function cloneSegmentForExport(segment) {
   if (!segment) {
@@ -30,9 +53,9 @@ function cloneSegmentForExport(segment) {
     gpuCount: segment.deviceInfo?.gpuCount ?? null,
     startedAt: segment.startedAt,
     endedAt: segment.endedAt,
-    gpuMinutes: segment.gpuMinutes,
-    qualityMultiplier: segment.qualityMultiplier,
-    alphaWU: segment.alphaWU
+    gpuMinutes: roundGpuMinutes(segment.gpuMinutes),
+    qualityMultiplier: roundQuality(segment.qualityMultiplier),
+    alphaWU: roundAlpha(segment.alphaWU)
   };
 }
 
@@ -86,9 +109,9 @@ function buildBreakdown(segments, property) {
 function cloneSegments(segments = []) {
   return segments.map((segment) => ({
     ...segment,
-    alphaWU: Number(segment.alphaWU ?? 0),
-    gpuMinutes: Number(segment.gpuMinutes ?? 0),
-    qualityMultiplier: Number(segment.qualityMultiplier ?? 0),
+    alphaWU: roundAlpha(segment.alphaWU ?? 0),
+    gpuMinutes: roundGpuMinutes(segment.gpuMinutes ?? 0),
+    qualityMultiplier: roundQuality(segment.qualityMultiplier ?? 0),
     gpuCount: segment.gpuCount ?? null
   }));
 }
@@ -203,7 +226,7 @@ function toIso(ms) {
 
 function incrementMap(map, key, value) {
   const current = map.get(key) ?? 0;
-  map.set(key, current + value);
+  map.set(key, addRounded(current, value));
 }
 
 export function startSegment({ jobId, deviceInfo = {}, modelClass = null, slaProfile = null, startedAt = Date.now() }) {
@@ -245,18 +268,23 @@ export function stopSegment(segmentId, { endedAt = Date.now() } = {}) {
   }
   const endMs = Math.max(toMillis(endedAt, Date.now()), record.startMs);
   const durationMs = Math.max(0, endMs - record.startMs);
-  const gpuMinutes = (durationMs / 60000) * record.deviceInfo.gpuCount;
+  const rawGpuMinutes = (durationMs / 60000) * record.deviceInfo.gpuCount;
+  const gpuMinutes = roundGpuMinutes(rawGpuMinutes);
   const config = getConfig();
-  const qualityMultiplier = calculateQualityMultiplier(
-    {
-      modelClass: record.modelClass,
-      vramTier: record.deviceInfo.vramTier,
-      slaProfile: record.slaProfile,
-      deviceClass: record.deviceInfo.deviceClass
-    },
-    config?.WORK_UNITS ?? {}
+  const qualityMultiplier = roundQuality(
+    calculateQualityMultiplier(
+      {
+        modelClass: record.modelClass,
+        vramTier: record.deviceInfo.vramTier,
+        slaProfile: record.slaProfile,
+        deviceClass: record.deviceInfo.deviceClass
+      },
+      config?.WORK_UNITS ?? {}
+    )
   );
-  const alphaWU = computeAlphaWorkUnits({ gpuMinutes, qualityMultiplier });
+  const alphaWU = roundAlpha(
+    computeAlphaWorkUnits({ gpuMinutes, qualityMultiplier })
+  );
   const segment = {
     ...record,
     endMs,
@@ -272,10 +300,10 @@ export function stopSegment(segmentId, { endedAt = Date.now() } = {}) {
   let jobTotalAlphaWU = alphaWU;
   if (jobKey) {
     const existingJobTotal = state.jobTotals.get(jobKey) ?? 0;
-    jobTotalAlphaWU = existingJobTotal + alphaWU;
+    jobTotalAlphaWU = addRounded(existingJobTotal, alphaWU);
     state.jobTotals.set(jobKey, jobTotalAlphaWU);
   }
-  state.totalAlphaWU += alphaWU;
+  state.totalAlphaWU = addRounded(state.totalAlphaWU, alphaWU);
   const nodeLabel = config?.NODE_LABEL ?? null;
   recordAlphaWorkUnitSegment({
     nodeLabel,
@@ -296,7 +324,7 @@ export function stopSegment(segmentId, { endedAt = Date.now() } = {}) {
 
   if (!epochDurationMs || totalDurationMs === 0) {
     const bucket = ensureBucket(segment.epochIndex, segment.epochId, segment.startedAt);
-    bucket.totalAlphaWU += alphaWU;
+    bucket.totalAlphaWU = addRounded(bucket.totalAlphaWU, alphaWU);
     if (!bucket.startedAt || bucket.startedAt > segment.startedAt) {
       bucket.startedAt = segment.startedAt;
     }
@@ -326,19 +354,19 @@ export function stopSegment(segmentId, { endedAt = Date.now() } = {}) {
 
       const fraction = sliceDurationMs / totalDurationMs;
 
-      let sliceGpuMinutes = gpuMinutes * fraction;
-      let sliceAlphaWU = alphaWU * fraction;
+      let sliceGpuMinutes = roundGpuMinutes(gpuMinutes * fraction);
+      let sliceAlphaWU = roundAlpha(alphaWU * fraction);
 
       if (sliceEndMs === segment.endMs) {
-        sliceGpuMinutes = Math.max(0, gpuMinutes - accumulatedGpuMinutes);
-        sliceAlphaWU = Math.max(0, alphaWU - accumulatedAlpha);
+        sliceGpuMinutes = roundGpuMinutes(Math.max(0, gpuMinutes - accumulatedGpuMinutes));
+        sliceAlphaWU = roundAlpha(Math.max(0, alphaWU - accumulatedAlpha));
       }
 
       const sliceStartedAtIso = toIso(sliceStartMs);
       const sliceEndedAtIso = toIso(sliceEndMs);
       const bucket = ensureBucket(epochIndex, epochId, sliceStartedAtIso);
 
-      bucket.totalAlphaWU += sliceAlphaWU;
+      bucket.totalAlphaWU = addRounded(bucket.totalAlphaWU, sliceAlphaWU);
       if (!bucket.startedAt || bucket.startedAt > sliceStartedAtIso) {
         bucket.startedAt = sliceStartedAtIso;
       }
@@ -350,8 +378,8 @@ export function stopSegment(segmentId, { endedAt = Date.now() } = {}) {
       incrementMap(bucket.byDeviceClass, segment.deviceInfo.deviceClass ?? 'UNKNOWN', sliceAlphaWU);
       incrementMap(bucket.bySlaProfile, segment.slaProfile ?? 'UNKNOWN', sliceAlphaWU);
 
-      accumulatedAlpha += sliceAlphaWU;
-      accumulatedGpuMinutes += sliceGpuMinutes;
+      accumulatedAlpha = addRounded(accumulatedAlpha, sliceAlphaWU);
+      accumulatedGpuMinutes = addRounded(accumulatedGpuMinutes, sliceGpuMinutes, GPU_MINUTE_DECIMALS);
       sliceStartMs = sliceEndMs;
     }
   }
@@ -366,7 +394,8 @@ export function stopSegment(segmentId, { endedAt = Date.now() } = {}) {
     startedAt: segment.startedAt,
     endedAt: segment.endedAt,
     gpuMinutes,
-    qualityMultiplier
+    qualityMultiplier,
+    alphaWU
   });
 }
 

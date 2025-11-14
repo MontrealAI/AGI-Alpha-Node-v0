@@ -65,7 +65,8 @@ describe('work unit constants', () => {
       config
     );
 
-    expect(multiplier).toBeCloseTo(1.25 * VRAM_TIER_WEIGHTS[VRAM_TIERS.TIER_24] * 1 * 1.1, 5);
+    const expected = 1.25 * VRAM_TIER_WEIGHTS[VRAM_TIERS.TIER_24] * 1 * 1.1;
+    expect(multiplier).toBeCloseTo(expected, 4);
   });
 
   it('rejects negative alpha work unit parameters', () => {

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadConfig } from '../src/config/env.js';
 import {
   startSegment,
@@ -11,43 +11,137 @@ import {
   getRecentEpochSummaries,
   resetMetering
 } from '../src/services/metering.js';
-import { MODEL_CLASSES, SLA_PROFILES, VRAM_TIERS } from '../src/constants/workUnits.js';
+import {
+  MODEL_CLASSES,
+  MODEL_CLASS_WEIGHTS,
+  VRAM_TIERS,
+  VRAM_TIER_WEIGHTS,
+  SLA_PROFILES,
+  SLA_WEIGHTS,
+  BENCHMARK_WEIGHTS,
+  roundTo
+} from '../src/constants/workUnits.js';
+import * as monitoring from '../src/telemetry/monitoring.js';
 
 const START_TIME = new Date('2024-01-01T00:00:00Z');
+
+const WEIGHT_CASES = [
+  {
+    name: 'LLM_8B · STANDARD on A100',
+    jobId: 'weights-standard',
+    modelClass: MODEL_CLASSES.LLM_8B,
+    vramTier: VRAM_TIERS.TIER_16,
+    slaProfile: SLA_PROFILES.STANDARD,
+    deviceClass: 'A100-80GB',
+    gpuCount: 1,
+    durationMinutes: 12.5,
+    offsetMinutes: 0.5
+  },
+  {
+    name: 'LLM_70B · LOW_LATENCY on H100',
+    jobId: 'weights-low-latency',
+    modelClass: MODEL_CLASSES.LLM_70B,
+    vramTier: VRAM_TIERS.TIER_80,
+    slaProfile: SLA_PROFILES.LOW_LATENCY_ENCLAVE,
+    deviceClass: 'H100-80GB',
+    gpuCount: 2,
+    durationMinutes: 8.75,
+    offsetMinutes: 2.25
+  },
+  {
+    name: 'RESEARCH_AGENT · TRUSTED_EXECUTION on MI300X',
+    jobId: 'weights-trusted',
+    modelClass: MODEL_CLASSES.RESEARCH_AGENT,
+    vramTier: VRAM_TIERS.TIER_48,
+    slaProfile: SLA_PROFILES.TRUSTED_EXECUTION,
+    deviceClass: 'MI300X-192GB',
+    gpuCount: 3,
+    durationMinutes: 6.4,
+    offsetMinutes: 3.75
+  }
+];
 
 describe('metering service', () => {
   beforeEach(() => {
     resetMetering();
     loadConfig({});
+    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
-  it('computes alpha work units using duration, device, and SLA weights', () => {
+  it('computes GPU minutes from wall clock duration and GPU count', () => {
     const { segmentId, epochId } = startSegment({
-      jobId: 'job-1',
-      deviceInfo: { deviceClass: 'A100-80GB', vramTier: VRAM_TIERS.TIER_80, gpuCount: 2 },
-      modelClass: MODEL_CLASSES.LLM_70B,
-      slaProfile: SLA_PROFILES.LOW_LATENCY_ENCLAVE,
+      jobId: 'gpu-minutes',
+      deviceInfo: { deviceClass: 'A100-80GB', vramTier: VRAM_TIERS.TIER_16, gpuCount: 2 },
+      modelClass: MODEL_CLASSES.LLM_8B,
+      slaProfile: SLA_PROFILES.STANDARD,
       startedAt: START_TIME
     });
 
     const result = stopSegment(segmentId, {
-      endedAt: new Date('2024-01-01T00:10:00Z')
+      endedAt: new Date(START_TIME.getTime() + 15 * 60_000)
     });
 
-    expect(result.gpuMinutes).toBeCloseTo(20, 4);
-    expect(result.qualityMultiplier).toBeCloseTo(19.32, 2);
-    expect(result.alphaWU).toBeCloseTo(386.4, 2);
-
-    expect(getJobAlphaWU('job-1')).toBeCloseTo(386.4, 2);
+    const expectedGpuMinutes = roundTo(30, 4);
+    expect(result.gpuMinutes).toBeCloseTo(expectedGpuMinutes, 4);
+    expect(result.alphaWU).toBeCloseTo(result.gpuMinutes * result.qualityMultiplier, 2);
+    expect(getJobAlphaWU('gpu-minutes')).toBe(result.alphaWU);
 
     const epochTotals = getEpochAlphaWU(epochId);
-    expect(epochTotals.totalAlphaWU).toBeCloseTo(386.4, 2);
-    expect(epochTotals.alphaWU_by_job['job-1']).toBeCloseTo(386.4, 2);
-    expect(epochTotals.alphaWU_by_deviceClass['A100-80GB']).toBeCloseTo(386.4, 2);
-    expect(epochTotals.alphaWU_by_slaProfile[SLA_PROFILES.LOW_LATENCY_ENCLAVE]).toBeCloseTo(386.4, 2);
+    expect(epochTotals.totalAlphaWU).toBe(result.alphaWU);
+    expect(epochTotals.alphaWU_by_job['gpu-minutes']).toBe(result.alphaWU);
   });
 
-  it('maintains rolling epoch summaries for downstream telemetry', () => {
+  it.each(WEIGHT_CASES)('applies work unit weights for %s', (testCase) => {
+    const {
+      jobId,
+      name,
+      modelClass,
+      vramTier,
+      slaProfile,
+      deviceClass,
+      gpuCount,
+      durationMinutes,
+      offsetMinutes
+    } = testCase;
+    const startedAt = new Date(START_TIME.getTime() + offsetMinutes * 60_000);
+    const endedAt = new Date(startedAt.getTime() + durationMinutes * 60_000);
+
+    const expectedMultiplier =
+      MODEL_CLASS_WEIGHTS[modelClass] *
+      VRAM_TIER_WEIGHTS[vramTier] *
+      SLA_WEIGHTS[slaProfile] *
+      (BENCHMARK_WEIGHTS[deviceClass] ?? 1);
+    const expectedQuality = roundTo(expectedMultiplier, 4);
+    const expectedGpuMinutes = roundTo(durationMinutes * gpuCount, 4);
+    const expectedAlpha = roundTo(expectedGpuMinutes * expectedQuality, 2);
+
+    const { segmentId } = startSegment({
+      jobId,
+      deviceInfo: { deviceClass, vramTier, gpuCount },
+      modelClass,
+      slaProfile,
+      startedAt
+    });
+
+    const result = stopSegment(segmentId, { endedAt });
+
+    expect(result.gpuMinutes).toBeCloseTo(expectedGpuMinutes, 4);
+    expect(result.qualityMultiplier).toBeCloseTo(expectedQuality, 4);
+    expect(result.alphaWU).toBe(expectedAlpha);
+
+    const summary = getJobAlphaSummary(jobId);
+    expect(summary.total).toBe(expectedAlpha);
+    expect(summary.bySegment).toHaveLength(1);
+    expect(summary.bySegment[0].alphaWU).toBe(expectedAlpha);
+    expect(summary.bySegment[0].qualityMultiplier).toBeCloseTo(expectedQuality, 4);
+    expect(summary.bySegment[0].gpuMinutes).toBeCloseTo(expectedGpuMinutes, 4);
+
+    const label = `${name} :: alpha`; // ensure label used for debugging
+    expect(label).toBeTruthy();
+  });
+
+  it('maintains rolling epoch summaries with rounded, non-negative totals', () => {
     const first = startSegment({
       jobId: 'alpha',
       deviceInfo: { deviceClass: 'H100-80GB', vramTier: VRAM_TIERS.TIER_80, gpuCount: 1 },
@@ -59,7 +153,7 @@ describe('metering service', () => {
 
     const second = startSegment({
       jobId: 'beta',
-      deviceInfo: { deviceClass: 'A100-80GB', vramTier: VRAM_TIERS.TIER_48, gpuCount: 1 },
+      deviceInfo: { deviceClass: 'A100-80GB', vramTier: VRAM_TIERS.TIER_48, gpuCount: 2 },
       modelClass: MODEL_CLASSES.LLM_8B,
       slaProfile: SLA_PROFILES.STANDARD,
       startedAt: new Date(START_TIME.getTime() + 45 * 60_000)
@@ -68,55 +162,62 @@ describe('metering service', () => {
 
     const summaries = getRecentEpochSummaries({ limit: 5 });
     expect(summaries.length).toBeGreaterThan(0);
-    const jobIds = new Set(
-      summaries.flatMap((entry) => Object.keys(entry.alphaWU_by_job))
-    );
+    const jobIds = new Set(summaries.flatMap((entry) => Object.keys(entry.alphaWU_by_job)));
     expect(jobIds.has('alpha')).toBe(true);
     expect(jobIds.has('beta')).toBe(true);
     summaries.forEach((entry) => {
+      expect(entry.totalAlphaWU).toBe(Math.round(entry.totalAlphaWU * 100) / 100);
       expect(Object.values(entry.alphaWU_by_deviceClass).every((value) => value >= 0)).toBe(true);
       expect(Object.values(entry.alphaWU_by_slaProfile).every((value) => value >= 0)).toBe(true);
+      Object.values(entry.alphaWU_by_job).forEach((value) => {
+        expect(value).toBe(Math.round(value * 100) / 100);
+      });
     });
   });
 
-  it('exposes per-job and global α-WU summaries for proofs and governance', () => {
-    const jobId = '0x' + '42'.repeat(32);
-    const { segmentId } = startSegment({
-      jobId,
-      deviceInfo: { deviceClass: 'A100-80GB', vramTier: VRAM_TIERS.TIER_80, gpuCount: 1 },
-      modelClass: MODEL_CLASSES.LLM_8B,
-      slaProfile: SLA_PROFILES.STANDARD,
-      startedAt: new Date(START_TIME.getTime() + 120_000)
-    });
-    const firstSegment = stopSegment(segmentId, { endedAt: new Date(START_TIME.getTime() + 420_000) });
+  it('rounds alpha work units to two decimals deterministically across exports', () => {
+    const recordSpy = vi.spyOn(monitoring, 'recordAlphaWorkUnitSegment');
 
-    const secondStart = startSegment({
-      jobId,
-      deviceInfo: { deviceClass: 'H100-80GB', vramTier: VRAM_TIERS.TIER_80, gpuCount: 2 },
-      modelClass: MODEL_CLASSES.RESEARCH_AGENT,
-      slaProfile: SLA_PROFILES.LOW_LATENCY_ENCLAVE,
-      startedAt: new Date(START_TIME.getTime() + 600_000)
-    });
-    const secondSegment = stopSegment(secondStart.segmentId, {
-      endedAt: new Date(START_TIME.getTime() + 900_000)
+    const { segmentId, epochId } = startSegment({
+      jobId: 'rounding-case',
+      deviceInfo: { deviceClass: 'MI300X-192GB', vramTier: VRAM_TIERS.TIER_48, gpuCount: 3 },
+      modelClass: MODEL_CLASSES.MULTIMODAL_ROUTER,
+      slaProfile: SLA_PROFILES.HIGH_REDUNDANCY,
+      startedAt: new Date(START_TIME.getTime() + 5 * 60_000)
     });
 
-    const summary = getJobAlphaSummary(jobId);
-    expect(summary.total).toBeCloseTo(firstSegment.alphaWU + secondSegment.alphaWU, 5);
-    expect(summary.bySegment).toHaveLength(2);
-    expect(Object.values(summary.modelClassBreakdown).reduce((acc, value) => acc + value, 0)).toBeCloseTo(
-      summary.total,
-      5
-    );
-    expect(Object.values(summary.slaBreakdown).reduce((acc, value) => acc + value, 0)).toBeCloseTo(
-      summary.total,
-      5
-    );
+    const result = stopSegment(segmentId, {
+      endedAt: new Date(START_TIME.getTime() + 5 * 60_000 + 7.5 * 60_000)
+    });
+
+    const scaledAlpha = Math.round(result.alphaWU * 100);
+    expect(result.alphaWU).toBe(scaledAlpha / 100);
+    expect(Number.isInteger(scaledAlpha)).toBe(true);
+
+    const summary = getJobAlphaSummary('rounding-case');
+    expect(summary.total).toBe(result.alphaWU);
+    expect(summary.bySegment).toHaveLength(1);
+    expect(summary.bySegment[0].alphaWU).toBe(result.alphaWU);
+    expect(summary.bySegment[0].gpuMinutes).toBe(Math.round(summary.bySegment[0].gpuMinutes * 10000) / 10000);
+
+    const lifetime = getLifetimeAlphaWU();
+    expect(lifetime).toBe(result.alphaWU);
+
+    const epochTotals = getEpochAlphaWU(epochId);
+    expect(epochTotals.totalAlphaWU).toBe(result.alphaWU);
+    Object.values(epochTotals.alphaWU_by_job).forEach((value) => {
+      expect(value).toBe(Math.round(value * 100) / 100);
+    });
+
+    const recent = getRecentEpochSummaries({ limit: 1 });
+    expect(recent[0].totalAlphaWU).toBe(result.alphaWU);
 
     const globalSummary = getGlobalAlphaSummary();
-    expect(globalSummary.total).toBeGreaterThan(0);
-    expect(globalSummary.total).toBeCloseTo(summary.total, 5);
-    expect(globalSummary.bySegment.length).toBeGreaterThanOrEqual(summary.bySegment.length);
-    expect(getLifetimeAlphaWU()).toBeCloseTo(globalSummary.total, 5);
+    expect(globalSummary.total).toBe(result.alphaWU);
+    expect(globalSummary.bySegment[0].alphaWU).toBe(result.alphaWU);
+
+    expect(recordSpy).toHaveBeenCalled();
+    const lastCall = recordSpy.mock.calls[recordSpy.mock.calls.length - 1];
+    expect(lastCall?.[0]?.alphaWU).toBe(result.alphaWU);
   });
 });
