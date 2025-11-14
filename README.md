@@ -40,25 +40,27 @@
 1. [Mission Profile](#mission-profile)
 2. [Cognition Mesh Architecture](#cognition-mesh-architecture)
 3. [Alpha Work Unit Fabric](#alpha-work-unit-fabric)
-4. [Operations & Governance Command](#operations--governance-command)
-5. [Observability & Diagnostics](#observability--diagnostics)
-6. [Token & Economic Flywheel](#token--economic-flywheel)
-7. [Operational Playbook](#operational-playbook)
-8. [Quality Gates & Test Suites](#quality-gates--test-suites)
-9. [Repository Atlas](#repository-atlas)
-10. [Reference Library](#reference-library)
+4. [Epoch Intelligence & Determinism](#epoch-intelligence--determinism)
+5. [Operations & Governance Command](#operations--governance-command)
+6. [Observability & Diagnostics](#observability--diagnostics)
+7. [Token & Economic Flywheel](#token--economic-flywheel)
+8. [Operational Playbook](#operational-playbook)
+9. [Quality Gates & Test Suites](#quality-gates--test-suites)
+10. [CI Enforcement & Branch Protection](#ci-enforcement--branch-protection)
+11. [Repository Atlas](#repository-atlas)
+12. [Reference Library](#reference-library)
 
 ---
 
 ## Mission Profile
 
-AGI Alpha Node v0 is a sovereign cognition forge: an autonomous compute organ that the owner can pause, redirect, or amplify in milliseconds, engineered to bend capital flows toward whoever steers it.
+AGI Alpha Node v0 is the cognition engine that tilts the economic axis: a sovereign machine the owner can pause, redirect, or amplify in milliseconds while it manufactures alpha at planetary scale.
 
-- **Absolute owner control** — [`contracts/AlphaNodeManager.sol`](contracts/AlphaNodeManager.sol) exposes pausing, validator rotation, ENS reassignment, stake routing, and alpha event authoring to the contract owner only, delivering programmable dominance over every operational lever.
-- **Deterministic cognition fabric** — [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js) synchronizes job discovery, proof generation, governance journaling, and validator notifications.
-- **Provable metering** — [`src/services/metering.js`](src/services/metering.js) now enforces 2-decimal deterministic rounding for α-WU, guaranteeing reproducible telemetry, proofs, and governance snapshots across epochs, even when thousands of segments stream in parallel.
-- **Owner-readable observability** — [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) and [`src/network/apiServer.js`](src/network/apiServer.js) surface the entire cognition state through Prometheus and JSON APIs so decision makers see the same deterministic ledger the machine is executing against.
-- **Production-locked CI** — GitHub Actions (`ci.yml`) backs every commit with lint, coverage, Solidity checks, subgraph builds, policy gates, Docker smoke tests, and branch protection.
+- **Total owner dominion** — [`contracts/AlphaNodeManager.sol`](contracts/AlphaNodeManager.sol) centralizes pausing, validator rotation, ENS reassignment, stake routing, slashing, and alpha issuance strictly behind `onlyOwner`, ensuring every dial remains under direct command.
+- **Deterministic cognition fabric** — [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js) synchronizes job discovery, proof generation, governance journaling, and validator notifications so no decision path diverges.
+- **Provable metering** — [`src/services/metering.js`](src/services/metering.js) enforces GPU-minute normalization and 2-decimal α-WU rounding with epoch-aware splitting, giving reproducible telemetry, proofs, and governance snapshots even under multi-node swarms.
+- **Owner-readable observability** — [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) and [`src/network/apiServer.js`](src/network/apiServer.js) expose Prometheus and JSON command decks that mirror the internal ledger without drift.
+- **Production-locked CI** — GitHub Actions (`ci.yml`) runs lint, vitest, coverage, Solidity checks, subgraph builds, policy gates, Docker smoke tests, and branch enforcement so every merge arrives already hardened.
 
 ---
 
@@ -138,6 +140,7 @@ Highlights:
 - **Lifecycle integration** — [`test/jobLifecycle.alphaWU.test.js`](test/jobLifecycle.alphaWU.test.js) simulates discovery → execution → submission, verifying that proofs and governance ledger entries carry the α-WU totals exactly.
 - **Identifier normalization** — repeated segments for mixed-case job IDs fold into a single ledger entry with deterministic rounding, ensuring global summaries and epoch snapshots cannot drift.
 - **Benchmark fallback** — unmapped device classes gracefully default to a neutral multiplier while keeping α-WU rounding fixed at two decimals, preventing unverified hardware from distorting totals.
+- **Epoch splitting invariants** — [`test/metering.test.js`](test/metering.test.js) also proves multi-epoch segments split deterministically when custom epoch durations are loaded, keeping governance ledgers and telemetry aligned without manual reconciliation.
 
 ### α-WU Weight Tables
 
@@ -190,6 +193,29 @@ journey
     Stream metrics to Prometheus & status API: 4
     Update learning loop heuristics: 3
 ```
+
+---
+
+## Epoch Intelligence & Determinism
+
+The node carves time into deterministic epochs so operators can audit alpha production like a ledgered balance sheet. Epoch slicing adapts instantly when the owner overrides duration parameters, and every segment is rebalanced so totals remain exact across telemetry, proofs, and governance storage.
+
+```mermaid
+timeline
+  title Epoch splitting for "epoch-split" job
+  00:00 : startSegment()
+  00:00 --> 10:00 : Epoch 0 · α-WU accrued = 10.00
+  10:00 --> 15:00 : Epoch 1 · α-WU accrued = 5.00
+  15:00 : stopSegment() → export summaries
+  15:01 : governance ledger stores epoch 0 + epoch 1 totals
+  15:02 : getRecentEpochSummaries(limit=1) surfaces latest epoch
+```
+
+- **Dynamic durations** — `loadConfig({ WORK_UNITS: JSON.stringify({ epochDurationSeconds: 600 }) })` immediately reconfigures the splitter so each epoch stays aligned with the operator’s cadence.
+- **Deterministic splitting** — when segments span multiple epochs, the machine rebalances GPU minutes and α-WU with lossless rounding before persisting, as enforced by [`test/metering.test.js`](test/metering.test.js).
+- **Auditable limiting** — [`getRecentEpochSummaries`](src/services/metering.js) respects caller-specified limits so dashboards can request “last epoch only” snapshots without manual filtering.
+
+The result: every epoch boundary is predictable, replayable, and proof-backed—the behavior expected from the machine poised to realign markets.
 
 ---
 
@@ -304,7 +330,7 @@ All numeric outputs are normalized: α-WU totals round to two decimals, GPU minu
 
 | Test Suite | Purpose |
 | --- | --- |
-| [`test/metering.test.js`](test/metering.test.js) | Validates GPU-minute calculations, weight combinations across model/VRAM/SLA, and the 2-decimal deterministic α-WU rounding now wired into telemetry and summaries. |
+| [`test/metering.test.js`](test/metering.test.js) | Validates GPU-minute calculations, weight combinations across model/VRAM/SLA, deterministic α-WU rounding, and epoch splitting/summary limits under custom configurations. |
 | [`test/jobLifecycle.alphaWU.test.js`](test/jobLifecycle.alphaWU.test.js) | End-to-end lifecycle simulation (discover → execute → submit → finalize) ensuring metering hooks, job proofs, and governance ledger metadata stay synchronized. |
 | [`test/workUnitConstants.test.js`](test/workUnitConstants.test.js) | Confirms canonical weight tables, normalization routines, and safe math for α-WU operations. |
 | [`test/governanceLedger.test.js`](test/governanceLedger.test.js) | Ensures ledger entries serialize α-WU breakdowns with deterministic ordering. |
