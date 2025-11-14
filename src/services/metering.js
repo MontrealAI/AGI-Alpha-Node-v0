@@ -11,7 +11,8 @@ const state = {
   activeSegments: new Map(),
   jobTotals: new Map(),
   jobSegments: new Map(),
-  epochBuckets: new Map()
+  epochBuckets: new Map(),
+  totalAlphaWU: 0
 };
 
 function cloneSegmentForExport(segment) {
@@ -274,6 +275,7 @@ export function stopSegment(segmentId, { endedAt = Date.now() } = {}) {
     jobTotalAlphaWU = existingJobTotal + alphaWU;
     state.jobTotals.set(jobKey, jobTotalAlphaWU);
   }
+  state.totalAlphaWU += alphaWU;
   const nodeLabel = config?.NODE_LABEL ?? null;
   recordAlphaWorkUnitSegment({
     nodeLabel,
@@ -383,6 +385,10 @@ export function getJobAlphaSummary(jobId) {
   return buildJobAlphaSummary(jobId);
 }
 
+export function getLifetimeAlphaWU() {
+  return Number(state.totalAlphaWU ?? 0);
+}
+
 export function getGlobalAlphaSummary() {
   const summary = buildGlobalAlphaSummary();
   summary.modelClassBreakdown = normaliseBreakdownMap(summary.modelClassBreakdown);
@@ -473,6 +479,7 @@ export function resetMetering() {
   state.jobTotals.clear();
   state.jobSegments.clear();
   state.epochBuckets.clear();
+  state.totalAlphaWU = 0;
 }
 
 export function getSegmentsSnapshot() {
