@@ -225,7 +225,7 @@ flowchart LR
 ### Bridge Capabilities
 
 * **Deterministic epochs** — overlapping metering segments are fractionally attributed to any ISO window, yielding reproducible totals fit for merkle commitments.
-* **Provider labeling** — every payload binds totals to the executing node label, aligning with governance policies and dynamic staking directives.
+* **Provider labeling** — every payload binds totals to the executing node label and surfaces `breakdown.byProvider` with α-WU and GPU minutes for multi-rack introspection.
 * **Dual surfaces** — operators can export via CLI for batch jobs or call the REST endpoint for automated bridge relays guarded by `GOVERNANCE_API_TOKEN`.
 
 #### CLI Export
@@ -262,6 +262,9 @@ curl \
     "alphaWU": 128.42
   },
   "breakdown": {
+    "byProvider": {
+      "oracle-alpha": { "alphaWU": 128.42, "gpuMinutes": 50.7 }
+    },
     "byJob": {
       "job-1": { "alphaWU": 92.41, "gpuMinutes": 36.5 },
       "job-2": { "alphaWU": 36.01, "gpuMinutes": 14.2 }
@@ -288,6 +291,8 @@ Payloads are pure JSON (no bigint serialization artifacts) and remain stable acr
 | `nodeLabel` | `string` | The lowercase-normalized provider label used by metering segments (derived from `NODE_LABEL` / `PROVIDER_LABEL`). |
 | `window.from` / `window.to` | `ISO 8601 string` | Inclusive temporal bounds of the epoch window, rounded to millisecond precision. |
 | `totals.alphaWU` | `number` | Aggregate α-work units for the window, rounded to 8 decimal places for reproducibility. |
+| `breakdown.byProvider[provider].alphaWU` | `number` | α-WU attributed to each provider label matching the node runtime. |
+| `breakdown.byProvider[provider].gpuMinutes` | `number` | GPU minutes accrued by the provider within the window. |
 | `breakdown.byJob[jobId].alphaWU` | `number` | α-WU assigned to `jobId` after fractional overlap adjustments. |
 | `breakdown.byJob[jobId].gpuMinutes` | `number` | GPU minutes attributed to `jobId` in the window. |
 | `breakdown.byDeviceClass[deviceClass]` | `number` | α-WU totals by hardware class (e.g., `A100-80GB`, `H100-80GB`). |

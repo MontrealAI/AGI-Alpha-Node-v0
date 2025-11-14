@@ -116,6 +116,7 @@ export function buildEpochPayload({ epochId = null, fromTs, toTs } = {}) {
   const snapshot = getSegmentsSnapshot();
 
   let totalAlpha = 0;
+  const providerTotals = new Map();
   const jobTotals = new Map();
   const deviceTotals = new Map();
   const slaTotals = new Map();
@@ -161,6 +162,10 @@ export function buildEpochPayload({ epochId = null, fromTs, toTs } = {}) {
 
     totalAlpha += segmentAlpha;
 
+    const providerKey =
+      segment?.providerLabel ?? segment?.deviceInfo?.providerLabel ?? nodeLabel ?? 'unknown-node';
+    accumulate(providerTotals, providerKey, segmentAlpha, segmentGpu);
+
     const jobKey = segment.jobId ?? 'UNKNOWN';
     accumulate(jobTotals, jobKey, segmentAlpha, segmentGpu);
 
@@ -170,6 +175,15 @@ export function buildEpochPayload({ epochId = null, fromTs, toTs } = {}) {
     const slaKey = segment.slaProfile ?? 'UNKNOWN';
     accumulateScalar(slaTotals, slaKey, segmentAlpha);
   }
+
+  const providerBreakdown = Object.fromEntries(
+    Array.from(providerTotals.entries())
+      .sort(([a], [b]) => String(a).localeCompare(String(b)))
+      .map(([provider, metrics]) => [provider, {
+        alphaWU: sanitizeNumber(metrics.alphaWU),
+        gpuMinutes: sanitizeNumber(metrics.gpuMinutes)
+      }])
+  );
 
   const jobBreakdown = Object.fromEntries(
     Array.from(jobTotals.entries())
@@ -194,6 +208,7 @@ export function buildEpochPayload({ epochId = null, fromTs, toTs } = {}) {
       alphaWU: sanitizeNumber(totalAlpha)
     },
     breakdown: {
+      byProvider: providerBreakdown,
       byJob: jobBreakdown,
       byDeviceClass: deviceBreakdown,
       bySlaProfile: slaBreakdown

@@ -58,6 +58,14 @@ describe('oracle epoch export', () => {
     expect(payload.window.to).toBe(WINDOW_END_ISO);
 
     expect(payload.totals.alphaWU).toBeCloseTo(expectedJob1Alpha + expectedJob2Alpha, 6);
+    expect(payload.breakdown.byProvider['oracle-alpha'].alphaWU).toBeCloseTo(
+      expectedJob1Alpha + expectedJob2Alpha,
+      6
+    );
+    expect(payload.breakdown.byProvider['oracle-alpha'].gpuMinutes).toBeCloseTo(
+      expectedJob1Gpu + expectedJob2Gpu,
+      6
+    );
     expect(payload.breakdown.byJob['job-1'].alphaWU).toBeCloseTo(expectedJob1Alpha, 6);
     expect(payload.breakdown.byJob['job-2'].alphaWU).toBeCloseTo(expectedJob2Alpha, 6);
     expect(payload.breakdown.byJob['job-1'].gpuMinutes).toBeCloseTo(expectedJob1Gpu, 6);
@@ -95,6 +103,11 @@ describe('oracle epoch export', () => {
     });
 
     expect(payload.totals.alphaWU).toBeCloseTo(Number(matchingResult.alphaWU), 6);
+    expect(payload.breakdown.byProvider['oracle-alpha'].alphaWU).toBeCloseTo(
+      Number(matchingResult.alphaWU),
+      6
+    );
+    expect(payload.breakdown.byProvider).not.toHaveProperty('rogue-node');
     expect(payload.breakdown.byJob['job-allow'].alphaWU).toBeCloseTo(Number(matchingResult.alphaWU), 6);
     expect(payload.breakdown.byJob).not.toHaveProperty('job-deny');
     expect(payload.breakdown.byDeviceClass['A100-80GB']).toBeCloseTo(payload.totals.alphaWU, 6);
