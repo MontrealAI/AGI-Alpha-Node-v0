@@ -50,14 +50,15 @@
 2. [System Constellation](#system-constellation)
 3. [Alpha-WU Continuum](#alpha-wu-continuum)
 4. [Alpha Evidence Schema](#alpha-evidence-schema)
-5. [Oracle Bridge Surface](#oracle-bridge-surface)
-6. [Lifecycle Journal & Governance Ledger](#lifecycle-journal--governance-ledger)
-7. [Owner Mastery](#owner-mastery)
-8. [Operational Launch](#operational-launch)
-9. [Continuous Verification & CI](#continuous-verification--ci)
-10. [Token Mechanics](#token-mechanics)
-11. [Repository Atlas](#repository-atlas)
-12. [Reference Library](#reference-library)
+5. [Telemetry & Diagnostics](#telemetry--diagnostics)
+6. [Oracle Bridge Surface](#oracle-bridge-surface)
+7. [Lifecycle Journal & Governance Ledger](#lifecycle-journal--governance-ledger)
+8. [Owner Mastery](#owner-mastery)
+9. [Operational Launch](#operational-launch)
+10. [Continuous Verification & CI](#continuous-verification--ci)
+11. [Token Mechanics](#token-mechanics)
+12. [Repository Atlas](#repository-atlas)
+13. [Reference Library](#reference-library)
 
 ---
 
@@ -316,6 +317,60 @@ Every field is sanitized to finite numeric ranges, ensuring that downstream inde
 * **Snapshot integrity** — `computeJobMetadataHash` and ledger serialization convert BigInts and nested structures into stable digests. Replaying ledgers surfaces tampering immediately.
 
 The ledgers and journal align runtime decisions with on-chain state, forming an auditable narrative around every alpha discovery.
+
+---
+
+## Telemetry & Diagnostics
+
+Prometheus exports, diagnostics APIs, and the owner control plane converge on a unified α-WU signal. Metering events trigger counter increments, monitor loops roll up epochs, and REST consumers receive totals identical to dashboard gauges.
+
+```mermaid
+flowchart LR
+  classDef meter fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#e0f2fe;
+  classDef telemetry fill:#111827,stroke:#a855f7,stroke-width:2px,color:#f5f3ff;
+  classDef api fill:#022c22,stroke:#10b981,stroke-width:2px,color:#d1fae5;
+
+  Metering[[metering.stopSegment]]:::meter --> MetricsCounter[(agi_alpha_node_alpha_wu_total)]:::telemetry
+  MetricsCounter --> EpochGauge[(agi_alpha_node_alpha_wu_epoch)]:::telemetry
+  MetricsCounter --> JobGauge[(agi_alpha_node_alpha_wu_per_job*)]:::telemetry
+  EpochGauge --> StatusAPI[[GET /status]]:::api
+  MetricsCounter --> Prometheus{{GET /metrics}}:::api
+
+  class JobGauge optional;
+  classDef optional fill:#312e81,stroke:#facc15,stroke-width:2px,color:#fef3c7,stroke-dasharray: 5 5;
+```
+
+| Metric | Type | Labels | Description |
+| --- | --- | --- | --- |
+| `agi_alpha_node_alpha_wu_total` | Counter | `node_label`, `device_class`, `sla_profile` | Cumulative α-WU attributed to each hardware/SLA tuple for the active node label. |
+| `agi_alpha_node_alpha_wu_epoch` | Gauge | `epoch_id` | Rolling totals per epoch as reconstructed by the monitor loop (24-epoch window). |
+| `agi_alpha_node_alpha_wu_per_job` | Gauge *(opt-in)* | `job_id` | High-cardinality per-job totals mirroring `metering.getJobAlphaWU(jobId)`; disabled by default. |
+
+> ℹ️ Enable the per-job gauge only when Prometheus cardinality budgets allow it:
+
+```bash
+export METRICS_ALPHA_WU_PER_JOB=1
+npm start
+```
+
+The REST status surface mirrors the Prometheus totals:
+
+```bash
+curl http://localhost:8080/status | jq
+```
+
+```jsonc
+{
+  "status": "ok",
+  "offlineMode": false,
+  "alphaWU": {
+    "lastEpoch": { "id": "epoch-123456", "alphaWU": 318.42 },
+    "lifetimeAlphaWU": 9821.77
+  }
+}
+```
+
+`/status` is safe for non-technical operators yet precise enough for automation. Dashboards that scrape `/metrics` and SRE probes that poll `/status` both consume the same α-WU truth source alongside existing stake, utilization, and health-gate gauges.
 
 ---
 

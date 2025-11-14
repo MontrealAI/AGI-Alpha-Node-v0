@@ -42,6 +42,7 @@ import {
 import { buildStakeAndActivateTx } from '../services/staking.js';
 import { recordGovernanceAction } from '../services/governanceLedger.js';
 import { buildEpochPayload } from '../services/oracleExport.js';
+import { getGlobalAlphaSummary, getRecentEpochSummaries } from '../services/metering.js';
 
 function jsonResponse(res, statusCode, payload) {
   const body = JSON.stringify(payload, (_, value) => (typeof value === 'bigint' ? value.toString() : value));
@@ -926,6 +927,26 @@ export function startAgentApi({
           completed: metrics.completed,
           failed: metrics.failed,
           lastJobProvider: metrics.lastJobProvider
+        });
+        return;
+      }
+
+      if (req.method === 'GET' && req.url === '/status') {
+        const globalAlpha = getGlobalAlphaSummary();
+        const [lastEpochSummary] = getRecentEpochSummaries({ limit: 1 });
+        const lastEpoch = lastEpochSummary
+          ? {
+              id: lastEpochSummary.epochId,
+              alphaWU: Number(lastEpochSummary.totalAlphaWU ?? 0)
+            }
+          : null;
+        jsonResponse(res, 200, {
+          status: 'ok',
+          offlineMode,
+          alphaWU: {
+            lastEpoch,
+            lifetimeAlphaWU: Number(globalAlpha?.total ?? 0)
+          }
         });
         return;
       }

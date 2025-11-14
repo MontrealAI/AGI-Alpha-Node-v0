@@ -124,7 +124,8 @@ describe('monitorLoop', () => {
     SYSTEM_PAUSE_ADDRESS: undefined,
     DESIRED_MINIMUM_STAKE: undefined,
     AUTO_RESUME: false,
-    METRICS_PORT: 9464
+    METRICS_PORT: 9464,
+    METRICS_ALPHA_WU_PER_JOB: false
   };
 
   const logger = { info: vi.fn(), error: vi.fn(), warn: vi.fn() };
@@ -179,7 +180,8 @@ describe('monitorLoop', () => {
     expect(launchMonitoring).toHaveBeenCalledTimes(1);
     expect(launchMonitoring.mock.calls[0][0]).toMatchObject({
       performance: mockDiagnostics.performance,
-      runtimeMode: 'online'
+      runtimeMode: 'online',
+      enableAlphaWuPerJob: false
     });
     expect(monitor.getAlphaWuHistory()).toBeInstanceOf(Array);
   });

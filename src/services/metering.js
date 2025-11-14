@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { getConfig } from '../config/env.js';
+import { recordAlphaWorkUnitSegment } from '../telemetry/monitoring.js';
 import {
   calculateQualityMultiplier,
   computeAlphaWorkUnits,
@@ -267,10 +268,22 @@ export function stopSegment(segmentId, { endedAt = Date.now() } = {}) {
   state.activeSegments.delete(segmentId);
 
   const jobKey = normaliseJobKey(segment.jobId);
+  let jobTotalAlphaWU = alphaWU;
   if (jobKey) {
     const existingJobTotal = state.jobTotals.get(jobKey) ?? 0;
-    state.jobTotals.set(jobKey, existingJobTotal + alphaWU);
+    jobTotalAlphaWU = existingJobTotal + alphaWU;
+    state.jobTotals.set(jobKey, jobTotalAlphaWU);
   }
+  const nodeLabel = config?.NODE_LABEL ?? null;
+  recordAlphaWorkUnitSegment({
+    nodeLabel,
+    deviceClass: segment.deviceInfo?.deviceClass ?? 'UNKNOWN',
+    slaProfile: segment.slaProfile ?? 'UNKNOWN',
+    jobId: segment.jobId,
+    epochId: segment.epochId,
+    alphaWU,
+    jobTotalAlphaWU
+  });
   upsertJobSegment(segment);
 
   const epochDurationSeconds = getEpochDurationSeconds();
