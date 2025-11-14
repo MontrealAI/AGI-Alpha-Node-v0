@@ -314,6 +314,18 @@ All numeric outputs are normalized: α-WU totals round to two decimals, GPU minu
 
 All suites run inside `npm run ci:verify`, and CI badges only stay green when every gate passes.
 
+### α-WU Validation Recipes
+
+```bash
+# Focus metering math and rounding invariants
+npm test -- --run test/metering.test.js
+
+# Replay full lifecycle with α-WU proof propagation
+npm test -- --run test/jobLifecycle.alphaWU.test.js
+```
+
+Combine the two when triaging governance discrepancies—the first ensures the segment math is deterministic, the second confirms every proof and ledger export faithfully mirrors those totals end-to-end.
+
 ---
 
 ## CI Enforcement & Branch Protection
