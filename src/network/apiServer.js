@@ -41,6 +41,7 @@ import {
 } from '../services/governance.js';
 import { buildStakeAndActivateTx } from '../services/staking.js';
 import { recordGovernanceAction } from '../services/governanceLedger.js';
+import { buildEpochPayload } from '../services/oracleExport.js';
 
 function jsonResponse(res, statusCode, payload) {
   const body = JSON.stringify(payload, (_, value) => (typeof value === 'bigint' ? value.toString() : value));
@@ -957,6 +958,37 @@ export function startAgentApi({
 
       if (req.method === 'GET' && req.url === '/jobs/open') {
         jsonResponse(res, 200, { jobs: Array.from(lifecycleJobs.values()) });
+        return;
+      }
+
+      if (req.method === 'GET' && req.url.startsWith('/oracle/epochs')) {
+        let requestUrl;
+        try {
+          requestUrl = new URL(req.url, 'http://localhost');
+        } catch (error) {
+          jsonResponse(res, 400, { error: error instanceof Error ? error.message : String(error) });
+          return;
+        }
+
+        try {
+          ensureOwnerAuthorization(req, ownerToken);
+        } catch (authError) {
+          logger.warn(authError, 'Unauthorized oracle export attempt');
+          jsonResponse(res, authError.statusCode ?? 401, { error: authError.message });
+          return;
+        }
+
+        const from = requestUrl.searchParams.get('from');
+        const to = requestUrl.searchParams.get('to');
+        const epochId = requestUrl.searchParams.get('epochId') ?? requestUrl.searchParams.get('id');
+
+        try {
+          const payload = buildEpochPayload({ epochId, fromTs: from, toTs: to });
+          jsonResponse(res, 200, payload);
+        } catch (error) {
+          logger.warn(error, 'Failed to build oracle epoch export');
+          jsonResponse(res, 400, { error: error instanceof Error ? error.message : String(error) });
+        }
         return;
       }
 

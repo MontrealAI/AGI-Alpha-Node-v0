@@ -50,13 +50,14 @@
 2. [System Constellation](#system-constellation)
 3. [Alpha-WU Continuum](#alpha-wu-continuum)
 4. [Alpha Evidence Schema](#alpha-evidence-schema)
-5. [Lifecycle Journal & Governance Ledger](#lifecycle-journal--governance-ledger)
-6. [Owner Mastery](#owner-mastery)
-7. [Operational Launch](#operational-launch)
-8. [Continuous Verification & CI](#continuous-verification--ci)
-9. [Token Mechanics](#token-mechanics)
-10. [Repository Atlas](#repository-atlas)
-11. [Reference Library](#reference-library)
+5. [Oracle Bridge Surface](#oracle-bridge-surface)
+6. [Lifecycle Journal & Governance Ledger](#lifecycle-journal--governance-ledger)
+7. [Owner Mastery](#owner-mastery)
+8. [Operational Launch](#operational-launch)
+9. [Continuous Verification & CI](#continuous-verification--ci)
+10. [Token Mechanics](#token-mechanics)
+11. [Repository Atlas](#repository-atlas)
+12. [Reference Library](#reference-library)
 
 ---
 
@@ -203,6 +204,82 @@ This schema guarantees that journals, proofs, and governance records describe th
 
 ---
 
+## Oracle Bridge Surface
+
+The oracle bridge distills α-WU telemetry into deterministic payloads suitable for on-chain attestations or sovereign data rooms. The pipeline is anchored by [`src/services/oracleExport.js`](src/services/oracleExport.js), which reconstructs overlapping segments, prorates contributions, and emits an epoch payload cryptographically attributable to the node label.
+
+```mermaid
+flowchart LR
+  classDef metric fill:#082f49,stroke:#38bdf8,stroke-width:2px,color:#e0f2fe;
+  classDef service fill:#111827,stroke:#f97316,stroke-width:2px,color:#f8fafc;
+  classDef surface fill:#0f172a,stroke:#22d3ee,stroke-width:2px,color:#ecfeff;
+  classDef chain fill:#1f2937,stroke:#84cc16,stroke-width:2px,color:#ecfccb;
+
+  Metering((α-WU Segments)):::metric --> Export[[oracleExport.buildEpochPayload]]:::service
+  Export --> CLI{{`oracle export-epoch`}}:::surface
+  Export --> API[[`GET /oracle/epochs`]]:::surface
+  CLI --> Ledger[(Off-chain Oracle Sink)]:::chain
+  API --> Chain[(On-chain Bridge)]:::chain
+```
+
+### Bridge Capabilities
+
+* **Deterministic epochs** — overlapping metering segments are fractionally attributed to any ISO window, yielding reproducible totals fit for merkle commitments.
+* **Provider labeling** — every payload binds totals to the executing node label, aligning with governance policies and dynamic staking directives.
+* **Dual surfaces** — operators can export via CLI for batch jobs or call the REST endpoint for automated bridge relays guarded by `GOVERNANCE_API_TOKEN`.
+
+#### CLI Export
+
+```bash
+node src/index.js oracle export-epoch \
+  --from "2024-01-01T00:00:00Z" \
+  --to "2024-01-01T00:15:00Z" \
+  --epoch-id epoch-2024-01-01-a \
+  --out alpha-wu-epoch.json
+```
+
+#### REST Export
+
+```bash
+curl \
+  -H "Authorization: Bearer $GOVERNANCE_API_TOKEN" \
+  "http://localhost:8080/oracle/epochs?from=2024-01-01T00:00:00Z&to=2024-01-01T00:15:00Z&epochId=epoch-2024-01-01-a"
+```
+
+#### Sample Payload
+
+```jsonc
+{
+  "epochId": "epoch-2024-01-01-a",
+  "nodeLabel": "oracle-alpha",
+  "window": {
+    "from": "2024-01-01T00:00:00.000Z",
+    "to": "2024-01-01T00:15:00.000Z"
+  },
+  "totals": {
+    "alphaWU": 128.42
+  },
+  "breakdown": {
+    "byJob": {
+      "job-1": { "alphaWU": 92.41, "gpuMinutes": 36.5 },
+      "job-2": { "alphaWU": 36.01, "gpuMinutes": 14.2 }
+    },
+    "byDeviceClass": {
+      "A100-80GB": 92.41,
+      "H100-80GB": 36.01
+    },
+    "bySlaProfile": {
+      "STANDARD": 92.41,
+      "HIGH_REDUNDANCY": 36.01
+    }
+  }
+}
+```
+
+Payloads are pure JSON (no bigint serialization artifacts) and remain stable across CLI and REST exports. Downstream consumers can hash the document to anchor proofs or feed automated staking distribution without fear of drift.
+
+---
+
 ## Lifecycle Journal & Governance Ledger
 
 * **Lifecycle Journal (`src/services/lifecycleJournal.js`)** — append-only JSONL feed with deterministic metadata hashing. Each action entry includes normalized job metadata and α-WU breakdowns for effortless forensics.
@@ -257,6 +334,21 @@ The owner console spans CLI entry points (`src/index.js`), scripts in `scripts/`
 6. **Replay ledgers** — inspect `.agi/lifecycle/actions.jsonl` and `.governance-ledger/v1/*.json` to surface hashes, α-WU breakdowns, and signature provenance with any JSON tooling.
 
 For containerized rollouts, leverage `deploy/docker` for Compose stacks or `deploy/helm/agi-alpha-node` for Kubernetes clusters. Both ship with health probes and secret templates for immediate production alignment.
+
+---
+
+### CLI Command Spine
+
+| Command | Description | Key Files |
+| --- | --- | --- |
+| `node src/index.js bootstrap` | Bootstraps monitoring, lifecycle sync, API server, and governance hooks. | [`src/orchestrator/bootstrap.js`](src/orchestrator/bootstrap.js) |
+| `node src/index.js monitor-loop` | Streams metering, lifecycle, and telemetry events; can run once or continuously. | [`src/orchestrator/monitorLoop.js`](src/orchestrator/monitorLoop.js) |
+| `node src/index.js oracle export-epoch --from … --to …` | Emits deterministic α-WU oracle payloads for any ISO window. | [`src/services/oracleExport.js`](src/services/oracleExport.js) |
+| `node src/index.js governance …` | Crafts owner transactions for pause, stake, reward, and upgrade directives. | [`src/services/governance.js`](src/services/governance.js) |
+| `node src/index.js jobs …` | Applies, submits, and finalizes jobs with α-WU evidence injection. | [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js) |
+| `node src/index.js token …` | Introspects $AGIALPHA metadata, allowances, and approval payloads. | [`src/services/token.js`](src/services/token.js) |
+
+Each command accepts `--help` for exhaustive options. The CLI is safe for non-technical operators: every transaction builder prints payloads before broadcast, and dry-run modes are available for governance surfaces.
 
 ---
 
