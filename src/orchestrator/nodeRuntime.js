@@ -16,6 +16,7 @@ import {
 import { derivePerformanceProfile } from '../services/performance.js';
 import { startSegment, stopSegment } from '../services/metering.js';
 import { getDeviceInfo, getSlaProfile } from '../services/executionContext.js';
+import { deriveModelRuntimeFromJob } from '../telemetry/alphaWuTelemetry.js';
 import { MODEL_CLASSES } from '../constants/workUnits.js';
 
 export async function runNodeDiagnostics({
@@ -412,7 +413,8 @@ function deriveModelClass(job) {
 export function bindExecutionLoopMetering({
   jobLifecycle,
   logger = pino({ level: 'info', name: 'execution-meter' }),
-  deviceInfo = null
+  deviceInfo = null,
+  alphaTelemetry = null
 } = {}) {
   if (!jobLifecycle?.on || !jobLifecycle?.off) {
     return { detach: () => {} };
@@ -421,6 +423,7 @@ export function bindExecutionLoopMetering({
   const meteringLogger = typeof logger.child === 'function' ? logger.child({ subsystem: 'metering' }) : logger;
   const resolvedDeviceInfo = deviceInfo ?? getDeviceInfo();
   const activeSegments = new Map();
+  const activeJobs = new Set();
 
   const handleJobUpdate = (job) => {
     const jobId = job?.jobId ?? job?.id ?? null;
@@ -441,6 +444,18 @@ export function bindExecutionLoopMetering({
           slaProfile: getSlaProfile(job)
         });
         activeSegments.set(jobId, segment.segmentId);
+        activeJobs.add(jobId);
+        try {
+          alphaTelemetry?.beginContext?.({
+            jobId,
+            job,
+            role: 'executor',
+            modelRuntime: deriveModelRuntimeFromJob(job),
+            inputs: { job }
+          });
+        } catch (telemetryError) {
+          meteringLogger?.warn?.(telemetryError, 'Failed to initialise α-WU telemetry context');
+        }
         meteringLogger?.debug?.({ jobId, segmentId: segment.segmentId, status }, 'Metering segment started');
       } catch (error) {
         meteringLogger?.warn?.(error, 'Failed to start metering segment');
@@ -455,6 +470,11 @@ export function bindExecutionLoopMetering({
       }
       try {
         const stopped = stopSegment(segmentId);
+        try {
+          alphaTelemetry?.recordSegment?.(jobId, stopped);
+        } catch (telemetryError) {
+          meteringLogger?.warn?.(telemetryError, 'Failed to record α-WU telemetry segment');
+        }
         meteringLogger?.debug?.(
           { jobId, segmentId, status, alphaWU: stopped?.alphaWU ?? null },
           'Metering segment completed'
@@ -463,6 +483,7 @@ export function bindExecutionLoopMetering({
         meteringLogger?.warn?.(error, 'Failed to stop metering segment');
       } finally {
         activeSegments.delete(jobId);
+        activeJobs.delete(jobId);
       }
     }
   };
@@ -478,13 +499,19 @@ export function bindExecutionLoopMetering({
       }
       for (const [jobId, segmentId] of activeSegments.entries()) {
         try {
-          stopSegment(segmentId);
+          const stopped = stopSegment(segmentId);
+          try {
+            alphaTelemetry?.recordSegment?.(jobId, stopped);
+          } catch (telemetryError) {
+            meteringLogger?.warn?.(telemetryError, 'Failed to capture α-WU telemetry during detach');
+          }
           meteringLogger?.debug?.({ jobId, segmentId }, 'Metering segment stopped during detach');
         } catch (error) {
           meteringLogger?.warn?.(error, 'Failed to stop metering segment during detach');
         }
       }
       activeSegments.clear();
+      activeJobs.clear();
     }
   };
 }

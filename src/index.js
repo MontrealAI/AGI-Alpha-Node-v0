@@ -1709,7 +1709,7 @@ jobs
         logger
       );
       lifecycle = jobLifecycle;
-      const submission = await jobLifecycle.submit(jobId, {
+      const submission = await jobLifecycle.submitExecutorResult(jobId, {
         result: resultPayload ?? options.resultUri ?? '',
         resultUri: options.resultUri,
         metadata: metadataPayload,
@@ -1727,6 +1727,9 @@ jobs
       }
       if (submission.resultHash) {
         console.log(`  resultHash: ${submission.resultHash}`);
+      }
+      if (submission.alphaWu) {
+        console.log(`  α-WU signature: ${submission.alphaWu.attestor_sig}`);
       }
       console.log(`  method: ${submission.method}`);
     } catch (error) {

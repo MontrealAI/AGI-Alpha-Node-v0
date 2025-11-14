@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -9,6 +9,7 @@ import * as jobProof from '../src/services/jobProof.js';
 import { recordGovernanceAction } from '../src/services/governanceLedger.js';
 import { loadConfig } from '../src/config/env.js';
 import { MODEL_CLASSES, SLA_PROFILES, VRAM_TIERS } from '../src/constants/workUnits.js';
+import { verifyAlphaWu } from '../src/crypto/signing.js';
 
 const registryAddress = '0x00000000000000000000000000000000000000aa';
 const v0Profile = resolveJobProfile('v0');
@@ -52,6 +53,12 @@ describe('job lifecycle α-WU integration', () => {
     provider.getLogs.mockResolvedValue([]);
     provider.on.mockReset();
     provider.off.mockReset();
+    process.env.NODE_PRIVATE_KEY =
+      '0x59c6995e998f97a5a0044966f0945386f0b0c9cc1fa50bdbeeb29f44cbeb2c82';
+  });
+
+  afterEach(() => {
+    delete process.env.NODE_PRIVATE_KEY;
   });
 
   it('propagates α-WU totals through lifecycle proof and governance ledger', async () => {
@@ -98,6 +105,8 @@ describe('job lifecycle α-WU integration', () => {
     const stopSpy = vi.spyOn(metering, 'stopSegment');
     const proofSpy = vi.spyOn(jobProof, 'createJobProof');
 
+    await lifecycle.apply(discoveredJobId, { subdomain: 'node', proof: '0x1234' });
+
     const segmentStart = metering.startSegment({
       jobId: discoveredJobId,
       deviceInfo: { deviceClass: 'H100-80GB', vramTier: VRAM_TIERS.TIER_80, gpuCount: 2 },
@@ -114,14 +123,17 @@ describe('job lifecycle α-WU integration', () => {
     expect(stopSpy).toHaveBeenCalledTimes(1);
     expect(segmentResult.alphaWU).toBeGreaterThan(0);
 
-    await lifecycle.apply(discoveredJobId, { subdomain: 'node', proof: '0x1234' });
-
-    const submission = await lifecycle.submit(discoveredJobId, {
+    const submission = await lifecycle.submitExecutorResult(discoveredJobId, {
       result: { ok: true },
       resultUri: 'ipfs://result'
     });
 
     expect(submission.commitment).toMatch(/^0x/);
+    expect(submission.alphaWu).toBeTruthy();
+    expect(verifyAlphaWu(submission.alphaWu)).toBe(true);
+    const recorded = lifecycle.getAlphaWUsForJob(discoveredJobId);
+    expect(recorded).toHaveLength(1);
+    expect(recorded[0].wu_id).toBe(submission.alphaWu.wu_id);
     expect(proofSpy).toHaveBeenCalledTimes(1);
     const proof = proofSpy.mock.results[0]?.value;
     expect(proof).toBeTruthy();

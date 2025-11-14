@@ -6,6 +6,9 @@ import { getJobAlphaSummary, getJobAlphaWU } from './metering.js';
 import { resolveJobProfile, createInterfaceFromProfile } from './jobProfiles.js';
 import { buildActionEntry, buildSnapshotEntry } from './lifecycleJournal.js';
 import { createAlphaWorkUnitRegistry, DEFAULT_WINDOWS as DEFAULT_ALPHA_WINDOWS } from './alphaWorkUnits.js';
+import { createAlphaWuTelemetry, deriveModelRuntimeFromJob } from '../telemetry/alphaWuTelemetry.js';
+import { signAlphaWu, verifyAlphaWu } from '../crypto/signing.js';
+import { validateAlphaWu, cloneAlphaWu, compareAlphaWu } from '../types/alphaWu.js';
 
 const JOB_STATUS_MAP = {
   0: 'open',
@@ -20,6 +23,7 @@ const JOB_STATUS_MAP = {
 
 const ALPHA_WORK_UNIT_WINDOWS = DEFAULT_ALPHA_WINDOWS.map((entry) => ({ ...entry }));
 const COMPLETION_STATUSES = new Set(['submitted', 'validated', 'finalized', 'failed']);
+const EXECUTION_STATUSES = new Set(['applied', 'assigned', 'executing', 'running']);
 
 const defaultContractFactory = (address, abi, providerOrSigner) => new Contract(address, abi, providerOrSigner);
 
@@ -319,13 +323,16 @@ export function createJobLifecycle({
   journal = null,
   logger = pino({ level: 'info', name: 'job-lifecycle' }),
   contractFactory = defaultContractFactory,
-  healthGate = null
+  healthGate = null,
+  alphaTelemetry = createAlphaWuTelemetry()
 } = {}) {
   const profile = resolveJobProfile(profileInput, profileOverrides);
   const iface = createInterfaceFromProfile(profile);
   const emitter = new EventEmitter({ captureRejections: true });
   const jobs = new Map();
   const alphaWorkUnits = createAlphaWorkUnitRegistry();
+  const alphaWuLog = new Map();
+  const telemetryActiveJobs = new Set();
   const metrics = {
     discovered: 0,
     applied: 0,
@@ -343,6 +350,23 @@ export function createJobLifecycle({
   let registryAddress = jobRegistryAddress ? getAddress(jobRegistryAddress) : null;
   let contract = null;
   let watchers = [];
+
+  function appendAlphaWuRecord(jobId, alphaWu) {
+    if (!jobId || !alphaWu) return;
+    const key = normalizeJobId(jobId);
+    if (!key) return;
+    if (!alphaWuLog.has(key)) {
+      alphaWuLog.set(key, []);
+    }
+    alphaWuLog.get(key).push(cloneAlphaWu(alphaWu));
+  }
+
+  function getAlphaWuRecords(jobId) {
+    const key = normalizeJobId(jobId);
+    if (!key) return [];
+    const entries = alphaWuLog.get(key) ?? [];
+    return entries.map((entry) => cloneAlphaWu(entry));
+  }
 
   const compatibilityWarnings = new Map();
 
@@ -450,6 +474,7 @@ export function createJobLifecycle({
     const normalizedJobId = normalizeJobId(jobId);
     const existing = jobs.get(normalizedJobId) ?? { jobId: normalizedJobId };
     const sanitizedPatch = patch ? { ...patch } : {};
+    const previousStatus = existing.status?.toLowerCase?.() ?? null;
     const normalizedStatus =
       typeof sanitizedPatch.status === 'string' && sanitizedPatch.status
         ? sanitizedPatch.status.toLowerCase()
@@ -474,17 +499,44 @@ export function createJobLifecycle({
 
     const merged = mergeJobRecord(existing, sanitizedPatch);
     jobs.set(normalizedJobId, merged);
-    emitter.emit('job:update', normalizeJobMetadata(merged));
+    const normalizedJob = normalizeJobMetadata(merged);
+
+    if (alphaTelemetry?.beginContext && EXECUTION_STATUSES.has(normalizedStatus)) {
+      if (!telemetryActiveJobs.has(normalizedJobId) || previousStatus !== normalizedStatus) {
+        try {
+          alphaTelemetry.beginContext({
+            jobId: normalizedJobId,
+            job: normalizedJob,
+            role: 'executor',
+            modelRuntime: deriveModelRuntimeFromJob(normalizedJob),
+            inputs: { job: normalizedJob }
+          });
+          telemetryActiveJobs.add(normalizedJobId);
+        } catch (error) {
+          logger?.warn?.(error, 'Failed to initialise α-WU telemetry context from lifecycle update');
+        }
+      }
+    }
+
+    if (COMPLETION_STATUSES.has(normalizedStatus)) {
+      telemetryActiveJobs.delete(normalizedJobId);
+    }
+
+    emitter.emit('job:update', normalizedJob);
     metrics.discovered = jobs.size;
     return merged;
   }
 
   function recordAction(action, jobState = null) {
     metrics.lastAction = action?.type ?? null;
+    const actionWithArtifact = action?.alphaWu
+      ? { ...action, alphaWuArtifact: cloneAlphaWu(action.alphaWu) }
+      : { ...action };
+    delete actionWithArtifact.alphaWu;
     const extendedAction =
       jobState?.alphaWU && typeof jobState.alphaWU === 'object'
-        ? { ...action, alphaWU: cloneAlphaSummary(jobState.alphaWU) }
-        : action;
+        ? { ...actionWithArtifact, alphaWU: cloneAlphaSummary(jobState.alphaWU) }
+        : actionWithArtifact;
     emitter.emit('action', extendedAction);
     if (journal?.append) {
       const normalizedJob = jobState ? normalizeJobMetadata(jobState) : null;
@@ -691,7 +743,8 @@ export function createJobLifecycle({
     signer = null,
     timestamp,
     overrides = null,
-    validator = null
+    validator = null,
+    alphaWu = null
   } = {}) {
     if (result === undefined || result === null) {
       throw new Error('result is required to submit a job');
@@ -709,6 +762,76 @@ export function createJobLifecycle({
       resultUri: resultUri ?? ''
     });
 
+    const jobState = jobs.get(normalizedJobId) ?? null;
+    const telemetryOutputs = {
+      result,
+      metadata,
+      resultUri: resultUri ?? '',
+      commitment: proofPayload.commitment,
+      resultHash: proofPayload.resultHash
+    };
+
+    const alphaWuWeight = Number(
+      proofPayload?.alphaWU?.total ?? (() => {
+        try {
+          return getJobAlphaWU(normalizedJobId);
+        } catch {
+          return 0;
+        }
+      })()
+    );
+
+    let signedAlphaWu = null;
+    if (alphaTelemetry?.isEnabled?.() && typeof alphaTelemetry.finalize === 'function') {
+      const normalizedJob = jobState ? normalizeJobMetadata(jobState) : null;
+      const rawAlphaWu = alphaTelemetry.finalize(normalizedJobId, {
+        outputs: telemetryOutputs,
+        alphaWuWeight,
+        modelRuntime: deriveModelRuntimeFromJob(normalizedJob ?? {})
+      });
+      if (!rawAlphaWu) {
+        throw new Error('α-WU telemetry context missing – submission quarantined');
+      }
+      try {
+        signedAlphaWu = await signAlphaWu(rawAlphaWu);
+      } catch (error) {
+        logger?.warn?.(error, 'Failed to sign α-WU payload');
+        throw error;
+      }
+    }
+
+    if (alphaWu) {
+      const suppliedAlphaWu = validateAlphaWu(alphaWu);
+      let suppliedAlphaWuJobId;
+      try {
+        suppliedAlphaWuJobId = normalizeJobId(suppliedAlphaWu.job_id);
+      } catch (error) {
+        throw new Error('Provided α-WU payload references an invalid job identifier');
+      }
+      if (suppliedAlphaWuJobId !== normalizedJobId) {
+        throw new Error('Provided α-WU payload does not belong to the submitted job');
+      }
+      const signatureValid = verifyAlphaWu(suppliedAlphaWu, {
+        expectedAddress: signedAlphaWu?.attestor_address ?? suppliedAlphaWu.attestor_address
+      });
+      if (!signatureValid) {
+        throw new Error('Provided α-WU signature verification failed');
+      }
+      if (signedAlphaWu) {
+        if (!compareAlphaWu(signedAlphaWu, suppliedAlphaWu)) {
+          throw new Error('Provided α-WU payload does not match telemetry snapshot');
+        }
+      } else {
+        signedAlphaWu = suppliedAlphaWu;
+      }
+    }
+
+    if (!signedAlphaWu) {
+      throw new Error('α-WU artifact required for submission');
+    }
+
+    appendAlphaWuRecord(normalizedJobId, signedAlphaWu);
+
     const context = {
       jobId: normalizedJobId,
       subdomain: subdomain ?? '',
@@ -721,7 +844,8 @@ export function createJobLifecycle({
       validator: validator ?? null,
       result,
       timestamp,
-      operator: connection?.signer?.address ?? defaultSigner?.address ?? null
+      operator: connection?.signer?.address ?? defaultSigner?.address ?? null,
+      alphaWu: signedAlphaWu
     };
 
     const candidates = buildMethodCandidates(profile.methods.submit ?? [], context);
@@ -750,7 +874,8 @@ export function createJobLifecycle({
       transactionHash: response.hash ?? null,
       commitment: proofPayload.commitment,
       resultHash: proofPayload.resultHash,
-      validator: context.validator ?? null
+      validator: context.validator ?? null,
+      alphaWu: cloneAlphaWu(signedAlphaWu)
     }, updated);
     return {
       jobId: normalizedJobId,
@@ -759,8 +884,19 @@ export function createJobLifecycle({
       commitment: proofPayload.commitment,
       resultHash: proofPayload.resultHash,
       validator: context.validator ?? null,
+      alphaWu: cloneAlphaWu(signedAlphaWu),
       response
     };
+  }
+
+  async function submitExecutorResult(jobId, payload = {}) {
+    if (!payload || typeof payload !== 'object') {
+      throw new Error('payload is required to submit executor result');
+    }
+    if (!alphaTelemetry?.isEnabled?.() && !payload.alphaWu) {
+      throw new Error('alphaWu artifact is required when telemetry is disabled');
+    }
+    return submit(jobId, payload);
   }
 
   async function finalize(jobId, { signer = null, overrides = null, validator = null } = {}) {
@@ -1178,12 +1314,14 @@ export function createJobLifecycle({
     refreshJob,
     apply,
     submit,
+    submitExecutorResult,
     finalize,
     notifyValidator,
     listJobs,
     getJob,
     getMetrics,
     recordAlphaWorkUnitEvent,
+    getAlphaWUsForJob: getAlphaWuRecords,
     getAlphaWorkUnitMetrics: (options = {}) => alphaWorkUnits.getMetrics(options),
     watch,
     stop,

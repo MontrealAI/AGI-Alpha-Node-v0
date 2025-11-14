@@ -1634,20 +1634,22 @@ export function startAgentApi({
           return;
         }
         try {
-          const result = await jobLifecycle.submit(jobId, {
+          const result = await jobLifecycle.submitExecutorResult(jobId, {
             result: body?.result ?? body?.resultUri ?? '',
             resultUri: body?.resultUri,
             metadata: body?.metadata,
             subdomain: body?.subdomain,
             proof: body?.proof,
-            timestamp: body?.timestamp
+            timestamp: body?.timestamp,
+            alphaWu: body?.alphaWu
           });
           jsonResponse(res, 202, {
             jobId: result.jobId,
             transactionHash: result.transactionHash,
             method: result.method,
             commitment: result.commitment,
-            resultHash: result.resultHash
+            resultHash: result.resultHash,
+            alphaWu: result.alphaWu ?? null
           });
         } catch (error) {
           logger.error(error, 'Failed to submit job result');
