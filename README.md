@@ -185,7 +185,7 @@ sequenceDiagram
 | Key management | [`src/identity/keys.ts`](src/identity/keys.ts) | Loads secp256k1 / ed25519 keyfiles, derives pubkeys, and enforces ENS parity via `validateKeypairAgainstENS`. |
 | Runtime enforcement | [`src/identity/bootstrap.js`](src/identity/bootstrap.js) + [`src/orchestrator/bootstrap.js`](src/orchestrator/bootstrap.js) | The bootstrapper lazily loads the TypeScript identity modules via `tsx/esm`, hydrates ENS state, validates the keypair, and refuses to continue if anything drifts from the on-chain record. |
 
-**NodeIdentity schema (single source of truth)**
+### NodeIdentity schema (single source of truth)
 
 | Field | Type | Source | Purpose |
 | --- | --- | --- | --- |
@@ -371,7 +371,7 @@ stateDiagram-v2
 
 Pull requests must surface the CI badge shown above and satisfy `.github/required-checks.json`, ensuring branch protection keeps the command surface green.
 
-**Visibility + enforcement guardrails**
+### Visibility + enforcement guardrails
 
 - The CI badge reflects the same workflow that gates `main` and every pull request; no bypass paths exist for lint, tests, coverage, Solidity hygiene, subgraph builds, or audits.
 - Branch protection consumes `.github/required-checks.json`, so adding a new check automatically blocks merges until it is green, preserving the owner’s operational guarantees.
