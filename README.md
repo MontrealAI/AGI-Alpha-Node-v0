@@ -39,17 +39,19 @@
 ## Contents
 
 1. [Mission Profile](#mission-profile)
-2. [Cognition Mesh Architecture](#cognition-mesh-architecture)
-3. [Validator Pipeline & Attestations](#validator-pipeline--attestations)
-4. [ENS Identity & Verifier Surface](#ens-identity--verifier-surface)
-5. [α-WU Telemetry & Signing Fabric](#α-wu-telemetry--signing-fabric)
-6. [Epoch Intelligence & Determinism](#epoch-intelligence--determinism)
-7. [Operations & Governance Command](#operations--governance-command)
-8. [Telemetry, API & CLI](#telemetry-api--cli)
-9. [Quality Gates & Test Suites](#quality-gates--test-suites)
-10. [CI Enforcement & Branch Protection](#ci-enforcement--branch-protection)
-11. [Repository Atlas](#repository-atlas)
-12. [Reference Library](#reference-library)
+2. [Rapid Activation Protocol](#rapid-activation-protocol)
+3. [Cognition Mesh Architecture](#cognition-mesh-architecture)
+4. [Validator Pipeline & Attestations](#validator-pipeline--attestations)
+5. [ENS Identity & Verifier Surface](#ens-identity--verifier-surface)
+6. [α-WU Telemetry & Signing Fabric](#α-wu-telemetry--signing-fabric)
+7. [Epoch Intelligence & Determinism](#epoch-intelligence--determinism)
+8. [Owner Command & Sovereignty](#owner-command--sovereignty)
+9. [Telemetry, API & CLI](#telemetry-api--cli)
+10. [Quality Gates & Test Suites](#quality-gates--test-suites)
+11. [CI Enforcement & Branch Protection](#ci-enforcement--branch-protection)
+12. [Deployment Pathways](#deployment-pathways)
+13. [Repository Atlas](#repository-atlas)
+14. [Reference Library](#reference-library)
 
 ---
 
@@ -61,6 +63,71 @@ AGI Alpha Node v0 is the cognition engine that tilts economic gravity: a soverei
 - **Deterministic cognition fabric** — [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js) orchestrates discovery → execution → proof → governance with telemetry-backed α-WUs, preventing drift across swarms.【F:src/services/jobLifecycle.js†L320-L920】
 - **Owner-readable observability** — [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) and [`src/network/apiServer.js`](src/network/apiServer.js) expose Prometheus metrics plus authenticated JSON command decks, mirroring internal ledgers without lag.【F:src/network/apiServer.js†L1550-L1700】
 - **Production-locked CI** — GitHub Actions (`ci.yml`) runs lint, vitest, coverage, Solidity checks, subgraph builds, policy gates, Docker smoke tests, and branch enforcement so every merge arrives already hardened.【F:.github/workflows/ci.yml†L1-L200】
+
+---
+
+## Rapid Activation Protocol
+
+Power up a node from a cold checkout to a fully verified, owner-controlled deployment using the deterministic ritual below. Every step is engineered for non-technical operators while preserving cryptographic assurances.
+
+```mermaid
+flowchart LR
+  Checkout[[Clone repository]] --> Install[npm ci]
+  Install --> Config[Authorize .env<br/>NODE_ENS_NAME · payout routes]
+  Config --> Verify[npm run ci:verify]
+  Verify --> ENS[node src/index.js ens:records]
+  ENS --> Launch[node src/index.js container --once]
+```
+
+1. **Clone & install**
+
+   ```bash
+   git clone https://github.com/MontrealAI/AGI-Alpha-Node-v0.git
+   cd AGI-Alpha-Node-v0
+   npm ci
+   ```
+
+   The repository ships a locked dependency graph and Node 20.18+ requirement to guarantee repeatable installs.【F:package.json†L1-L52】
+
+2. **Author configuration** — create `.env` (or export environment variables) covering ENS identity, payout routes, and attestor keys. Each field is validated by the runtime schema at load time, preventing malformed deployments.【F:src/config/schema.js†L265-L380】
+
+   ```bash
+   cat <<'EOF' > .env
+   NODE_ROLE=mixed
+   NODE_LABEL=orchestrator
+   ENS_PARENT_DOMAIN=alpha.node.agi.eth
+   NODE_ENS_NAME=orchestrator.alpha.node.agi.eth
+   OPERATOR_ADDRESS=0x0000000000000000000000000000000000000001
+   NODE_PAYOUT_ETH_ADDRESS=0x0000000000000000000000000000000000000001
+   NODE_PAYOUT_AGIALPHA_ADDRESS=0x0000000000000000000000000000000000000001
+   NODE_PRIMARY_MODEL=orchestrator-hypernet:v1
+   VERIFIER_PUBLIC_BASE_URL=https://node.example
+   NODE_PRIVATE_KEY=0x...........................
+   VALIDATOR_PRIVATE_KEY=0x...........................
+   EOF
+   ```
+
+   Keep secrets in secure storage; the CLI and bootstrapper load them via `loadConfig()` and refuse to operate with invalid formatting.【F:src/index.js†L675-L706】【F:src/orchestrator/bootstrap.js†L320-L412】
+
+3. **Mirror CI locally** — execute the same matrix GitHub Actions enforces (`lint`, `vitest`, coverage, Solidity, subgraph, audit, policy). The convenience wrapper below runs the full set and matches the operator runbook.【F:package.json†L23-L47】【F:docs/operator-runbook.md†L29-L44】
+
+   ```bash
+   npm run ci:verify
+   ```
+
+4. **Publish deterministic ENS metadata** — generate the JSON payload that must be written to ENS text/multicoin records before going live.【F:src/index.js†L675-L706】【F:src/ens/ens_config.js†L117-L188】
+
+   ```bash
+   node src/index.js ens:records --pretty
+   ```
+
+5. **Launch the container orchestrator** — this command verifies ENS ownership, audits staking posture, spins up the verifier HTTP surface, Prometheus metrics, and optional validator runtime in a single action.【F:src/index.js†L1115-L1230】【F:src/orchestrator/bootstrap.js†L330-L412】
+
+   ```bash
+   node src/index.js container --once --metrics-port 9464 --api-port 8080
+   ```
+
+   Remove `--once` to run continuously; add `--auto-stake` and governance overrides when operating against live incentives smart contracts.【F:src/index.js†L1116-L1194】
 
 ---
 
@@ -338,11 +405,21 @@ The deterministic metering engine continues to normalize GPU minutes, quality we
 
 ---
 
-## Operations & Governance Command
+## Owner Command & Sovereignty
 
-- **Owner directives** — `NODE_PRIVATE_KEY` and `OPERATOR_ADDRESS` empower `submitExecutorResult` to sign outputs and `finalize` jobs, while `AlphaNodeManager` retains pause/unpause, validator control, and stake management.【F:contracts/AlphaNodeManager.sol†L60-L200】
-- **API surface** — the operator API now enforces α-WU presence on submissions and returns the signed artifact to dashboards or downstream protocols.【F:src/network/apiServer.js†L1630-L1680】
-- **Journal enrichment** — lifecycle actions append both the α-WU summary and raw artifact reference for audit trails and governance playback.【F:src/services/jobLifecycle.js†L510-L550】
+The owner’s signature remains the absolute source of authority: every critical dial is guarded by `onlyOwner`, surfaced through deterministic builders, and mirrored back to dashboards and diagnostics.
+
+- **Contract-first supremacy** — `AlphaNodeManager` exposes pause/unpause, validator toggles, ENS identity rotation, status gating, and stake withdrawals exclusively for the owner key, keeping custody and routing firmly under human direction.【F:contracts/AlphaNodeManager.sol†L78-L200】
+- **Governance atlas** — `governance catalog` and `governance surfaces` introspect the owner ABIs, map each control surface to builder functions, and report coverage so operators know every dial is reachable from the CLI.【F:src/index.js†L2090-L2140】【F:src/services/governance.js†L315-L352】【F:src/services/governance.js†L1650-L1684】
+- **Actionable diagnostics** — `bootstrapContainer` streams `ownerDirectives` and health-gate posture, highlighting when to broadcast governance payloads or pause the node based on stake, ENS verification, and telemetry signals.【F:src/orchestrator/bootstrap.js†L384-L418】
+
+| Capability | Contract pivot | CLI builder(s) | Effect |
+| --- | --- | --- | --- |
+| Freeze or resume the mesh | `AlphaNodeManager.pause()` / `unpause()` lock execution under `onlyOwner`; the SystemPause contract can broadcast global halts.【F:contracts/AlphaNodeManager.sol†L78-L92】【F:src/services/governance.js†L324-L352】 | `governance system-pause --action <pause/resume>` crafts the transaction with the correct ABI selector.【F:src/index.js†L2490-L2507】 | Emits a signed directive that halts or resumes workloads across orchestrator, validator, and executor pipelines. |
+| Reassign ENS controllers & operators | `registerIdentity`, `updateIdentityController`, `setIdentityStatus`, and `revokeIdentity` remain owner-only, ensuring ENS routing never drifts from policy.【F:contracts/AlphaNodeManager.sol†L102-L170】 | `governance node-register`, `node-operator`, and `identity-delegate` build canonical payloads for NodeRegistry and IdentityRegistry updates.【F:src/index.js†L2138-L2240】【F:src/services/governance.js†L355-L452】【F:src/services/governance.js†L1348-L1388】 | Delegates or revokes node custody, publishes metadata URIs, and synchronizes ENS controllers with registry state. |
+| Gate validators & WorkMeter roles | Owner-only `setValidator` plus WorkMeter role binding maintain attestor hygiene and settlement integrity.【F:contracts/AlphaNodeManager.sol†L94-L145】【F:src/services/governance.js†L521-L592】 | `governance workmeter-validator`, `workmeter-oracle`, and `validator-threshold` toggle per-address permissions and quorum counts.【F:src/index.js†L2262-L2544】【F:src/services/governance.js†L553-L613】【F:src/services/governance.js†L915-L972】 | Hardens validation circuits, enforces quorum math, and prevents rogue attestations from entering the ledger. |
+| Tune stake floors & registry wiring | Owner may raise minimums and redirect registry pointers to protect collateral routes.【F:contracts/AlphaNodeManager.sol†L156-L200】【F:src/services/governance.js†L915-L972】 | `governance minimum-stake` and `registry-upgrade` broadcast StakeManager directives with automatic diff context.【F:src/index.js†L2510-L2577】【F:src/services/governance.js†L915-L972】【F:src/services/governance.js†L972-L1040】 | Elevates $AGIALPHA bonding thresholds and rewires stake, job, or identity registries without manual ABI crafting. |
+| Rebalance reward emissions | RewardEngine global share controls keep operator/validator/treasury splits precise to the basis point.【F:src/services/governance.js†L1040-L1100】 | `governance global-shares` and `role-share` normalize allocations while validating totals equal 10 000 bps.【F:src/index.js†L2613-L2650】【F:src/services/governance.js†L1040-L1100】 | Broadcasts deterministic emission payloads so downstream incentives align with the operator’s policy. |
 
 ### Governance Token
 
@@ -428,6 +505,27 @@ npm run ci:verify
 - **`ci.yml`** executes lint, vitest, coverage, Solidity lint/build, subgraph checks, security audit, policy gates, branch naming guard, and Docker smoke tests before merging.【F:.github/workflows/ci.yml†L1-L200】
 - **Badges** — CI, coverage, telemetry schema, and signature badges refresh automatically, signalling a continuously green mainline.
 - **Branch policy scripts** — [`scripts/verify-branch-gate.mjs`](scripts/verify-branch-gate.mjs) blocks unsafe branch patterns, while [`scripts/verify-health-gate.mjs`](scripts/verify-health-gate.mjs) validates runtime environment toggles.
+
+---
+
+## Deployment Pathways
+
+```mermaid
+flowchart LR
+  Codebase[[Main branch]] -->|ci:verify| Image[Docker image<br/>ghcr.io/montrealai/agi-alpha-node]
+  Image --> Helm[Helm chart<br/>deploy/helm/agi-alpha-node]
+  Helm --> Mesh[Kubernetes cluster]
+  Image --> DockerHost[Single-node Docker]
+  Mesh --> Observability[Prometheus & REST APIs]
+  DockerHost --> Observability
+  Codebase --> Subgraph[subgraph/ deployment]
+  Subgraph --> Analytics[Graph indexers]
+```
+
+- **Production container** — the `Dockerfile` installs runtime dependencies with `npm ci --omit=dev`, copies the orchestrator, and exposes a healthcheck that reuses the node’s health script. Pair it with the one-click playbook for env-var templates, offline snapshots, and post-launch commands.【F:Dockerfile†L1-L18】【F:docs/deployment/one-click.md†L1-L72】
+- **Helm orchestration** — `deploy/helm/agi-alpha-node` packages readiness probes, autoscaling hints, secret mounts, and offline snapshot toggles so institutional operators can roll out high-availability clusters in minutes.【F:deploy/helm/agi-alpha-node/Chart.yaml†L1-L7】【F:docs/deployment/one-click.md†L73-L140】
+- **Subgraph + analytics** — CI renders the Graph manifest, runs code generation, and builds the indexing package so analytics dashboards stay synchronized with the node ledger.【F:package.json†L31-L47】【F:docs/deployment/branch-protection.md†L1-L80】
+- **Operational runbooks** — companion guides in `docs/deployment/` and the operator runbook walk non-technical staff through badge verification, branch protection, Docker invocations, and Helm upgrades, keeping human procedures aligned with automated gates.【F:docs/deployment/one-click.md†L1-L160】【F:docs/operator-runbook.md†L1-L70】
 
 ---
 
