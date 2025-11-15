@@ -20,9 +20,25 @@ describe('config schema', () => {
     const config = coerceConfig({ RPC_URL: 'https://rpc.ankr.com/eth' });
     expect(config.ENS_PARENT_DOMAIN).toBe('alpha.node.agi.eth');
     expect(config.METRICS_PORT).toBe(9464);
+    expect(config.HEALTHCHECK_TIMEOUT).toBe(5000);
     expect(config.VERIFIER_PORT).toBe(8787);
     expect(config.AGIALPHA_TOKEN_ADDRESS).toBe(AGIALPHA_TOKEN_CHECKSUM_ADDRESS);
     expect(config.AGIALPHA_TOKEN_DECIMALS).toBe(AGIALPHA_TOKEN_DECIMALS);
+  });
+
+  it('coerces healthcheck timeout values safely', () => {
+    const config = coerceConfig({
+      RPC_URL: 'https://rpc.ankr.com/eth',
+      HEALTHCHECK_TIMEOUT: '15000'
+    });
+    expect(config.HEALTHCHECK_TIMEOUT).toBe(15000);
+
+    expect(() =>
+      coerceConfig({
+        RPC_URL: 'https://rpc.ankr.com/eth',
+        HEALTHCHECK_TIMEOUT: '100'
+      })
+    ).toThrow(/must be/);
   });
 
   it('strips unknown environment variables without rejection', () => {

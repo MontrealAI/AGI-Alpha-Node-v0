@@ -332,6 +332,7 @@ export const configSchema = z
     JOB_REGISTRY_PROFILE: z.string().optional().default('v0'),
     JOB_PROFILE_SPEC: z.any().optional().transform((value) => parseProfileSpec(value)),
     METRICS_PORT: z.coerce.number().int().min(1024).max(65535).default(9464),
+    HEALTHCHECK_TIMEOUT: z.coerce.number().int().min(250).max(120_000).default(5000),
     VERIFIER_PORT: z.coerce.number().int().min(1024).max(65535).default(8787),
     VERIFIER_PUBLIC_BASE_URL: z
       .string()

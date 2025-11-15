@@ -1,7 +1,29 @@
 import http from 'node:http';
 
-const port = Number.parseInt(process.env.METRICS_PORT ?? process.env.PORT ?? '9464', 10);
-const timeoutMs = Number.parseInt(process.env.HEALTHCHECK_TIMEOUT ?? '5000', 10);
+import { loadConfig } from './config/env.js';
+
+function coercePort(value) {
+  const numeric = typeof value === 'number' ? value : Number.parseInt(String(value ?? '').trim(), 10);
+  if (!Number.isInteger(numeric)) {
+    return null;
+  }
+  if (numeric < 1 || numeric > 65535) {
+    return null;
+  }
+  return numeric;
+}
+
+const config = loadConfig();
+
+const port =
+  coercePort(config.METRICS_PORT) ??
+  coercePort(process.env.PORT) ??
+  coercePort(config.API_PORT) ??
+  9464;
+
+const timeoutMs = Number.isInteger(config.HEALTHCHECK_TIMEOUT) && config.HEALTHCHECK_TIMEOUT > 0
+  ? config.HEALTHCHECK_TIMEOUT
+  : 5000;
 
 const request = http.request(
   {
