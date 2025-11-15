@@ -206,6 +206,40 @@ flowchart LR
   Guard --> Identity
 ```
 
+### Canonical Identity Schema
+
+```mermaid
+classDiagram
+  direction TB
+  class NodeIdentity {
+    +string ensName
+    +string peerId
+    +NodePubkey pubkey
+    +number fuses
+    +number expiry
+    +string[] multiaddrs
+    +Record metadata
+  }
+  class NodePubkey {
+    +string x
+    +string y
+  }
+  class NodeKeypair {
+    +SupportedKeyType type
+    +string privateKey
+    +NodePubkey publicKey
+  }
+  NodeIdentity --> NodePubkey
+  NodeKeypair --> NodePubkey
+```
+
+### Identity Boot Sequence
+
+1. `loadNodeIdentity` normalises the ENS label, resolves the canonical resolver, hydrates the pubkey, NameWrapper fuses/expiry, and extracts authoritative TXT metadata for downstream services.【F:src/identity/loader.ts†L23-L147】
+2. `_dnsaddr` TXT records are parsed through `parseDnsaddr`, yielding a deduplicated multiaddr set for libp2p meshes without leaking malformed entries.【F:src/identity/dnsaddr.ts†L1-L39】
+3. `loadNodeKeypair` collects signing material from JSON keyfiles or environment variables, deriving secp256k1 coordinates when necessary to mirror ENS state.【F:src/identity/keys.ts†L47-L118】
+4. `validateKeypairAgainstENS` hard-fails any drift between the local keypair and ENS-published pubkey, keeping attestation authority bound to the owner’s controls.【F:src/identity/keys.ts†L120-L164】
+
 ```ts
 import { loadNodeIdentity } from './src/identity/loader.js';
 import { loadNodeKeypair, validateKeypairAgainstENS } from './src/identity/keys.js';
