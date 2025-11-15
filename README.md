@@ -23,6 +23,7 @@
   <img src="https://img.shields.io/badge/Coverage-83.12%25-16a34a?logo=codecov&logoColor=white" alt="Coverage" />
   <a href="spec/alpha_wu.schema.json"><img src="https://img.shields.io/badge/Alpha%E2%80%91WU%20Schema-draft%202020--12-0ea5e9?logo=json&logoColor=white" alt="Alpha-WU Schema" /></a>
   <img src="https://img.shields.io/badge/Telemetry-Signed%20%26%20Verified-9333ea?logo=openssl&logoColor=white" alt="Signed Telemetry" />
+  <img src="https://img.shields.io/badge/Metrics-Prometheus%20%E2%86%92%20JSON-2563eb?logo=prometheus&logoColor=white" alt="Observability" />
   <img src="https://img.shields.io/badge/Solidity-0.8.26-363636?logo=solidity&logoColor=white" alt="Solidity" />
   <img src="https://img.shields.io/badge/Node.js-20.18%2B-43853d?logo=node.js&logoColor=white" alt="Runtime" />
   <a href="Dockerfile"><img src="https://img.shields.io/badge/Docker-Production%20Image-2496ed?logo=docker&logoColor=white" alt="Docker" /></a>
@@ -58,7 +59,7 @@ AGI Alpha Node v0 is the sovereign cognition forge: a production-class node that
 
 - **Absolute owner supremacy** — [`contracts/AlphaNodeManager.sol`](contracts/AlphaNodeManager.sol) centralizes pausing, validator rotation, ENS reassignment, stake routing, and α-WU governance under `onlyOwner`, giving the operator unbounded ability to reshape incentives, payout flows, and node identity on demand.【F:contracts/AlphaNodeManager.sol†L17-L200】
 - **Deterministic cognition orchestration** — [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js) spans discovery → execution → proof → governance with cryptographically signed α-WUs, ensuring every attestation carries the node’s ENS identity and operator intent.【F:src/services/jobLifecycle.js†L320-L920】
-- **Multi-surface observability** — [`src/network/apiServer.js`](src/network/apiServer.js) and [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) expose JSON+Prometheus feeds so operators inspect throughput, job journals, and governance telemetry without spelunking logs.【F:src/network/apiServer.js†L1500-L1700】【F:src/telemetry/monitoring.js†L1-L200】
+- **Multi-surface observability** — [`src/network/apiServer.js`](src/network/apiServer.js) and [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) expose JSON+Prometheus feeds with real-time `jobs_running`, completion/failure counters, α-WU validation histograms, stake posture, and ENS health so operators inspect throughput without spelunking logs.【F:src/network/apiServer.js†L1500-L1700】【F:src/telemetry/monitoring.js†L1-L340】
 - **Canonical token economy** — `$AGIALPHA` (18 decimals) is permanently mapped to [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) and codified in [`src/constants/token.js`](src/constants/token.js); staking, rewards, and slashing logic all reference this immutable anchor.【F:src/constants/token.js†L1-L20】
 
 ---
@@ -215,9 +216,52 @@ stateDiagram-v2
 
 ## Telemetry & Insight Fabric
 
-- [`src/network/apiServer.js`](src/network/apiServer.js) surfaces authenticated JSON endpoints for lifecycle stats, governance directives, owner command payloads, and alpha throughput analytics.【F:src/network/apiServer.js†L1500-L1750】
-- [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) exports Prometheus metrics with success rates, α-WU latencies, stake posture, and ENS identity health, giving instant feedback loops for automation.【F:src/telemetry/monitoring.js†L1-L200】
-- [`docs/telemetry/`](docs/telemetry/) captures dashboard recipes and Grafana panels aligned with the exported metrics, so observability spins up without guesswork.【F:docs/telemetry/README.md†L1-L120】
+The node streams a living pulse of orchestration, validation, and ownership in two synchronized planes: signed JSON over [`/api/metrics`](src/network/apiServer.js) for operators and Prometheus-compatible exposition over [`/metrics`](src/telemetry/monitoring.js) for machines.【F:src/network/apiServer.js†L1500-L1770】【F:src/telemetry/monitoring.js†L280-L380】 The observability lattice fuses job lifecycle state, α-WU validation telemetry, and owner health signals so you can close loops without ever opening a log file.
+
+```mermaid
+sequenceDiagram
+    participant Executor
+    participant Lifecycle as JobLifecycle
+    participant Metrics as Telemetry Registry
+    participant Prometheus
+    participant Grafana
+    Executor->>Lifecycle: apply / submit / finalize α-WU
+    Lifecycle->>Metrics: update jobs_running, latency, α-WU counters
+    Metrics-->>Prometheus: /metrics exposition (Counter, Gauge, Summary)
+    Prometheus-->>Grafana: scrape + render dashboards
+    Grafana-->>Owner: latency quantiles, α-WU validation envelopes
+```
+
+### Metric Constellation
+
+| Metric | Type | Origin | Insight |
+| ------ | ---- | ------ | ------- |
+| `jobs_running` | Gauge | Job lifecycle state transitions | Number of concurrently executing workloads guarded by owner policy.【F:src/services/jobLifecycle.js†L470-L620】【F:src/telemetry/monitoring.js†L300-L360】 |
+| `jobs_completed_total` / `jobs_failed_total` | Counter | Lifecycle completion events | Monotonic trackers for throughput and failure envelopes, wired into autoscaling and bounty pacing.【F:src/services/jobLifecycle.js†L470-L650】【F:src/telemetry/monitoring.js†L340-L360】 |
+| `job_latency_ms` | Summary (p50/p95/p99) | Submission→completion delta | Latency quantiles (ms) for each workload, allowing SLO enforcement and validator arbitration.【F:src/services/jobLifecycle.js†L470-L650】【F:src/telemetry/monitoring.js†L300-L360】 |
+| `alpha_wu_total` | Counter | Metered execution segments | Total α-WU minted per node/device/SLA profile, retained for epoch rollups.【F:src/services/metering.js†L300-L340】【F:src/telemetry/monitoring.js†L250-L320】 |
+| `alpha_wu_validated_total` / `alpha_wu_invalid_total` | Counter | Validator sink + slash detector | Successful vs. rejected validations so you can quantify validator quality and dispute posture instantly.【F:src/services/jobLifecycle.js†L380-L430】【F:src/telemetry/monitoring.js†L300-L360】 |
+| `alpha_wu_validation_latency_ms` | Summary | Mint → validation timestamps | Quantiles for validation dwell time, highlighting slow or malicious validator cohorts.【F:src/services/jobLifecycle.js†L380-L440】【F:src/telemetry/monitoring.js†L300-L360】 |
+| Stake, ENS, governance gauges | Gauge | Diagnostics pipeline | Continuous stake balances, heartbeat age, compatibility warnings, and ENS health statuses for non-stop policy gating.【F:src/orchestrator/nodeRuntime.js†L270-L360】【F:src/telemetry/monitoring.js†L100-L240】 |
+
+The JSON plane mirrors the same state so automation agents can ingest structured metrics without Prometheus tooling. Example:
+
+```bash
+curl -sS http://localhost:8080/api/metrics \
+  -H "Authorization: Bearer <OWNER_TOKEN>" | jq '.jobLifecycle.jobLatency'
+```
+
+### Prometheus Scrape Blueprint
+
+```yaml
+scrape_configs:
+  - job_name: agi-alpha-node
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['agi-alpha-node.local:9464']
+```
+
+Grafana dashboards in [`docs/telemetry/`](docs/telemetry/) map directly onto the exported series so you can drop them into your observability stack with zero rewiring.【F:docs/telemetry/README.md†L1-L120】
 
 ---
 
