@@ -185,6 +185,19 @@ sequenceDiagram
 | Key management | [`src/identity/keys.ts`](src/identity/keys.ts) | Loads secp256k1 / ed25519 keyfiles, derives pubkeys, and enforces ENS parity via `validateKeypairAgainstENS`. |
 | Runtime enforcement | [`src/identity/bootstrap.js`](src/identity/bootstrap.js) + [`src/orchestrator/bootstrap.js`](src/orchestrator/bootstrap.js) | The bootstrapper lazily loads the TypeScript identity modules via `tsx/esm`, hydrates ENS state, validates the keypair, and refuses to continue if anything drifts from the on-chain record. |
 
+### NodeIdentity schema (single source of truth)
+
+| Field | Type | Source | Purpose |
+| --- | --- | --- | --- |
+| `ensName` | `string` | ENS name (normalized lower-case) | Canonical label that binds peer + staking identity. |
+| `peerId` | `string` | TXT (`node.peerId` / `peerId`) | Ensures libp2p node identity mirrors ENS. |
+| `pubkey.x` / `pubkey.y` | `0x`-prefixed hex | ENS `pubkey` record | secp256k1 coordinates for signature parity checks. |
+| `multiaddrs` | `string[]` | `_dnsaddr.<ens>` TXT with `dnsaddr=` prefixes | Dialable libp2p endpoints for swarms and orchestrators. |
+| `metadata` | `Record<string,string>` | ENS TXT records | Versioning, role, status, and custom node descriptors. |
+| `fuses` / `expiry` | `number?` | ENS NameWrapper | Ownership guarantees and expiry awareness for operator UX. |
+
+`loadNodeIdentity()` hydrates every field above, while `validateKeypairAgainstENS()` refuses to proceed if the locally loaded signing keypair deviates from the ENS-published pubkey—preserving the owner’s sovereignty over attestations and payouts.
+
 ```mermaid
 flowchart LR
   ENS[(ENS Resolver / NameWrapper)] -->|pubkey + TXT| Loader{{loadNodeIdentity}}
@@ -357,6 +370,12 @@ stateDiagram-v2
 | Policy gates | `npm run ci:policy` + `npm run ci:branch` | Health gate enforcement, branch naming rules, and governance guardrails before merge. |
 
 Pull requests must surface the CI badge shown above and satisfy `.github/required-checks.json`, ensuring branch protection keeps the command surface green.
+
+### Visibility + enforcement guardrails
+
+- The CI badge reflects the same workflow that gates `main` and every pull request; no bypass paths exist for lint, tests, coverage, Solidity hygiene, subgraph builds, or audits.
+- Branch protection consumes `.github/required-checks.json`, so adding a new check automatically blocks merges until it is green, preserving the owner’s operational guarantees.
+- The Docker smoke test runs against the tip commit SHA, confirming that the published image exports the CLI help surface even when RPC endpoints are stubbed—catching container regressions before promotion.
 
 ---
 
