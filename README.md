@@ -251,6 +251,8 @@ curl -sS http://localhost:8080/api/metrics \
   -H "Authorization: Bearer <OWNER_TOKEN>" | jq '.jobLifecycle.jobLatency'
 ```
 
+The synthetic workload harness in [`test/jobLifecycle.metrics.test.js`](test/jobLifecycle.metrics.test.js) drives an in-memory lifecycle through apply → submit → finalize while streaming α-WU validation and slash events, verifying that counters, gauges, and latency histograms all react exactly as operators expect.【F:test/jobLifecycle.metrics.test.js†L1-L196】
+
 ### Prometheus Scrape Blueprint
 
 ```yaml
