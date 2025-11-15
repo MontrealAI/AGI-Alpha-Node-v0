@@ -19,7 +19,15 @@ export interface LoadNodeIdentityOptions {
   readonly logger?: Logger;
 }
 
-const DEFAULT_METADATA_KEYS = ['node.peerId', 'node.role', 'node.version', 'node.status', 'node.dnsaddr'];
+const DEFAULT_METADATA_KEYS = [
+  'node.peerId',
+  'node.peerid',
+  'peerId',
+  'node.role',
+  'node.version',
+  'node.status',
+  'node.dnsaddr'
+];
 
 function normalizeName(name: string): string {
   const trimmed = name.trim();
