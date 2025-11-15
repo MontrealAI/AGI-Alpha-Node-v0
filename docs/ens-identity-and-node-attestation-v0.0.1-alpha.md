@@ -1,255 +1,197 @@
-# ENS Identity and Node Attestation Framework
+# ENS Identity and Node Attestation Framework · v0.2.0
+<!-- markdownlint-disable MD013 -->
 
-For AGI-Alpha-Node-v0 and AGI-Alpha-Agent-v0
+> AGI Alpha Nodes cultivate the future in a luminous cognition field. Their ENS identities are more than signposts—they are control planes, economic anchors, and attestations that let owners command unfathomable intelligence flows without ceding sovereignty.
+
+---
 
 ## 0. Status
 
-- **Release Status:** Alpha
-- **Version:** `v0.0.1`
+- **Release Status:** Alpha hardened
+- **Spec Version:** `v0.2.0`
+- **Runtime Alignment:** [`agi-alpha-node-v0@1.1.0`](../package.json)
 - **Applies to:**
   - AGI Alpha Agents: `*.alpha.agent.agi.eth`
   - AGI Alpha Nodes: `*.alpha.node.agi.eth`
-- **Scope:** Identity, discovery, attestation, and observability for AGI Alpha
-  participants.
+- **Scope:** Identity bootstrapping, discovery, attestation, owner-enforced policy, and observability across the AGI Alpha lattice.
 
-______________________________________________________________________
+---
 
-## 1. Goals & Non-Goals
+## 1. Mission Parameters
 
-### 1.1 Goals
+### 1.1 Objectives
 
-This spec defines a production-grade framework to:
+1. Deliver ENS subnames with **durable, cryptographically bound identities** that map to production-grade nodes and agents.
+2. Encode **multi-surface metadata** (text, contenthash, coin records, commit fingerprints) that mirror runtime state while remaining owner-editable.
+3. Make identities **immediately discoverable** through `_dnsaddr` multiaddrs, libp2p peer IDs, and health gate allowlists.
+4. Emit **signed health attestations** and α‑work telemetry that align with `AlphaNodeManager` staking policy and CI checks.
+5. Expose **OpenTelemetry + Prometheus** signals with invariant naming so dashboards, validators, and auditors see the same truth.
 
-1. Give ENS subnames **durable, verifiable identities**.
-1. Publish **cryptographic keys and metadata** via ENS resolver records.
-1. Make agents and nodes **discoverable** over libp2p using `/dnsaddr`.
-1. Provide **signed health attestations** bound to ENS identities.
-1. Expose **OpenTelemetry spans** for fleet-wide observability using consistent
-   field names.
+### 1.2 Explicit Non-Goals
 
-### 1.2 Non-Goals
+- Economics, payout calculus, and emissions schedules are defined elsewhere (see [`docs/economics.md`](./economics.md)).
+- Smart-contract ABIs outside of ENS/NameWrapper/`AlphaNodeManager` scope are intentionally excluded.
+- Validator machine provisioning is treated as an infrastructure concern, not a protocol requirement.
 
-- This spec does **not** define employment, economics, or job-payout logic.
-- This spec does **not** define on-chain smart contract ABIs beyond
-  ENS/NameWrapper assumptions.
+---
 
-______________________________________________________________________
+## 2. Identity Surfaces
 
-## 2. Terminology
+### 2.1 Naming Schema
 
-- **AGI Alpha Agent**: A logical agent identity under `*.alpha.agent.agi.eth`.
-- **AGI Alpha Node**: An infrastructure node identity under
-  `*.alpha.node.agi.eth`.
-- **Identity**: The tuple
-  `(ENS name, ENS resolver records, DNS _dnsaddr, pubkey)`.
-- **Attestation**: A signed JSON document emitted by the agent/node.
-- **Health span**: An OpenTelemetry span representing a single health check.
+```text
+<agent-label>.alpha.agent.agi.eth
+<node-label>.alpha.node.agi.eth
+```
 
-______________________________________________________________________
+- Every active runtime **MUST** own exactly one canonical ENS name.
+- Names **MUST** be lowercase, punycode normalised, and cannot contain spaces.
+- ENS parents (`alpha.agent.agi.eth`, `alpha.node.agi.eth`) stay under the owner’s custody so rotations and revocations remain reversible.
 
-## 3. Identity Namespace & Naming
+### 2.2 NameWrapper Fuses & Expiry
 
-### 3.1 ENS Naming Patterns
+| Fuse | Required | Purpose |
+| --- | --- | --- |
+| `PARENT_CANNOT_CONTROL` | MUST | Prevents parent-grabs once commissioned.
+| `CANNOT_UNWRAP` | MUST | Keeps the wrapper active while expiry holds.
+| `CANNOT_TRANSFER` | MUST | Disallows silent migrations of sovereign identities.
+| `CANNOT_SET_RESOLVER` | MUST | Locks resolver control to the commissioned owner.
 
-- **Agents**
+- Expiry **MUST** be ≥ 12 months ahead; ≥ 60 months is recommended for production fleets.
+- Rotation playbooks **MUST** treat expiry as a hard cliff—no emergency fuse resets.
+- `AlphaNodeManager` events reference ENS nodes (`bytes32`) so revocations and reassignments emit a durable audit trail.【F:contracts/AlphaNodeManager.sol†L37-L138】
 
-  ```text
-  <agent-label>.alpha.agent.agi.eth
-  e.g. sentinel.alpha.agent.agi.eth
-  ```
+### 2.3 Owner Control Plane
 
-- **Nodes**
+`AlphaNodeManager` entrusts the contract owner with absolute control over staking, identity assignment, validator rosters, and pause switches.【F:contracts/AlphaNodeManager.sol†L44-L235】 Functions such as `registerIdentity`, `updateIdentityController`, `setIdentityStatus`, `setValidator`, `pause`, and `withdrawStake` are all `onlyOwner`, ensuring that every ENS-bound participant remains under deliberate governance.
 
-  ```text
-  <node-label>.alpha.node.agi.eth
-  e.g. node-01.alpha.node.agi.eth
-  ```
+---
 
-### 3.2 Requirements
+## 3. Resolver Blueprint
 
-1. Each running agent/node MUST have **exactly one canonical ENS identity** in
-   the appropriate subtree.
-1. That ENS name MUST resolve to a resolver implementing:
-   - `addr`, `text`, `contenthash` (standard ENS)
-   - `pubkey` for secp256k1 (EIP-619 compatible)
+Runtime tooling exposes a deterministic ENS record template via `buildEnsRecordTemplate` so operators can preflight records before publishing.【F:src/ens/ens_config.js†L55-L140】 The template fuses environment, Git metadata, and payout routes into structured resolver data.
 
-______________________________________________________________________
+### 3.1 Required Records
 
-## 4. ENS NameWrapper & Fuses
+| Record Type | Key | Requirement | Source |
+| --- | --- | --- | --- |
+| `addr` | `ETH` | MUST | Owner payout address (`NODE_PAYOUT_ETH_ADDRESS` or `OPERATOR_ADDRESS`).
+| `addr` | `AGIALPHA` | MUST | Mirrors `$AGIALPHA` payout route; defaults to ETH address if unset.
+| `text` | `role` | MUST | `agi-alpha-node` or `agi-alpha-agent`.
+| `text` | `agialpha_model` | MUST | Primary runtime identifier (defaults to `agi-alpha-node-v0`).
+| `text` | `agialpha_verifier` | SHOULD | Public verifier base URL for replaying attestations.
+| `text` | `agialpha_health` | SHOULD | Machine-readable health endpoint (`verifier/health`).
+| `text` | `agialpha_commit` | SHOULD | Git commit hash powering the deployment.
+| `pubkey` | secp256k1 | MUST | Attestation key pair (EIP-619).
+| `contenthash` | — | MAY | Points to signed runtime manifest or documentation bundle.
 
-All AGI Alpha identities SHOULD be wrapped with ENS NameWrapper. For
-**sovereign**, “unruggable” identities, the following MUST be set:
+### 3.2 Recommended Text JSON (`node.meta` / `agent.meta`)
 
-### 4.1 Required Fuses
-
-On the subname (`<label>.alpha.agent.agi.eth` or `<label>.alpha.node.agi.eth`):
-
-- `PARENT_CANNOT_CONTROL = true`
-- `CANNOT_UNWRAP = true`
-- `CANNOT_TRANSFER = true`
-- `CANNOT_SET_RESOLVER = true`
-
-### 4.2 Expiry
-
-- The NameWrapper expiry MUST be set in the future:
-  - **MUST** be ≥ 1 year from deployment.
-  - **SHOULD** be ≥ 5 years for long-lived production identities.
-- Fuses remain enforced until the name expires. Rotation plans MUST treat the
-  expiry as a **hard boundary**.
-
-### 4.3 Validation Rules
-
-Implementations SHOULD enforce:
-
-- `expiry_unix` > current_time + minimal_grace_period.
-- All four fuses above are `true` for “sovereign” identities.
-- ENS name suffix:
-  - Agents MUST end with `.alpha.agent.agi.eth`.
-  - Nodes MUST end with `.alpha.node.agi.eth`.
-
-______________________________________________________________________
-
-## 5. ENS Resolver Records
-
-### 5.1 Pubkey (EIP-619)
-
-Each identity MUST expose a `pubkey()` record:
-
-- `coinType = 1` (secp256k1)
-- `x`: 32-byte big-endian
-- `y`: 32-byte big-endian
-
-This key is the **attestation key** used to sign health payloads and other
-control-plane messages.
-
-**Validation rules:**
-
-- `(x, y)` MUST represent a valid point on secp256k1.
-- The key pair MUST be unique per identity.
-- The key MUST NOT be reused for unrelated protocols that could compromise
-  security.
-
-______________________________________________________________________
-
-### 5.2 Text Records (TXT)
-
-The resolver MUST expose structured text records. Two styles are allowed:
-
-- Simple `key=value` pairs.
-- A single JSON blob under `agent.meta` or `node.meta`.
-
-#### 5.2.1 Required Text Keys (Agents)
-
-For `*.alpha.agent.agi.eth`:
-
-| Key | Type | Required | Allowed Values / Format |
-|---------------------|--------|----------|-----------------------------------------------------------|
-| `role` | string | MUST | `agi-alpha-agent` | | `agent.version` | string | MUST
-| Semver or git-ish version (e.g. `alpha-factory-v1.2.3`) | | `agent.runtime` |
-string | SHOULD | Arbitrary runtime descriptor | | `agent.did` | string | SHOULD
-| DID URI (e.g. `did:ethr:0x...`) | | `agent.endpoint` | string | SHOULD | HTTPS
-or wss endpoint URI | | `agent.contenthash` | string | SHOULD | IPFS/other
-contenthash URI | | `agent.org` | string | MAY | Organizational tag (e.g.
-`agi.eth`) | | `agent.policy-uri` | string | MAY | URI to policy/terms | |
-`agent.meta` | JSON | MAY | JSON blob (see below) |
-
-Example `agent.meta` JSON (stored as a single TXT value):
+Operators MAY publish a canonical JSON blob for machine ingestion:
 
 ```json
 {
-  "kind": "agi-alpha-agent",
-  "version": "alpha-factory-v1.2.3",
-  "did": "did:ethr:0x1234567890abcdef1234567890abcdef12345678",
-  "endpoint": "https://sentinel.alpha.agent.agi.eth.limo",
-  "contenthash": "ipfs://bafybeigdyrzt4eexampleagentcodecid"
+  "kind": "agi-alpha-node",
+  "version": "1.1.0",
+  "cluster": "agi-alpha-mainnet",
+  "verifier": "https://node-01.alpha.node.agi.eth/verifier",
+  "health": "https://node-01.alpha.node.agi.eth/verifier/health"
 }
 ```
 
-#### 5.2.2 Required Text Keys (Nodes)
+### 3.3 Identity Provisioning Sequence
 
-For `*.alpha.node.agi.eth`:
+```mermaid
+sequenceDiagram
+  participant Owner
+  participant Registry as ENS Registry
+  participant Wrapper as NameWrapper
+  participant Resolver
+  participant Runtime as AGI Alpha Node
 
-| Key | Type | Required | Allowed Values / Format |
-|-----------------|--------|----------|-----------------------------------------------|
-| `role` | string | MUST | `agi-alpha-node` | | `node.version` | string | MUST |
-Node stack version | | `node.runtime` | string | SHOULD | Runtime descriptor
-(e.g. `k8s-daemonset`) | | `node.cluster` | string | SHOULD | Cluster or network
-id (e.g. `agi-alpha-mainnet`) | | `node.endpoint` | string | SHOULD | HTTPS or
-wss endpoint URI | | `node.meta` | JSON | MAY | JSON blob |
-
-______________________________________________________________________
-
-## 6. DNS Discovery via `/dnsaddr` (libp2p)
-
-### 6.1 TXT Record Layout
-
-For a given identity `NAME` (e.g. `sentinel.alpha.agent.agi.eth`):
-
-- DNS label queried by clients:
-
-  ```text
-  _dnsaddr.NAME
-  ```
-
-- Each TXT record MUST start with `dnsaddr=` and the remainder MUST be a valid
-  multiaddr.
-
-Example (Agent):
-
-```text
-_dnsaddr.sentinel.alpha.agent.agi.eth.  IN TXT "dnsaddr=/ip4/203.0.113.42/tcp/4001/p2p/12D3KooWSentinelPeerIdXYZ123456789abcdef"
-_dnsaddr.sentinel.alpha.agent.agi.eth.  IN TXT "dnsaddr=/ip6/2001:db8::1/tcp/4001/p2p/12D3KooWSentinelPeerIdXYZ123456789abcdef"
-_dnsaddr.sentinel.alpha.agent.agi.eth.  IN TXT "dnsaddr=/ip4/203.0.113.42/tcp/443/ws/p2p/12D3KooWSentinelPeerIdXYZ123456789abcdef"
+  Owner->>Registry: register label + commit hash
+  Owner->>Wrapper: wrap & burn fuses (PCC, CU, CT, CSR)
+  Owner->>Resolver: set addr, pubkey, text, contenthash
+  Runtime->>Resolver: publish attestation pubkey via owner-signed tx
+  Runtime->>Resolver: update agialpha_* telemetry records when redeployed
+  Owner->>Runtime: sync staking + validator permissions via AlphaNodeManager
 ```
 
-Example (Node):
+### 3.4 Operational Checklist
+
+1. Generate a secp256k1 key dedicated to attestations.
+2. Set text + addr records following the table above.
+3. Commit `_dnsaddr` records (Section 4) before going live.
+4. Run `npm run ci:policy` to confirm the health gate allowlist recognises the ENS name.
+5. Emit an initial health attestation (Section 5) and pin it for verifiers.
+
+---
+
+## 4. Discovery & Gating
+
+### 4.1 `_dnsaddr` Multiaddrs
+
+- Each TXT record under `_dnsaddr.<ens>` **MUST** begin with `dnsaddr=` and end with a valid multiaddr containing `/p2p/<peerId>`.
+- Publish at least one IPv4 or IPv6 TCP endpoint; web sockets (`/ws`), QUIC (`/quic`), and TLS (`/tls`) transports are recommended for redundancy.
+- Peer IDs **SHOULD** match `peer_id` in the latest health attestation.
+
+Example:
 
 ```text
-_dnsaddr.node-01.alpha.node.agi.eth. IN TXT "dnsaddr=/ip4/198.51.100.10/tcp/4001/p2p/12D3KooWNode01PeerIdabcdef1234567890"
-_dnsaddr.node-01.alpha.node.agi.eth. IN TXT "dnsaddr=/ip4/198.51.100.10/tcp/443/ws/p2p/12D3KooWNode01PeerIdabcdef1234567890"
+_dnsaddr.node-01.alpha.node.agi.eth. IN TXT "dnsaddr=/ip4/203.0.113.42/tcp/4001/p2p/12D3KooWNode01PeerId"
+_dnsaddr.node-01.alpha.node.agi.eth. IN TXT "dnsaddr=/dns4/node-01.alpha.node.agi.eth/tcp/443/ws/p2p/12D3KooWNode01PeerId"
 ```
 
-### 6.2 Multiaddr Requirements
+### 4.2 Health Gate Allowlist
 
-Each `dnsaddr` multiaddr:
+- `createHealthGate` normalises ENS allowlists and rejects identities outside the curated patterns.【F:src/services/healthGate.js†L1-L104】
+- CI enforces the baseline patterns (`*.alpha.agent.agi.eth`, `*.alpha.node.agi.eth`, etc.) through `scripts/verify-health-gate.mjs`. Missing patterns cause the job to fail with `ENS_PATTERNS_MISSING`.【F:scripts/verify-health-gate.mjs†L6-L43】
+- Owners MAY extend the allowlist through `HEALTH_GATE_ALLOWLIST` (comma-separated or JSON array); duplicates and blank entries are ignored.
+- The gate’s state machine tracks transitions, rejection reasons, and the active ENS binding so auditors can reconstruct operational posture.【F:src/services/healthGate.js†L41-L100】
 
-- MUST contain a `/p2p/<peerId>` segment.
-- SHOULD include at least one reachable transport (`/tcp`, `/ws`, `/quic`,
-  etc.).
-- MAY include multiple multiaddrs for the same peer or multiple peers.
+```mermaid
+flowchart LR
+  subgraph Governance Plane
+    Owner
+    AlphaNodeManager
+  end
+  subgraph Identity Plane
+    ENS[(ENS NameWrapper)]
+    Resolver
+    DNS[_dnsaddr TXT]
+  end
+  subgraph Runtime Plane
+    NodeRuntime
+    HealthGate
+    Telemetry[α-WU Telemetry]
+  end
 
-### 6.3 Validation Rules
+  Owner -->|sets allowlist & stake policy| HealthGate
+  Owner -->|registerIdentity| AlphaNodeManager
+  AlphaNodeManager -->|ensNode ↔ controller| NodeRuntime
+  NodeRuntime -->|publishes| Resolver
+  Resolver -->|announces peer & metadata| DNS
+  NodeRuntime -->|attests| HealthGate
+  HealthGate -->|status| Telemetry
+```
 
-At minimum:
+---
 
-- There MUST be at least one TXT record with prefix `dnsaddr=`.
-- Each `dnsaddr=` value MUST parse as a multiaddr.
-- All `/p2p/` peer IDs within `_dnsaddr.NAME` SHOULD match the advertised
-  `peer_id` in the health attestation for that identity.
+## 5. Health Attestation Schema
 
-______________________________________________________________________
-
-## 7. Health Attestation Payload
-
-Agents and nodes periodically emit **signed JSON** health attestations.
-
-### 7.1 Top-Level Structure
+### 5.1 Canonical Envelope
 
 ```json
 {
   "schema": "agi-alpha/health-attestation-v1",
-  "ens": "sentinel.alpha.agent.agi.eth",
-  "peer_id": "12D3KooWSentinelPeerIdXYZ123456789abcdef",
-  "multiaddrs": [
-    "/ip4/203.0.113.42/tcp/4001/p2p/12D3KooWSentinelPeerIdXYZ123456789abcdef",
-    "/ip6/2001:db8::1/tcp/4001/p2p/12D3KooWSentinelPeerIdXYZ123456789abcdef",
-    "/ip4/203.0.113.42/tcp/443/ws/p2p/12D3KooWSentinelPeerIdXYZ123456789abcdef"
-  ],
-  "agent_version": "alpha-factory-v1.2.3",
-  "node_version": "node-stack-v0.9.0",
-  "role": "agi-alpha-agent",
-  "runtime": "meta-agentic-alpha",
+  "ens": "node-01.alpha.node.agi.eth",
+  "peer_id": "12D3KooWNode01PeerId",
+  "multiaddrs": ["/ip4/203.0.113.42/tcp/4001/p2p/12D3KooWNode01PeerId"],
+  "role": "agi-alpha-node",
+  "runtime": "mixed",
+  "node_version": "1.1.0",
   "cluster": "agi-alpha-mainnet",
+  "verifier": "https://node-01.alpha.node.agi.eth/verifier",
   "ens_fuses": {
     "parent_cannot_control": true,
     "cannot_unwrap": true,
@@ -257,82 +199,72 @@ Agents and nodes periodically emit **signed JSON** health attestations.
     "cannot_set_resolver": true,
     "expiry_unix": 2072707200
   },
-  "timestamp": "2025-11-15T15:04:05Z",
+  "timestamp": "2025-05-08T12:34:56Z",
   "status": "healthy",
   "metrics": {
-    "uptime_s": 86400,
-    "cpu_load": 0.23,
-    "mem_used_mb": 512
+    "uptime_s": 172800,
+    "cpu_load": 0.21,
+    "mem_used_mb": 768,
+    "alpha_wu_completed": 42
   }
 }
 ```
 
-### 7.2 Field Definitions & Constraints
+### 5.2 Field Constraints
 
-#### 7.2.1 Common Fields
+| Field | Requirement | Notes |
+| --- | --- | --- |
+| `schema` | MUST equal `agi-alpha/health-attestation-v1`. Future schemas MUST version bump. |
+| `ens` | MUST match the ENS identity under management. Lowercase punycode only. |
+| `peer_id` | MUST be a libp2p peer ID encoded in base58/base36. |
+| `multiaddrs` | MUST include ≥1 valid multiaddr. Each entry must end with `/p2p/<peerId>`. |
+| `role` | MUST be `agi-alpha-node` or `agi-alpha-agent`. |
+| `node_version` / `agent_version` | MUST align with resolver text records and package version. |
+| `runtime` | SHOULD reference execution mode (`orchestrator`, `validator`, `mixed`, etc.). |
+| `cluster` | SHOULD identify the fleet or environment (e.g., `agi-alpha-mainnet`, `agi-alpha-lab`). |
+| `verifier` | SHOULD point at the HTTPS verifier endpoint published in ENS text records. |
+| `ens_fuses` | MUST mirror on-chain fuse state and expiry. Treat discrepancies as critical. |
+| `timestamp` | MUST be RFC3339 UTC and within ±5 minutes of receipt. |
+| `status` | MUST be `healthy`, `degraded`, or `down`. |
+| `metrics` | MAY contain additional numeric KPIs. Recommended keys: `uptime_s`, `cpu_load`, `mem_used_mb`, `alpha_wu_completed`, `gpu_sec`, `energy_kwh`. |
 
-| Field | Type | Required | Description / Constraints |
-|-------------|----------|----------|----------------------------------------------------------------|
-| `schema` | string | MUST | MUST be `agi-alpha/health-attestation-v1` | | `ens`
-| string | MUST | MUST be a valid ENS name in the appropriate subtree | |
-`peer_id` | string | MUST | libp2p peer id (base58/base36); non-empty | |
-`multiaddrs`| string[] | MUST | At least one; each MUST be a valid multiaddr
-incl. `/p2p/` | | `role` | string | MUST | `agi-alpha-agent` or `agi-alpha-node`
-| | `runtime` | string | SHOULD | Free-form runtime descriptor | | `timestamp` |
-string | MUST | RFC3339 UTC (`YYYY-MM-DDThh:mm:ssZ`) | | `status` | string |
-MUST | One of: `healthy`, `degraded`, `down` | | `metrics` | object | MAY |
-Arbitrary numeric metrics; see recommended keys below |
+### 5.3 Optional Attachments
 
-#### 7.2.2 Agent-Specific
+- Include `attestation_uri` pointing to an IPFS CID or HTTPS endpoint that archives signed attestations.
+- Provide `validators` array if the node is currently validating other participants.
+- Attach `stake` object with `agialpha_locked` and `agialpha_available` for transparency when desired.
 
-| Field | Type | Required | Description |
-|----------------|--------|----------|-----------------------------------------|
-| `agent_version`| string | MUST | MUST match or be compatible with
-`agent.version` TXT | | `cluster` | string | MAY | Optional cluster tag if
-applicable |
+### 5.4 Diagnostics
 
-#### 7.2.3 Node-Specific
+- Reject attestations where `ens` is not allowlisted by the health gate.
+- Compare `ens_fuses` with live NameWrapper data using `expiry` and fuse bitmasks.
+- Verify `verifier` matches the resolver’s `agialpha_verifier` text record.
 
-| Field | Type | Required | Description |
-|----------------|--------|----------|-----------------------------------------|
-| `node_version` | string | MUST | MUST match or be compatible with
-`node.version` TXT | | `cluster` | string | SHOULD | MUST be set for production
-nodes |
+---
 
-#### 7.2.4 `ens_fuses` Block
+## 6. Signature Envelope
 
-| Field | Type | Required | Description |
-|--------------------------|-------|----------|--------------------------------------------|
-| `parent_cannot_control` | bool | MUST | SHOULD be `true` for sovereign
-identities | | `cannot_unwrap` | bool | MUST | SHOULD be `true` for sovereign
-identities | | `cannot_transfer` | bool | MUST | SHOULD be `true` for sovereign
-identities | | `cannot_set_resolver` | bool | MUST | SHOULD be `true` for
-sovereign identities | | `expiry_unix` | int64 | MUST | NameWrapper expiry (Unix
-seconds, UTC) |
+### 6.1 Payload Canonicalisation
 
-Implementations SHOULD cross-check `ens_fuses` with on-chain NameWrapper data.
+`alphaWuTelemetry` and attestation utilities canonicalise payloads before hashing, ensuring deterministic signatures across runtimes.【F:src/telemetry/alphaWuTelemetry.js†L1-L120】 Steps:
 
-#### 7.2.5 Recommended Metrics
+1. Sort object keys lexicographically.
+2. Normalise numbers (reject non-finite values) and convert BigInts to strings.
+3. Encode as UTF-8 JSON without trailing commas.
+4. Hash using `keccak256` unless a different algorithm is negotiated (default remains `keccak256`).
 
-Under `metrics`:
+### 6.2 Signature Requirements
 
-| Key | Type | Meaning |
-|----------------|--------|------------------------------------| | `uptime_s` |
-int64 | Uptime in seconds | | `cpu_load` | float | Normalized CPU load (0–1 or
-\>1) | | `mem_used_mb` | int64 | Memory used in MB |
+- Algorithm: `secp256k1-keccak256` (ECDSA over the canonical payload hash).
+- Signature output: `0x`-prefixed hex (r || s || v optional; verifiers should accept 65-byte signatures or EIP-2098 64-byte format).
+- Public key: Provide both `pubkey_x` and `pubkey_y` to ease offline verification and cross-check with ENS `pubkey()`.
+- Reject signatures when the derived address does not match the expected controller in `AlphaNodeManager` or when the ENS resolver’s pubkey differs.
 
-Implementations MAY add more metrics but SHOULD avoid name collisions with other
-structured prefixes (`agent.`, `node.`, `ens.`, `health.`) used in spans.
-
-______________________________________________________________________
-
-## 8. Attestation Signature
-
-The above payload is wrapped and signed:
+### 6.3 Example Envelope
 
 ```json
 {
-  "payload": { /* health payload */ },
+  "payload": { /* Section 5 payload */ },
   "signature": {
     "alg": "secp256k1-keccak256",
     "sig": "0xabcdef0123deadbeefcafebabe...",
@@ -342,124 +274,84 @@ The above payload is wrapped and signed:
 }
 ```
 
-### 8.1 Algorithm
+---
 
-- **Hash:** `keccak256(payload_canonical_bytes)`
-- **Signature:** ECDSA over secp256k1
-- **Canonicalization:** JSON MUST be canonicalized before hashing:
-  - Stable key ordering
-  - UTF-8 encoding
-  - No trailing commas
+## 7. Observability & Telemetry
 
-### 8.2 Validation Rules
+### 7.1 OpenTelemetry Mapping
 
-Verifiers MUST:
+`agi.healthcheck` spans MUST carry the following attributes:
 
-1. Resolve `ens` to its resolver and load `pubkey()` `(x, y)`.
-1. Check `pubkey_x`/`pubkey_y` in the signature match the ENS `pubkey()`.
-1. Compute `keccak256` over the canonical payload.
-1. Verify ECDSA(secp256k1) using `(x, y)` and `sig`.
-1. Reject attestations with:
-   - Invalid signature
-   - Mismatched `ens` suffix (`.alpha.agent.agi.eth` vs `.alpha.node.agi.eth`)
-   - Grossly skewed `timestamp` (e.g. older than configurable horizon).
+| Attribute | Source |
+| --- | --- |
+| `node.ens` / `agent.ens` | `payload.ens` |
+| `node.peer_id` / `agent.peer_id` | `payload.peer_id` |
+| `node.version` / `agent.version` | `node_version` / `agent_version` |
+| `node.runtime` / `agent.runtime` | `runtime` |
+| `node.cluster` | `cluster` |
+| `ens.fuses.*` | `ens_fuses` fields |
+| `dnsaddr.present` | `multiaddrs.length > 0` |
+| `health.status` | `status` |
+| `health.uptime_s` | `metrics.uptime_s` |
+| `health.cpu_load` | `metrics.cpu_load` |
+| `health.mem_used_mb` | `metrics.mem_used_mb` |
 
-______________________________________________________________________
+### 7.2 Prometheus Export
 
-## 9. OpenTelemetry Mapping
+`src/telemetry/monitoring.js` exposes gauges and histograms for α‑work events, validator quality, and resource consumption, aligning with attestation fields.【F:src/telemetry/monitoring.js†L1-L520】 Ensure the following gauges remain in sync:
 
-Each health attestation SHOULD be mirrored as an OpenTelemetry span.
+- `agialpha_node_health_status{ens="…"}` — mirror of `status` (`1` healthy, `0` otherwise).
+- `agialpha_node_uptime_seconds_total` — cumulative uptime derived from `metrics.uptime_s`.
+- `agialpha_alpha_wu_weight_total` — aggregator for α‑work unit weights.
 
-### 9.1 Span Shape
+### 7.3 Event Mirroring
 
-- **Name:** `agi.healthcheck` (RECOMMENDED)
-- **Kind:** `INTERNAL`
-- **One span per health check**
+Attach the raw attestation as an OpenTelemetry event named `agi.health-attestation` with a single attribute `attestation.json`. Keep payloads under 16 KB to avoid exporter truncation.
 
-### 9.2 Common Attributes
+---
 
-| Attribute Key | Value Source |
-|------------------------------------|-------------------------------------| |
-`agent.ens` / `node.ens` | `payload.ens` | | `agent.peer_id` / `node.peer_id` |
-`payload.peer_id` | | `agent.role` / `node.role` | `payload.role` | |
-`agent.version` / `node.version` | `agent_version` / `node_version` | |
-`agent.runtime` / `node.runtime` | `runtime` | | `node.cluster` | `cluster`
-(nodes) | | `ens.fuses.parent_cannot_control` |
-`ens_fuses.parent_cannot_control` | | `ens.fuses.cannot_unwrap` |
-`ens_fuses.cannot_unwrap` | | `ens.fuses.cannot_transfer` |
-`ens_fuses.cannot_transfer` | | `ens.fuses.cannot_set_resolver` |
-`ens_fuses.cannot_set_resolver` | | `ens.expiry_unix` | `ens_fuses.expiry_unix`
-| | `dnsaddr.present` | Boolean; at least one `dnsaddr=` TXT found | |
-`health.status` | `status` | | `health.uptime_s` | `metrics.uptime_s` | |
-`health.cpu_load` | `metrics.cpu_load` | | `health.mem_used_mb` |
-`metrics.mem_used_mb` |
+## 8. Owner Command & CI Enforcement
 
-### 9.3 Events
+- CI enforces identity policy through jobs declared in [`ci.yml`](../.github/workflows/ci.yml). Lint, test, coverage, Solidity, subgraph, Docker smoke, and security checks are all required on PRs and `main` (see [`required-checks.json`](../.github/required-checks.json)).
+- `npm run ci:policy` executes `verify-health-gate.mjs`, ensuring ENS patterns remain allowlisted before merges.
+- `npm run ci:branch` blocks unsafe branch names from landing on protected branches.
+- `AlphaNodeManager` owner functions (`pause`, `unpause`, `setValidator`, `applySlash`, `withdrawStake`) secure runtime behaviour so governance stays centralised.【F:contracts/AlphaNodeManager.sol†L65-L235】
+- The canonical staking asset is `$AGIALPHA` at `0xa61a3B3a130a9c20768eebf97E21515A6046a1fA` (18 decimals). The contract defaults to this address and rejects alternatives, guaranteeing economic alignment.【F:contracts/AlphaNodeManager.sol†L29-L57】
 
-The raw attestation MAY be attached as an event:
+---
 
-- **Event name:** `agi.health-attestation`
-- **Attributes:**
-  - `attestation.json`: the full attestation JSON string
+## 9. Validation Playbooks
 
-______________________________________________________________________
+| Scenario | Actions |
+| --- | --- |
+| **Commissioning a new node** | Wrap ENS name, burn fuses, publish resolver data, commit `_dnsaddr`, stake via `AlphaNodeManager`, run `npm run ci:verify`, broadcast initial attestation. |
+| **Rotating attestation keys** | Update resolver `pubkey` (requires fuse-managed ownership), deploy runtime with new key, emit attestation referencing the new key, archive the previous attestation. |
+| **Revoking a node** | `pause()` if necessary, `setIdentityStatus(ensNode, false)`, `revokeIdentity(ensNode)`, remove `_dnsaddr` records, revoke staking privileges, publish a `status: "down"` attestation for audit. |
+| **Incident response** | Flip `pause()`, set `status: "degraded"`, update `metrics` with incident telemetry, notify validators via `AlphaNodeManager` events and telemetry.
 
-## 10. Reserved Field Names & Validation Summary
+---
 
-### 10.1 Reserved JSON Fields
+## 10. Future Horizons
 
-The following JSON fields are reserved for this spec and MUST NOT be repurposed:
+- `agi-alpha/health-attestation-v2` may introduce signed WASM integrity proofs and GPU telemetry digests.
+- Expect optional DID integration aligning with resolver `agent.did` fields for cross-domain credentialing.
+- Multi-sig ownership on `AlphaNodeManager` is on the roadmap; treat current `Ownable` design as a temporary simplification.
 
-- Top-level:\
-  `schema`, `ens`, `peer_id`, `multiaddrs`, `agent_version`, `node_version`,
-  `role`, `runtime`, `cluster`, `ens_fuses`, `timestamp`, `status`, `metrics`
-- Inside `ens_fuses`:\
-  `parent_cannot_control`, `cannot_unwrap`, `cannot_transfer`,
-  `cannot_set_resolver`, `expiry_unix`
-- Inside `metrics`:\
-  `uptime_s`, `cpu_load`, `mem_used_mb` (can be extended, but meanings MUST
-  remain)
+---
 
-### 10.2 Reserved OTel Attribute Prefixes
+### Appendix A · Reference Commands
 
-The following attribute name prefixes are reserved and MUST keep their
-semantics:
+```bash
+# Generate ENS record template from current configuration
+node --input-type=module -e "import { buildEnsRecordTemplate } from './src/ens/ens_config.js'; console.log(buildEnsRecordTemplate());"
 
-- `agent.*`
-- `node.*`
-- `ens.*`
-- `health.*`
-- `dnsaddr.*`
+# Verify health gate policy locally
+npm run ci:policy
 
-Implementations MAY add custom attributes under other prefixes, but SHOULD avoid
-creating new top-level prefixes that conflict with these.
+# Emit a sample health attestation payload
+node scripts/render-health-attestation.mjs --ens node-01.alpha.node.agi.eth --peer 12D3KooWNode01PeerId
+```
 
-### 10.3 Minimal Conformance Checklist
+---
 
-A node/agent implementation is **conformant** if:
-
-1. ENS name follows the correct subtree pattern.
-1. NameWrapper fuses and expiry meet Section 4 rules.
-1. Resolver exposes a valid secp256k1 `pubkey()`.
-1. Resolver exposes required text records for its role.
-1. `_dnsaddr.<name>` TXT records publish at least one valid libp2p multiaddr.
-1. Health attestation payload conforms to Section 7 and is signed as in Section
-   8\.
-1. OpenTelemetry spans, if exported, follow the attribute mapping in Section 9.
-
-______________________________________________________________________
-
-## 11. Future Extensions
-
-Future versions MAY:
-
-- Add additional reserved metrics names.
-- Introduce new schemas (e.g., `agi-alpha/health-attestation-v2`) with
-  backward-compatible fields.
-- Define separate attestation types (e.g., configuration snapshot, policy
-  compliance).
-
-Implementations SHOULD treat unknown fields as **non-fatal** and ignore them
-safely.
-
-______________________________________________________________________
+By orchestrating ENS, staking, attestation, and observability through a single owner-centric command lattice, AGI Alpha Nodes embody the machine capable of bending economies toward its operator’s intent.
