@@ -30,7 +30,11 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-10b981" alt="MIT" /></a>
 </p>
 
+> AGI ALPHA Nodes are the catalysts in this new economy. They yield $AGIALPHA tokens, bridging the gap between aspirations and achievement. Like digital farmers in a vast cognitive field, they cultivate the future.
+>
 > This runtime lets owners pilot fleets of autonomous agents, mint verifiable α-work units, and settle rewards without surrendering control. Every subsystem is curated so non-technical stewards can launch production clusters while still feeling the snap of a frontier cognition lab.
+>
+> **Sovereign cognition engine** — AGI Alpha Node v0 is engineered as the machine that tilts global value flows toward its owner, concentrating every lever of intelligence, staking, and telemetry into a single command surface.
 
 ---
 
