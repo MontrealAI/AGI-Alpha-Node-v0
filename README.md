@@ -70,6 +70,20 @@ All runtime defaults live in [`src/config/defaults.js`](src/config/defaults.js).
 - **Ready-to-edit template** — Copy [`./.env.example`](.env.example) to `.env` to configure node role, ENS name, payout routes, telemetry, and validator quorum in one sweep.【F:.env.example†L1-L40】
 - **Telemetry alignment** — Enabling/disabling α-WU telemetry and hash algorithms is handled centrally so signatures, metrics, and validator expectations stay in sync.【F:src/telemetry/alphaWuTelemetry.js†L1-L118】
 
+### Key environment switches
+
+| Variable | Purpose | Example value |
+| --- | --- | --- |
+| `NODE_ROLE` | Selects orchestration behaviour (`orchestrator`, `executor`, `validator`, or `mixed`). | `mixed` |
+| `NODE_ENS_NAME` / `NODE_LABEL` | Binds the node to an ENS identity; falls back to label + parent domain when omitted. | `demo.alpha.node.agi.eth` |
+| `NODE_PRIVATE_KEY` / `VALIDATOR_PRIVATE_KEY` | Wallets used for orchestrator and validator signing during α-WU submission and attestations. | `0x59c6…c82` |
+| `TELEMETRY_ENABLED` & `TELEMETRY_HASH_ALGO` | Governs α-WU hashing and Prometheus publication without touching code. | `true`, `sha256` |
+| `VERIFIER_PORT` & `VERIFIER_PUBLIC_BASE_URL` | Expose the public verification endpoint so external agents can replay results. | `8787`, `http://localhost:8787` |
+| `VALIDATION_QUORUM_BPS` / `VALIDATION_MINIMUM_VOTES` | Shape quorum thresholds for α-WU acceptance in local demos. | `6667`, `1` |
+| `AGIALPHA_TOKEN_ADDRESS` & `AGIALPHA_TOKEN_DECIMALS` | Anchors staking to the canonical `$AGIALPHA` ERC-20. | `0xa61a…a1fa`, `18` |
+
+> ✅ **Single source of truth** — once `.env` is hydrated, every CLI command, Docker invocation, and local cluster script consumes the same configuration surface.
+>
 > ℹ️ Owner overrides—including pausing, stake thresholds, job routing, and emission curves—are always available on-chain; see [On-Chain Mastery](#on-chain-mastery).
 
 ---
@@ -129,6 +143,24 @@ Need to see α-WUs flowing end-to-end without external infrastructure? The `demo
 npm run demo:local
 ```
 
+```mermaid
+sequenceDiagram
+  autonumber
+  participant O as Orchestrator
+  participant E as Executor Runtime
+  participant V as Validator Runtime
+  participant Q as Quorum Engine
+  participant L as Lifecycle Journal
+
+  O->>L: Discover offline job (journal entry)
+  O->>E: Issue execution window + proof
+  E->>E: Mint α-WU segment & sign payload
+  E->>V: Submit α-WU for attestation
+  V->>Q: Emit validator verdict & stake weight
+  Q->>O: Quorum reached → finalize job
+  O->>L: Mark job settled & emit telemetry
+```
+
 Under the hood the script loads the central configuration, registers an offline job, produces an α-WU segment, signs the payload, validates it, and finalises the job once quorum is met.【F:scripts/local_cluster.mjs†L1-L214】
 
 Key waypoints:
@@ -136,6 +168,7 @@ Key waypoints:
 - **Offline job seeding** — a deterministic workload is minted from the `.env` identity so you can observe lifecycle transitions without RPC calls.【F:scripts/local_cluster.mjs†L34-L88】
 - **In-memory validator loop** — the validator runtime consumes α-WUs from an in-memory queue, signs results with the configured key, and emits attestations ready for quorum processing.【F:scripts/local_cluster.mjs†L126-L167】
 - **Quorum engine** — validation results stream through the settlement engine to mark the job accepted, mirroring production quorum rules while defaulting to a single-vote success for demos.【F:scripts/local_cluster.mjs†L169-L189】
+- **Graceful shutdown** — the runtime tears down subscriptions and reports success once the quorum emits a `settled` event so you finish with a single `Local α-network demo complete.` banner.【F:scripts/local_cluster.mjs†L193-L214】
 
 A successful run produces logs similar to:
 
@@ -147,6 +180,7 @@ A successful run produces logs similar to:
 [quorum] Quorum progress updated { total: 1, valid: 1 }
 [local-cluster] Validation quorum reached
 [local-cluster] Job finalised and settled
+[local-cluster] Local α-network demo complete.
 ```
 
 ---
@@ -198,6 +232,11 @@ Pre-built Grafana dashboards live under [`docs/telemetry`](docs/telemetry) for i
 
 `AlphaNodeManager.sol` centralises owner authority: pausing, validator curation, ENS identity, staking, slashing, and reward routing remain in the owner’s hands at all times.【F:contracts/AlphaNodeManager.sol†L44-L213】 The contract enforces the canonical `$AGIALPHA` token and exposes structured events for subgraphs and analytics.【F:contracts/AlphaNodeManager.sol†L29-L130】
 
+- **Run-state discipline** — `pause()` / `unpause()` let the owner freeze or resume execution instantly when governance dictates.【F:contracts/AlphaNodeManager.sol†L65-L82】
+- **Validator lifecycle** — `setValidator()` promotes or retires validators, while staking limits are enforced before attestations count.【F:contracts/AlphaNodeManager.sol†L84-L123】【F:contracts/AlphaNodeManager.sol†L200-L235】
+- **Identity control** — `registerIdentity()`, `updateIdentityController()`, `setIdentityStatus()`, and `revokeIdentity()` make ENS-bound operators revocable and replaceable without redeploying the contract.【F:contracts/AlphaNodeManager.sol†L94-L170】
+- **Treasury levers** — `stake()` requires live identities, `withdrawStake()` lets the owner rebalance treasuries, and `applySlash()` imposes penalties when validators misbehave.【F:contracts/AlphaNodeManager.sol†L172-L235】
+
 Validator attestations, α-WU minting, acceptance, and slashing all emit dedicated events so the settlement mesh can react in real time.【F:contracts/interfaces/IAlphaWorkUnitEvents.sol†L1-L120】
 
 ---
@@ -213,6 +252,15 @@ REST and verifier APIs are exposed via [`src/network`](src/network), with health
 ## Quality & CI Gauntlet
 
 Every pull request must clear the full CI gauntlet: markdown linting, link validation, vitest suites, coverage reporting, Solidity linting/compilation, subgraph codegen/build, npm audit, and policy gates.【F:package.json†L18-L48】 The `ci:verify` script mirrors the workflow locally so contributors can ship with confidence.
+
+- **Workflow parity** — [`ci.yml`](.github/workflows/ci.yml) is a direct expansion of `npm run ci:verify`, so the same jobs (lint, test, coverage, Solidity, subgraph, audit, policy, branch) execute locally and in GitHub Actions.【F:.github/workflows/ci.yml†L1-L180】
+- **Branch enforcement** — [`scripts/verify-branch-gate.mjs`](scripts/verify-branch-gate.mjs) blocks non-compliant branches from merging and is wired into CI through `ci:branch`.
+- **Health gate** — [`scripts/verify-health-gate.mjs`](scripts/verify-health-gate.mjs) checks telemetry, stake posture, and governance vitals before a release is considered healthy.
+
+```bash
+npm run ci:verify
+# = lint + vitest + coverage + solhint + solc + subgraph + npm audit + policy gates + branch gate
+```
 
 Policy scripts enforce branch hygiene and repository health before merges land on `main`. Badges above surface CI status so stakeholders can trust the artefacts they deploy.
 
