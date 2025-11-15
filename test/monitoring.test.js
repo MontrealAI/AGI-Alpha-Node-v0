@@ -54,6 +54,13 @@ describe('monitoring telemetry server', () => {
       { window: 'all', dimension: 'agent', metric: 'minted', key: 'orion' },
       3
     );
+    telemetry.jobsRunningGauge.set(4);
+    telemetry.jobsCompletedCounter.inc(9);
+    telemetry.jobsFailedCounter.inc(1);
+    telemetry.jobLatencySummary.observe(2500);
+    telemetry.alphaWuValidatedCounter.inc(5);
+    telemetry.alphaWuInvalidCounter.inc(2);
+    telemetry.alphaWuValidationLatencySummary.observe(1400);
 
     recordAlphaWorkUnitSegment({
       nodeLabel: 'node-a',
@@ -99,6 +106,13 @@ describe('monitoring telemetry server', () => {
     expect(metrics).toContain('agi_alpha_node_alpha_wu_per_job');
     expect(metrics).toContain('alpha_wu_per_job');
     expect(metrics).toContain('job_id="job-123"');
+    expect(metrics).toContain('jobs_running');
+    expect(metrics).toContain('jobs_completed_total');
+    expect(metrics).toContain('jobs_failed_total');
+    expect(metrics).toContain('job_latency_ms');
+    expect(metrics).toContain('alpha_wu_validated_total');
+    expect(metrics).toContain('alpha_wu_invalid_total');
+    expect(metrics).toContain('alpha_wu_validation_latency_ms');
   });
 
   it('returns 404 for unknown routes', async () => {

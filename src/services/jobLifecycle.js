@@ -9,6 +9,15 @@ import { createAlphaWorkUnitRegistry, DEFAULT_WINDOWS as DEFAULT_ALPHA_WINDOWS }
 import { createAlphaWuTelemetry, deriveModelRuntimeFromJob } from '../telemetry/alphaWuTelemetry.js';
 import { signAlphaWu, verifyAlphaWu } from '../crypto/signing.js';
 import { validateAlphaWu, cloneAlphaWu, compareAlphaWu } from '../types/alphaWu.js';
+import {
+  updateJobsRunning,
+  incrementJobsCompleted,
+  incrementJobsFailed,
+  observeJobLatencyMs,
+  incrementAlphaWuValidated,
+  incrementAlphaWuInvalid,
+  observeAlphaWuValidationLatencyMs
+} from '../telemetry/monitoring.js';
 
 const JOB_STATUS_MAP = {
   0: 'open',
@@ -22,7 +31,7 @@ const JOB_STATUS_MAP = {
 };
 
 const ALPHA_WORK_UNIT_WINDOWS = DEFAULT_ALPHA_WINDOWS.map((entry) => ({ ...entry }));
-const COMPLETION_STATUSES = new Set(['submitted', 'validated', 'finalized', 'failed']);
+const COMPLETION_STATUSES = new Set(['submitted', 'validated', 'finalized', 'failed', 'cancelled']);
 const EXECUTION_STATUSES = new Set(['applied', 'assigned', 'executing', 'running']);
 
 const defaultContractFactory = (address, abi, providerOrSigner) => new Contract(address, abi, providerOrSigner);
@@ -51,6 +60,62 @@ function normalizeBytes(value) {
     return hexlify(toUtf8Bytes(trimmed));
   }
   throw new TypeError('Unsupported byte-like value; expected hex string, utf-8 string, array, or Uint8Array');
+}
+
+function normalizeTimestampMs(value, fallbackMs = Date.now()) {
+  if (value instanceof Date) {
+    const ms = value.getTime();
+    return Number.isFinite(ms) && ms >= 0 ? ms : fallbackMs;
+  }
+  if (typeof value === 'bigint') {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return fallbackMs;
+    const ms = numeric > 1e12 ? numeric : numeric * 1000;
+    return ms >= 0 ? Math.floor(ms) : fallbackMs;
+  }
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) return fallbackMs;
+    const ms = value > 1e12 ? value : value * 1000;
+    return ms >= 0 ? Math.floor(ms) : fallbackMs;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return fallbackMs;
+    const parsed = Number.parseFloat(trimmed);
+    if (!Number.isFinite(parsed)) return fallbackMs;
+    const ms = parsed > 1e12 ? parsed : parsed * 1000;
+    return ms >= 0 ? Math.floor(ms) : fallbackMs;
+  }
+  if (value && typeof value.valueOf === 'function') {
+    const numeric = Number(value.valueOf());
+    if (Number.isFinite(numeric)) {
+      const ms = numeric > 1e12 ? numeric : numeric * 1000;
+      return ms >= 0 ? Math.floor(ms) : fallbackMs;
+    }
+  }
+  return fallbackMs;
+}
+
+function normalizeAlphaWorkUnitId(value) {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed ? trimmed.toLowerCase() : null;
+  }
+  if (value instanceof Uint8Array) {
+    return `0x${Buffer.from(value).toString('hex')}`;
+  }
+  if (typeof value === 'bigint') {
+    return value >= 0 ? `0x${value.toString(16)}` : value.toString();
+  }
+  try {
+    const stringValue = String(value).trim();
+    return stringValue ? stringValue.toLowerCase() : null;
+  } catch {
+    return null;
+  }
 }
 
 function parseTags(raw) {
@@ -332,6 +397,9 @@ export function createJobLifecycle({
   const jobs = new Map();
   const alphaWorkUnits = createAlphaWorkUnitRegistry();
   const alphaWuLog = new Map();
+  const jobRuntimeTracker = new Map();
+  const completedJobs = new Set();
+  const alphaWuMintTimestamps = new Map();
   const telemetryActiveJobs = new Set();
   const metrics = {
     discovered: 0,
@@ -344,8 +412,17 @@ export function createJobLifecycle({
     activeProfile: profile.id,
     compatibilityWarnings: [],
     alphaWorkUnits: alphaWorkUnits.getMetrics({ windows: ALPHA_WORK_UNIT_WINDOWS }),
-    alphaGate: { suppressed: 0 }
+    alphaGate: { suppressed: 0 },
+    jobsRunning: 0,
+    jobsCompleted: 0,
+    jobsFailed: 0,
+    jobLatency: { samples: 0, totalMs: 0, lastMs: 0 },
+    alphaWuValidated: 0,
+    alphaWuInvalid: 0,
+    alphaWuValidationLatency: { samples: 0, totalMs: 0, lastMs: 0 }
   };
+
+  updateJobsRunning(metrics.jobsRunning);
 
   let registryAddress = jobRegistryAddress ? getAddress(jobRegistryAddress) : null;
   let contract = null;
@@ -370,6 +447,28 @@ export function createJobLifecycle({
 
   const compatibilityWarnings = new Map();
 
+  function recordJobLatencySample(durationMs) {
+    if (!Number.isFinite(durationMs) || durationMs < 0) {
+      return;
+    }
+    const summary = metrics.jobLatency ?? { samples: 0, totalMs: 0, lastMs: 0 };
+    summary.samples += 1;
+    summary.totalMs += durationMs;
+    summary.lastMs = durationMs;
+    metrics.jobLatency = summary;
+  }
+
+  function recordAlphaValidationLatencySample(durationMs) {
+    if (!Number.isFinite(durationMs) || durationMs < 0) {
+      return;
+    }
+    const summary = metrics.alphaWuValidationLatency ?? { samples: 0, totalMs: 0, lastMs: 0 };
+    summary.samples += 1;
+    summary.totalMs += durationMs;
+    summary.lastMs = durationMs;
+    metrics.alphaWuValidationLatency = summary;
+  }
+
   function refreshAlphaWorkUnitMetrics(windowOverrides = null) {
     const windowsToUse = windowOverrides && windowOverrides.length ? windowOverrides : ALPHA_WORK_UNIT_WINDOWS;
     metrics.alphaWorkUnits = alphaWorkUnits.getMetrics({ windows: windowsToUse });
@@ -380,23 +479,54 @@ export function createJobLifecycle({
       throw new Error('Alpha work unit event type is required');
     }
     const normalizedType = type.trim().toLowerCase();
+    const unitKey = normalizeAlphaWorkUnitId(payload?.id);
+    const eventTimestampMs = normalizeTimestampMs(payload?.timestamp, Date.now());
     let result;
     switch (normalizedType) {
       case 'mint':
       case 'minted':
         result = alphaWorkUnits.recordMint(payload);
+        if (unitKey) {
+          alphaWuMintTimestamps.set(unitKey, eventTimestampMs);
+        }
         break;
       case 'validate':
       case 'validated':
         result = alphaWorkUnits.recordValidation(payload);
+        if (unitKey) {
+          const mintedMs = alphaWuMintTimestamps.get(unitKey) ?? eventTimestampMs;
+          alphaWuMintTimestamps.delete(unitKey);
+          const latencyMs = Math.max(0, eventTimestampMs - mintedMs);
+          recordAlphaValidationLatencySample(latencyMs);
+          observeAlphaWuValidationLatencyMs(latencyMs);
+        }
+        {
+          const scoreValue =
+            payload?.score === undefined || payload?.score === null ? null : Number(payload.score);
+          if (scoreValue !== null && Number.isFinite(scoreValue) && scoreValue <= 0) {
+            metrics.alphaWuInvalid += 1;
+            incrementAlphaWuInvalid(1);
+          } else {
+            metrics.alphaWuValidated += 1;
+            incrementAlphaWuValidated(1);
+          }
+        }
         break;
       case 'accept':
       case 'accepted':
         result = alphaWorkUnits.recordAcceptance(payload);
+        if (unitKey) {
+          alphaWuMintTimestamps.delete(unitKey);
+        }
         break;
       case 'slash':
       case 'slashed':
         result = alphaWorkUnits.recordSlash(payload);
+        metrics.alphaWuInvalid += 1;
+        incrementAlphaWuInvalid(1);
+        if (unitKey) {
+          alphaWuMintTimestamps.delete(unitKey);
+        }
         break;
       default:
         throw new Error(`Unknown alpha work unit event type: ${type}`);
@@ -479,6 +609,7 @@ export function createJobLifecycle({
       typeof sanitizedPatch.status === 'string' && sanitizedPatch.status
         ? sanitizedPatch.status.toLowerCase()
         : existing.status?.toLowerCase?.() ?? null;
+    const nowMs = Date.now();
 
     if (sanitizedPatch && Object.prototype.hasOwnProperty.call(sanitizedPatch, 'alphaWU')) {
       sanitizedPatch.alphaWU = cloneAlphaSummary(sanitizedPatch.alphaWU);
@@ -500,6 +631,45 @@ export function createJobLifecycle({
     const merged = mergeJobRecord(existing, sanitizedPatch);
     jobs.set(normalizedJobId, merged);
     const normalizedJob = normalizeJobMetadata(merged);
+
+    if (EXECUTION_STATUSES.has(normalizedStatus)) {
+      if (!jobRuntimeTracker.has(normalizedJobId)) {
+        jobRuntimeTracker.set(normalizedJobId, nowMs);
+      }
+      completedJobs.delete(normalizedJobId);
+      metrics.jobsRunning = jobRuntimeTracker.size;
+      updateJobsRunning(jobRuntimeTracker.size);
+    } else if (COMPLETION_STATUSES.has(normalizedStatus)) {
+      let latencyRecorded = false;
+      if (jobRuntimeTracker.has(normalizedJobId)) {
+        const startedAtMs = jobRuntimeTracker.get(normalizedJobId);
+        jobRuntimeTracker.delete(normalizedJobId);
+        const latencyMs = Math.max(0, nowMs - startedAtMs);
+        recordJobLatencySample(latencyMs);
+        observeJobLatencyMs(latencyMs);
+        latencyRecorded = true;
+      }
+      metrics.jobsRunning = jobRuntimeTracker.size;
+      updateJobsRunning(jobRuntimeTracker.size);
+      if (!completedJobs.has(normalizedJobId)) {
+        if (normalizedStatus === 'failed' || normalizedStatus === 'cancelled') {
+          metrics.jobsFailed += 1;
+          incrementJobsFailed(1);
+        } else {
+          metrics.jobsCompleted += 1;
+          incrementJobsCompleted(1);
+        }
+        completedJobs.add(normalizedJobId);
+      }
+    } else if (jobRuntimeTracker.has(normalizedJobId)) {
+      jobRuntimeTracker.delete(normalizedJobId);
+      metrics.jobsRunning = jobRuntimeTracker.size;
+      updateJobsRunning(jobRuntimeTracker.size);
+    }
+
+    if (!EXECUTION_STATUSES.has(normalizedStatus) && !COMPLETION_STATUSES.has(normalizedStatus)) {
+      completedJobs.delete(normalizedJobId);
+    }
 
     if (alphaTelemetry?.beginContext && EXECUTION_STATUSES.has(normalizedStatus)) {
       if (!telemetryActiveJobs.has(normalizedJobId) || previousStatus !== normalizedStatus) {
@@ -1005,7 +1175,15 @@ export function createJobLifecycle({
 
   function getMetrics({ alphaWindows = null } = {}) {
     refreshAlphaWorkUnitMetrics(alphaWindows ?? null);
-    return { ...metrics };
+    return {
+      ...metrics,
+      compatibilityWarnings: Array.isArray(metrics.compatibilityWarnings)
+        ? metrics.compatibilityWarnings.map((warning) => ({ ...warning }))
+        : [],
+      alphaGate: metrics.alphaGate ? { ...metrics.alphaGate } : null,
+      jobLatency: metrics.jobLatency ? { ...metrics.jobLatency } : null,
+      alphaWuValidationLatency: metrics.alphaWuValidationLatency ? { ...metrics.alphaWuValidationLatency } : null
+    };
   }
 
   function on(eventName, handler) {

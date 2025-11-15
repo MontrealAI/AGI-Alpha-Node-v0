@@ -198,6 +198,70 @@ describe('job lifecycle service', () => {
     expect(Object.keys(finalizeEntry?.job?.alphaWU?.qualityBreakdown?.modelClass ?? {})).toContain(MODEL_CLASSES.LLM_8B);
   });
 
+  it('tracks job lifecycle counters and latency metrics', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2024-01-01T00:00:00Z'));
+
+    try {
+      const normalizedJobId = zeroPadValue(keccak256(toUtf8Bytes('job-latency')), 32);
+      const applyMock = vi.fn(async () => ({ hash: '0xapply-latency' }));
+      const submitMock = vi.fn(async () => ({ hash: '0xsubmit-latency' }));
+      const finalizeMock = vi.fn(async () => ({ hash: '0xfinal-latency' }));
+
+      const contractFactory = vi.fn(() => ({
+        target: registryAddress,
+        interface: v0Interface,
+        applyForJob: applyMock,
+        submitProof: submitMock,
+        finalize: finalizeMock,
+        connect() {
+          return this;
+        }
+      }));
+
+      const lifecycle = createJobLifecycle({
+        provider,
+        jobRegistryAddress: registryAddress,
+        profile: 'v0',
+        contractFactory
+      });
+
+      const segment = startSegment({
+        jobId: normalizedJobId,
+        deviceInfo: { deviceClass: 'A100-80GB', vramTier: 'TIER_80', gpuCount: 1 },
+        modelClass: MODEL_CLASSES.LLM_8B,
+        slaProfile: SLA_PROFILES.STANDARD,
+        startedAt: new Date('2024-01-01T00:00:00Z')
+      });
+
+      await lifecycle.apply('job-latency', { subdomain: 'node', proof: '0x1234' });
+      const afterApply = lifecycle.getMetrics();
+      expect(afterApply.jobsRunning).toBe(1);
+
+      vi.advanceTimersByTime(120_000);
+
+      await lifecycle.submitExecutorResult('job-latency', {
+        result: { ok: true },
+        resultUri: 'ipfs://job-latency'
+      });
+      stopSegment(segment.segmentId, { endedAt: new Date('2024-01-01T00:15:00Z') });
+
+      const afterSubmit = lifecycle.getMetrics();
+      expect(afterSubmit.jobsRunning).toBe(0);
+      expect(afterSubmit.jobsCompleted).toBe(1);
+      expect(afterSubmit.jobsFailed).toBe(0);
+      expect(afterSubmit.jobLatency.samples).toBe(1);
+      expect(afterSubmit.jobLatency.lastMs).toBe(120_000);
+
+      await lifecycle.finalize('job-latency');
+      const afterFinalize = lifecycle.getMetrics();
+      expect(afterFinalize.jobsCompleted).toBe(1);
+      expect(afterFinalize.jobLatency.samples).toBe(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('records alpha work unit events manually and surfaces metrics', () => {
     const lifecycle = createJobLifecycle({});
     const events = [];
@@ -232,6 +296,11 @@ describe('job lifecycle service', () => {
     expect(alphaMetrics.overall.totals.minted).toBe(1);
     expect(alphaMetrics.overall.totals.accepted).toBe(1);
     expect(alphaMetrics.overall.acceptanceRate).toBeCloseTo(1);
+    const lifecycleMetrics = lifecycle.getMetrics();
+    expect(lifecycleMetrics.alphaWuValidated).toBe(1);
+    expect(lifecycleMetrics.alphaWuInvalid).toBe(1);
+    expect(lifecycleMetrics.alphaWuValidationLatency.lastMs).toBe(100_000);
+    expect(lifecycleMetrics.alphaWuValidationLatency.samples).toBe(1);
     expect(events).toHaveLength(4);
     expect(events[0].type).toBe('minted');
   });
@@ -371,6 +440,8 @@ describe('job lifecycle service', () => {
 
     const metrics = lifecycle.getMetrics();
     expect(metrics.validatorNotifications).toBeGreaterThan(0);
+    expect(metrics.alphaWuValidated).toBeGreaterThanOrEqual(1);
+    expect(metrics.alphaWuInvalid).toBe(0);
 
     const alphaMetrics = lifecycle.getAlphaWorkUnitMetrics();
     expect(alphaMetrics.overall.totals.minted).toBeGreaterThanOrEqual(1);
