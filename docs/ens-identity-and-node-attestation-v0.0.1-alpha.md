@@ -1,4 +1,4 @@
-# ENS Identity and Node Attestation Framework · v0.2.0
+# ENS Identity and Node Attestation Framework · v0.3.0
 <!-- markdownlint-disable MD013 -->
 
 > AGI Alpha Nodes cultivate the future in a luminous cognition field. Their ENS identities are more than signposts—they are control planes, economic anchors, and attestations that let owners command unfathomable intelligence flows without ceding sovereignty.
@@ -8,8 +8,9 @@
 ## 0. Status
 
 - **Release Status:** Alpha hardened
-- **Spec Version:** `v0.2.0`
+- **Spec Version:** `v0.3.0`
 - **Runtime Alignment:** [`agi-alpha-node-v0@1.1.0`](../package.json)
+- **CI Baseline:** [`Continuous Integration`](../.github/workflows/ci.yml) · [`Required Checks`](../.github/required-checks.json)
 - **Applies to:**
   - AGI Alpha Agents: `*.alpha.agent.agi.eth`
   - AGI Alpha Nodes: `*.alpha.node.agi.eth`
@@ -59,11 +60,21 @@
 
 - Expiry **MUST** be ≥ 12 months ahead; ≥ 60 months is recommended for production fleets.
 - Rotation playbooks **MUST** treat expiry as a hard cliff—no emergency fuse resets.
-- `AlphaNodeManager` events reference ENS nodes (`bytes32`) so revocations and reassignments emit a durable audit trail.【F:contracts/AlphaNodeManager.sol†L37-L138】
+- `AlphaNodeManager` events reference ENS nodes (`bytes32`) so revocations and reassignments emit a durable audit trail.【F:contracts/AlphaNodeManager.sol†L34-L156】
 
 ### 2.3 Owner Control Plane
 
-`AlphaNodeManager` entrusts the contract owner with absolute control over staking, identity assignment, validator rosters, and pause switches.【F:contracts/AlphaNodeManager.sol†L44-L235】 Functions such as `registerIdentity`, `updateIdentityController`, `setIdentityStatus`, `setValidator`, `pause`, and `withdrawStake` are all `onlyOwner`, ensuring that every ENS-bound participant remains under deliberate governance.
+`AlphaNodeManager` entrusts the contract owner with absolute control over staking, identity assignment, validator rosters, and pause switches.【F:contracts/AlphaNodeManager.sol†L44-L257】 Every privileged surface is `onlyOwner`, ensuring ENS-bound operators can be commissioned, rotated, or halted without external consent.
+
+| Capability | Function(s) | Guarantees |
+| --- | --- | --- |
+| Fleet halting & recovery | `pause()`, `unpause()` | Owner can freeze or resume the staking plane instantly, emitting auditable events.【F:contracts/AlphaNodeManager.sol†L78-L92】 |
+| Validator roster curation | `setValidator(address,bool)` | Owner toggles validator authority while preserving on-chain provenance.【F:contracts/AlphaNodeManager.sol†L94-L100】 |
+| Identity lifecycle | `registerIdentity`, `updateIdentityController`, `setIdentityStatus`, `revokeIdentity` | Owner assigns controllers, rotates custody, and retires ENS nodes with durable event logs.【F:contracts/AlphaNodeManager.sol†L102-L156】 |
+| Stake custody & treasury routing | `stake(uint256)`, `withdrawStake(address,uint256)` | Deposits require active identities; withdrawals only reach owner-approved recipients.【F:contracts/AlphaNodeManager.sol†L177-L199】 |
+| Production telemetry governance | `recordAlphaWUMint`, `recordAlphaWUValidation`, `recordAlphaWUAcceptance`, `applySlash` | Owner or delegated validators notarise α‑work flows, enforce stake-backed validation, and slash misconduct directly.【F:contracts/AlphaNodeManager.sol†L202-L257】 |
+
+**Result:** the operator can revise payout parameters, pause emissions, or revoke compromised controllers with a single transaction, preserving total sovereignty over the intelligence estate.
 
 ---
 
@@ -117,13 +128,19 @@ sequenceDiagram
   Owner->>Runtime: sync staking + validator permissions via AlphaNodeManager
 ```
 
-### 3.4 Operational Checklist
+### 3.4 Automation Tooling
+
+- **Deterministic record templates** — `buildEnsRecordTemplate` derives text and coin records from runtime configuration, commit metadata, and payout routes so operators cannot drift from CI-approved values.【F:src/ens/ens_config.js†L29-L198】
+- **Interactive ENS playbooks** — `generateEnsSetupGuide` + `formatEnsGuide` output human-readable runbooks bound to the operator address and parent domain, covering minting, fuse management, CLI verification, staking prep, and diagnostics.【F:src/services/ensGuide.js†L6-L88】
+- **Resolver verification** — `verifyNodeOwnership` interrogates registry, wrapper, and resolver custodians before activation; it powers the `node src/index.js verify-ens` CLI for immediate validation.【F:src/services/ensVerifier.js†L1-L139】
+
+### 3.5 Operational Checklist
 
 1. Generate a secp256k1 key dedicated to attestations.
 2. Set text + addr records following the table above.
 3. Commit `_dnsaddr` records (Section 4) before going live.
 4. Run `npm run ci:policy` to confirm the health gate allowlist recognises the ENS name.
-5. Emit an initial health attestation (Section 5) and pin it for verifiers.
+5. Use the CLI (`node src/index.js status`) to snapshot diagnostics, then emit and archive an initial health attestation (Section 5) for verifiers.
 
 ---
 
@@ -246,19 +263,19 @@ flowchart LR
 
 ### 6.1 Payload Canonicalisation
 
-`alphaWuTelemetry` and attestation utilities canonicalise payloads before hashing, ensuring deterministic signatures across runtimes.【F:src/telemetry/alphaWuTelemetry.js†L1-L120】 Steps:
+`alphaWuTelemetry`, `canonicalizeForSigning`, and attestation utilities canonicalise payloads before hashing, ensuring deterministic signatures across runtimes.【F:src/telemetry/alphaWuTelemetry.js†L1-L118】【F:src/utils/canonicalize.js†L1-L54】 Steps:
 
 1. Sort object keys lexicographically.
 2. Normalise numbers (reject non-finite values) and convert BigInts to strings.
 3. Encode as UTF-8 JSON without trailing commas.
-4. Hash using `keccak256` unless a different algorithm is negotiated (default remains `keccak256`).
+4. Hash using `keccak256` (default) or the negotiated algorithm declared in runtime configuration.【F:src/telemetry/alphaWuTelemetry.js†L90-L118】
 
 ### 6.2 Signature Requirements
 
-- Algorithm: `secp256k1-keccak256` (ECDSA over the canonical payload hash).
+- Algorithm: `secp256k1-keccak256` (ECDSA over the canonical payload hash produced by `canonicalizeForSigning`).
 - Signature output: `0x`-prefixed hex (r || s || v optional; verifiers should accept 65-byte signatures or EIP-2098 64-byte format).
 - Public key: Provide both `pubkey_x` and `pubkey_y` to ease offline verification and cross-check with ENS `pubkey()`.
-- Reject signatures when the derived address does not match the expected controller in `AlphaNodeManager` or when the ENS resolver’s pubkey differs.
+- Reject signatures when the derived address does not match the expected controller in `AlphaNodeManager` or when the ENS resolver’s pubkey differs. Gatekeepers SHOULD re-hash payloads with `hashTelemetryPayload` when cross-checking α‑work telemetry commitments.【F:src/telemetry/alphaWuTelemetry.js†L90-L118】
 
 ### 6.3 Example Envelope
 
@@ -312,10 +329,10 @@ Attach the raw attestation as an OpenTelemetry event named `agi.health-attestati
 
 ## 8. Owner Command & CI Enforcement
 
-- CI enforces identity policy through jobs declared in [`ci.yml`](../.github/workflows/ci.yml). Lint, test, coverage, Solidity, subgraph, Docker smoke, and security checks are all required on PRs and `main` (see [`required-checks.json`](../.github/required-checks.json)).
+- CI enforces identity policy through jobs declared in [`ci.yml`](../.github/workflows/ci.yml). Lint, test, coverage, Solidity, subgraph, Docker smoke, and security checks are all required on PRs and `main` (see [`required-checks.json`](../.github/required-checks.json)). Required checks mirror the badge set surfaced in the README so auditors can confirm green pipelines at a glance.【F:.github/workflows/ci.yml†L1-L210】【F:.github/required-checks.json†L1-L9】
 - `npm run ci:policy` executes `verify-health-gate.mjs`, ensuring ENS patterns remain allowlisted before merges.
-- `npm run ci:branch` blocks unsafe branch names from landing on protected branches.
-- `AlphaNodeManager` owner functions (`pause`, `unpause`, `setValidator`, `applySlash`, `withdrawStake`) secure runtime behaviour so governance stays centralised.【F:contracts/AlphaNodeManager.sol†L65-L235】
+- `npm run ci:branch` blocks unsafe branch names from landing on protected branches and ensures ENS-critical branches map to allowlisted domains.【F:scripts/verify-branch-gate.mjs†L7-L100】
+- `AlphaNodeManager` owner functions (`pause`, `unpause`, `setValidator`, `applySlash`, `withdrawStake`) secure runtime behaviour so governance stays centralised.【F:contracts/AlphaNodeManager.sol†L44-L257】
 - The canonical staking asset is `$AGIALPHA` at `0xa61a3B3a130a9c20768eebf97E21515A6046a1fA` (18 decimals). The contract defaults to this address and rejects alternatives, guaranteeing economic alignment.【F:contracts/AlphaNodeManager.sol†L29-L57】
 
 ---
@@ -343,13 +360,44 @@ Attach the raw attestation as an OpenTelemetry event named `agi.health-attestati
 
 ```bash
 # Generate ENS record template from current configuration
-node --input-type=module -e "import { buildEnsRecordTemplate } from './src/ens/ens_config.js'; console.log(buildEnsRecordTemplate());"
+node --input-type=module <<'NODE'
+import { buildEnsRecordTemplate } from './src/ens/ens_config.js';
+console.log(JSON.stringify(buildEnsRecordTemplate(), null, 2));
+NODE
 
-# Verify health gate policy locally
-npm run ci:policy
+# Verify ENS ownership and NameWrapper custody for an operator address
+node src/index.js verify-ens --label 1 --address 0x0000000000000000000000000000000000000001
 
-# Emit a sample health attestation payload
-node scripts/render-health-attestation.mjs --ens node-01.alpha.node.agi.eth --peer 12D3KooWNode01PeerId
+# Render a deterministic health attestation hash for archival testing
+node --input-type=module <<'NODE'
+import { canonicalizeForSigning } from './src/utils/canonicalize.js';
+import { keccak256, toUtf8Bytes } from 'ethers';
+
+const payload = {
+  schema: 'agi-alpha/health-attestation-v1',
+  ens: 'node-01.alpha.node.agi.eth',
+  peer_id: '12D3KooWNode01PeerId',
+  multiaddrs: ['/ip4/203.0.113.42/tcp/4001/p2p/12D3KooWNode01PeerId'],
+  role: 'agi-alpha-node',
+  node_version: '1.1.0',
+  runtime: 'mixed',
+  cluster: 'agi-alpha-mainnet',
+  ens_fuses: {
+    parent_cannot_control: true,
+    cannot_unwrap: true,
+    cannot_transfer: true,
+    cannot_set_resolver: true,
+    expiry_unix: 2072707200
+  },
+  timestamp: '2025-05-08T12:34:56Z',
+  status: 'healthy',
+  metrics: { uptime_s: 172800, cpu_load: 0.21, mem_used_mb: 768 }
+};
+
+const canonical = canonicalizeForSigning(payload);
+console.log('canonical', canonical);
+console.log('hash', keccak256(toUtf8Bytes(canonical)));
+NODE
 ```
 
 ---
