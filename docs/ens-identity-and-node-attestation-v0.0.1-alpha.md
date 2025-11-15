@@ -181,11 +181,11 @@ Owner sovereignty is enforced in code as a first-class primitive. Every high-imp
 
 | Control Vector | Solidity Surface | CLI Builder | Result |
 | --- | --- | --- | --- |
-| Halt or resume the fleet | `pause()`, `unpause()` | `node src/index.js governance pause --execute` | Instantly freezes or resumes staking, α‑work issuance, and validator scoring with on-chain events.【F:contracts/AlphaNodeManager.sol†L61-L92】【F:src/services/governance.js†L1623-L1663】 |
-| Curate validator set | `setValidator(address,bool)` | `node src/index.js governance validators --address <addr> --active true` | Grants or revokes validation authority while emitting immutable roster logs.【F:contracts/AlphaNodeManager.sol†L94-L112】【F:src/services/governance.js†L1710-L1766】 |
-| Rotate controllers & status | `registerIdentity`, `updateIdentityController`, `setIdentityStatus`, `revokeIdentity` | `node src/index.js governance identities ...` | Assigns or suspends ENS controllers, preserving audit trails for every change.【F:contracts/AlphaNodeManager.sol†L114-L164】【F:src/services/governance.js†L1768-L1880】 |
-| Manage capital flows | `stake`, `withdrawStake` | `node src/index.js governance treasury ...` | Directs `$AGIALPHA` deposits and withdrawals through owner-authorised routes only.【F:contracts/AlphaNodeManager.sol†L166-L199】【F:src/services/token.js†L1-L235】 |
-| Enforce α‑Work truth | `recordAlphaWUMint`, `recordAlphaWUValidation`, `recordAlphaWUAcceptance`, `applySlash` | `node src/index.js governance alpha-wu ...` | Mints, validates, accepts, or slashes α‑work with deterministic ledger hooks and stake ceilings.【F:contracts/AlphaNodeManager.sol†L201-L257】【F:src/services/governance.js†L1708-L1880】 |
+| Global safeguard relay | `pauseAll()`, `resumeAll()`, `unpauseAll()` on `SystemPause` | `node src/index.js governance system-pause --action <pause|resume|unpause> --execute --confirm` | Freezes or re-enables every protocol entrypoint with a single owner signature, mirroring the on-chain pause events.【F:src/services/governance.js†L324-L347】【F:src/index.js†L2492-L2511】 |
+| Node registry custody | `setNodeStatus(bytes32,bool)`, `setOperator(address,bool)`, `setNodeMetadata(bytes32,string)` on `NodeRegistry` | `node src/index.js governance node-status|node-operator|node-metadata … --execute --confirm` | Rotates controllers, toggles active nodes, and refreshes metadata while emitting immutable registry updates.【F:src/services/governance.js†L372-L521】【F:src/index.js†L2166-L2241】 |
+| WorkMeter validator orbit | `setValidator(address,bool)`, `setOracle(address,bool)`, `setSubmissionWindow(uint256)` on `WorkMeter` | `node src/index.js governance workmeter-validator|workmeter-oracle|workmeter-window … --execute --confirm` | Curates validator/oracle access and telemetry cadence for α‑work proofs with deterministic payloads.【F:src/services/governance.js†L540-L602】【F:src/index.js†L2243-L2388】 |
+| Reward and treasury shaping | `setRoleShare`, `setGlobalShares` on `RewardEngine`; `setTreasury(address)` on `PlatformIncentives` | `node src/index.js governance role-share|global-shares|incentives-treasury … --execute --confirm` | Rebalances operator/validator/treasury flows and redirects capital under owner control with full ledger emission.【F:src/services/governance.js†L620-L757】【F:src/index.js†L2533-L2985】 |
+| α‑Work accounting | `submitUsage(bytes32,…)`, `recordEpoch(uint256,…)` surfaces | `node src/index.js governance workmeter-submit|productivity-record … --execute --confirm` | Records workload attestations, emission routing, and treasury hooks for replayable audit trails.【F:src/services/governance.js†L602-L835】【F:src/index.js†L2389-L2477】 |
 
 Deterministic governance manifests written to `.governance-ledger/v1` make every executed action reproducible by auditors and downstream automation.【F:src/services/governanceLedger.js†L1-L120】【F:src/services/governanceLedger.js†L181-L260】
 
@@ -344,7 +344,7 @@ stateDiagram-v2
 - Reject attestations whose `ens` is not allowlisted by the health gate.
 - Compare `ens_fuses` with NameWrapper data to detect stale fuse states.
 - Verify `verifier` matches the resolver’s published endpoint before trusting telemetry.
-- Persist every attestation hash into the governance ledger snapshot for replay and compliance diffing.【F:src/services/governanceLedger.js†L121-L209】
+- Persist attestation hashes out-of-band: only governance CLI executions call `recordGovernanceAction`, so operators must archive hashes alongside ledger entries until automated ingestion ships.【F:src/index.js†L569-L594】【F:src/services/governanceLedger.js†L121-L209】
 
 ---
 
@@ -478,7 +478,7 @@ graph LR
 | Rotate attestation keys | Update resolver `pubkey`, deploy runtime with new key, emit attestation referencing the new key, archive the previous attestation. |
 | Revoke a node | `pause()` if needed, `setIdentityStatus(ensNode, false)`, `revokeIdentity(ensNode)`, remove `_dnsaddr`, revoke staking privileges, publish a `status: "down"` attestation. |
 | Incident response | Trigger `pause()`, set `status: "degraded"`, update metrics with incident telemetry, notify validators via events and dashboards. |
-| Rebuild ledger after event | Run `node src/index.js governance ledger --replay`, regenerate `.governance-ledger/v1` from attestation + transaction archives, share signed bundle with auditors. |
+| Rebuild ledger after event | Restore `.governance-ledger/v1` from the latest signed backup or rerun archived governance builders with `--execute --confirm` to regenerate entries before distributing the bundle to auditors. |
 
 ---
 
