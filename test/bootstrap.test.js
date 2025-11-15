@@ -1,5 +1,25 @@
 import { describe, expect, it, vi, beforeEach, afterEach, afterAll } from 'vitest';
 
+const nodeIdentityRecord = {
+  ensName: '1.alpha.node.agi.eth',
+  peerId: '12D3KooXidentity',
+  pubkey: { x: '0x' + '1'.repeat(64), y: '0x' + '2'.repeat(64) },
+  multiaddrs: ['/dns4/example.com/tcp/443/wss/p2p/12D3'],
+  metadata: { 'node.role': 'validator', 'node.version': '1.0.0' }
+};
+
+const identityModuleMocks = vi.hoisted(() => ({
+  loadNodeIdentityRecord: vi.fn(async () => ({ ...nodeIdentityRecord })),
+  loadNodeKeypairFromSource: vi.fn(() => ({
+    type: 'secp256k1',
+    privateKey: '0x' + 'a'.repeat(64),
+    publicKey: { x: '0x' + '1'.repeat(64), y: '0x' + '2'.repeat(64) }
+  })),
+  validateKeypairAgainstEnsRecord: vi.fn(() => true)
+}));
+
+vi.mock('../src/identity/bootstrap.js', () => identityModuleMocks);
+
 vi.mock('../src/config/env.js', () => ({
   loadConfig: vi.fn()
 }));
@@ -77,6 +97,11 @@ import { createProvider, createWallet } from '../src/services/provider.js';
 import { createJobLifecycle } from '../src/services/jobLifecycle.js';
 import { startAgentApi } from '../src/network/apiServer.js';
 import { startVerifierServer } from '../src/network/verifierServer.js';
+import {
+  loadNodeIdentityRecord,
+  loadNodeKeypairFromSource,
+  validateKeypairAgainstEnsRecord
+} from '../src/identity/bootstrap.js';
 
 const baseConfig = {
   RPC_URL: 'https://rpc.example',
@@ -150,6 +175,9 @@ describe('bootstrapContainer', () => {
     apiInstance = apiInstanceFactory();
     startAgentApi.mockReturnValue(apiInstance);
     startVerifierServer.mockClear();
+    identityModuleMocks.loadNodeIdentityRecord.mockClear();
+    identityModuleMocks.loadNodeKeypairFromSource.mockClear();
+    identityModuleMocks.validateKeypairAgainstEnsRecord.mockClear();
   });
 
   afterEach(() => {
@@ -216,6 +244,21 @@ describe('bootstrapContainer', () => {
     expect(lifecycleInstance.stop).toHaveBeenCalled();
     expect(bindExecutionLoopMetering).toHaveBeenCalledWith(
       expect.objectContaining({ jobLifecycle: lifecycleInstance })
+    );
+  });
+
+  it('hydrates node identity and validates keypair before diagnostics run', async () => {
+    await bootstrapContainer({ skipMonitor: true });
+
+    expect(loadNodeIdentityRecord).toHaveBeenCalledWith(
+      '1.alpha.node.agi.eth',
+      expect.objectContaining({ logger: expect.any(Object) })
+    );
+    expect(loadNodeKeypairFromSource).toHaveBeenCalledWith(expect.objectContaining({ logger: expect.any(Object) }));
+    expect(validateKeypairAgainstEnsRecord).toHaveBeenCalledWith(
+      expect.objectContaining({ ensName: '1.alpha.node.agi.eth' }),
+      expect.objectContaining({ privateKey: expect.stringMatching(/^0x[a-f0-9]{64}$/) }),
+      expect.objectContaining({ logger: expect.any(Object) })
     );
   });
 });
