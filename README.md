@@ -54,13 +54,14 @@ graph TB
 1. [Constellation Overview](#constellation-overview)
 2. [Quickstart Sequence](#quickstart-sequence)
 3. [ENS Control Fabric](#ens-control-fabric)
-4. [Runtime Systems Map](#runtime-systems-map)
-5. [Owner Command Authority](#owner-command-authority)
-6. [Observability & Governance](#observability--governance)
-7. [CI & Release Ramparts](#ci--release-ramparts)
-8. [Deployment Vectors](#deployment-vectors)
-9. [Repository Atlas](#repository-atlas)
-10. [Reference Library](#reference-library)
+4. [Node Identity Fabric](#node-identity-fabric)
+5. [Runtime Systems Map](#runtime-systems-map)
+6. [Owner Command Authority](#owner-command-authority)
+7. [Observability & Governance](#observability--governance)
+8. [CI & Release Ramparts](#ci--release-ramparts)
+9. [Deployment Vectors](#deployment-vectors)
+10. [Repository Atlas](#repository-atlas)
+11. [Reference Library](#reference-library)
 
 ---
 
@@ -69,7 +70,7 @@ graph TB
 - **$AGIALPHA treasury engine** — The runtime is hard-wired to the canonical 18-decimal token contract [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa), powering staking, payouts, and liquidity loops.【F:contracts/AlphaNodeManager.sol†L29-L53】【F:src/constants/token.js†L1-L20】
 - **Owner-dominated controls** — The AlphaNodeManager contract exposes pause/resume, emission gates, stake withdrawals, validator rosters, and identity governance entirely under the owner’s address.【F:contracts/AlphaNodeManager.sol†L59-L213】
 - **Deterministic orchestration** — Workflows from discovery → execution → validation → settlement are orchestrated in [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js), ensuring each α-work unit is audited and journaled.【F:src/services/jobLifecycle.js†L404-L707】
-- **Identity-first runtime** — ENS metadata, payout routes, telemetry baselines, and verifier URLs are generated consistently by [`src/ens/ens_config.js`](src/ens/ens_config.js) and the TypeScript ENS network client.【F:src/ens/ens_config.js†L1-L188】【F:src/ens/client.ts†L1-L147】
+- **Identity-first runtime** — ENS metadata, payout routes, telemetry baselines, libp2p multiaddrs, and signing keys are consolidated through `loadNodeIdentity`, `_dnsaddr` parsing, and ENS-aligned key validation so operators inherit a single canonical identity view.【F:src/identity/loader.ts†L1-L147】【F:src/identity/dnsaddr.ts†L1-L39】【F:src/identity/keys.ts†L1-L164】
 - **Production-ready packaging** — Docker, Helm, CI gates, lint/test/coverage/security chains, and subgraph build tooling ship in-tree so non-technical operators can deploy without touching the internals.【F:Dockerfile†L1-L92】【F:package.json†L1-L64】
 
 ---
@@ -98,6 +99,7 @@ flowchart LR
 2. **Configure identity & payouts**
    - Duplicate `.env.example`, fill in ENS label/name, payout routes, telemetry, and staking settings.
    - Optional ENS overrides (`ALPHA_NODE_*`) let you pin RPC endpoints, registries, and resolvers when running on bespoke networks.【F:.env.example†L1-L79】【F:.env.example†L81-L86】
+   - Supply signing material via `ALPHA_NODE_KEYFILE` (JSON keyfile) or `NODE_PRIVATE_KEY` so local attestations match the ENS-published pubkey before workloads launch.【F:src/identity/keys.ts†L47-L106】
 
 3. **Mirror CI locally**
 
@@ -183,6 +185,43 @@ Errors are annotated with explicit resolver or network diagnostics, ensuring RPC
 
 ---
 
+## Node Identity Fabric
+
+The identity subsystem fuses ENS resolution, libp2p topology, and signer verification into a single in-memory authority that every runtime component consumes.【F:src/identity/loader.ts†L1-L147】【F:src/identity/dnsaddr.ts†L1-L39】【F:src/identity/keys.ts†L1-L164】
+
+- **`NodeIdentity`** — canonical structure capturing ENS name, peer ID, secp256k1 pubkey, NameWrapper fuses/expiry, multiaddrs, and every TXT record surfaced for downstream modules.【F:src/identity/types.ts†L1-L21】
+- **`loadNodeIdentity(ensName)`** — fetches resolver, pubkey, TXT metadata, `_dnsaddr` multiaddrs, and NameWrapper state in one sweep, trimming/validating every field so orchestration code never reimplements ENS plumbing.【F:src/identity/loader.ts†L1-L147】
+- **`parseDnsaddr`** — pure utility converting `_dnsaddr` TXT fragments into deduplicated multiaddr arrays, tolerating quotes, whitespace, and duplicate records.【F:src/identity/dnsaddr.ts†L1-L39】
+- **`loadNodeKeypair` / `validateKeypairAgainstENS`** — load signing keys from `ALPHA_NODE_KEYFILE` or `NODE_PRIVATE_KEY`, derive secp256k1 coordinates, and abort if the local key drifts from the ENS-published pubkey, guaranteeing attestations originate from the operator-controlled key.【F:src/identity/keys.ts†L1-L164】
+
+```mermaid
+flowchart LR
+  ENS[(ENS Registry)] --> Loader[loadNodeIdentity]
+  Loader --> TXT[TXT metadata]
+  Loader --> DNSADDR[_dnsaddr parser]
+  DNSADDR --> Multiaddrs[libp2p multiaddrs]
+  Loader --> Identity{NodeIdentity}
+  Keyfile[ALPHA_NODE_KEYFILE / NODE_PRIVATE_KEY] --> Keypair[loadNodeKeypair]
+  Keypair --> Guard[validateKeypairAgainstENS]
+  Guard --> Identity
+```
+
+```ts
+import { loadNodeIdentity } from './src/identity/loader.js';
+import { loadNodeKeypair, validateKeypairAgainstENS } from './src/identity/keys.js';
+
+const identity = await loadNodeIdentity('1.alpha.node.agi.eth');
+const keypair = loadNodeKeypair();
+validateKeypairAgainstENS(identity, keypair);
+
+console.log(identity.multiaddrs);
+// [/dns4/node.agi.network/tcp/443/wss/p2p/12D3..., /ip6/2001:db8::1/tcp/443/p2p/12D4...]
+```
+
+Vitest suites enforce the behaviour, including ENS fallbacks, `_dnsaddr` parsing, key loading from environment or JSON files, and mismatch handling.【F:test/identity/loader.test.ts†L1-L74】【F:test/identity/dnsaddr.test.ts†L1-L32】【F:test/identity/keys.test.ts†L1-L67】
+
+---
+
 ## Runtime Systems Map
 
 | Domain | Highlights | Key Files |
@@ -192,6 +231,7 @@ Errors are annotated with explicit resolver or network diagnostics, ensuring RPC
 | **Telemetry & health** | Prometheus metrics, health gates, and monitoring loops keep clusters observable even when offline-first workloads replay. | [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js), [`src/healthcheck.js`](src/healthcheck.js) |
 | **Configuration spine** | Defaults, schema coercion, and environment loaders resolve a single immutable config the entire runtime consumes. | [`src/config/defaults.js`](src/config/defaults.js), [`src/config/schema.js`](src/config/schema.js), [`src/config/env.js`](src/config/env.js) |
 | **ENS network integration** | `loadEnsConfig` normalises RPC endpoints, registry/resolver wrappers, and NameWrapper presets for mainnet & Sepolia; `EnsClient` wraps ethers.js for pubkeys, text records, contenthash, and fuse inspection. | [`src/ens/config.ts`](src/ens/config.ts), [`src/ens/client.ts`](src/ens/client.ts) |
+| **Identity alignment** | NodeIdentity loader, `_dnsaddr` parser, and ENS-aware key validation deliver a trusted identity surface for libp2p, staking, and attestation pipelines. | [`src/identity`](src/identity)【F:src/identity/loader.ts†L1-L147】【F:src/identity/keys.ts†L1-L164】 |
 | **Docs & governance** | Comprehensive economics, governance, and attestation manuals are included for operators and auditors. | [`docs`](docs) |
 
 ```mermaid
