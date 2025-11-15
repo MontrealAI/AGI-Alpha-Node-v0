@@ -21,6 +21,7 @@
     "precoverage": "node scripts/check-ajv-version.mjs",
     "lint:sol": "solhint --config .solhint.json \"contracts/**/*.sol\"",
     "test:sol": "node scripts/run-solc.mjs",
+    "ens:inspect": "ts-node --esm scripts/ens-inspect.ts",
     "ci:lint": "npm run lint",
     "ci:test": "npm run test",
     "ci:coverage": "npm run coverage",
@@ -47,6 +48,7 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@types/node": "^20.14.10",
     "ajv": "^8.17.1",
     "c8": "^9.1.0",
     "cross-env": "^7.0.3",
@@ -57,6 +59,8 @@
     "prettier": "^3.3.3",
     "solc": "^0.8.26",
     "solhint": "^5.0.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4",
     "vitest": "^1.6.0"
   }
 }
