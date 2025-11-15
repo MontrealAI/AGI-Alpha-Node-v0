@@ -1,4 +1,4 @@
-# ENS Identity & Node Attestation HyperSpec · v0.3.1
+# ENS Identity & Node Attestation HyperSpec · v0.4.0
 <!-- markdownlint-disable MD013 MD033 -->
 
 <p align="center">
@@ -21,10 +21,11 @@
   <a href="../.github/required-checks.json">
     <img src="https://img.shields.io/badge/PR%20Gate-Required%20Checks-8b5cf6?logo=github" alt="Required checks" />
   </a>
-  <img src="https://img.shields.io/badge/Spec-v0.3.1-ec4899" alt="Spec version" />
+  <img src="https://img.shields.io/badge/Spec-v0.4.0-ec4899" alt="Spec version" />
   <img src="https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-ff3366?logo=ethereum&logoColor=white" alt="$AGIALPHA address" />
   <img src="https://img.shields.io/badge/Telemetry-OpenTelemetry%20%26%20Prometheus-0ea5e9?logo=prometheus" alt="Telemetry" />
   <img src="https://img.shields.io/badge/Discovery-libp2p%20dnsaddr-22d3ee?logo=ipfs" alt="libp2p" />
+  <a href="https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa"><img src="https://img.shields.io/badge/Token-18%20Decimals-1e3a8a?logo=ethereum&logoColor=white" alt="$AGIALPHA token canonical" /></a>
 </p>
 
 > AGI Alpha Nodes cultivate the cognitive economy and keep its rivers of value aligned with the owner’s hand. This framework binds every ENS identity, attestation, and telemetry pulse into a single machine that reshapes capital flow without surrendering control.
@@ -52,9 +53,10 @@
 ## Status & Alignment
 
 - **Release Status:** Alpha hardened
-- **Spec Version:** `v0.3.1`
+- **Spec Version:** `v0.4.0`
 - **Runtime Alignment:** [`agi-alpha-node-v0@1.1.0`](../package.json)
 - **CI Baseline:** [`Continuous Integration`](../.github/workflows/ci.yml) · [`Required Checks`](../.github/required-checks.json)
+- **Token Canon:** `$AGIALPHA` (18 decimals) anchored to [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) across runtime modules.【F:src/constants/token.js†L1-L20】
 - **Applies to:**
   - AGI Alpha Agents `*.alpha.agent.agi.eth`
   - AGI Alpha Nodes `*.alpha.node.agi.eth`
@@ -69,6 +71,7 @@
 3. Ensure identities are **discoverable in milliseconds** through `_dnsaddr` multiaddrs, libp2p peer IDs, and health gate allowlists.
 4. Emit **signed health attestations** and α‑work telemetry that align with `AlphaNodeManager` staking logic and pipeline policy.
 5. Expose **OpenTelemetry spans and Prometheus gauges** with invariant naming so dashboards, validators, and auditors consume the same truth source.
+6. Maintain the **$AGIALPHA economic spine**—staking, treasury flows, owner approvals—through immutable address + decimals validation in every service surface.【F:src/constants/token.js†L1-L20】【F:src/services/token.js†L1-L235】
 
 ### Non-Goals
 
@@ -90,6 +93,13 @@
 - Every runtime **MUST** operate under exactly one canonical ENS name inside the relevant subtree.
 - Names **MUST** be lowercase, punycode normalised, and collision-free.
 - Parent domains (`alpha.agent.agi.eth`, `alpha.node.agi.eth`) stay under owner custody to preserve rotation and recovery options.
+
+### Token & Treasury Anchor
+
+- `$AGIALPHA` is the **only** staking and reward instrument; the checksum address is injected into contracts, CLI flows, and schema validation.【F:contracts/AlphaNodeManager.sol†L33-L67】【F:src/constants/token.js†L1-L20】
+- `normalizeTokenAddress()` and `assertCanonicalAgialphaAddress()` prevent alternate token injections before any transaction is crafted.【F:src/constants/token.js†L8-L25】
+- CLI helpers `describeAgialphaToken`, `buildTokenApproveTx`, and `getTokenAllowance` give non-technical stewards one-step control over allowances and metadata.【F:src/services/token.js†L1-L235】
+- Governance builders (Section [Owner Command Plane](#owner-command-plane)) surface `$AGIALPHA` staking, emission, and treasury routes so the owner alone can throttle capital velocity.
 
 ### NameWrapper Fuses & Expiry
 
@@ -123,15 +133,42 @@ flowchart TD
 
 ## Owner Command Plane
 
-`AlphaNodeManager` entrusts the contract owner with absolute control over staking, identity assignment, validator rosters, and pause switches. Every privileged surface is `onlyOwner`, guaranteeing that the machine can be steered, halted, or reconfigured instantly.【F:contracts/AlphaNodeManager.sol†L18-L199】
+`AlphaNodeManager` entrusts the contract owner with absolute control over fleet halting, identity assignment, validator rosters, and treasury withdrawals, while other flows are shared with active operators and validators. The table below spells out the concrete access modifiers applied on-chain so operators can assess who may exercise each control surface.【F:contracts/AlphaNodeManager.sol†L18-L257】
 
-| Capability | Function(s) | Guarantees |
+| Capability | Function(s) | Access Control | Guarantees |
+| --- | --- | --- | --- |
+| Fleet halting & recovery | `pause()`, `unpause()` | `onlyOwner` | Owner freezes or resumes staking/emission instantly with auditable events.【F:contracts/AlphaNodeManager.sol†L61-L92】 |
+| Validator roster curation | `setValidator(address,bool)` | `onlyOwner` | Owner toggles validator authority while preserving provenance.【F:contracts/AlphaNodeManager.sol†L94-L112】 |
+| Identity lifecycle | `registerIdentity`, `updateIdentityController`, `setIdentityStatus`, `revokeIdentity` | `onlyOwner` | Owner commissions, rotates, and retires ENS-bound controllers with durable logs.【F:contracts/AlphaNodeManager.sol†L114-L164】 |
+| Stake intake & custody | `stake(uint256)` | Active identity + `whenNotPaused` | Any controller with an active identity can deposit stake while the fleet is live; deposits revert for paused or unauthorised accounts.【F:contracts/AlphaNodeManager.sol†L166-L199】 |
+| Treasury routing | `withdrawStake(address,uint256)` | `onlyOwner` | Withdrawals require explicit owner intent and are paid to owner-specified recipients only.【F:contracts/AlphaNodeManager.sol†L166-L199】 |
+| α‑Work mint attestation | `recordAlphaWUMint` | Active identity/owner + `whenNotPaused` | Agents mint α‑work units for themselves; the owner can backstop issuance, but unauthorised callers revert.【F:contracts/AlphaNodeManager.sol†L201-L219】 |
+| α‑Work validation | `recordAlphaWUValidation` | Validators + `whenNotPaused` | Registered validators notarise α‑work using their bonded stake and are limited by recorded balances.【F:contracts/AlphaNodeManager.sol†L221-L239】 |
+| α‑Work acceptance | `recordAlphaWUAcceptance` | Owner or validator + `whenNotPaused` | Either the owner or approved validators may accept α‑work once attestation is satisfied.【F:contracts/AlphaNodeManager.sol†L241-L251】 |
+| Slashing | `applySlash` | `onlyOwner` | Owner enforces stake penalties against validators with explicit events and bounds checks.【F:contracts/AlphaNodeManager.sol†L253-L257】 |
+
+### CLI Surfaces for Owner Supremacy
+
+The `governance` command group in [`src/index.js`](../src/index.js) mirrors every owner-only call with transaction builders and manifest exports so a single steward can modify parameters live.【F:src/index.js†L2070-L2145】
+
+| Surface | Command | Output |
 | --- | --- | --- |
-| Fleet halting & recovery | `pause()`, `unpause()` | Owner freezes or resumes staking/emission instantly with auditable events.【F:contracts/AlphaNodeManager.sol†L61-L92】 |
-| Validator roster curation | `setValidator(address,bool)` | Owner toggles validator authority while preserving provenance.【F:contracts/AlphaNodeManager.sol†L94-L112】 |
-| Identity lifecycle | `registerIdentity`, `updateIdentityController`, `setIdentityStatus`, `revokeIdentity` | Owner commissions, rotates, and retires ENS-bound controllers with durable logs.【F:contracts/AlphaNodeManager.sol†L114-L164】 |
-| Stake custody & treasury routing | `stake(uint256)`, `withdrawStake(address,uint256)` | Deposits require active identities; withdrawals reach owner-approved recipients only.【F:contracts/AlphaNodeManager.sol†L166-L199】 |
-| α‑Work telemetry enforcement | `recordAlphaWUMint`, `recordAlphaWUValidation`, `recordAlphaWUAcceptance`, `applySlash` | Owner or delegated validators notarise α‑work, enforce stake-backed validation, and slash misconduct.【F:contracts/AlphaNodeManager.sol†L201-L257】 |
+| Function catalog | `node src/index.js governance catalog` | Lists every owner-only ABI signature wired to builders for auditability.【F:src/index.js†L2090-L2100】【F:src/services/governance.js†L1555-L1710】 |
+| Coverage manifest | `node src/index.js governance surfaces --json` | JSON manifest covering each control surface, targeted contracts, and builder coverage ratios for CI ingestion.【F:src/index.js†L2102-L2143】【F:src/services/governance.js†L1666-L1707】 |
+| Parameter builders | `node src/index.js governance <surface>` | Deterministic payloads for pausing, staking thresholds, emission schedules, identity registry, and job instrumentation using `$AGIALPHA` units by default.【F:src/services/governance.js†L1708-L1880】 |
+
+```mermaid
+flowchart LR
+  OwnerConsole[Owner console]
+  GovernanceCLI[`node src/index.js governance ...`]
+  Builder[Deterministic Tx Builder]
+  Ledger[AlphaNodeManager]
+  Treasury[$AGIALPHA Treasury]
+
+  OwnerConsole --> GovernanceCLI --> Builder
+  Builder -->|signed tx| Ledger --> Treasury
+  Ledger -->|events| Observability[(Governance Ledger)]
+```
 
 ---
 
@@ -316,6 +353,25 @@ stateDiagram-v2
     "pubkey_y": "0x1d4f119610eec3be1a4fb29bca55d2b1e8950cd4e4c8f6a6c5b4587103cdef01"
   }
 }
+```
+
+```mermaid
+sequenceDiagram
+  participant Runtime
+  participant Canon as Canonicalizer
+  participant Signer as secp256k1 Key
+  participant Resolver
+  participant Verifier
+
+  Runtime->>Canon: Emit health payload
+  Canon->>Signer: keccak256(canonical JSON)
+  Signer-->>Runtime: Signature (r,s,[v])
+  Runtime->>Resolver: Publish pubkey (EIP-619)
+  Runtime->>Verifier: Push attestation bundle
+  Verifier->>Resolver: Fetch pubkey_x/pubkey_y
+  Verifier->>Canon: Rebuild canonical payload
+  Verifier->>Signer: Validate secp256k1 signature
+  Verifier-->>Runtime: Status recorded + telemetry mirrored
 ```
 
 ---
