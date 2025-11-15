@@ -3,7 +3,15 @@ import { setTimeout as delay } from 'node:timers/promises';
 import {
   recordAlphaWorkUnitSegment,
   startMonitoringServer,
-  updateAlphaWorkUnitEpochMetrics
+  updateAlphaWorkUnitEpochMetrics,
+  updateJobsRunning,
+  incrementJobsCompleted,
+  incrementJobsFailed,
+  incrementAlphaWuValidated,
+  incrementAlphaWuInvalid,
+  observeJobLatencyMs,
+  observeAlphaWuValidationLatencyMs,
+  __resetMonitoringStateForTests
 } from '../src/telemetry/monitoring.js';
 
 const noopLogger = { info: () => {}, warn: () => {}, error: () => {} };
@@ -20,6 +28,7 @@ describe('monitoring telemetry server', () => {
   let telemetry;
 
   beforeEach(() => {
+    __resetMonitoringStateForTests();
     telemetry = null;
   });
 
@@ -122,5 +131,57 @@ describe('monitoring telemetry server', () => {
 
     const response = await fetch(`http://127.0.0.1:${port}/health`);
     expect(response.status).toBe(404);
+  });
+
+  it('replays metrics recorded before the monitoring server starts', async () => {
+    updateJobsRunning(2);
+    incrementJobsCompleted(3);
+    incrementJobsFailed(1);
+    incrementAlphaWuValidated(4);
+    incrementAlphaWuInvalid(2);
+
+    recordAlphaWorkUnitSegment({
+      nodeLabel: 'node-pre',
+      deviceClass: 'H100-80GB',
+      slaProfile: 'SOVEREIGN',
+      jobId: 'job-pre',
+      epochId: 'epoch-pre',
+      alphaWU: 3,
+      jobTotalAlphaWU: 3
+    });
+
+    recordAlphaWorkUnitSegment({
+      nodeLabel: 'node-pre',
+      deviceClass: 'H100-80GB',
+      slaProfile: 'SOVEREIGN',
+      jobId: 'job-pre',
+      epochId: 'epoch-pre',
+      alphaWU: 5,
+      jobTotalAlphaWU: 8
+    });
+
+    updateAlphaWorkUnitEpochMetrics([{ epochId: 'epoch-pre', totalAlphaWU: 8 }]);
+
+    telemetry = startMonitoringServer({ port: 0, logger: noopLogger, enableAlphaWuPerJob: true });
+    await waitForServer(telemetry.server);
+
+    observeJobLatencyMs(620);
+    observeAlphaWuValidationLatencyMs(480);
+
+    const { port } = telemetry.server.address();
+    await delay(10);
+
+    const metricsResponse = await fetch(`http://127.0.0.1:${port}/metrics`);
+    expect(metricsResponse.status).toBe(200);
+    const metrics = await metricsResponse.text();
+
+    expect(metrics).toContain('jobs_running 2');
+    expect(metrics).toContain('jobs_completed_total 3');
+    expect(metrics).toContain('jobs_failed_total 1');
+    expect(metrics).toContain('alpha_wu_validated_total 4');
+    expect(metrics).toContain('alpha_wu_invalid_total 2');
+    expect(metrics).toContain('alpha_wu_total{node_label="node-pre",device_class="H100-80GB",sla_profile="SOVEREIGN"} 8');
+    expect(metrics).toContain('alpha_wu_per_job{job_id="job-pre"} 8');
+    expect(metrics).toContain('alpha_wu_epoch{epoch_id="epoch-pre"} 8');
   });
 });
