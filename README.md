@@ -50,15 +50,16 @@ graph LR
 3. [$AGIALPHA Treasury Engine](#agialpha-treasury-engine)
 4. [ENS Control Fabric](#ens-control-fabric)
 5. [Node Identity Fabric](#node-identity-fabric)
-6. [Identity Boot Sequence](#identity-boot-sequence)
-7. [Autonomous Job Lifecycle](#autonomous-job-lifecycle)
-8. [Owner Command Authority](#owner-command-authority)
-9. [Operator Console](#operator-console)
-10. [Observability & Governance](#observability--governance)
-11. [CI & Release Ramparts](#ci--release-ramparts)
-12. [Deployment Vectors](#deployment-vectors)
-13. [Repository Atlas](#repository-atlas)
-14. [Reference Library](#reference-library)
+6. [Identity Assurance Playbook](#identity-assurance-playbook)
+7. [Identity Boot Sequence](#identity-boot-sequence)
+8. [Autonomous Job Lifecycle](#autonomous-job-lifecycle)
+9. [Owner Command Authority](#owner-command-authority)
+10. [Operator Console](#operator-console)
+11. [Observability & Governance](#observability--governance)
+12. [CI & Release Ramparts](#ci--release-ramparts)
+13. [Deployment Vectors](#deployment-vectors)
+14. [Repository Atlas](#repository-atlas)
+15. [Reference Library](#reference-library)
 
 ---
 
@@ -97,6 +98,12 @@ flowchart LR
    - Duplicate `.env.example`, fill in ENS label/name, payout routes, telemetry, and staking settings.
    - Optional ENS overrides (`ALPHA_NODE_*`) let you pin RPC endpoints, registries, and resolvers when running on bespoke networks.
    - Supply signing material via `ALPHA_NODE_KEYFILE` (JSON keyfile) or `NODE_PRIVATE_KEY` so local attestations match the ENS-published pubkey before workloads launch.
+   - Verify the published records match reality before booting:
+
+     ```bash
+     npm run ens:inspect -- --name <your-node>.eth
+     node -e "import { loadNodeIdentity } from './src/identity/loader.js'; (async()=>console.log(await loadNodeIdentity('<your-node>.eth')) )();"
+     ```
 
 3. **Mirror CI locally**
 
@@ -190,6 +197,40 @@ flowchart LR
 ```
 
 The loader fails fast when a resolver is missing, when the ENS pubkey is absent, or when `node.peerId` metadata is undefined—preventing half-hydrated runtimes from emitting attestations. `validateKeypairAgainstENS` computes the local secp256k1 public key and compares it with ENS-published coordinates; mismatches throw `NodeKeyValidationError`, ensuring attestations always originate from the declared identity.
+
+---
+
+## Identity Assurance Playbook
+
+```mermaid
+flowchart TB
+  subgraph ENS Surface
+    A1[Resolver] --> A2[pubkey]
+    A1 --> A3[TXT + _dnsaddr]
+    A1 --> A4[NameWrapper fuses + expiry]
+  end
+  subgraph Local Vault
+    B1[loadNodeKeypair]
+    B2[validateKeypairAgainstENS]
+  end
+  subgraph Runtime Gate
+    C1[Health gate]
+    C2[Telemetry + bootstrap]
+  end
+  A2 & A3 & A4 -->|loadNodeIdentity| B1
+  B1 -->|derive pubkey| B2
+  B2 -->|success| C1
+  B2 -. fail fast .-> X([Exit 1])
+  C1 --> C2
+```
+
+1. **Probe ENS surface** — `npm run ens:inspect -- --name <ens>` dumps resolver, pubkey, TXT, `_dnsaddr`, NameWrapper fuses, and expiry so discrepancies are caught before runtime boot.
+2. **Hydrate canonical snapshot** — `loadNodeIdentity('<ens>')` normalises coordinates and strips noise from TXT records, returning `multiaddrs`, `metadata`, and NameWrapper state for downstream consumers.
+3. **Enforce key parity** — `loadNodeKeypair()` accepts JSON keyfiles or `NODE_PRIVATE_KEY` and `validateKeypairAgainstENS()` verifies the derived secp256k1 coordinates match the ENS pubkey. Mismatches throw `NodeKeyValidationError` and abort startup with a non-zero exit.
+4. **Libp2p reachability** — `_dnsaddr.<ens>` TXT entries beginning with `dnsaddr=` are parsed by `parseDnsaddr`, ensuring that only valid multiaddrs enter the orchestrator mesh.
+5. **Operational gate** — Health gates, telemetry, and orchestrators only unlock after a successful identity + key alignment, preventing unsigned traffic or stale peerIds from ever emitting attestations.
+
+These steps guarantee the contract owner retains total control over identity, reachability, and signing authority before a single job is scheduled.
 
 ---
 
