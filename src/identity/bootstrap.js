@@ -38,8 +38,10 @@ function createCachedImporter(specifier) {
   };
 }
 
-const importIdentityLoader = createCachedImporter(new URL('./loader.js', import.meta.url).href);
-const importIdentityKeys = createCachedImporter(new URL('./keys.js', import.meta.url).href);
+// The ENS identity sources are TypeScript modules; ensure we point the loader at the
+// `.ts` files so the tsx runtime can transpile them at import time.
+const importIdentityLoader = createCachedImporter(new URL('./loader.ts', import.meta.url).href);
+const importIdentityKeys = createCachedImporter(new URL('./keys.ts', import.meta.url).href);
 
 function resolveLogger(logger) {
   if (logger) {
