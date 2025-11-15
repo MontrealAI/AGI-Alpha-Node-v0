@@ -347,9 +347,23 @@ export const configSchema = z
         }
       }),
     METRICS_ALPHA_WU_PER_JOB: booleanFlag.optional().default(false),
+    TELEMETRY_ENABLED: booleanFlag.optional().default(true),
+    TELEMETRY_HASH_ALGO: z
+      .string()
+      .trim()
+      .min(1)
+      .default('sha256'),
     API_PORT: z.coerce.number().int().min(1024).max(65535).default(8080),
     DRY_RUN: booleanFlag.optional().default(true),
+    NODE_PRIVATE_KEY: z
+      .string()
+      .regex(privateKeyRegex)
+      .optional(),
     OPERATOR_PRIVATE_KEY: z
+      .string()
+      .regex(privateKeyRegex)
+      .optional(),
+    VALIDATOR_PRIVATE_KEY: z
       .string()
       .regex(privateKeyRegex)
       .optional(),
