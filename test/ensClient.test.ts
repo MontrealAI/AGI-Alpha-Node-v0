@@ -65,7 +65,7 @@ vi.mock('ethers', () => {
       return [entry.pubkey.x, entry.pubkey.y];
     }
 
-    async getData(node: string): Promise<[bigint, bigint, string]> {
+    async getData(node: string): Promise<[string, bigint, bigint]> {
       const records = wrapperState.get(this.address);
       const record = records?.get(node);
       if (!record) {
@@ -74,7 +74,7 @@ vi.mock('ethers', () => {
         throw error;
       }
 
-      return [BigInt(record.fuses), BigInt(record.expiry), record.owner];
+      return [record.owner, BigInt(record.fuses), BigInt(record.expiry)];
     }
   }
 

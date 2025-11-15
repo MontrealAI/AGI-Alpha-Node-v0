@@ -19,7 +19,7 @@ export interface EnsClientInit extends EnsConfigInit {
 
 const PUBKEY_ABI = ['function pubkey(bytes32 node) view returns (bytes32 x, bytes32 y)'];
 const NAME_WRAPPER_ABI = [
-  'function getData(bytes32 node) view returns (uint32 fuses, uint64 expiry, address owner)'
+  'function getData(bytes32 node) view returns (address owner, uint32 fuses, uint64 expiry)'
 ];
 
 export class EnsResolutionError extends Error {
@@ -86,10 +86,10 @@ export class EnsClient {
 
     const contract = new Contract(this.config.nameWrapper, NAME_WRAPPER_ABI, this.provider);
     try {
-      const [fusesRaw, expiryRaw, ownerRaw] = (await contract.getData(namehash(name))) as readonly [
+      const [ownerRaw, fusesRaw, expiryRaw] = (await contract.getData(namehash(name))) as readonly [
+        string,
         bigint,
-        bigint,
-        string
+        bigint
       ];
 
       return {
