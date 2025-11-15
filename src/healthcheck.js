@@ -1,5 +1,6 @@
 import http from 'node:http';
 
+import { config as loadEnv } from 'dotenv';
 import { loadConfig } from './config/env.js';
 
 function coercePort(value) {
@@ -13,12 +14,19 @@ function coercePort(value) {
   return numeric;
 }
 
+loadEnv();
+
+const metricsPortEnv = Object.prototype.hasOwnProperty.call(process.env, 'METRICS_PORT')
+  ? process.env.METRICS_PORT
+  : undefined;
+
 const config = loadConfig();
 
 const port =
-  coercePort(config.METRICS_PORT) ??
+  coercePort(metricsPortEnv) ??
   coercePort(process.env.PORT) ??
   coercePort(config.API_PORT) ??
+  coercePort(config.METRICS_PORT) ??
   9464;
 
 const timeoutMs = Number.isInteger(config.HEALTHCHECK_TIMEOUT) && config.HEALTHCHECK_TIMEOUT > 0
