@@ -1,4 +1,4 @@
-# ENS Identity & Node Attestation HyperSpec · v0.5.1
+# ENS Identity & Node Attestation HyperSpec · v0.6.0
 <!-- markdownlint-disable MD013 MD033 -->
 
 <p align="center">
@@ -21,7 +21,7 @@
   <a href="../.github/required-checks.json">
     <img src="https://img.shields.io/badge/PR%20Gate-Required%20Checks-8b5cf6?logo=github" alt="Required checks" />
   </a>
-  <img src="https://img.shields.io/badge/Spec-v0.5.1-ec4899" alt="Spec version" />
+  <img src="https://img.shields.io/badge/Spec-v0.6.0-ec4899" alt="Spec version" />
   <img src="https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-ff3366?logo=ethereum&logoColor=white" alt="$AGIALPHA address" />
   <img src="https://img.shields.io/badge/Telemetry-OpenTelemetry%20%26%20Prometheus-0ea5e9?logo=prometheus" alt="Telemetry" />
   <img src="https://img.shields.io/badge/Discovery-libp2p%20dnsaddr-22d3ee?logo=ipfs" alt="libp2p" />
@@ -55,10 +55,10 @@
 ## Status & Alignment
 
 - **Release Status:** Alpha hardened
-- **Spec Version:** `v0.5.1`
+- **Spec Version:** `v0.6.0`
 - **Runtime Alignment:** [`agi-alpha-node-v0@1.1.0`](../package.json)
 - **CI Baseline:** [`Continuous Integration`](../.github/workflows/ci.yml) · [`Required Checks`](../.github/required-checks.json) · [`Branch Gate`](../scripts/verify-branch-gate.mjs)
-- **Token Canon:** `$AGIALPHA` (18 decimals) anchored to [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) across runtime modules.【F:src/constants/token.js†L1-L20】
+- **Token Canon:** `$AGIALPHA` (18 decimals) anchored to [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) across runtime modules.【F:src/constants/token.js†L1-L27】
 - **Applies to:**
   - AGI Alpha Agents `*.alpha.agent.agi.eth`
   - AGI Alpha Nodes `*.alpha.node.agi.eth`
@@ -73,7 +73,7 @@
 3. Ensure identities are **discoverable in milliseconds** through `_dnsaddr` multiaddrs, libp2p peer IDs, and health gate allowlists.
 4. Emit **signed health attestations** and α‑work telemetry that align with `AlphaNodeManager` staking logic and pipeline policy.
 5. Expose **OpenTelemetry spans and Prometheus gauges** with invariant naming so dashboards, validators, and auditors consume the same truth source.
-6. Maintain the **$AGIALPHA economic spine**—staking, treasury flows, owner approvals—through immutable address + decimals validation in every service surface.【F:src/constants/token.js†L1-L20】【F:src/services/token.js†L1-L235】
+6. Maintain the **$AGIALPHA economic spine**—staking, treasury flows, owner approvals—through immutable address + decimals validation in every service surface.【F:src/constants/token.js†L1-L27】【F:src/services/token.js†L46-L136】
 
 ### Non-Goals
 
@@ -99,9 +99,9 @@
 
 ### Token & Treasury Anchor
 
-- `$AGIALPHA` is the **only** staking and reward instrument; the checksum address is injected into contracts, CLI flows, and schema validation.【F:contracts/AlphaNodeManager.sol†L33-L67】【F:src/constants/token.js†L1-L20】
-- `normalizeTokenAddress()` and `assertCanonicalAgialphaAddress()` prevent alternate token injections before any transaction is crafted.【F:src/constants/token.js†L8-L25】
-- CLI helpers `describeAgialphaToken`, `buildTokenApproveTx`, and `getTokenAllowance` give non-technical stewards one-step control over allowances and metadata.【F:src/services/token.js†L1-L235】
+- `$AGIALPHA` is the **only** staking and reward instrument; the checksum address is injected into contracts, CLI flows, and schema validation.【F:contracts/AlphaNodeManager.sol†L44-L68】【F:src/constants/token.js†L1-L27】
+- `normalizeTokenAddress()` and `assertCanonicalAgialphaAddress()` prevent alternate token injections before any transaction is crafted.【F:src/constants/token.js†L9-L27】
+- CLI helpers `describeAgialphaToken`, `buildTokenApproveTx`, and `getTokenAllowance` give non-technical stewards one-step control over allowances and metadata.【F:src/services/token.js†L46-L136】
 - Governance builders (Section [Owner Command Plane](#owner-command-plane)) surface `$AGIALPHA` staking, emission, and treasury routes so the owner alone can throttle capital velocity.
 
 ### NameWrapper Fuses & Expiry
@@ -152,13 +152,13 @@ flowchart TD
 
 ### CLI Surfaces for Owner Supremacy
 
-The `governance` command group in [`src/index.js`](../src/index.js) mirrors every owner-only call with transaction builders and manifest exports so a single steward can modify parameters live.【F:src/index.js†L2070-L2145】
+The `governance` command group in [`src/index.js`](../src/index.js) mirrors every owner-only call with transaction builders and manifest exports so a single steward can modify parameters live.【F:src/index.js†L2096-L2507】
 
 | Surface | Command | Output |
 | --- | --- | --- |
-| Function catalog | `node src/index.js governance catalog` | Lists every owner-only ABI signature wired to builders for auditability.【F:src/index.js†L2090-L2100】【F:src/services/governance.js†L1555-L1710】 |
-| Coverage manifest | `node src/index.js governance surfaces --json` | JSON manifest covering each control surface, targeted contracts, and builder coverage ratios for CI ingestion.【F:src/index.js†L2102-L2143】【F:src/services/governance.js†L1666-L1707】 |
-| Parameter builders | `node src/index.js governance <surface>` | Deterministic payloads for pausing, staking thresholds, emission schedules, identity registry, and job instrumentation using `$AGIALPHA` units by default.【F:src/services/governance.js†L1708-L1880】 |
+| Function catalog | `node src/index.js governance catalog` | Lists every owner-only ABI signature wired to builders for auditability.【F:src/index.js†L2096-L2107】【F:src/services/governance.js†L315-L324】 |
+| Coverage manifest | `node src/index.js governance surfaces --json` | JSON manifest covering each control surface, targeted contracts, and builder coverage ratios for CI ingestion.【F:src/index.js†L2109-L2133】【F:src/services/governance.js†L1555-L1685】 |
+| Parameter builders | `node src/index.js governance <surface>` | Deterministic payloads for pausing, staking thresholds, emission schedules, identity registry, and job instrumentation using `$AGIALPHA` units by default.【F:src/index.js†L2135-L2507】【F:src/services/governance.js†L324-L1662】 |
 
 ```mermaid
 flowchart LR
@@ -177,17 +177,17 @@ flowchart LR
 
 ### Parameter Rotations & Emergency Controls
 
-Owner sovereignty is enforced in code as a first-class primitive. Every high-impact dial exposed by `AlphaNodeManager` has a matching builder and audit surface so the owner can rotate parameters without latency.【F:contracts/AlphaNodeManager.sol†L18-L257】【F:src/services/governance.js†L1555-L1880】
+Owner sovereignty is enforced in code as a first-class primitive. Every high-impact dial exposed by `AlphaNodeManager` has a matching builder and audit surface so the owner can rotate parameters without latency.【F:contracts/AlphaNodeManager.sol†L18-L257】【F:src/services/governance.js†L1555-L1685】
 
 | Control Vector | Solidity Surface | CLI Builder | Result |
 | --- | --- | --- | --- |
-| Global safeguard relay | `pauseAll()`, `resumeAll()`, `unpauseAll()` on `SystemPause` | `node src/index.js governance system-pause --action <pause|resume|unpause> --execute --confirm` | Freezes or re-enables every protocol entrypoint with a single owner signature, mirroring the on-chain pause events.【F:src/services/governance.js†L324-L347】【F:src/index.js†L2492-L2511】 |
-| Node registry custody | `setNodeStatus(bytes32,bool)`, `setOperator(address,bool)`, `setNodeMetadata(bytes32,string)` on `NodeRegistry` | `node src/index.js governance node-status|node-operator|node-metadata … --execute --confirm` | Rotates controllers, toggles active nodes, and refreshes metadata while emitting immutable registry updates.【F:src/services/governance.js†L372-L521】【F:src/index.js†L2166-L2241】 |
-| WorkMeter validator orbit | `setValidator(address,bool)`, `setOracle(address,bool)`, `setSubmissionWindow(uint256)` on `WorkMeter` | `node src/index.js governance workmeter-validator|workmeter-oracle|workmeter-window … --execute --confirm` | Curates validator/oracle access and telemetry cadence for α‑work proofs with deterministic payloads.【F:src/services/governance.js†L540-L602】【F:src/index.js†L2243-L2388】 |
-| Reward and treasury shaping | `setRoleShare`, `setGlobalShares` on `RewardEngine`; `setTreasury(address)` on `PlatformIncentives` | `node src/index.js governance role-share|global-shares|incentives-treasury … --execute --confirm` | Rebalances operator/validator/treasury flows and redirects capital under owner control with full ledger emission.【F:src/services/governance.js†L620-L757】【F:src/index.js†L2533-L2985】 |
+| Global safeguard relay | `pauseAll()`, `resumeAll()`, `unpauseAll()` on `SystemPause` | `node src/index.js governance system-pause --action <pause|resume|unpause> --execute --confirm` | Freezes or re-enables every protocol entrypoint with a single owner signature, mirroring the on-chain pause events.【F:src/services/governance.js†L324-L352】【F:src/index.js†L2490-L2507】 |
+| Node registry custody | `setNodeStatus(bytes32,bool)`, `setOperator(address,bool)`, `setNodeMetadata(bytes32,string)` on `NodeRegistry` | `node src/index.js governance node-status|node-operator|node-metadata … --execute --confirm` | Rotates controllers, toggles active nodes, and refreshes metadata while emitting immutable registry updates.【F:src/services/governance.js†L355-L521】【F:src/index.js†L2135-L2241】 |
+| WorkMeter validator orbit | `setValidator(address,bool)`, `setOracle(address,bool)`, `setSubmissionWindow(uint256)` on `WorkMeter` | `node src/index.js governance workmeter-validator|workmeter-oracle|workmeter-window … --execute --confirm` | Curates validator/oracle access and telemetry cadence for α‑work proofs with deterministic payloads.【F:src/services/governance.js†L540-L668】【F:src/index.js†L2243-L2388】 |
+| Reward and treasury shaping | `setRoleShare`, `setGlobalShares` on `RewardEngine`; `setTreasury(address)` on `PlatformIncentives` | `node src/index.js governance role-share|global-shares|incentives-treasury … --execute --confirm` | Rebalances operator/validator/treasury flows and redirects capital under owner control with full ledger emission.【F:src/services/governance.js†L620-L1662】【F:src/index.js†L2389-L2985】 |
 | α‑Work accounting | `submitUsage(bytes32,…)`, `recordEpoch(uint256,…)` surfaces | `node src/index.js governance workmeter-submit|productivity-record … --execute --confirm` | Records workload attestations, emission routing, and treasury hooks for replayable audit trails.【F:src/services/governance.js†L602-L835】【F:src/index.js†L2389-L2477】 |
 
-Deterministic governance manifests written to `.governance-ledger/v1` make every executed action reproducible by auditors and downstream automation.【F:src/services/governanceLedger.js†L1-L120】【F:src/services/governanceLedger.js†L181-L260】
+Deterministic governance manifests written to `.governance-ledger/v1` make every executed action reproducible by auditors and downstream automation.【F:src/services/governanceLedger.js†L1-L123】【F:src/services/governanceLedger.js†L182-L244】
 
 ---
 
@@ -243,8 +243,8 @@ sequenceDiagram
 ### Automation Tooling
 
 - **Deterministic record templates** — `buildEnsRecordTemplate` derives text and coin records from runtime configuration and payout routes, guaranteeing CI-approved values.【F:src/ens/ens_config.js†L29-L198】
-- **Interactive ENS guide** — `generateEnsSetupGuide` + `formatEnsGuide` produce runbooks with fuse instructions, CLI verification, staking prep, and diagnostics.【F:src/services/ensGuide.js†L6-L88】
-- **Resolver verification** — `verifyNodeOwnership` interrogates registry, wrapper, and resolver custodians, powering `node src/index.js verify-ens` for immediate validation.【F:src/services/ensVerifier.js†L1-L139】
+- **Interactive ENS guide** — `generateEnsSetupGuide` + `formatEnsGuide` produce runbooks with fuse instructions, CLI verification, staking prep, and diagnostics.【F:src/services/ensGuide.js†L6-L74】
+- **Resolver verification** — `verifyNodeOwnership` interrogates registry, wrapper, and resolver custodians, powering `node src/index.js verify-ens` for immediate validation.【F:src/services/ensVerifier.js†L1-L104】
 
 ---
 
@@ -263,7 +263,7 @@ _dnsaddr.node-01.alpha.node.agi.eth. IN TXT "dnsaddr=/dns4/node-01.alpha.node.ag
 
 ### Health Gate Allowlist
 
-- `createHealthGate` normalises ENS allowlists and rejects identities outside curated patterns.【F:src/services/healthGate.js†L1-L104】
+- `createHealthGate` normalises ENS allowlists and rejects identities outside curated patterns.【F:src/services/healthGate.js†L1-L153】
 - CI enforces baseline patterns via `scripts/verify-health-gate.mjs`; missing entries fail with `ENS_PATTERNS_MISSING`.
 - Operators MAY extend the allowlist through `HEALTH_GATE_ALLOWLIST`; blanks and duplicates are ignored by the parser.
 - The gate tracks transitions, rejection reasons, and active bindings so auditors can reconstruct operational posture.
@@ -344,7 +344,7 @@ stateDiagram-v2
 - Reject attestations whose `ens` is not allowlisted by the health gate.
 - Compare `ens_fuses` with NameWrapper data to detect stale fuse states.
 - Verify `verifier` matches the resolver’s published endpoint before trusting telemetry.
-- Persist attestation hashes out-of-band: only governance CLI executions call `recordGovernanceAction`, so operators must archive hashes alongside ledger entries until automated ingestion ships.【F:src/index.js†L569-L594】【F:src/services/governanceLedger.js†L121-L209】
+- Persist attestation hashes out-of-band: only governance CLI executions call `recordGovernanceAction`, so operators must archive hashes alongside ledger entries until automated ingestion ships.【F:src/index.js†L569-L584】【F:src/services/governanceLedger.js†L182-L244】
 
 ---
 
@@ -352,7 +352,7 @@ stateDiagram-v2
 
 ### Canonicalisation Pipeline
 
-`alphaWuTelemetry`, `canonicalizeForSigning`, and `hashTelemetryPayload` guarantee deterministic payload hashing prior to signing.【F:src/telemetry/alphaWuTelemetry.js†L61-L118】【F:src/utils/canonicalize.js†L1-L54】 Steps:
+`alphaWuTelemetry`, `canonicalizeForSigning`, and `hashTelemetryPayload` guarantee deterministic payload hashing prior to signing.【F:src/telemetry/alphaWuTelemetry.js†L68-L212】【F:src/utils/canonicalize.js†L1-L58】 Steps:
 
 1. Sort object keys lexicographically.
 2. Normalise numbers (reject non-finite values) and stringify BigInts.
@@ -450,7 +450,7 @@ graph LR
 
 ## CI & Policy Enforcement
 
-- CI orchestrated by [`ci.yml`](../.github/workflows/ci.yml) covers lint, tests, coverage, Solidity, subgraph TypeScript, Docker smoke, security audit, and badge publication; concurrency prevents stale runs.【F:.github/workflows/ci.yml†L1-L260】
+- CI orchestrated by [`ci.yml`](../.github/workflows/ci.yml) covers lint, tests, coverage, Solidity, subgraph TypeScript, Docker smoke, security audit, and badge publication; concurrency prevents stale runs.【F:.github/workflows/ci.yml†L1-L276】
 - Protected branches enforce the same surface via [`required-checks.json`](../.github/required-checks.json); merges are blocked unless every check is green and visible.
 - Required status checks render as public shields for auditors and are stored in `.github/required-checks.json` for reproducibility.【F:.github/required-checks.json†L1-L9】
 - `npm run ci:policy` executes `scripts/verify-health-gate.mjs`, ensuring ENS patterns stay curated.
@@ -459,14 +459,14 @@ graph LR
 
 | Required Check | Workflow Job | Purpose |
 | --- | --- | --- |
-| Lint Markdown & Links | `lint` | Markdown lint, link validation, health/branch policies.【F:.github/workflows/ci.yml†L16-L58】 |
-| Unit & Integration Tests | `test` | Mirrors the Vitest harness and runtime smoke for deterministic coverage.【F:.github/workflows/ci.yml†L59-L90】 |
-| Coverage Report | `coverage` | Publishes instrumentation and pushes shield payloads for branch protection.【F:.github/workflows/ci.yml†L91-L147】 |
-| Solidity Lint & Compile | `solidity` | Validates contracts before owner governance actions are generated.【F:.github/workflows/ci.yml†L91-L118】 |
-| Subgraph TypeScript Build | `typescript` | Ensures indexing clients remain in lockstep with ENS/node metadata.【F:.github/workflows/ci.yml†L119-L147】 |
-| Docker Build & Smoke Test | `docker-smoke` | Guarantees containerised deployments remain runnable for non-technical stewards.【F:.github/workflows/ci.yml†L148-L190】 |
-| Dependency Security Scan | `security` | Audits npm tree to protect owner-controlled contract execution surfaces.【F:.github/workflows/ci.yml†L191-L217】 |
-| Publish Status Badges | `badges` | Updates off-repo badges when main passes every gate, keeping visibility instant.【F:.github/workflows/ci.yml†L218-L268】 |
+| Lint Markdown & Links | `lint` | Markdown lint, link validation, health/branch policies.【F:.github/workflows/ci.yml†L18-L58】 |
+| Unit & Integration Tests | `test` | Mirrors the Vitest harness and runtime smoke for deterministic coverage.【F:.github/workflows/ci.yml†L60-L80】 |
+| Coverage Report | `coverage` | Publishes instrumentation and pushes shield payloads for branch protection.【F:.github/workflows/ci.yml†L126-L176】 |
+| Solidity Lint & Compile | `solidity` | Validates contracts before owner governance actions are generated.【F:.github/workflows/ci.yml†L82-L103】 |
+| Subgraph TypeScript Build | `typescript` | Ensures indexing clients remain in lockstep with ENS/node metadata.【F:.github/workflows/ci.yml†L104-L124】 |
+| Docker Build & Smoke Test | `docker-smoke` | Guarantees containerised deployments remain runnable for non-technical stewards.【F:.github/workflows/ci.yml†L177-L209】 |
+| Dependency Security Scan | `security` | Audits npm tree to protect owner-controlled contract execution surfaces.【F:.github/workflows/ci.yml†L210-L230】 |
+| Publish Status Badges | `badges` | Updates off-repo badges when main passes every gate, keeping visibility instant.【F:.github/workflows/ci.yml†L232-L276】 |
 
 ---
 
