@@ -79,6 +79,7 @@ All runtime defaults live in [`src/config/defaults.js`](src/config/defaults.js).
 | `NODE_PRIVATE_KEY` / `VALIDATOR_PRIVATE_KEY` | Wallets used for orchestrator and validator signing during α-WU submission and attestations. | `0x59c6…c82` |
 | `TELEMETRY_ENABLED` & `TELEMETRY_HASH_ALGO` | Governs α-WU hashing and Prometheus publication without touching code. | `true`, `sha256` |
 | `VERIFIER_PORT` & `VERIFIER_PUBLIC_BASE_URL` | Expose the public verification endpoint so external agents can replay results. | `8787`, `http://localhost:8787` |
+| `HEALTHCHECK_TIMEOUT` | Duration (ms) the self-check waits for `/metrics` before failing CI or orchestration. | `5000` |
 | `VALIDATION_QUORUM_BPS` / `VALIDATION_MINIMUM_VOTES` | Shape quorum thresholds for α-WU acceptance in local demos. | `6667`, `1` |
 | `AGIALPHA_TOKEN_ADDRESS` & `AGIALPHA_TOKEN_DECIMALS` | Anchors staking to the canonical `$AGIALPHA` ERC-20. | `0xa61a…a1fa`, `18` |
 
@@ -221,6 +222,7 @@ graph TD
 The observability stack treats every α-WU as a first-class telemetry event.
 
 - **Prometheus exporter** — `/metrics` exposes runtime gauges, counters, and histograms covering job discovery, execution latency, validator quorum, and α-WU throughput.【F:src/telemetry/monitoring.js†L1-L520】
+- **Self-healing health gate** — [`src/healthcheck.js`](src/healthcheck.js) leans on the central config to probe `/metrics` with bounded timeouts, making container probes and CI smoke tests deterministic.【F:src/healthcheck.js†L1-L43】【F:src/config/schema.js†L334-L345】
 - **α-WU telemetry** — payload hashing, segment tracking, and signature sealing run through [`src/telemetry/alphaWuTelemetry.js`](src/telemetry/alphaWuTelemetry.js) so validators can replay exactly what executors produced.【F:src/telemetry/alphaWuTelemetry.js†L118-L237】
 - **Governance ledger** — every lifecycle milestone is journaled for auditability and downstream automation.【F:src/services/lifecycleJournal.js†L1-L120】
 
@@ -254,6 +256,7 @@ REST and verifier APIs are exposed via [`src/network`](src/network), with health
 Every pull request must clear the full CI gauntlet: markdown linting, link validation, vitest suites, coverage reporting, Solidity linting/compilation, subgraph codegen/build, npm audit, and policy gates.【F:package.json†L18-L48】 The `ci:verify` script mirrors the workflow locally so contributors can ship with confidence.
 
 - **Workflow parity** — [`ci.yml`](.github/workflows/ci.yml) is a direct expansion of `npm run ci:verify`, so the same jobs (lint, test, coverage, Solidity, subgraph, audit, policy, branch) execute locally and in GitHub Actions.【F:.github/workflows/ci.yml†L1-L180】
+- **Enforced visibility** — [`required-checks.json`](.github/required-checks.json) mirrors the workflow, letting GitHub block merges unless every status is green and surfacing badges for stakeholders automatically.【F:.github/required-checks.json†L1-L9】
 - **Branch enforcement** — [`scripts/verify-branch-gate.mjs`](scripts/verify-branch-gate.mjs) blocks non-compliant branches from merging and is wired into CI through `ci:branch`.
 - **Health gate** — [`scripts/verify-health-gate.mjs`](scripts/verify-health-gate.mjs) checks telemetry, stake posture, and governance vitals before a release is considered healthy.
 
