@@ -70,7 +70,7 @@ graph LR
 - **$AGIALPHA treasury engine** — The runtime is hard-wired to the canonical 18-decimal token contract [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa), powering staking, payouts, and liquidity loops.【F:contracts/AlphaNodeManager.sol†L29-L53】【F:src/constants/token.js†L1-L20】
 - **Owner-dominated controls** — The AlphaNodeManager contract exposes pause/resume, emission gates, stake withdrawals, validator rosters, and identity governance entirely under the owner’s address.【F:contracts/AlphaNodeManager.sol†L59-L213】
 - **Deterministic orchestration** — Workflows from discovery → execution → validation → settlement are orchestrated in [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js), ensuring each α-work unit is audited and journaled.【F:src/services/jobLifecycle.js†L404-L707】
-- **Identity-first runtime** — ENS metadata, payout routes, telemetry baselines, libp2p multiaddrs, and signing keys are consolidated through `loadNodeIdentity`, `_dnsaddr` parsing, and ENS-aligned key validation so operators inherit a single canonical identity view.【F:src/identity/loader.ts†L1-L147】【F:src/identity/dnsaddr.ts†L1-L39】【F:src/identity/keys.ts†L1-L164】
+- **Identity-first runtime** — The container bootstrapper now hydrates ENS metadata, `_dnsaddr` multiaddrs, and the signing key before any diagnostics run by piping through the TypeScript bridge in `src/identity/bootstrap.js`, guaranteeing that the live peerId, pubkey, and libp2p endpoints exactly match the ENS records.【F:src/orchestrator/bootstrap.js†L143-L233】【F:src/identity/bootstrap.js†L1-L84】【F:src/identity/loader.ts†L1-L147】【F:src/identity/dnsaddr.ts†L1-L39】【F:src/identity/keys.ts†L1-L164】
 - **Production-ready packaging** — Docker, Helm, CI gates, lint/test/coverage/security chains, and subgraph build tooling ship in-tree so non-technical operators can deploy without touching the internals.【F:Dockerfile†L1-L92】【F:package.json†L1-L64】
 
 ---
@@ -116,7 +116,7 @@ flowchart LR
    node src/index.js container --once
    ```
 
-   The bootstrapper hydrates ENS, governance, staking, and telemetry state before handing off α-work scheduling.【F:src/orchestrator/bootstrap.js†L421-L518】
+   The bootstrapper hydrates ENS, governance, staking, and telemetry state before handing off α-work scheduling.【F:src/orchestrator/bootstrap.js†L225-L590】
 
 ---
 
@@ -148,10 +148,22 @@ sequenceDiagram
 | Canonical identity snapshot | [`src/identity/loader.ts`](src/identity/loader.ts) | Fetches resolver, pubkey, TXT metadata, `_dnsaddr` multiaddrs, and NameWrapper data into a single `NodeIdentity`.【F:src/identity/loader.ts†L1-L147】 |
 | `_dnsaddr` → libp2p | [`src/identity/dnsaddr.ts`](src/identity/dnsaddr.ts) | Sanitises TXT fragments, extracts `dnsaddr=` multiaddrs, deduplicates, and feeds libp2p dialers. 【F:src/identity/dnsaddr.ts†L1-L39】|
 | Key management | [`src/identity/keys.ts`](src/identity/keys.ts) | Loads secp256k1 / ed25519 keyfiles, derives pubkeys, and enforces ENS parity via `validateKeypairAgainstENS`.【F:src/identity/keys.ts†L1-L164】 |
+| Runtime enforcement | [`src/identity/bootstrap.js`](src/identity/bootstrap.js) + [`src/orchestrator/bootstrap.js`](src/orchestrator/bootstrap.js) | The bootstrapper lazily loads the TypeScript identity modules via `tsx/esm`, hydrates ENS state, validates the keypair, and refuses to continue if anything drifts from the on-chain record.【F:src/identity/bootstrap.js†L1-L84】【F:src/orchestrator/bootstrap.js†L143-L233】 |
+
+```mermaid
+flowchart LR
+  ENS[(ENS Resolver / NameWrapper)] -->|pubkey + TXT| Loader{{loadNodeIdentityRecord}}
+  DNS[_dnsaddr TXT_] --> Loader
+  Loader --> IdentityCache[NodeIdentity Snapshot]
+  IdentityCache --> Keycheck[validateKeypairAgainstENS]
+  Keycheck --> Owner{Owner Console}
+  IdentityCache --> HealthGate
+  IdentityCache --> Telemetry
+```
 
 The loader fails fast when a resolver is missing, when the ENS pubkey is absent, or when `node.peerId` metadata is undefined—preventing half-hydrated runtimes from emitting attestations.【F:src/identity/loader.ts†L34-L88】【F:src/identity/loader.ts†L100-L134】
 
-`validateKeypairAgainstENS` computes the local secp256k1 public key and compares it with ENS-published coordinates; mismatches throw `NodeKeyValidationError`, ensuring attestations always originate from the declared identity.【F:src/identity/keys.ts†L107-L164】
+`validateKeypairAgainstENS` computes the local secp256k1 public key and compares it with ENS-published coordinates; mismatches throw `NodeKeyValidationError`, ensuring attestations always originate from the declared identity.【F:src/identity/keys.ts†L107-L164】  The bootstrapper surfaces these checks immediately so that failed validations stop the process before governance, staking, or telemetry begins.【F:src/orchestrator/bootstrap.js†L162-L233】
 
 ---
 
@@ -198,7 +210,7 @@ The AlphaNodeManager contract gives the owner complete control over the staking 
 
 ## Observability & Governance
 
-- **Health gates**: The bootstrapper publishes health snapshots and ENS allowlists to halt workloads if telemetry degrades.【F:src/orchestrator/bootstrap.js†L421-L518】【F:scripts/verify-health-gate.mjs†L1-L90】
+- **Health gates**: The bootstrapper publishes health snapshots and ENS allowlists to halt workloads if telemetry degrades.【F:src/orchestrator/bootstrap.js†L427-L556】【F:scripts/verify-health-gate.mjs†L1-L90】
 - **Metrics**: Prometheus counters & histograms export α-work throughput, validator performance, and reward curves for dashboards.【F:src/telemetry/alphaMetrics.js†L1-L200】【F:src/telemetry/monitoring.js†L1-L220】
 - **Governance ledger**: Structured event journaling tracks validator status, staking posture, and orchestrator directives for audit trails.【F:src/services/governanceLedger.js†L1-L260】【F:src/services/governanceStatus.js†L1-L120】
 - **Offline resilience**: Snapshot + replay primitives guarantee that disconnected nodes can resynchronise once connectivity returns.【F:src/services/offlineSnapshot.js†L1-L210】

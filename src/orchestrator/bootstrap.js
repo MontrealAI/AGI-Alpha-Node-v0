@@ -18,6 +18,11 @@ import { createAlphaWuTelemetry } from '../telemetry/alphaWuTelemetry.js';
 import { startValidatorRuntime } from '../validator/runtime.js';
 import { createQuorumEngine } from '../settlement/quorumEngine.js';
 import { getNodeEnsName } from '../ens/ens_config.js';
+import {
+  loadNodeIdentityRecord,
+  loadNodeKeypairFromSource,
+  validateKeypairAgainstEnsRecord
+} from '../identity/bootstrap.js';
 
 function assertConfigField(value, field) {
   if (!value) {
@@ -120,7 +125,10 @@ export async function bootstrapContainer({
       stopJobWatchers: null,
       executionBinding: null,
       healthGate: null,
-      validatorRuntime
+      validatorRuntime,
+      nodeIdentity: null,
+      nodeKeypair: null,
+      quorumEngine: null
     };
   }
 
@@ -144,11 +152,46 @@ export async function bootstrapContainer({
     ?? (config.NODE_LABEL && config.ENS_PARENT_DOMAIN
       ? `${config.NODE_LABEL}.${config.ENS_PARENT_DOMAIN}`
       : null);
-  const initialEnsName = config.HEALTH_GATE_OVERRIDE_ENS ?? canonicalEnsName ?? derivedEnsName;
+  const identityEnsName = canonicalEnsName ?? derivedEnsName;
+  const initialEnsName = config.HEALTH_GATE_OVERRIDE_ENS ?? identityEnsName;
+
+  if (!identityEnsName) {
+    throw new Error('Unable to derive ENS name. Configure NODE_ENS_NAME or NODE_LABEL + ENS_PARENT_DOMAIN.');
+  }
+
+  const identityLogger = typeof logger.child === 'function' ? logger.child({ subsystem: 'node-identity' }) : logger;
+  let nodeIdentity;
+  try {
+    nodeIdentity = await loadNodeIdentityRecord(identityEnsName, { logger: identityLogger });
+    identityLogger.info(
+      {
+        ensName: nodeIdentity.ensName,
+        peerId: nodeIdentity.peerId,
+        multiaddrs: nodeIdentity.multiaddrs,
+        fuses: nodeIdentity.fuses ?? null,
+        expiry: nodeIdentity.expiry ?? null
+      },
+      'ENS node identity hydrated'
+    );
+  } catch (error) {
+    identityLogger.error(error, 'Failed to load node identity from ENS');
+    throw error;
+  }
+
+  let nodeKeypair = null;
+  try {
+    nodeKeypair = await loadNodeKeypairFromSource({ logger: identityLogger });
+    await validateKeypairAgainstEnsRecord(nodeIdentity, nodeKeypair, { logger: identityLogger });
+    identityLogger.info({ ensName: nodeIdentity.ensName }, 'Local keypair aligned with ENS pubkey');
+  } catch (error) {
+    identityLogger.error(error, 'Failed to validate node keypair against ENS identity');
+    throw error;
+  }
+
   if (initialEnsName) {
     healthGate.setStatus({
       isHealthy: config.HEALTH_GATE_INITIAL_STATE,
-      ensName: initialEnsName,
+      ensName: nodeIdentity?.ensName ?? initialEnsName,
       source: 'bootstrap-initial'
     });
   }
@@ -184,7 +227,7 @@ export async function bootstrapContainer({
   let executionBinding = null;
   const telemetryLogger = typeof logger.child === 'function' ? logger.child({ subsystem: 'alpha-telemetry' }) : logger;
   const alphaTelemetry = createAlphaWuTelemetry({
-    nodeEnsName: canonicalEnsName ?? initialEnsName,
+    nodeEnsName: nodeIdentity?.ensName ?? identityEnsName,
     attestorAddress: config.OPERATOR_ADDRESS,
     logger: telemetryLogger
   });
@@ -411,7 +454,7 @@ export async function bootstrapContainer({
       logger
     });
     healthGate.updateFromDiagnostics({
-      ensName: diagnostics?.verification?.nodeName ?? derivedEnsName,
+      ensName: diagnostics?.verification?.nodeName ?? nodeIdentity?.ensName ?? derivedEnsName,
       stakeEvaluation: diagnostics?.stakeEvaluation,
       diagnosticsHealthy: diagnostics?.stakeEvaluation?.meets && !diagnostics?.stakeEvaluation?.penaltyActive,
       source: 'bootstrap-diagnostics'
@@ -479,7 +522,9 @@ export async function bootstrapContainer({
       jobLifecycle: null,
       healthGate,
       validatorRuntime,
-      quorumEngine
+      quorumEngine,
+      nodeIdentity,
+      nodeKeypair
     };
   }
 
@@ -488,7 +533,7 @@ export async function bootstrapContainer({
     const onDiagnostics = (diag) => {
       if (diag) {
         healthGate.updateFromDiagnostics({
-          ensName: diag?.verification?.nodeName ?? derivedEnsName,
+          ensName: diag?.verification?.nodeName ?? nodeIdentity?.ensName ?? derivedEnsName,
           stakeEvaluation: diag?.stakeEvaluation,
           diagnosticsHealthy: diag?.stakeEvaluation?.meets && !diag?.stakeEvaluation?.penaltyActive,
           source: 'monitor-diagnostics'
@@ -539,6 +584,8 @@ export async function bootstrapContainer({
     executionBinding,
     healthGate,
     validatorRuntime,
-    quorumEngine
+    quorumEngine,
+    nodeIdentity,
+    nodeKeypair
   };
 }
