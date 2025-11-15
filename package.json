@@ -21,7 +21,7 @@
     "precoverage": "node scripts/check-ajv-version.mjs",
     "lint:sol": "solhint --config .solhint.json \"contracts/**/*.sol\"",
     "test:sol": "node scripts/run-solc.mjs",
-    "ens:inspect": "ts-node --esm scripts/ens-inspect.ts",
+    "ens:inspect": "tsx scripts/ens-inspect.ts",
     "ci:lint": "npm run lint",
     "ci:test": "npm run test",
     "ci:coverage": "npm run coverage",
@@ -60,6 +60,7 @@
     "solc": "^0.8.26",
     "solhint": "^5.0.3",
     "ts-node": "^10.9.2",
+    "tsx": "^4.20.6",
     "typescript": "^5.5.4",
     "vitest": "^1.6.0"
   }
