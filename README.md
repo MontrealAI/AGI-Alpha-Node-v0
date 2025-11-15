@@ -83,6 +83,22 @@ All runtime defaults live in [`src/config/defaults.js`](src/config/defaults.js).
 | `VALIDATION_QUORUM_BPS` / `VALIDATION_MINIMUM_VOTES` | Shape quorum thresholds for α-WU acceptance in local demos. | `6667`, `1` |
 | `AGIALPHA_TOKEN_ADDRESS` & `AGIALPHA_TOKEN_DECIMALS` | Anchors staking to the canonical `$AGIALPHA` ERC-20. | `0xa61a…a1fa`, `18` |
 
+### Advanced environment toggles
+
+The template also surfaces optional overrides so owners can reshape governance and observability without code edits.【F:.env.example†L42-L88】
+
+| Variable | Capability | Sample |
+| --- | --- | --- |
+| `VALIDATOR_SOURCE_TYPE` / `VALIDATOR_SINK_TYPE` | Route α-WU attestations between memory, file, HTTP, or MQ back-ends. | `memory` |
+| `ROLE_SHARE_TARGETS` | JSON/CSV map of payout shares by role (basis points). | `{"executor":5000,"validator":4000,"owner":1000}` |
+| `DESIRED_*_ADDRESS` set | Declare desired registry or module contracts before orchestration auto-discovers them. | `0x0000…` |
+| `AUTO_STAKE` + `STAKE_AMOUNT` | Auto-stake `$AGIALPHA` when the node boots, using owner-approved levels. | `true`, `1500` |
+| `HEALTH_GATE_ALLOWLIST` | Restrict governance health probes to trusted ENS domains. | `*.alpha.node.agi.eth` |
+| `AUTO_RESUME` & `SYSTEM_PAUSE_ADDRESS` | Define who can lift automated pauses once telemetry stabilises. | `true`, `0xd6…c96B` |
+| `WORK_UNITS` | JSON payload to rebalance α-WU weighting for models, VRAM tiers, and SLAs. | `{"baseUnit":100,"weights":{"modelClass":{"LLM_70B":2}}}` |
+| `GOVERNANCE_LEDGER_ROOT` | Export ledger snapshots for downstream reporting automation. | `./.agi/ledger` |
+| `OFFLINE_MODE` & `OFFLINE_SNAPSHOT_PATH` | Force orchestrator to replay offline jobs and fetch snapshots from disk. | `true`, `./snapshots/latest.json` |
+
 > ✅ **Single source of truth** — once `.env` is hydrated, every CLI command, Docker invocation, and local cluster script consumes the same configuration surface.
 >
 > ℹ️ Owner overrides—including pausing, stake thresholds, job routing, and emission curves—are always available on-chain; see [On-Chain Mastery](#on-chain-mastery).
