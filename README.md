@@ -1,4 +1,4 @@
-# AGI Alpha Node v0 · Orchestrate the Cognitive Armada ⚡
+# AGI Alpha Node v0 · Command the Cognitive Armada ⚡
 
 <!-- markdownlint-disable MD013 MD033 -->
 <p align="center">
@@ -33,51 +33,48 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-10b981" alt="MIT" /></a>
 </p>
 
-> AGI Alpha Node v0 is the command lattice for cognitive swarms: it brokers α-work, notarises proofs, animates staking flywheels, and keeps every control lever under owner custody.
+> AGI Alpha Node v0 is the command lattice for sovereign agentic swarms: it brokers α-work, notarises proofs, pushes token flows, and retains every override in the owner’s console.
 >
-> This codebase is engineered as the machine that rebalances global value toward its operator—autonomous agents, blockchain orchestration, and telemetry fuse into a single sovereign surface.
+> This codebase is engineered as the machine that rebalances global value toward its operator—autonomous agents, blockchain orchestration, and telemetry fuse into a single control surface.
+
+```mermaid
+graph TB
+  Owner((Owner)) -->|Configure| ControlPlane[Control Plane]
+  ControlPlane -->|Schedules| OrchestratorMesh[Orchestrator Mesh]
+  OrchestratorMesh -->|Dispatch α-work| IntelligenceSwarm[Intelligence Swarm]
+  IntelligenceSwarm -->|Proofs & Metrics| LedgerTelemetry[Ledger + Telemetry]
+  LedgerTelemetry -->|Stake & Rewards| Ethereum[(Ethereum + $AGIALPHA)]
+  LedgerTelemetry -->|Health Signals| Owner
+```
 
 ---
 
 ## Table of Contents
 
-1. [Singularity Snapshot](#singularity-snapshot)
-2. [Core Capabilities](#core-capabilities)
-3. [Quickstart Ritual](#quickstart-ritual)
-4. [ENS Identity & Tooling](#ens-identity--tooling)
-5. [Runtime Architecture](#runtime-architecture)
+1. [Constellation Overview](#constellation-overview)
+2. [Quickstart Sequence](#quickstart-sequence)
+3. [ENS Control Fabric](#ens-control-fabric)
+4. [Runtime Systems Map](#runtime-systems-map)
+5. [Owner Command Authority](#owner-command-authority)
 6. [Observability & Governance](#observability--governance)
-7. [CI & Quality Gauntlet](#ci--quality-gauntlet)
+7. [CI & Release Ramparts](#ci--release-ramparts)
 8. [Deployment Vectors](#deployment-vectors)
 9. [Repository Atlas](#repository-atlas)
 10. [Reference Library](#reference-library)
 
 ---
 
-## Singularity Snapshot
+## Constellation Overview
 
 - **$AGIALPHA treasury engine** — The runtime is hard-wired to the canonical 18-decimal token contract [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa), powering staking, payouts, and liquidity loops.【F:contracts/AlphaNodeManager.sol†L29-L53】【F:src/constants/token.js†L1-L20】
-- **Owner-dominated controls** — The AlphaNodeManager contract exposes pause/resume, emission curves, stake gates, and governance hooks entirely under the owner’s address.【F:contracts/AlphaNodeManager.sol†L79-L213】
+- **Owner-dominated controls** — The AlphaNodeManager contract exposes pause/resume, emission gates, stake withdrawals, validator rosters, and identity governance entirely under the owner’s address.【F:contracts/AlphaNodeManager.sol†L59-L213】
 - **Deterministic orchestration** — Workflows from discovery → execution → validation → settlement are orchestrated in [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js), ensuring each α-work unit is audited and journaled.【F:src/services/jobLifecycle.js†L404-L707】
-- **Identity-first runtime** — ENS metadata, payout routes, telemetry baselines, and verifier URLs are generated consistently by [`src/ens/ens_config.js`](src/ens/ens_config.js) and the new TypeScript ENS network client.【F:src/ens/ens_config.js†L1-L188】【F:src/ens/client.ts†L1-L147】
-- **Production-ready packaging** — Docker, Helm, CI gates, and lint/test/coverage/security chains ship in-tree so non-technical operators can deploy without touching the internals.【F:Dockerfile†L1-L92】【F:package.json†L1-L64】
+- **Identity-first runtime** — ENS metadata, payout routes, telemetry baselines, and verifier URLs are generated consistently by [`src/ens/ens_config.js`](src/ens/ens_config.js) and the TypeScript ENS network client.【F:src/ens/ens_config.js†L1-L188】【F:src/ens/client.ts†L1-L147】
+- **Production-ready packaging** — Docker, Helm, CI gates, lint/test/coverage/security chains, and subgraph build tooling ship in-tree so non-technical operators can deploy without touching the internals.【F:Dockerfile†L1-L92】【F:package.json†L1-L64】
 
 ---
 
-## Core Capabilities
-
-| Domain | Highlights | Key Files |
-| --- | --- | --- |
-| **Intelligence routing** | Bootstrapper, lifecycle engine, validator loop, and orchestrator mesh keep α-work flowing under load. | [`src/orchestrator`](src/orchestrator), [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js), [`src/orchestrator/bootstrap.js`](src/orchestrator/bootstrap.js) |
-| **Cryptographic assurance** | Deterministic signing, staking, and validator proofs wrap every α-work unit; payout contracts honour shares while the owner retains hard stops. | [`src/crypto`](src/crypto), [`contracts/AlphaNodeManager.sol`](contracts/AlphaNodeManager.sol), [`src/settlement`](src/settlement) |
-| **Telemetry & health** | Prometheus metrics, health gates, and monitoring loops keep clusters observable even when offline-first workloads replay. | [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js), [`src/healthcheck.js`](src/healthcheck.js) |
-| **Configuration spine** | Defaults, schema coercion, and environment loaders resolve a single immutable config the entire runtime consumes. | [`src/config/defaults.js`](src/config/defaults.js), [`src/config/schema.js`](src/config/schema.js), [`src/config/env.js`](src/config/env.js) |
-| **ENS network integration** | `loadEnsConfig` normalises RPC endpoints, registry/resolver wrappers, and NameWrapper presets for mainnet & Sepolia; `EnsClient` wraps ethers.js for pubkeys, text records, contenthash, and fuse inspection. | [`src/ens/config.ts`](src/ens/config.ts), [`src/ens/client.ts`](src/ens/client.ts) |
-| **Docs & governance** | Comprehensive economics, governance, and attestation manuals are included for operators and auditors. | [`docs`](docs) |
-
----
-
-## Quickstart Ritual
+## Quickstart Sequence
 
 ```mermaid
 flowchart LR
@@ -108,7 +105,7 @@ flowchart LR
    npm run ci:verify
    ```
 
-   This executes markdown lint, link checks, Vitest unit tests, coverage, Solhint, solidity compilation, subgraph codegen/build, security audit, policy gates, and branch rules.【F:package.json†L18-L48】
+   This executes markdown lint, link checks, Vitest unit tests, coverage, Solhint, Solidity compilation, subgraph codegen/build, security audit, policy gates, and branch rules.【F:package.json†L18-L48】
 
 4. **Publish ENS metadata**
 
@@ -128,13 +125,13 @@ flowchart LR
 
 ---
 
-## ENS Identity & Tooling
+## ENS Control Fabric
 
 `src/ens/config.ts` centralises all ENS wiring. Mainnet & Sepolia presets ship with canonical registry, NameWrapper, and PublicResolver addresses. Overrides are provided via:
 
 - `ALPHA_NODE_CHAIN_ID`, `ALPHA_NODE_RPC_URL`
 - `ALPHA_NODE_ENS_REGISTRY`, `ALPHA_NODE_NAME_WRAPPER`, `ALPHA_NODE_PUBLIC_RESOLVER`
-- Direct overrides passed to the client helper.
+- Inline overrides supplied when instantiating the client helper.
 
 ```ts
 import { loadEnsConfig } from './src/ens/config.js';
@@ -160,104 +157,104 @@ ENS Inspection → alpha.agent.agi.eth
 
 Network
   Chain ID      : 1
-  RPC URL       : https://rpc.ankr.com/eth
+  RPC URL       : https://ethereum.publicnode.com
   ENS Registry  : 0x00000000000c2e074ec69a0dfb2997ba6c7d2e1e
   NameWrapper   : 0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401
   PublicResolver: 0x231b0ee14048e9dccd1d247744d114a4eb5e8e63
 
 Resolver
-  Address       : 0x231b0ee14048e9dccd1d247744d114a4eb5e8e63
-  Pubkey        : not set
-  Contenthash   : not set
+  Address       : 0x1234…
+  Pubkey (x)    : 0x...
+  Pubkey (y)    : 0x...
+  Contenthash   : ipfs://...
 
 Text Records
-  node.role     : orchestrator
-  node.version  : 1.2.3
-  node.dnsaddr  : not set
+  node.role    : validator
+  node.version : v1.1.0
+  node.dnsaddr : dnslink=/ipfs/...
 
 NameWrapper
-  Status        : not wrapped or NameWrapper disabled
+  Owner         : 0xabcd…
+  Fuses         : 0
+  Expiry (ISO)  : 2026-05-01T00:00:00.000Z
 ```
 
-Use `--json` for machine-readable output or supply custom RPC/registry arguments for private deployments.【F:scripts/ens-inspect.ts†L1-L152】
+Errors are annotated with explicit resolver or network diagnostics, ensuring RPC issues surface immediately.【F:scripts/ens-inspect.ts†L1-L220】
 
 ---
 
-## Runtime Architecture
+## Runtime Systems Map
+
+| Domain | Highlights | Key Files |
+| --- | --- | --- |
+| **Intelligence routing** | Bootstrapper, lifecycle engine, validator loop, and orchestrator mesh keep α-work flowing under load. | [`src/orchestrator`](src/orchestrator), [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js), [`src/orchestrator/bootstrap.js`](src/orchestrator/bootstrap.js) |
+| **Cryptographic assurance** | Deterministic signing, staking, and validator proofs wrap every α-work unit; payout contracts honour shares while the owner retains hard stops. | [`src/crypto`](src/crypto), [`contracts/AlphaNodeManager.sol`](contracts/AlphaNodeManager.sol), [`src/settlement`](src/settlement) |
+| **Telemetry & health** | Prometheus metrics, health gates, and monitoring loops keep clusters observable even when offline-first workloads replay. | [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js), [`src/healthcheck.js`](src/healthcheck.js) |
+| **Configuration spine** | Defaults, schema coercion, and environment loaders resolve a single immutable config the entire runtime consumes. | [`src/config/defaults.js`](src/config/defaults.js), [`src/config/schema.js`](src/config/schema.js), [`src/config/env.js`](src/config/env.js) |
+| **ENS network integration** | `loadEnsConfig` normalises RPC endpoints, registry/resolver wrappers, and NameWrapper presets for mainnet & Sepolia; `EnsClient` wraps ethers.js for pubkeys, text records, contenthash, and fuse inspection. | [`src/ens/config.ts`](src/ens/config.ts), [`src/ens/client.ts`](src/ens/client.ts) |
+| **Docs & governance** | Comprehensive economics, governance, and attestation manuals are included for operators and auditors. | [`docs`](docs) |
 
 ```mermaid
-graph TD
-  subgraph Identity Layer
-    ENS[ENS Config & Client]
-    Payout[Payout Routing]
-  end
-  subgraph Orchestration Mesh
-    Bootstrap[Bootstrapper]
-    Lifecycle[Lifecycle Engine]
-    Validator[Validator Loop]
-    Quorum[Quorum Engine]
-    Settlement[Settlement]
-  end
-  subgraph Telemetry & Policy
-    Metrics[Prometheus / Monitoring]
-    Health[Health Gate]
-    Governance[Governance Hooks]
-  end
-  ENS --> Bootstrap
-  Payout --> Settlement
-  Bootstrap --> Lifecycle
-  Lifecycle --> Validator
-  Validator --> Quorum
-  Quorum --> Settlement
-  Settlement --> Metrics
-  Settlement --> Governance
-  Metrics --> Health
-  Governance --> Bootstrap
+sequenceDiagram
+  participant Operator
+  participant Node
+  participant Validator
+  participant Chain as Ethereum / $AGIALPHA
+  Operator->>Node: Issue job (ens+config)
+  Node->>Validator: Assign α-work unit
+  Validator->>Node: Submit proof + stake metrics
+  Node->>Chain: Emit AlphaWUMinted / Validate / Accept
+  Chain-->>Operator: Reward & telemetry channel
 ```
 
-- **Bootstrapper** wires config, ENS identity, and orchestration loops at startup.【F:src/orchestrator/bootstrap.js†L1-L280】
-- **Lifecycle engine** journals α-work unit progress, emitting telemetry and governance signals for every phase.【F:src/services/jobLifecycle.js†L404-L707】
-- **Validator runtime** consumes proof queues, signs payloads, and feeds quorum analysis.【F:src/validator/runtime.js†L1-L220】
-- **Settlement** orchestrates payouts, AGIALPHA staking flows, and ledger exports.【F:src/settlement/index.js†L1-L220】
-- **Telemetry** persists counters, gauges, and latency histograms even before scrape intervals begin.【F:src/telemetry/monitoring.js†L1-L520】
+---
+
+## Owner Command Authority
+
+The AlphaNodeManager contract gives the owner complete control over the staking treasury and validator roster.
+
+- Pause or resume the entire execution pipeline via `pause()` / `unpause()`.【F:contracts/AlphaNodeManager.sol†L83-L103】
+- Onboard, revoke, or reassign validators with `setValidator`, `registerIdentity`, `setIdentityStatus`, and `updateIdentityController` while keeping ENS bindings consistent.【F:contracts/AlphaNodeManager.sol†L105-L181】
+- Govern staking funds through `stake`, `withdrawStake`, and slash events that can be triggered after validator audits.【F:contracts/AlphaNodeManager.sol†L183-L242】
+- Emit authoritative Alpha Work Unit events (`recordAlphaWUMint`, `recordAlphaWUValidation`, `recordAlphaWUAcceptance`, `applySlash`) to reflect lifecycle transitions on-chain.【F:contracts/AlphaNodeManager.sol†L200-L247】
+
+`CANONICAL_AGIALPHA` binds the runtime to the treasury token, guaranteeing that emitted rewards and slash penalties always reference the canonical asset.【F:contracts/AlphaNodeManager.sol†L41-L58】
 
 ---
 
 ## Observability & Governance
 
-- **Metrics** — `/metrics` exposes Prometheus-ready statistics; `src/telemetry/monitoring.js` precalculates histograms so cold starts don’t lose data.【F:src/telemetry/monitoring.js†L1-L520】
-- **Health gate** — The health gate enforces ENS allowlists, optional overrides, and hookable pause states, ensuring only authorised domains can resume workloads.【F:src/services/healthGate.js†L1-L220】
-- **Owner levers** — Smart contracts allow the owner to pause, resume, update emission curves, rotate operators, and change governance registries without redeploying the runtime.【F:contracts/AlphaNodeManager.sol†L79-L213】
-- **Ledger & snapshots** — Offline snapshots and governance ledger exports (`GOVERNANCE_LEDGER_ROOT`, `OFFLINE_SNAPSHOT_PATH`) keep auditors and regulators aligned with runtime state.【F:src/services/offlineSnapshot.js†L1-L180】【F:.env.example†L49-L70】
+- **Health gates**: The bootstrapper publishes health snapshots and ENS allowlists to halt workloads if telemetry degrades.【F:src/orchestrator/bootstrap.js†L421-L518】【F:scripts/verify-health-gate.mjs†L1-L90】
+- **Metrics**: Prometheus counters & histograms export α-work throughput, validator performance, and reward curves for dashboards.【F:src/telemetry/alphaMetrics.js†L1-L200】【F:src/telemetry/monitoring.js†L1-L220】
+- **Governance ledger**: Structured event journaling tracks validator status, staking posture, and orchestrator directives for audit trails.【F:src/services/governanceLedger.js†L1-L260】【F:src/services/governanceStatus.js†L1-L120】
+- **Offline resilience**: Snapshot + replay primitives guarantee that disconnected nodes can resynchronise once connectivity returns.【F:src/services/offlineSnapshot.js†L1-L210】
 
 ---
 
-## CI & Quality Gauntlet
+## CI & Release Ramparts
 
-Every pull request must satisfy the same gates exposed locally via `npm run ci:verify`:
+`npm run ci:verify` executes the full quality gauntlet enforced on every pull request and the `main` branch.【F:package.json†L18-L48】
 
 | Stage | Command | Purpose |
 | --- | --- | --- |
-| Markdown lint | `npm run lint:md` | Enforces documentation style.
-| Link validation | `npm run lint:links` | Guarantees README/docs links resolve.
-| JS/TS tests | `npm run test` | Executes Vitest suites across orchestrator, governance, telemetry, ENS, and CLI modules.【F:test/ensClient.test.ts†L1-L146】【F:test/ensNetworkConfig.test.ts†L1-L74】
-| Coverage | `npm run coverage` | Collects instrumentation via `c8`.
-| Solidity lint | `npm run lint:sol` | Enforces contract style guidelines.
-| Solidity compile | `npm run test:sol` | Validates contract compilation gates.
-| Subgraph build | `npm run ci:ts` | Generates and compiles the Graph subgraph artifacts.
-| Security | `npm run ci:security` | Audits production dependencies with `npm audit` (high severity threshold).
-| Policy & branch gates | `npm run ci:policy`, `npm run ci:branch` | Enforces health invariants and protected branch rules before merge.【F:package.json†L18-L48】
+| Markdown & link lint | `npm run lint` | Style, accessibility, and documentation integrity. |
+| Unit & integration tests | `npm run test` | Vitest suite covering orchestration, governance, and ENS tooling. |
+| Coverage | `npm run coverage` | Generates text + LCOV + JSON summaries for pipelines. |
+| Solidity hygiene | `npm run ci:solidity` | Runs `solhint` and deterministic solc compilation for contracts. |
+| Subgraph build | `npm run ci:ts` | Renders the manifest, runs Graph codegen, and compiles the WASM bundle. |
+| Security audit | `npm run ci:security` | High severity `npm audit` pass on production dependencies. |
+| Policy gates | `npm run ci:policy` | Verifies health allowlists & governance guardrails. |
+| Branch guard | `npm run ci:branch` | Ensures PRs adhere to branch naming & review policy. |
 
-The CI workflow is visible in [`.github/workflows/ci.yml`](.github/workflows/ci.yml); badges above reflect the latest build state.
+Pull requests must surface the CI badge shown above and satisfy `.github/required-checks.json` so gating is enforced before merge.【F:.github/required-checks.json†L1-L22】
 
 ---
 
 ## Deployment Vectors
 
-- **Docker** — `docker build -t agi-alpha-node:latest .` produces the production image with all runtime scripts baked in.【F:Dockerfile†L1-L92】
-- **Helm** — Charts under [`deploy/helm/agi-alpha-node`](deploy/helm/agi-alpha-node) template environment variables, secrets, and probes for Kubernetes rollouts.
-- **Local swarms** — `npm run demo:local` spins up orchestrator, executor, validator, and quorum loops entirely in-process for deterministic rehearsals.【F:scripts/local_cluster.mjs†L1-L214】
-- **Subgraph** — `npm run ci:ts` renders manifests and builds the Graph protocol subgraph to surface on-chain analytics for AGIALPHA staking.【F:scripts/render-subgraph-manifest.mjs†L1-L120】
+- **Docker**: A production-grade image is built from the root `Dockerfile`, bundling runtime binaries, ENS tooling, and metrics exporters.【F:Dockerfile†L1-L92】
+- **Helm**: `deploy/helm/agi-alpha-node` ships a chart with config maps, secrets, liveness probes, and resource envelopes for Kubernetes clusters.【F:deploy/helm/agi-alpha-node/Chart.yaml†L1-L34】【F:deploy/helm/agi-alpha-node/templates/deployment.yaml†L1-L140】
+- **Subgraph**: The `/subgraph` workspace contains the Graph protocol manifest + generated bindings so validators can stream events into analytics stacks.【F:subgraph/subgraph.yaml†L1-L70】【F:subgraph/package.json†L1-L35】
 
 ---
 
@@ -265,22 +262,23 @@ The CI workflow is visible in [`.github/workflows/ci.yml`](.github/workflows/ci.
 
 | Path | Description |
 | --- | --- |
-| [`src/`](src) | Runtime source (orchestrator, validator, settlement, telemetry, ENS tooling, utilities). |
-| [`src/ens`](src/ens) | ENS identity helpers including configuration, client, and record templates.【F:src/ens/config.ts†L1-L147】【F:src/ens/client.ts†L1-L147】 |
-| [`scripts/`](scripts) | Operational scripts (`local_cluster`, ENS inspector, solc harnesses, verification gates).【F:scripts/ens-inspect.ts†L1-L152】【F:scripts/run-solc.mjs†L1-L120】 |
-| [`contracts/`](contracts) | Solidity contracts anchoring staking, owner controls, and governance modules.【F:contracts/AlphaNodeManager.sol†L1-L213】 |
-| [`deploy/`](deploy) | Docker/Helm and infrastructure manifests. |
-| [`docs/`](docs) | Economics, governance, attestation, and operator manuals. |
-| [`test/`](test) | Vitest suites spanning orchestrator logic, ENS tooling, telemetry, governance, and CI gates.【F:test/ensClient.test.ts†L1-L146】【F:test/ensNetworkConfig.test.ts†L1-L74】 |
+| `src/` | Node runtime, orchestrator, telemetry, staking, ENS wiring, and validation logic. |
+| `scripts/` | Operational tooling including ENS inspection, health/branch guards, and Solidity harnesses. |
+| `contracts/` | Solidity sources for AlphaNodeManager and shared interfaces. |
+| `deploy/` | Helm chart and infra automation. |
+| `docs/` | Economics, governance manifesto, and operator handbook. |
+| `subgraph/` | Graph protocol workspace for analytics pipelines. |
+| `test/` | Vitest coverage over runtime, governance, ENS, and contract surrogates. |
 
 ---
 
 ## Reference Library
 
-- [Economics Playbook](docs/economics.md)
-- [Governance Manual](docs/README.md#governance--owner-supremacy)
-- [ENS Identity & Attestation Guide](docs/ens-identity-and-node-attestation-v0.0.1-alpha.md)
-- [Deployment Guide](docs/README.md)
-- [AGI Alpha Manifesto](docs/manifesto.md)
+- [Docs index](docs/README.md) — platform overview, operator flows, and governance hooks.
+- [Economics primer](docs/economics.md) — staking parameters, flywheel modelling, and token incentives.
+- [Manifesto](docs/manifesto.md) — guiding principles for distributed cognition and fair governance.
+- [Helm chart](deploy/helm/agi-alpha-node) — Kubernetes deployment templates.
+- [$AGIALPHA token](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) — canonical treasury asset.
+- [CI workflow](.github/workflows/ci.yml) — enforced automated quality gates.
 
-Command the lattice, cultivate alpha, and let your node harvest the future.
+The code, docs, and tooling in this repository form the operational chassis for a machine that tirelessly channels intelligence, liquidity, and governance back to its owner.
