@@ -39,7 +39,7 @@
 1. [Constellation Overview](#constellation-overview)
 2. [Configuration Nexus](#configuration-nexus)
 3. [Launch Sequence](#launch-sequence)
-4. [Local Demo Alpha WUs and Validators](#local-demo-alpha-wus-and-validators)
+4. [Local Demo: α-WUs + Validators + ENS](#local-demo-α-wus--validators--ens)
 5. [Cognitive Mesh Topology](#cognitive-mesh-topology)
 6. [Metrics & Insight Field](#metrics--insight-field)
 7. [On-Chain Mastery](#on-chain-mastery)
@@ -91,7 +91,7 @@ The template also surfaces optional overrides so owners can reshape governance a
 | --- | --- | --- |
 | `VALIDATOR_SOURCE_TYPE` / `VALIDATOR_SINK_TYPE` | Route α-WU attestations between memory, file, HTTP, or MQ back-ends. | `memory` |
 | `ROLE_SHARE_TARGETS` | JSON/CSV map of payout shares by role (basis points). | `{"executor":5000,"validator":4000,"owner":1000}` |
-| `DESIRED_*_ADDRESS` set | Declare desired registry or module contracts before orchestration auto-discovers them. | `0x0000…` |
+| `DESIRED_*_ADDRESS` set | Declare desired registry or module contracts before orchestration auto-discovers them (leave blank to skip). | `0x0000…` |
 | `AUTO_STAKE` + `STAKE_AMOUNT` | Auto-stake `$AGIALPHA` when the node boots, using owner-approved levels. | `true`, `1500` |
 | `HEALTH_GATE_ALLOWLIST` | Restrict governance health probes to trusted ENS domains. | `*.alpha.node.agi.eth` |
 | `AUTO_RESUME` & `SYSTEM_PAUSE_ADDRESS` | Define who can lift automated pauses once telemetry stabilises. | `true`, `0xd6…c96B` |
@@ -100,6 +100,8 @@ The template also surfaces optional overrides so owners can reshape governance a
 | `OFFLINE_MODE` & `OFFLINE_SNAPSHOT_PATH` | Force orchestrator to replay offline jobs and fetch snapshots from disk. | `true`, `./snapshots/latest.json` |
 
 > ✅ **Single source of truth** — once `.env` is hydrated, every CLI command, Docker invocation, and local cluster script consumes the same configuration surface.
+>
+> 🧪 **Blank-safe overrides** — optional contract overrides and API secrets can be left empty in `.env`; the loader trims and discards them automatically so sample templates execute without manual cleanup.【F:src/config/schema.js†L20-L63】【F:src/config/schema.js†L283-L336】【F:src/config/schema.js†L437-L470】
 >
 > ℹ️ Owner overrides—including pausing, stake thresholds, job routing, and emission curves—are always available on-chain; see [On-Chain Mastery](#on-chain-mastery).
 
@@ -152,11 +154,12 @@ flowchart LR
 
 ---
 
-## Local Demo Alpha WUs and Validators
+## Local Demo: α-WUs + Validators + ENS
 
 Need to see α-WUs flowing end-to-end without external infrastructure? The `demo:local` script spins up an orchestrator, executor, and validator entirely in-process:
 
 ```bash
+cp .env.example .env  # populate development keys & optional overrides
 npm run demo:local
 ```
 

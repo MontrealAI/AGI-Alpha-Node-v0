@@ -31,6 +31,50 @@ const privateKeyRegex = /^0x[a-fA-F0-9]{64}$/;
 
 const basisPointsSchema = z.coerce.number().int().min(0).max(10_000);
 
+function optionalAddress(fieldName) {
+  return z
+    .string()
+    .optional()
+    .transform((value) => {
+      if (value === undefined || value === null) {
+        return undefined;
+      }
+
+      const trimmed = String(value).trim();
+      if (!trimmed) {
+        return undefined;
+      }
+
+      if (!addressRegex.test(trimmed)) {
+        throw new Error(`${fieldName} must be a 0x-prefixed 20-byte address`);
+      }
+
+      return trimmed;
+    });
+}
+
+function optionalSecret(fieldName, minimumLength = 0) {
+  return z
+    .string()
+    .optional()
+    .transform((value) => {
+      if (value === undefined || value === null) {
+        return undefined;
+      }
+
+      const trimmed = String(value).trim();
+      if (!trimmed) {
+        return undefined;
+      }
+
+      if (minimumLength > 0 && trimmed.length < minimumLength) {
+        throw new Error(`${fieldName} must contain at least ${minimumLength} characters when provided`);
+      }
+
+      return trimmed;
+    });
+}
+
 const NODE_ROLES = ['orchestrator', 'executor', 'validator', 'mixed'];
 
 const nodeRoleSchema = z
@@ -300,19 +344,19 @@ export const configSchema = z
         }
         return int;
       }),
-    OPERATOR_ADDRESS: z.string().regex(addressRegex).optional(),
-    PLATFORM_INCENTIVES_ADDRESS: z.string().regex(addressRegex).optional(),
-    NODE_PAYOUT_ETH_ADDRESS: z.string().regex(addressRegex).optional(),
-    NODE_PAYOUT_AGIALPHA_ADDRESS: z.string().regex(addressRegex).optional(),
-    STAKE_MANAGER_ADDRESS: z.string().regex(addressRegex).optional(),
-    REWARD_ENGINE_ADDRESS: z.string().regex(addressRegex).optional(),
-    JOB_REGISTRY_ADDRESS: z.string().regex(addressRegex).optional(),
-    IDENTITY_REGISTRY_ADDRESS: z.string().regex(addressRegex).optional(),
-    DESIRED_JOB_REGISTRY_ADDRESS: z.string().regex(addressRegex).optional(),
-    DESIRED_IDENTITY_REGISTRY_ADDRESS: z.string().regex(addressRegex).optional(),
-    DESIRED_VALIDATION_MODULE_ADDRESS: z.string().regex(addressRegex).optional(),
-    DESIRED_REPUTATION_MODULE_ADDRESS: z.string().regex(addressRegex).optional(),
-    DESIRED_DISPUTE_MODULE_ADDRESS: z.string().regex(addressRegex).optional(),
+    OPERATOR_ADDRESS: optionalAddress('OPERATOR_ADDRESS'),
+    PLATFORM_INCENTIVES_ADDRESS: optionalAddress('PLATFORM_INCENTIVES_ADDRESS'),
+    NODE_PAYOUT_ETH_ADDRESS: optionalAddress('NODE_PAYOUT_ETH_ADDRESS'),
+    NODE_PAYOUT_AGIALPHA_ADDRESS: optionalAddress('NODE_PAYOUT_AGIALPHA_ADDRESS'),
+    STAKE_MANAGER_ADDRESS: optionalAddress('STAKE_MANAGER_ADDRESS'),
+    REWARD_ENGINE_ADDRESS: optionalAddress('REWARD_ENGINE_ADDRESS'),
+    JOB_REGISTRY_ADDRESS: optionalAddress('JOB_REGISTRY_ADDRESS'),
+    IDENTITY_REGISTRY_ADDRESS: optionalAddress('IDENTITY_REGISTRY_ADDRESS'),
+    DESIRED_JOB_REGISTRY_ADDRESS: optionalAddress('DESIRED_JOB_REGISTRY_ADDRESS'),
+    DESIRED_IDENTITY_REGISTRY_ADDRESS: optionalAddress('DESIRED_IDENTITY_REGISTRY_ADDRESS'),
+    DESIRED_VALIDATION_MODULE_ADDRESS: optionalAddress('DESIRED_VALIDATION_MODULE_ADDRESS'),
+    DESIRED_REPUTATION_MODULE_ADDRESS: optionalAddress('DESIRED_REPUTATION_MODULE_ADDRESS'),
+    DESIRED_DISPUTE_MODULE_ADDRESS: optionalAddress('DESIRED_DISPUTE_MODULE_ADDRESS'),
     JOB_DISCOVERY_BLOCK_RANGE: z
       .coerce.number()
       .int()
@@ -419,7 +463,7 @@ export const configSchema = z
         const trimmed = value.trim();
         return trimmed.length ? trimmed : undefined;
       }),
-    SYSTEM_PAUSE_ADDRESS: z.string().regex(addressRegex).optional(),
+    SYSTEM_PAUSE_ADDRESS: optionalAddress('SYSTEM_PAUSE_ADDRESS'),
     DESIRED_MINIMUM_STAKE: z
       .union([z.string(), z.number(), z.bigint()])
       .optional()
@@ -442,10 +486,7 @@ export const configSchema = z
     VAULT_TOKEN: z.string().optional(),
     VAULT_SECRET_PATH: z.string().optional(),
     VAULT_SECRET_KEY: z.string().optional(),
-    GOVERNANCE_API_TOKEN: z
-      .string()
-      .min(8)
-      .optional(),
+    GOVERNANCE_API_TOKEN: optionalSecret('GOVERNANCE_API_TOKEN', 8),
     GOVERNANCE_LEDGER_ROOT: z
       .string()
       .optional()
