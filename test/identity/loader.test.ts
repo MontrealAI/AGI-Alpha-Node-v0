@@ -90,4 +90,31 @@ describe('loadNodeIdentity', () => {
 
     await expect(loadNodeIdentity('peerless.example.eth')).rejects.toThrow(/node\.peerId/);
   });
+
+  it('continues when _dnsaddr resolution fails', async () => {
+    const metadataRecords = new Map<string, string>([
+      ['node.peerId', '12D3KooWPQ'],
+      ['node.dnsaddr', 'dnsaddr=/dns4/fallback.example/tcp/443/wss/p2p/12D5']
+    ]);
+
+    mockClient.getResolver.mockImplementation(async (name: string) => {
+      if (name.startsWith('_dnsaddr.')) {
+        throw new MockEnsResolutionError('no resolver for _dnsaddr');
+      }
+      return '0xresolver';
+    });
+    mockClient.getPubkey.mockResolvedValue({
+      x: '0x' + '1'.repeat(64),
+      y: '0x' + '2'.repeat(64)
+    });
+    mockClient.getTextRecord.mockImplementation(async (_name: string, key: string) => {
+      return metadataRecords.get(key) ?? null;
+    });
+    mockClient.getNameWrapperData.mockResolvedValue(null);
+
+    const { loadNodeIdentity } = await import('../../src/identity/loader.js');
+
+    const identity = await loadNodeIdentity('dnsaddr-missing.example.eth');
+    expect(identity.multiaddrs).toEqual(['/dns4/fallback.example/tcp/443/wss/p2p/12D5']);
+  });
 });

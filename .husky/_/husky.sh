@@ -1,22 +1,38 @@
 #!/usr/bin/env sh
-[ "$HUSKY" = "2" ] && set -x
-n=$(basename "$0")
-s=$(dirname "$(dirname "$0")")/$n
+if [ "$HUSKY" = "2" ]; then
+  set -x
+fi
 
-[ ! -f "$s" ] && exit 0
+hook_name=$(basename "$0")
+hook_path="$(dirname "$(dirname "$0")")/$hook_name"
+
+if [ ! -f "$hook_path" ]; then
+  exit 0
+fi
 
 if [ -f "$HOME/.huskyrc" ]; then
-        echo "husky - '~/.huskyrc' is DEPRECATED, please move your code to ~/.config/husky/init.sh"
+  echo "husky - '~/.huskyrc' is DEPRECATED, please move your code to ~/.config/husky/init.sh"
 fi
-i="${XDG_CONFIG_HOME:-$HOME/.config}/husky/init.sh"
-[ -f "$i" ] && . "$i"
 
-[ "${HUSKY-}" = "0" ] && exit 0
+init_file="${XDG_CONFIG_HOME:-$HOME/.config}/husky/init.sh"
+if [ -f "$init_file" ]; then
+  . "$init_file"
+fi
+
+if [ "${HUSKY-}" = "0" ]; then
+  exit 0
+fi
 
 export PATH="node_modules/.bin:$PATH"
-sh -e "$s" "$@"
-c=$?
+sh -e "$hook_path" "$@"
+exit_code=$?
 
-[ $c != 0 ] && echo "husky - $n script failed (code $c)"
-[ $c = 127 ] && echo "husky - command not found in PATH=$PATH"
-exit $c
+if [ "$exit_code" -ne 0 ]; then
+  echo "husky - $hook_name script failed (code $exit_code)"
+fi
+
+if [ "$exit_code" -eq 127 ]; then
+  echo "husky - command not found in PATH=$PATH"
+fi
+
+exit "$exit_code"

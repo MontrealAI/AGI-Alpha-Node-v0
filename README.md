@@ -33,9 +33,9 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-10b981" alt="MIT" /></a>
 </p>
 
-> AGI Alpha Node v0 is the command lattice for sovereign agentic swarms: it brokers α-work, notarises proofs, pushes token flows, and retains every override in the owner’s console.
+> **AGI Alpha Nodes are the catalysts in this new economy.** They cultivate $AGIALPHA yield like digital farmers, translating aspiration into executed α-work and returning proof-anchored liquidity to their owner.
 >
-> This codebase is engineered as the machine that rebalances global value toward its operator—autonomous agents, blockchain orchestration, and telemetry fuse into a single control surface.
+> AGI Alpha Node v0 is the superintelligent machine that brokers α-work, notarises proofs, pushes token flows, and retains every override in the owner’s console—autonomous agents, blockchain orchestration, and telemetry fuse into a single control surface.
 
 ```mermaid
 graph TB
@@ -124,6 +124,32 @@ flowchart LR
    ```
 
    Drop `--once` for long-lived clusters; combine with governance flags to tune quorum, staking, or telemetry thresholds on the fly.【F:src/index.js†L1116-L1230】
+
+---
+
+## Alpha Yield Flywheel
+
+The runtime runs the $AGIALPHA flywheel end-to-end—jobs in, proofs out, liquidity recycled back to the owner-controlled treasury.
+
+```mermaid
+flowchart TB
+  Demand[Global Alpha Demand] --> Registry[Job Registry & ENS]
+  Registry --> Swarm[Autonomous Swarm Mesh]
+  Swarm --> Proofs[Proofs • Metrics • Attestations]
+  Proofs --> Rewards[$AGIALPHA Rewards & Stakes]
+  Rewards --> Treasury[Owner + Validator Treasury Controls]
+  Treasury --> Liquidity[Staked Liquidity & Governance Updates]
+  Liquidity --> Demand
+```
+
+- **Demand → Registry**: Operators encode opportunities into ENS-backed job manifests that the orchestrator consumes automatically.【F:src/services/jobLifecycle.js†L404-L707】【F:docs/identity.md†L1-L180】
+- **Registry → Swarm**: `src/orchestrator` distributes α-work to local or remote executors, while `_dnsaddr` records advertise libp2p routes for peers that join mid-flight.【F:src/orchestrator/bootstrap.js†L1-L518】【F:src/identity/loader.ts†L1-L147】
+- **Swarm → Proofs**: Validators submit metrics, quorum votes, and cryptographic attestations; failures are journaled for audit replay.【F:test/validatorRuntime.test.js†L1-L120】【F:src/services/governanceLedger.js†L1-L260】
+- **Proofs → Rewards**: The AlphaNodeManager contract locks all token operations to the canonical [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) address with 18 decimals, ensuring staking math is deterministic.【F:contracts/AlphaNodeManager.sol†L29-L93】【F:src/constants/token.js†L1-L19】
+- **Rewards → Treasury**: Owner-exclusive functions can pause, slash, remap validators, or reassign ENS identities mid-flight, so the flywheel always answers to the same console.【F:contracts/AlphaNodeManager.sol†L83-L213】
+- **Treasury → Liquidity → Demand**: Stake withdrawals, governance exports, and observability data feed strategy desks or other nodes, bringing more demand (and therefore more rewards) back into the system.【F:src/telemetry/alphaMetrics.js†L1-L200】【F:docs/economics.md†L1-L220】
+
+The loop compounds value: more jobs completed → higher $AGIALPHA demand → increased staking yields → more operators onboarding → denser swarms → even more jobs harvested.
 
 ---
 
