@@ -317,6 +317,7 @@ Policy scripts enforce branch hygiene and repository health before merges land o
 - [`docs/telemetry`](docs/telemetry) — α-WU KPI dashboards and monitoring primers.
 - [`docs/economics.md`](docs/economics.md) — staking, emissions, and incentive modelling.
 - [`docs/manifesto.md`](docs/manifesto.md) — vision framing for autonomous intelligence swarms.
+- [`docs/ens-identity-and-node-attestation-v0.0.1-alpha.md`](docs/ens-identity-and-node-attestation-v0.0.1-alpha.md) — definitive ENS + attestation playbook powering node sovereignty.
 
 ---
 
