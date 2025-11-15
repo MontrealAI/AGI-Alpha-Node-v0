@@ -133,6 +133,53 @@ describe('monitoring telemetry server', () => {
     expect(response.status).toBe(404);
   });
 
+  it('does not cache per-job totals when the feature is disabled', async () => {
+    recordAlphaWorkUnitSegment({
+      nodeLabel: 'node-disabled',
+      deviceClass: 'L40S',
+      slaProfile: 'STANDARD',
+      jobId: 'job-disabled',
+      epochId: 'epoch-disabled',
+      alphaWU: 1,
+      jobTotalAlphaWU: 1
+    });
+
+    telemetry = startMonitoringServer({ port: 0, logger: noopLogger, enableAlphaWuPerJob: false });
+    await waitForServer(telemetry.server);
+    const { port: disabledPort } = telemetry.server.address();
+    await delay(10);
+
+    let metricsResponse = await fetch(`http://127.0.0.1:${disabledPort}/metrics`);
+    expect(metricsResponse.status).toBe(200);
+    let metrics = await metricsResponse.text();
+    expect(metrics).not.toContain('alpha_wu_per_job');
+    expect(metrics).not.toContain('job_id="job-disabled"');
+
+    await new Promise((resolve) => telemetry.server.close(resolve));
+    telemetry = null;
+
+    telemetry = startMonitoringServer({ port: 0, logger: noopLogger, enableAlphaWuPerJob: true });
+    await waitForServer(telemetry.server);
+
+    recordAlphaWorkUnitSegment({
+      nodeLabel: 'node-enabled',
+      deviceClass: 'H100-80GB',
+      slaProfile: 'SOVEREIGN',
+      jobId: 'job-enabled',
+      epochId: 'epoch-enabled',
+      alphaWU: 2,
+      jobTotalAlphaWU: 2
+    });
+
+    await delay(10);
+    const { port } = telemetry.server.address();
+    metricsResponse = await fetch(`http://127.0.0.1:${port}/metrics`);
+    expect(metricsResponse.status).toBe(200);
+    metrics = await metricsResponse.text();
+    expect(metrics).not.toContain('job_id="job-disabled"');
+    expect(metrics).toContain('job_id="job-enabled"');
+  });
+
   it('replays metrics recorded before the monitoring server starts', async () => {
     updateJobsRunning(2);
     incrementJobsCompleted(3);

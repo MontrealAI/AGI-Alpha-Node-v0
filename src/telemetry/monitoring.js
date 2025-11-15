@@ -6,6 +6,7 @@ const alphaWuMetricState = {
   epochGauges: [],
   perJobGauges: [],
   perJobEnabled: false,
+  perJobConfigured: false,
   totalSegments: new Map(),
   perJobTotals: new Map(),
   epochTotals: new Map()
@@ -44,6 +45,7 @@ function registerAlphaWuMetricHandles({
   alphaWuMetricState.perJobGauges = Array.isArray(perJobGauges)
     ? perJobGauges.filter(Boolean)
     : [perJobGauges].filter(Boolean);
+  alphaWuMetricState.perJobConfigured = true;
   alphaWuMetricState.perJobEnabled = Boolean(perJobEnabled && alphaWuMetricState.perJobGauges.length > 0);
 
   alphaWuMetricState.totalCounters.forEach((counter) => counter.reset());
@@ -54,11 +56,15 @@ function registerAlphaWuMetricHandles({
   }
 
   alphaWuMetricState.perJobGauges.forEach((gauge) => gauge.reset());
-  for (const [jobId, total] of alphaWuMetricState.perJobTotals.entries()) {
-    const labels = { job_id: jobId };
-    alphaWuMetricState.perJobGauges.forEach((gauge) => {
-      gauge.set(labels, total);
-    });
+  if (!alphaWuMetricState.perJobEnabled) {
+    alphaWuMetricState.perJobTotals.clear();
+  } else {
+    for (const [jobId, total] of alphaWuMetricState.perJobTotals.entries()) {
+      const labels = { job_id: jobId };
+      alphaWuMetricState.perJobGauges.forEach((gauge) => {
+        gauge.set(labels, total);
+      });
+    }
   }
 
   alphaWuMetricState.epochGauges.forEach((gauge) => gauge.reset());
@@ -150,8 +156,14 @@ export function recordAlphaWorkUnitSegment({
     if (Number.isFinite(jobTotal)) {
       const jobKey = normaliseLabel(jobId);
       const labels = { job_id: jobKey };
-      alphaWuMetricState.perJobTotals.set(jobKey, jobTotal);
-      if (alphaWuMetricState.perJobEnabled) {
+      if (!alphaWuMetricState.perJobEnabled) {
+        if (alphaWuMetricState.perJobConfigured) {
+          alphaWuMetricState.perJobTotals.delete(jobKey);
+        } else {
+          alphaWuMetricState.perJobTotals.set(jobKey, jobTotal);
+        }
+      } else {
+        alphaWuMetricState.perJobTotals.set(jobKey, jobTotal);
         alphaWuMetricState.perJobGauges.forEach((gauge) => {
           gauge.set(labels, jobTotal);
         });
@@ -549,6 +561,7 @@ export function __resetMonitoringStateForTests() {
   alphaWuMetricState.epochGauges = [];
   alphaWuMetricState.perJobGauges = [];
   alphaWuMetricState.perJobEnabled = false;
+  alphaWuMetricState.perJobConfigured = false;
   alphaWuMetricState.totalSegments.clear();
   alphaWuMetricState.perJobTotals.clear();
   alphaWuMetricState.epochTotals.clear();
