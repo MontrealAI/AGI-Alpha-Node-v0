@@ -65,10 +65,18 @@ describe('verifier server', () => {
     expect(info.node_ens_name).toBe('verifier.alpha.eth');
     expect(info.supported_roles).toContain('validator');
     expect(info.ens_records.text_records.agialpha_verifier).toBe(config.VERIFIER_PUBLIC_BASE_URL);
+    expect(info.ens_records.text_records.agialpha_health).toBe(
+      `${config.VERIFIER_PUBLIC_BASE_URL}/verifier/health`
+    );
+    expect(info.ens_records.coin_addresses.ETH).toBe(validatorWallet.address);
+    expect(info.ens_records.coin_addresses.AGIALPHA).toBe(validatorWallet.address);
+    expect(info.metrics.total_requests).toBeGreaterThanOrEqual(1);
+    expect(info.metrics.total_validations).toBe(0);
 
     const health = await fetch(`${baseUrl}/verifier/health`).then((res) => res.json());
     expect(health.status).toBe('ok');
-    expect(health.total_requests).toBeGreaterThanOrEqual(1);
+    expect(health.total_requests).toBeGreaterThanOrEqual(2);
+    expect(health.total_validations).toBe(0);
   });
 
   it('validates α-WUs via POST /verifier/validate', async () => {
