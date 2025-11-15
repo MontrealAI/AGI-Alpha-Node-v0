@@ -315,6 +315,7 @@ Pull requests must surface the CI badge shown above and satisfy `.github/require
 ## Reference Library
 
 - [Docs index](docs/README.md) — platform overview, operator flows, and governance hooks.
+- [Node identity authority](docs/identity.md) — ENS resolution, key alignment, and libp2p topology guides.
 - [Economics primer](docs/economics.md) — staking parameters, flywheel modelling, and token incentives.
 - [Manifesto](docs/manifesto.md) — guiding principles for distributed cognition and fair governance.
 - [Helm chart](deploy/helm/agi-alpha-node) — Kubernetes deployment templates.
