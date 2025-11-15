@@ -35,7 +35,7 @@
 
 > **AGI Alpha Nodes are the catalysts in this new economy.** They cultivate $AGIALPHA yield like digital farmers, translating aspiration into executed α-work and returning proof-anchored liquidity to their owner.
 >
-> AGI Alpha Node v0 is the machine that brokers α-work, notarises proofs, pushes token flows, and retains every override in the owner’s console—autonomous agents, blockchain orchestration, and telemetry fuse into a single control surface.
+> AGI Alpha Node v0 is the superintelligent machine that brokers α-work, notarises proofs, pushes token flows, and retains every override in the owner’s console—autonomous agents, blockchain orchestration, and telemetry fuse into a single control surface.
 
 ```mermaid
 graph LR
@@ -55,13 +55,14 @@ graph LR
 2. [Quickstart Sequence](#quickstart-sequence)
 3. [ENS Control Fabric](#ens-control-fabric)
 4. [Node Identity Fabric](#node-identity-fabric)
-5. [Runtime Systems Map](#runtime-systems-map)
-6. [Owner Command Authority](#owner-command-authority)
-7. [Observability & Governance](#observability--governance)
-8. [CI & Release Ramparts](#ci--release-ramparts)
-9. [Deployment Vectors](#deployment-vectors)
-10. [Repository Atlas](#repository-atlas)
-11. [Reference Library](#reference-library)
+5. [Identity Boot Sequence](#identity-boot-sequence)
+6. [Runtime Systems Map](#runtime-systems-map)
+7. [Owner Command Authority](#owner-command-authority)
+8. [Observability & Governance](#observability--governance)
+9. [CI & Release Ramparts](#ci--release-ramparts)
+10. [Deployment Vectors](#deployment-vectors)
+11. [Repository Atlas](#repository-atlas)
+12. [Reference Library](#reference-library)
 
 ---
 
@@ -167,6 +168,34 @@ The loader fails fast when a resolver is missing, when the ENS pubkey is absent,
 
 ---
 
+## Identity Boot Sequence
+
+```mermaid
+sequenceDiagram
+  participant Operator
+  participant ENS
+  participant Loader as Identity Loader
+  participant KeyVault as Local Key Vault
+  participant Gate as Health Gate
+  participant Mesh as Orchestrator Mesh
+  Operator->>ENS: Publish ENS name + pubkey + TXT + _dnsaddr
+  Loader->>ENS: getResolver(), getPubkey(), getTextRecord()
+  Loader-->>KeyVault: NodeIdentity snapshot
+  KeyVault-->>Loader: loadNodeKeypair()
+  Loader->>KeyVault: validateKeypairAgainstENS()
+  Loader->>Gate: Verified identity + multiaddrs
+  Gate->>Mesh: Unlock scheduling + telemetry
+```
+
+1. **Resolver hydrate** — `loadNodeIdentity` normalises the ENS name, resolves the NameWrapper metadata, and assembles the canonical peerId + metadata bundle.【F:src/identity/loader.ts†L34-L147】
+2. **Dnsaddr sweep** — `_dnsaddr.${ensName}` TXT records and inline overrides are parsed via `parseDnsaddr`, yielding a deduplicated libp2p multiaddr array for the swarm dialers.【F:src/identity/dnsaddr.ts†L1-L39】【F:src/identity/loader.ts†L89-L134】
+3. **Key alignment** — `loadNodeKeypair` ingests keyfiles or `NODE_PRIVATE_KEY`, derives secp256k1 coordinates, and `validateKeypairAgainstENS` enforces parity before any orchestrator code runs.【F:src/identity/keys.ts†L47-L164】【F:src/orchestrator/bootstrap.js†L162-L233】
+4. **Health gate signal** — Once ENS + key material match, the bootstrapper primes the health gate, telemetry, and job lifecycle modules so that every subsequent component consumes the verified identity snapshot.【F:src/orchestrator/bootstrap.js†L193-L316】
+
+This sequencing ensures that even offline-first launches keep the owner’s declared ENS record, libp2p presence, and staking address perfectly aligned before the control plane starts emitting α-work.
+
+---
+
 ## Runtime Systems Map
 
 | Pillar | Description | Key Sources |
@@ -197,14 +226,16 @@ sequenceDiagram
 
 ## Owner Command Authority
 
-The AlphaNodeManager contract gives the owner complete control over the staking treasury and validator roster.
+The AlphaNodeManager contract gives the owner complete control over the staking treasury, validator roster, and identity ledger.
 
-- Pause or resume the entire execution pipeline via `pause()` / `unpause()`.【F:contracts/AlphaNodeManager.sol†L83-L103】
-- Onboard, revoke, or reassign validators with `setValidator`, `registerIdentity`, `setIdentityStatus`, and `updateIdentityController` while keeping ENS bindings consistent.【F:contracts/AlphaNodeManager.sol†L105-L181】
-- Govern staking funds through `stake`, `withdrawStake`, and slash events that can be triggered after validator audits.【F:contracts/AlphaNodeManager.sol†L183-L242】
-- Emit authoritative Alpha Work Unit events (`recordAlphaWUMint`, `recordAlphaWUValidation`, `recordAlphaWUAcceptance`, `applySlash`) to reflect lifecycle transitions on-chain.【F:contracts/AlphaNodeManager.sol†L200-L247】
+| Control Surface | Entry Points | Owner Powers |
+| --- | --- | --- |
+| **Execution kill switch** | `pause()`, `unpause()` | Freeze or resume every staking + orchestration call in a single transaction, ensuring emergency stops propagate instantly.【F:contracts/AlphaNodeManager.sol†L83-L103】 |
+| **Validator + identity registry** | `setValidator`, `registerIdentity`, `setIdentityStatus`, `updateIdentityController`, `revokeIdentity` | Assign, rotate, or retire controllers and validator wallets while keeping ENS nodes mapped to the right operators.【F:contracts/AlphaNodeManager.sol†L105-L181】 |
+| **Treasury + stake** | `stake`, `withdrawStake`, `applySlash` | Enforce deposits, drain treasury funds to approved recipients, or slash a validator after telemetry or audit triggers.【F:contracts/AlphaNodeManager.sol†L183-L247】 |
+| **Alpha Work telemetry** | `recordAlphaWUMint`, `recordAlphaWUValidation`, `recordAlphaWUAcceptance` | Emit authoritative lifecycle events so off-chain agents, subgraphs, and dashboards mirror the owner’s source of truth.【F:contracts/AlphaNodeManager.sol†L200-L247】 |
 
-`CANONICAL_AGIALPHA` binds the runtime to the treasury token, guaranteeing that emitted rewards and slash penalties always reference the canonical asset.【F:contracts/AlphaNodeManager.sol†L41-L58】
+`CANONICAL_AGIALPHA` binds the runtime to the treasury token, guaranteeing that emitted rewards and slash penalties always reference the canonical 18-decimal asset the ecosystem expects.【F:contracts/AlphaNodeManager.sol†L41-L58】
 
 ---
 
@@ -219,20 +250,33 @@ The AlphaNodeManager contract gives the owner complete control over the staking 
 
 ## CI & Release Ramparts
 
-`npm run ci:verify` executes the full quality gauntlet enforced on every pull request and the `main` branch.【F:package.json†L18-L48】
+```mermaid
+stateDiagram-v2
+  [*] --> Lint: markdownlint + link checks
+  Lint --> Tests: vitest suites
+  Tests --> Coverage: c8 summary
+  Coverage --> Solidity: solhint + solc compile
+  Solidity --> Subgraph: manifest render + codegen
+  Subgraph --> Docker: build + smoke test
+  Docker --> Security: npm audit --omit=dev
+  Security --> Policy: health/branch gates
+  Policy --> Badges: status + coverage gist update
+  Badges --> [*]
+```
+
+`npm run ci:verify` executes the full quality gauntlet enforced on every pull request and the `main` branch, matching the GitHub Actions workflow one-to-one.【F:package.json†L18-L48】【F:.github/workflows/ci.yml†L1-L205】
 
 | Stage | Command | Purpose |
 | --- | --- | --- |
-| Markdown & link lint | `npm run lint` | Style, accessibility, and documentation integrity. |
-| Unit & integration tests | `npm run test` | Vitest suite covering orchestration, governance, and ENS tooling. |
-| Coverage | `npm run coverage` | Generates text + LCOV + JSON summaries for pipelines. |
-| Solidity hygiene | `npm run ci:solidity` | Runs `solhint` and deterministic solc compilation for contracts. |
-| Subgraph build | `npm run ci:ts` | Renders the manifest, runs Graph codegen, and compiles the WASM bundle. |
-| Security audit | `npm run ci:security` | High severity `npm audit` pass on production dependencies. |
-| Policy gates | `npm run ci:policy` | Verifies health allowlists & governance guardrails. |
-| Branch guard | `npm run ci:branch` | Ensures PRs adhere to branch naming & review policy. |
+| Markdown & link lint | `npm run lint` | Style, accessibility, and documentation integrity, including governance docs and manifesto pages.【F:package.json†L18-L24】 |
+| Unit & integration tests | `npm run test` | Vitest suite covering orchestration, governance, ENS tooling, identity loaders, and telemetry.【F:package.json†L24-L26】 |
+| Coverage | `npm run coverage` | Generates text + LCOV + JSON reports, uploaded as artifacts for historical tracking.【F:package.json†L26-L30】【F:.github/workflows/ci.yml†L83-L149】 |
+| Solidity hygiene | `npm run ci:solidity` | Runs `solhint` plus deterministic solc builds for AlphaNodeManager and interfaces.【F:package.json†L30-L34】 |
+| Subgraph build | `npm run ci:ts` | Renders the manifest, runs Graph codegen, and compiles the WASM bundle consumed by analytics swarms.【F:package.json†L34-L39】 |
+| Security audit | `npm run ci:security` | Enforces high-severity dependency audits on production deps.【F:package.json†L39-L41】 |
+| Policy gates | `npm run ci:policy` + `npm run ci:branch` | Health gate enforcement, branch naming rules, and governance guardrails before merge.【F:package.json†L41-L48】【F:.github/workflows/ci.yml†L15-L205】 |
 
-Pull requests must surface the CI badge shown above and satisfy `.github/required-checks.json` so gating is enforced before merge.【F:.github/required-checks.json†L1-L22】
+Pull requests must surface the CI badge shown above and satisfy `.github/required-checks.json`, ensuring branch protection keeps the command surface green.【F:.github/required-checks.json†L1-L9】
 
 ---
 
