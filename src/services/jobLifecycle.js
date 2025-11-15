@@ -494,11 +494,13 @@ export function createJobLifecycle({
       case 'validated':
         result = alphaWorkUnits.recordValidation(payload);
         if (unitKey) {
-          const mintedMs = alphaWuMintTimestamps.get(unitKey) ?? eventTimestampMs;
+          const mintedMs = alphaWuMintTimestamps.get(unitKey);
           alphaWuMintTimestamps.delete(unitKey);
-          const latencyMs = Math.max(0, eventTimestampMs - mintedMs);
-          recordAlphaValidationLatencySample(latencyMs);
-          observeAlphaWuValidationLatencyMs(latencyMs);
+          if (Number.isFinite(mintedMs)) {
+            const latencyMs = Math.max(0, eventTimestampMs - mintedMs);
+            recordAlphaValidationLatencySample(latencyMs);
+            observeAlphaWuValidationLatencyMs(latencyMs);
+          }
         }
         {
           const scoreValue =
