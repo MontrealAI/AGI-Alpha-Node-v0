@@ -1,8 +1,24 @@
 import { createHash } from 'node:crypto';
+import { getConfig } from '../config/env.js';
 import { getNodeEnsName } from '../ens/ens_config.js';
 
-const DEFAULT_HASH_ALGO = process.env.TELEMETRY_HASH_ALGO || 'sha256';
-const ENABLED = process.env.TELEMETRY_ENABLED !== 'false';
+function resolveTelemetryDefaults() {
+  const fallback = {
+    enabled: process.env.TELEMETRY_ENABLED !== 'false',
+    hashAlgorithm: process.env.TELEMETRY_HASH_ALGO || 'sha256',
+    attestorAddress: process.env.OPERATOR_ADDRESS || null
+  };
+  try {
+    const config = getConfig();
+    return {
+      enabled: config?.TELEMETRY_ENABLED ?? fallback.enabled,
+      hashAlgorithm: config?.TELEMETRY_HASH_ALGO ?? fallback.hashAlgorithm,
+      attestorAddress: config?.OPERATOR_ADDRESS ?? fallback.attestorAddress
+    };
+  } catch {
+    return fallback;
+  }
+}
 
 function normalizeJobId(jobId) {
   if (!jobId && jobId !== 0) {
@@ -49,9 +65,11 @@ function canonicalize(value) {
   return value;
 }
 
-export function hashTelemetryPayload(payload, algorithm = DEFAULT_HASH_ALGO) {
+export function hashTelemetryPayload(payload, algorithm = null) {
+  const { hashAlgorithm } = resolveTelemetryDefaults();
+  const resolvedAlgorithm = algorithm ?? hashAlgorithm;
   const canonical = JSON.stringify(canonicalize(payload ?? null));
-  return `0x${createHash(algorithm).update(canonical).digest('hex')}`;
+  return `0x${createHash(resolvedAlgorithm).update(canonical).digest('hex')}`;
 }
 
 function sanitizeModelRuntime(modelRuntime = {}) {
@@ -84,18 +102,22 @@ export function deriveModelRuntimeFromJob(job = {}) {
 }
 
 export function createAlphaWuTelemetry({
-  enabled = ENABLED,
-  hashAlgorithm = DEFAULT_HASH_ALGO,
+  enabled,
+  hashAlgorithm,
   nodeEnsName = getNodeEnsName(),
-  attestorAddress = process.env.OPERATOR_ADDRESS || null,
+  attestorAddress,
   clock = () => Date.now(),
   cpuUsage = (start) => process.cpuUsage(start),
   logger = null
 } = {}) {
+  const defaults = resolveTelemetryDefaults();
+  const telemetryEnabled = enabled ?? defaults.enabled;
+  const telemetryHashAlgorithm = hashAlgorithm ?? defaults.hashAlgorithm;
+  const telemetryAttestorAddress = attestorAddress ?? defaults.attestorAddress;
   const contexts = new Map();
 
   function beginContext({ jobId, job = {}, role = 'executor', modelRuntime = null, inputs = null } = {}) {
-    if (!enabled) return null;
+    if (!telemetryEnabled) return null;
     const normalizedJobId = normalizeJobId(jobId);
     if (!normalizedJobId) {
       return null;
@@ -105,7 +127,7 @@ export function createAlphaWuTelemetry({
       jobId: normalizedJobId,
       role,
       modelRuntime: sanitizeModelRuntime(modelRuntime ?? deriveModelRuntimeFromJob(job)),
-      inputsHash: hashTelemetryPayload(inputs ?? job ?? { jobId: normalizedJobId }, hashAlgorithm),
+      inputsHash: hashTelemetryPayload(inputs ?? job ?? { jobId: normalizedJobId }, telemetryHashAlgorithm),
       startedAtMs: now,
       cpuStart: cpuUsage(),
       wuId: null,
@@ -119,7 +141,7 @@ export function createAlphaWuTelemetry({
   }
 
   function recordSegment(jobId, segment = {}) {
-    if (!enabled) return null;
+    if (!telemetryEnabled) return null;
     const normalizedJobId = normalizeJobId(jobId);
     if (!normalizedJobId) return null;
     const context = contexts.get(normalizedJobId);
@@ -147,7 +169,7 @@ export function createAlphaWuTelemetry({
   }
 
   function finalize(jobId, { outputs = {}, alphaWuWeight = null, modelRuntime = null, energyKwh = null } = {}) {
-    if (!enabled) {
+    if (!telemetryEnabled) {
       return null;
     }
     const normalizedJobId = normalizeJobId(jobId);
@@ -175,13 +197,13 @@ export function createAlphaWuTelemetry({
       alpha_wu_weight: finalAlphaWuWeight,
       model_runtime: finalModelRuntime,
       inputs_hash: context.inputsHash,
-      outputs_hash: hashTelemetryPayload(outputs, hashAlgorithm),
+      outputs_hash: hashTelemetryPayload(outputs, telemetryHashAlgorithm),
       wall_clock_ms: wallClockMs,
       cpu_sec: cpuSec >= 0 ? cpuSec : 0,
       gpu_sec: context.gpuSec !== null ? Number(context.gpuSec) : null,
       energy_kwh: finalEnergy !== null ? Number(finalEnergy) : null,
       node_ens_name: nodeEnsName,
-      attestor_address: attestorAddress,
+      attestor_address: telemetryAttestorAddress,
       attestor_sig: null,
       created_at: new Date(now).toISOString()
     };
@@ -205,6 +227,6 @@ export function createAlphaWuTelemetry({
     finalize,
     getContext,
     clear,
-    isEnabled: () => enabled
+    isEnabled: () => telemetryEnabled
   };
 }
