@@ -5,7 +5,11 @@ const alphaWuMetricState = {
   totalCounters: [],
   epochGauges: [],
   perJobGauges: [],
-  perJobEnabled: false
+  perJobEnabled: false,
+  perJobConfigured: false,
+  totalSegments: new Map(),
+  perJobTotals: new Map(),
+  epochTotals: new Map()
 };
 
 const jobMetricState = {
@@ -41,7 +45,35 @@ function registerAlphaWuMetricHandles({
   alphaWuMetricState.perJobGauges = Array.isArray(perJobGauges)
     ? perJobGauges.filter(Boolean)
     : [perJobGauges].filter(Boolean);
+  alphaWuMetricState.perJobConfigured = true;
   alphaWuMetricState.perJobEnabled = Boolean(perJobEnabled && alphaWuMetricState.perJobGauges.length > 0);
+
+  alphaWuMetricState.totalCounters.forEach((counter) => counter.reset());
+  for (const { labels, total } of alphaWuMetricState.totalSegments.values()) {
+    alphaWuMetricState.totalCounters.forEach((counter) => {
+      counter.inc(labels, total);
+    });
+  }
+
+  alphaWuMetricState.perJobGauges.forEach((gauge) => gauge.reset());
+  if (!alphaWuMetricState.perJobEnabled) {
+    alphaWuMetricState.perJobTotals.clear();
+  } else {
+    for (const [jobId, total] of alphaWuMetricState.perJobTotals.entries()) {
+      const labels = { job_id: jobId };
+      alphaWuMetricState.perJobGauges.forEach((gauge) => {
+        gauge.set(labels, total);
+      });
+    }
+  }
+
+  alphaWuMetricState.epochGauges.forEach((gauge) => gauge.reset());
+  for (const [epochId, total] of alphaWuMetricState.epochTotals.entries()) {
+    const labels = { epoch_id: epochId };
+    alphaWuMetricState.epochGauges.forEach((gauge) => {
+      gauge.set(labels, total);
+    });
+  }
 }
 
 function registerJobMetricHandles({ runningGauge = null, completedCounter = null, failedCounter = null, latencySummary = null } = {}) {
@@ -103,50 +135,73 @@ export function recordAlphaWorkUnitSegment({
   alphaWU,
   jobTotalAlphaWU
 }) {
-  if (
-    alphaWuMetricState.totalCounters.length === 0 &&
-    !alphaWuMetricState.perJobEnabled &&
-    alphaWuMetricState.epochGauges.length === 0
-  ) {
-    return;
-  }
-
   const numericAlphaWu = Number(alphaWU ?? 0);
-  if (Number.isFinite(numericAlphaWu) && numericAlphaWu > 0 && alphaWuMetricState.totalCounters.length > 0) {
+  if (Number.isFinite(numericAlphaWu) && numericAlphaWu > 0) {
     const labels = {
       node_label: normaliseLabel(nodeLabel),
       device_class: normaliseLabel(deviceClass, 'UNKNOWN'),
       sla_profile: normaliseLabel(slaProfile, 'UNKNOWN')
     };
+    const key = `${labels.node_label}::${labels.device_class}::${labels.sla_profile}`;
+    const current = alphaWuMetricState.totalSegments.get(key)?.total ?? 0;
+    const next = current + numericAlphaWu;
+    alphaWuMetricState.totalSegments.set(key, { labels, total: next });
     alphaWuMetricState.totalCounters.forEach((counter) => {
       counter.inc(labels, numericAlphaWu);
     });
   }
 
-  if (alphaWuMetricState.perJobEnabled && jobId) {
+  if (jobId) {
     const jobTotal = Number(jobTotalAlphaWU ?? 0);
     if (Number.isFinite(jobTotal)) {
-      const labels = { job_id: normaliseLabel(jobId) };
-      alphaWuMetricState.perJobGauges.forEach((gauge) => {
-        gauge.set(labels, jobTotal);
-      });
+      const jobKey = normaliseLabel(jobId);
+      const labels = { job_id: jobKey };
+      if (!alphaWuMetricState.perJobEnabled) {
+        if (alphaWuMetricState.perJobConfigured) {
+          alphaWuMetricState.perJobTotals.delete(jobKey);
+        } else {
+          alphaWuMetricState.perJobTotals.set(jobKey, jobTotal);
+        }
+      } else {
+        alphaWuMetricState.perJobTotals.set(jobKey, jobTotal);
+        alphaWuMetricState.perJobGauges.forEach((gauge) => {
+          gauge.set(labels, jobTotal);
+        });
+      }
     }
   }
 
-  if (alphaWuMetricState.epochGauges.length > 0 && epochId && Number.isFinite(numericAlphaWu) && numericAlphaWu > 0) {
-    const labels = { epoch_id: normaliseLabel(epochId) };
-    alphaWuMetricState.epochGauges.forEach((gauge) => {
-      // epochGauge is populated via monitor loop rollups. Ensure the label is registered early
-      gauge.set(labels, 0);
-    });
+  if (epochId && Number.isFinite(numericAlphaWu) && numericAlphaWu > 0) {
+    const epochKey = normaliseLabel(epochId);
+    if (!alphaWuMetricState.epochTotals.has(epochKey)) {
+      alphaWuMetricState.epochTotals.set(epochKey, 0);
+    }
+    if (alphaWuMetricState.epochGauges.length > 0) {
+      const labels = { epoch_id: epochKey };
+      alphaWuMetricState.epochGauges.forEach((gauge) => {
+        // epochGauge is populated via monitor loop rollups. Ensure the label is registered early
+        gauge.set(labels, 0);
+      });
+    }
   }
 }
 
 export function updateAlphaWorkUnitEpochMetrics(summaries = []) {
   if (alphaWuMetricState.epochGauges.length === 0) {
+    alphaWuMetricState.epochTotals.clear();
+    summaries.forEach((summary) => {
+      if (!summary) return;
+      const total = Number(summary.totalAlphaWU ?? 0);
+      if (!Number.isFinite(total)) {
+        return;
+      }
+      const epochId = normaliseLabel(summary.epochId);
+      alphaWuMetricState.epochTotals.set(epochId, total);
+    });
     return;
   }
   alphaWuMetricState.epochGauges.forEach((gauge) => gauge.reset());
+  alphaWuMetricState.epochTotals.clear();
   summaries.forEach((summary) => {
     if (!summary) return;
     const total = Number(summary.totalAlphaWU ?? 0);
@@ -154,6 +209,7 @@ export function updateAlphaWorkUnitEpochMetrics(summaries = []) {
       return;
     }
     const epochId = normaliseLabel(summary.epochId);
+    alphaWuMetricState.epochTotals.set(epochId, total);
     alphaWuMetricState.epochGauges.forEach((gauge) => {
       gauge.set({ epoch_id: epochId }, total);
     });
@@ -498,4 +554,29 @@ export function observeAlphaWuValidationLatencyMs(durationMs) {
   if (alphaValidationMetricState.latencySummary) {
     alphaValidationMetricState.latencySummary.observe(numeric);
   }
+}
+
+export function __resetMonitoringStateForTests() {
+  alphaWuMetricState.totalCounters = [];
+  alphaWuMetricState.epochGauges = [];
+  alphaWuMetricState.perJobGauges = [];
+  alphaWuMetricState.perJobEnabled = false;
+  alphaWuMetricState.perJobConfigured = false;
+  alphaWuMetricState.totalSegments.clear();
+  alphaWuMetricState.perJobTotals.clear();
+  alphaWuMetricState.epochTotals.clear();
+
+  jobMetricState.runningGauge = null;
+  jobMetricState.completedCounter = null;
+  jobMetricState.failedCounter = null;
+  jobMetricState.latencySummary = null;
+  jobMetricState.runningCount = 0;
+  jobMetricState.completedTotal = 0;
+  jobMetricState.failedTotal = 0;
+
+  alphaValidationMetricState.validatedCounter = null;
+  alphaValidationMetricState.invalidCounter = null;
+  alphaValidationMetricState.latencySummary = null;
+  alphaValidationMetricState.validatedTotal = 0;
+  alphaValidationMetricState.invalidTotal = 0;
 }
