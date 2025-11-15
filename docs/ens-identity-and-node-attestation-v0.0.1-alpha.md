@@ -133,15 +133,19 @@ flowchart TD
 
 ## Owner Command Plane
 
-`AlphaNodeManager` entrusts the contract owner with absolute control over staking, identity assignment, validator rosters, and pause switches. Every privileged surface is `onlyOwner`, guaranteeing that the machine can be steered, halted, or reconfigured instantly.【F:contracts/AlphaNodeManager.sol†L18-L199】
+`AlphaNodeManager` entrusts the contract owner with absolute control over fleet halting, identity assignment, validator rosters, and treasury withdrawals, while other flows are shared with active operators and validators. The table below spells out the concrete access modifiers applied on-chain so operators can assess who may exercise each control surface.【F:contracts/AlphaNodeManager.sol†L18-L257】
 
-| Capability | Function(s) | Guarantees |
-| --- | --- | --- |
-| Fleet halting & recovery | `pause()`, `unpause()` | Owner freezes or resumes staking/emission instantly with auditable events.【F:contracts/AlphaNodeManager.sol†L61-L92】 |
-| Validator roster curation | `setValidator(address,bool)` | Owner toggles validator authority while preserving provenance.【F:contracts/AlphaNodeManager.sol†L94-L112】 |
-| Identity lifecycle | `registerIdentity`, `updateIdentityController`, `setIdentityStatus`, `revokeIdentity` | Owner commissions, rotates, and retires ENS-bound controllers with durable logs.【F:contracts/AlphaNodeManager.sol†L114-L164】 |
-| Stake custody & treasury routing | `stake(uint256)`, `withdrawStake(address,uint256)` | Deposits require active identities; withdrawals reach owner-approved recipients only.【F:contracts/AlphaNodeManager.sol†L166-L199】 |
-| α‑Work telemetry enforcement | `recordAlphaWUMint`, `recordAlphaWUValidation`, `recordAlphaWUAcceptance`, `applySlash` | Owner or delegated validators notarise α‑work, enforce stake-backed validation, and slash misconduct.【F:contracts/AlphaNodeManager.sol†L201-L257】 |
+| Capability | Function(s) | Access Control | Guarantees |
+| --- | --- | --- | --- |
+| Fleet halting & recovery | `pause()`, `unpause()` | `onlyOwner` | Owner freezes or resumes staking/emission instantly with auditable events.【F:contracts/AlphaNodeManager.sol†L61-L92】 |
+| Validator roster curation | `setValidator(address,bool)` | `onlyOwner` | Owner toggles validator authority while preserving provenance.【F:contracts/AlphaNodeManager.sol†L94-L112】 |
+| Identity lifecycle | `registerIdentity`, `updateIdentityController`, `setIdentityStatus`, `revokeIdentity` | `onlyOwner` | Owner commissions, rotates, and retires ENS-bound controllers with durable logs.【F:contracts/AlphaNodeManager.sol†L114-L164】 |
+| Stake intake & custody | `stake(uint256)` | Active identity + `whenNotPaused` | Any controller with an active identity can deposit stake while the fleet is live; deposits revert for paused or unauthorised accounts.【F:contracts/AlphaNodeManager.sol†L166-L199】 |
+| Treasury routing | `withdrawStake(address,uint256)` | `onlyOwner` | Withdrawals require explicit owner intent and are paid to owner-specified recipients only.【F:contracts/AlphaNodeManager.sol†L166-L199】 |
+| α‑Work mint attestation | `recordAlphaWUMint` | Active identity/owner + `whenNotPaused` | Agents mint α‑work units for themselves; the owner can backstop issuance, but unauthorised callers revert.【F:contracts/AlphaNodeManager.sol†L201-L219】 |
+| α‑Work validation | `recordAlphaWUValidation` | Validators + `whenNotPaused` | Registered validators notarise α‑work using their bonded stake and are limited by recorded balances.【F:contracts/AlphaNodeManager.sol†L221-L239】 |
+| α‑Work acceptance | `recordAlphaWUAcceptance` | Owner or validator + `whenNotPaused` | Either the owner or approved validators may accept α‑work once attestation is satisfied.【F:contracts/AlphaNodeManager.sol†L241-L251】 |
+| Slashing | `applySlash` | `onlyOwner` | Owner enforces stake penalties against validators with explicit events and bounds checks.【F:contracts/AlphaNodeManager.sol†L253-L257】 |
 
 ### CLI Surfaces for Owner Supremacy
 
