@@ -1,4 +1,4 @@
-# ENS Identity & Node Attestation HyperSpec · v0.4.0
+# ENS Identity & Node Attestation HyperSpec · v0.5.1
 <!-- markdownlint-disable MD013 MD033 -->
 
 <p align="center">
@@ -21,11 +21,13 @@
   <a href="../.github/required-checks.json">
     <img src="https://img.shields.io/badge/PR%20Gate-Required%20Checks-8b5cf6?logo=github" alt="Required checks" />
   </a>
-  <img src="https://img.shields.io/badge/Spec-v0.4.0-ec4899" alt="Spec version" />
+  <img src="https://img.shields.io/badge/Spec-v0.5.1-ec4899" alt="Spec version" />
   <img src="https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-ff3366?logo=ethereum&logoColor=white" alt="$AGIALPHA address" />
   <img src="https://img.shields.io/badge/Telemetry-OpenTelemetry%20%26%20Prometheus-0ea5e9?logo=prometheus" alt="Telemetry" />
   <img src="https://img.shields.io/badge/Discovery-libp2p%20dnsaddr-22d3ee?logo=ipfs" alt="libp2p" />
   <a href="https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa"><img src="https://img.shields.io/badge/Token-18%20Decimals-1e3a8a?logo=ethereum&logoColor=white" alt="$AGIALPHA token canonical" /></a>
+  <img src="https://img.shields.io/badge/Owner%20Command-Absolute%20Control-9333ea?logo=protocols" alt="Owner control" />
+  <a href="../src/services/governanceLedger.js"><img src="https://img.shields.io/badge/Governance-Ledger%20v1-22c55e?logo=apachekafka&logoColor=white" alt="Governance ledger" /></a>
 </p>
 
 > AGI Alpha Nodes cultivate the cognitive economy and keep its rivers of value aligned with the owner’s hand. This framework binds every ENS identity, attestation, and telemetry pulse into a single machine that reshapes capital flow without surrendering control.
@@ -53,9 +55,9 @@
 ## Status & Alignment
 
 - **Release Status:** Alpha hardened
-- **Spec Version:** `v0.4.0`
+- **Spec Version:** `v0.5.1`
 - **Runtime Alignment:** [`agi-alpha-node-v0@1.1.0`](../package.json)
-- **CI Baseline:** [`Continuous Integration`](../.github/workflows/ci.yml) · [`Required Checks`](../.github/required-checks.json)
+- **CI Baseline:** [`Continuous Integration`](../.github/workflows/ci.yml) · [`Required Checks`](../.github/required-checks.json) · [`Branch Gate`](../scripts/verify-branch-gate.mjs)
 - **Token Canon:** `$AGIALPHA` (18 decimals) anchored to [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) across runtime modules.【F:src/constants/token.js†L1-L20】
 - **Applies to:**
   - AGI Alpha Agents `*.alpha.agent.agi.eth`
@@ -78,6 +80,7 @@
 - Economics, emissions, and treasury policy live in [`docs/economics.md`](./economics.md).
 - Smart contract ABIs beyond ENS/NameWrapper/`AlphaNodeManager` are intentionally excluded.
 - Validator infrastructure provisioning is considered out of scope for the spec.
+- ENS metadata formatting details live alongside this HyperSpec in [`docs/ens-node-metadata.md`](./ens-node-metadata.md).
 
 ---
 
@@ -164,11 +167,27 @@ flowchart LR
   Builder[Deterministic Tx Builder]
   Ledger[AlphaNodeManager]
   Treasury[$AGIALPHA Treasury]
+  LedgerMirror[(Governance Ledger)]
 
   OwnerConsole --> GovernanceCLI --> Builder
   Builder -->|signed tx| Ledger --> Treasury
-  Ledger -->|events| Observability[(Governance Ledger)]
+  Ledger -->|events| LedgerMirror
+  LedgerMirror --> Observability[(Attestation & Policy Archives)]
 ```
+
+### Parameter Rotations & Emergency Controls
+
+Owner sovereignty is enforced in code as a first-class primitive. Every high-impact dial exposed by `AlphaNodeManager` has a matching builder and audit surface so the owner can rotate parameters without latency.【F:contracts/AlphaNodeManager.sol†L18-L257】【F:src/services/governance.js†L1555-L1880】
+
+| Control Vector | Solidity Surface | CLI Builder | Result |
+| --- | --- | --- | --- |
+| Halt or resume the fleet | `pause()`, `unpause()` | `node src/index.js governance pause --execute` | Instantly freezes or resumes staking, α‑work issuance, and validator scoring with on-chain events.【F:contracts/AlphaNodeManager.sol†L61-L92】【F:src/services/governance.js†L1623-L1663】 |
+| Curate validator set | `setValidator(address,bool)` | `node src/index.js governance validators --address <addr> --active true` | Grants or revokes validation authority while emitting immutable roster logs.【F:contracts/AlphaNodeManager.sol†L94-L112】【F:src/services/governance.js†L1710-L1766】 |
+| Rotate controllers & status | `registerIdentity`, `updateIdentityController`, `setIdentityStatus`, `revokeIdentity` | `node src/index.js governance identities ...` | Assigns or suspends ENS controllers, preserving audit trails for every change.【F:contracts/AlphaNodeManager.sol†L114-L164】【F:src/services/governance.js†L1768-L1880】 |
+| Manage capital flows | `stake`, `withdrawStake` | `node src/index.js governance treasury ...` | Directs `$AGIALPHA` deposits and withdrawals through owner-authorised routes only.【F:contracts/AlphaNodeManager.sol†L166-L199】【F:src/services/token.js†L1-L235】 |
+| Enforce α‑Work truth | `recordAlphaWUMint`, `recordAlphaWUValidation`, `recordAlphaWUAcceptance`, `applySlash` | `node src/index.js governance alpha-wu ...` | Mints, validates, accepts, or slashes α‑work with deterministic ledger hooks and stake ceilings.【F:contracts/AlphaNodeManager.sol†L201-L257】【F:src/services/governance.js†L1708-L1880】 |
+
+Deterministic governance manifests written to `.governance-ledger/v1` make every executed action reproducible by auditors and downstream automation.【F:src/services/governanceLedger.js†L1-L120】【F:src/services/governanceLedger.js†L181-L260】
 
 ---
 
@@ -210,12 +229,14 @@ sequenceDiagram
   participant Wrapper as NameWrapper
   participant Resolver
   participant Runtime as Node Runtime
+  participant Ledger as Governance Ledger
 
   Owner->>Registry: Register subname & set expiry
   Owner->>Wrapper: Wrap & burn PCC, CU, CT, CSR
   Owner->>Resolver: Set addr/text/pubkey/contenthash
   Runtime->>Resolver: Publish deterministic agialpha_* payloads
   Owner->>Runtime: Link controller via AlphaNodeManager
+  Runtime->>Ledger: Append deployment manifest
   Runtime->>Resolver: Update commit/version metadata post-deploy
 ```
 
@@ -256,6 +277,7 @@ stateDiagram-v2
   Degraded --> Active: Signed recovery attestation
   Active --> Revoked: Owner triggers revokeIdentity
   Candidate --> Rejected: Gate policy mismatch
+  Revoked --> Candidate: Owner re-registers with new controller
 ```
 
 ---
@@ -322,6 +344,7 @@ stateDiagram-v2
 - Reject attestations whose `ens` is not allowlisted by the health gate.
 - Compare `ens_fuses` with NameWrapper data to detect stale fuse states.
 - Verify `verifier` matches the resolver’s published endpoint before trusting telemetry.
+- Persist every attestation hash into the governance ledger snapshot for replay and compliance diffing.【F:src/services/governanceLedger.js†L121-L209】
 
 ---
 
@@ -362,6 +385,7 @@ sequenceDiagram
   participant Signer as secp256k1 Key
   participant Resolver
   participant Verifier
+  participant Ledger as Governance Ledger
 
   Runtime->>Canon: Emit health payload
   Canon->>Signer: keccak256(canonical JSON)
@@ -371,6 +395,7 @@ sequenceDiagram
   Verifier->>Resolver: Fetch pubkey_x/pubkey_y
   Verifier->>Canon: Rebuild canonical payload
   Verifier->>Signer: Validate secp256k1 signature
+  Verifier->>Ledger: Archive attestation + governance context
   Verifier-->>Runtime: Status recorded + telemetry mirrored
 ```
 
@@ -413,9 +438,11 @@ graph LR
   Attestation[Signed attestation]
   OTel[OpenTelemetry exporter]
   Prom[Prometheus gateway]
+  Ledger[(Governance Ledger)]
   Dashboards[Dashboards & Auditors]
 
   Attestation -->|span + event| OTel --> Dashboards
+  Attestation -->|ledger snapshot| Ledger --> Dashboards
   Attestation -->|metrics reflection| Prom --> Dashboards
 ```
 
@@ -425,9 +452,21 @@ graph LR
 
 - CI orchestrated by [`ci.yml`](../.github/workflows/ci.yml) covers lint, tests, coverage, Solidity, subgraph TypeScript, Docker smoke, security audit, and badge publication; concurrency prevents stale runs.【F:.github/workflows/ci.yml†L1-L260】
 - Protected branches enforce the same surface via [`required-checks.json`](../.github/required-checks.json); merges are blocked unless every check is green and visible.
+- Required status checks render as public shields for auditors and are stored in `.github/required-checks.json` for reproducibility.【F:.github/required-checks.json†L1-L9】
 - `npm run ci:policy` executes `scripts/verify-health-gate.mjs`, ensuring ENS patterns stay curated.
 - `npm run ci:branch` enforces naming policy for ENS-critical branches before merges.【F:scripts/verify-branch-gate.mjs†L7-L100】
 - CI badges in this document and the README reflect the live workflow state for instant auditing.
+
+| Required Check | Workflow Job | Purpose |
+| --- | --- | --- |
+| Lint Markdown & Links | `lint` | Markdown lint, link validation, health/branch policies.【F:.github/workflows/ci.yml†L16-L58】 |
+| Unit & Integration Tests | `test` | Mirrors the Vitest harness and runtime smoke for deterministic coverage.【F:.github/workflows/ci.yml†L59-L90】 |
+| Coverage Report | `coverage` | Publishes instrumentation and pushes shield payloads for branch protection.【F:.github/workflows/ci.yml†L91-L147】 |
+| Solidity Lint & Compile | `solidity` | Validates contracts before owner governance actions are generated.【F:.github/workflows/ci.yml†L91-L118】 |
+| Subgraph TypeScript Build | `typescript` | Ensures indexing clients remain in lockstep with ENS/node metadata.【F:.github/workflows/ci.yml†L119-L147】 |
+| Docker Build & Smoke Test | `docker-smoke` | Guarantees containerised deployments remain runnable for non-technical stewards.【F:.github/workflows/ci.yml†L148-L190】 |
+| Dependency Security Scan | `security` | Audits npm tree to protect owner-controlled contract execution surfaces.【F:.github/workflows/ci.yml†L191-L217】 |
+| Publish Status Badges | `badges` | Updates off-repo badges when main passes every gate, keeping visibility instant.【F:.github/workflows/ci.yml†L218-L268】 |
 
 ---
 
@@ -439,6 +478,7 @@ graph LR
 | Rotate attestation keys | Update resolver `pubkey`, deploy runtime with new key, emit attestation referencing the new key, archive the previous attestation. |
 | Revoke a node | `pause()` if needed, `setIdentityStatus(ensNode, false)`, `revokeIdentity(ensNode)`, remove `_dnsaddr`, revoke staking privileges, publish a `status: "down"` attestation. |
 | Incident response | Trigger `pause()`, set `status: "degraded"`, update metrics with incident telemetry, notify validators via events and dashboards. |
+| Rebuild ledger after event | Run `node src/index.js governance ledger --replay`, regenerate `.governance-ledger/v1` from attestation + transaction archives, share signed bundle with auditors. |
 
 ---
 
