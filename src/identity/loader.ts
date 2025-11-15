@@ -68,7 +68,12 @@ function derivePeerId(metadata: Record<string, string>, ensName: string): string
   return peerId;
 }
 
-async function loadDnsaddrRecords(client: EnsClient, ensName: string, metadata: Record<string, string>): Promise<string[]> {
+async function loadDnsaddrRecords(
+  client: EnsClient,
+  ensName: string,
+  metadata: Record<string, string>,
+  logger: Logger
+): Promise<string[]> {
   const records: string[] = [];
 
   if (metadata['node.dnsaddr']) {
@@ -78,14 +83,21 @@ async function loadDnsaddrRecords(client: EnsClient, ensName: string, metadata: 
   const dnsSubdomain = `_dnsaddr.${ensName}`;
   try {
     const resolver = await client.getResolver(dnsSubdomain);
-    if (resolver) {
+    if (!resolver) {
+      logger.debug?.({ ensName: dnsSubdomain }, 'No resolver configured for _dnsaddr subdomain');
+    } else {
       const value = await client.getTextRecord(dnsSubdomain, 'dnsaddr');
       if (typeof value === 'string' && value.trim()) {
-        records.push(...value.split(/\r?\n/u).filter((entry) => entry.trim().length > 0));
+        records.push(value);
       }
     }
   } catch (error) {
     if (error instanceof EnsResolutionError) {
+      logger.debug?.(
+        { ensName: dnsSubdomain, error: error.message },
+        'Failed to resolve _dnsaddr records; continuing without libp2p overrides'
+      );
+    } else {
       throw error;
     }
   }
@@ -142,7 +154,7 @@ export async function loadNodeIdentity(
 
   const metadata = await loadMetadata(client, normalizedName, metadataKeys);
   const peerId = derivePeerId(metadata, normalizedName);
-  const multiaddrs = await loadDnsaddrRecords(client, normalizedName, metadata);
+  const multiaddrs = await loadDnsaddrRecords(client, normalizedName, metadata, logger);
 
   const wrapper = await client.getNameWrapperData(normalizedName);
   const identity: NodeIdentity = {
