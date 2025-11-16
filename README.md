@@ -15,7 +15,8 @@
   <a href=".github/required-checks.json">
     <img src="https://img.shields.io/badge/PR%20Gate-Required%20Checks-8b5cf6?logo=github&logoColor=white" alt="Required PR checks" />
   </a>
-  <img src="https://img.shields.io/badge/Tests-Vitest%20249%E2%9C%94-84cc16?logo=vitest&logoColor=white" alt="Vitest" />
+  <img src="https://img.shields.io/badge/Tests-Vitest%20251%E2%9C%94-84cc16?logo=vitest&logoColor=white" alt="Vitest" />
+  <img src="https://img.shields.io/badge/Coverage-c8%20ready-10b981?logo=codecov&logoColor=white" alt="Coverage" />
   <img src="https://img.shields.io/badge/Runtime-Node.js%2020.18%2B-43853d?logo=node.js&logoColor=white" alt="Runtime" />
   <img src="https://img.shields.io/badge/Solidity-0.8.26-363636?logo=solidity&logoColor=white" alt="Solidity" />
   <a href="https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa"><img src="https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-ff3366?logo=ethereum&logoColor=white" alt="$AGIALPHA" /></a>
@@ -134,8 +135,23 @@ flowchart TD
 ```
 
 - **Complete override authority** — `contracts/AlphaNodeManager.sol` empowers the owner to pause/unpause, update validator sets, register or rotate ENS identities, alter identity status, and withdraw stake.
+- **Parameter agility** — Owner-set tunables (minimum stake, quorum thresholds, reward curves, fuses/expiry, attestation cadence) are read at runtime, allowing rapid pivots without redeploying contracts.
 - **Runtime enforcement** — Services in `src/services/` (governance, staking, rewards, control plane) read owner directives and refuse execution when the health gate or treasury posture is off-policy.
 - **Token discipline** — Staking and payouts are normalized to wei precision against the canonical `$AGIALPHA` address; non-canonical overrides are rejected at config parsing.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Owner
+    Owner -->|Pause/Unpause| ControlPlane
+    Owner -->|Rekey / Rotate ENS| IdentityRegistry
+    Owner -->|Stake / Withdraw| Treasury
+    Owner -->|Quorum / Rewards| Governance
+    ControlPlane --> Runtime
+    IdentityRegistry --> Runtime
+    Treasury --> Runtime
+    Governance --> Runtime
+    Runtime -->|Health+Telemetry| Owner
+```
 
 ---
 
