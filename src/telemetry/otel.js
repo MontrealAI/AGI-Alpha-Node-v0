@@ -54,14 +54,24 @@ export function initTelemetry(config) {
     logger.info('Telemetry exporter disabled (ALPHA_NODE_OTEL_EXPORTER=none)');
   }
 
-  providerInstance = new NodeTracerProvider({
+  const providerOptions = {
     resource: resourceFromAttributes({
       'service.name': 'agi-alpha-node'
     }),
     sampler
-  });
+  };
 
-  spanProcessors.forEach((processor) => providerInstance.addSpanProcessor(processor));
+  if (spanProcessors.length) {
+    providerOptions.spanProcessors = spanProcessors;
+  }
+
+  providerInstance = new NodeTracerProvider(providerOptions);
+
+  if (typeof providerInstance.addSpanProcessor === 'function') {
+    spanProcessors.forEach((processor) => providerInstance.addSpanProcessor(processor));
+  } else if (spanProcessors.length) {
+    logger.warn('Span processors could not be registered: provider does not expose addSpanProcessor');
+  }
 
   providerInstance.register();
   tracerInstance = providerInstance.getTracer('agi-alpha-node');
