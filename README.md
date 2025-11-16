@@ -18,6 +18,7 @@
   </a>
   <img src="https://img.shields.io/badge/Tests-Vitest%20251%E2%9C%94-84cc16?logo=vitest&logoColor=white" alt="Vitest" />
   <img src="https://img.shields.io/badge/Coverage-c8%20ready-10b981?logo=codecov&logoColor=white" alt="Coverage" />
+  <img src="https://img.shields.io/badge/Branch%20Protection-Enforced-ef4444?logo=git&logoColor=white" alt="Branch protection" />
   <img src="https://img.shields.io/badge/Runtime-Node.js%2020.18%2B-43853d?logo=node.js&logoColor=white" alt="Runtime" />
   <img src="https://img.shields.io/badge/Solidity-0.8.26-363636?logo=solidity&logoColor=white" alt="Solidity" />
   <a href="https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa"><img src="https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-ff3366?logo=ethereum&logoColor=white" alt="$AGIALPHA" /></a>
@@ -179,19 +180,21 @@ flowchart TD
   subgraph Emission
     D --> E[EventEmitter / callbacks]
     E --> F[Telemetry exporters]
-    E --> G[Stdout dev tap]
+  E --> G[Stdout dev tap]
   end
   subgraph Verification
     F --> H[verifyAttestation]
     H --> I[verifyAgainstENS]
     H --> J[scripts/attestation-verify.ts]
   end
+  J --> K[Branch protections & CI badges]
 ```
 
 - **Schema** — [`src/attestation/schema.ts`](src/attestation/schema.ts) defines `HealthAttestation` v1 (`timestamp`, `ensName`, `peerId`, `nodeVersion`, `multiaddrs`, optional `fuses/expiry/latency/meta`, `status: healthy | degraded | unhealthy`) plus canonical serialization helpers for stable signatures.
 - **Emission** — [`src/attestation/health_service.ts`](src/attestation/health_service.ts) builds attestations from `NodeIdentity`, measures latency, signs via the node keypair, emits through an `EventEmitter` and callback, and can pretty-print to stdout for dev observability.
 - **Verification** — [`src/attestation/verify.ts`](src/attestation/verify.ts) recomputes canonical digests and verifies `secp256k1` or `ed25519` signatures. `verifyAgainstENS` reloads ENS identity to prevent drift from owner-declared records.
 - **CLI verifier** — `npm run attestation:verify -- --file signed.json --ens alpha.node.eth --print` loads the ENS identity (or a local `NodeIdentity` JSON) and exits non-zero on failure.
+- **Execution trace** — A single command (`npm run ci:verify`) reinstalls deterministic deps (including `@noble/ed25519`), reruns attestations, and locks the badges above to green before any PR merges.
 
 ### Sample signed attestation
 
@@ -220,6 +223,7 @@ flowchart TD
 - **Token constants** — `$AGIALPHA`, 18 decimals, canonical address enforced in [`src/constants/token.js`](src/constants/token.js) and [`src/config/schema.js`](src/config/schema.js). Divergent overrides are rejected.
 - **Treasury runtime** — Staking, reward, and treasury loops in [`src/services/staking.js`](src/services/staking.js), [`src/services/rewards.js`](src/services/rewards.js), and [`src/services/economics.js`](src/services/economics.js) normalize token math to wei precision.
 - **Ledger discipline** — Validation and settlement events (`recordAlphaWUMint`, `recordAlphaWUValidation`, `recordAlphaWUAcceptance`, `applySlash`) emit on-chain proofs that downstream subgraphs can index without ambiguity.
+- **Owner levers** — The contract owner can pause/unpause, rotate controllers, change validator activation, and redirect treasury outcomes without redeploying, preserving full sovereignty over AGI job flow.
 
 ---
 
@@ -254,6 +258,7 @@ flowchart LR
 - **Metrics** — [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) exposes Prometheus metrics populated by gauges in [`src/telemetry/alphaMetrics.js`](src/telemetry/alphaMetrics.js).
 - **AlphaWU signals** — [`src/telemetry/alphaWuTelemetry.js`](src/telemetry/alphaWuTelemetry.js) records execution and reward traces for every α-work unit.
 - **Healthcheck endpoint** — [`src/healthcheck.js`](src/healthcheck.js) provides liveness probes aligned with the health gate and identity posture.
+- **Attestation surface** — [`src/attestation/health_service.ts`](src/attestation/health_service.ts) and [`src/attestation/verify.ts`](src/attestation/verify.ts) ship with CI-backed unit tests ensuring signatures verify before shipping telemetry to dashboards.
 
 ---
 
@@ -273,6 +278,7 @@ flowchart LR
 
 - **One-command mirror** — `npm run ci:verify` executes linting, tests, coverage, Solidity hygiene, subgraph build, npm audit (high), and policy/branch gates.
 - **Required checks** — Enforced on PRs/main via [`.github/required-checks.json`](.github/required-checks.json): Lint Markdown & Links, Unit & Integration Tests, Coverage Report, Docker Build & Smoke Test, Solidity Lint & Compile, Subgraph TypeScript Build, Dependency Security Scan.
+- **Branch protections** — GitHub branch protection keeps every required check blocking merges; badges at the top stay green only when CI is fully passing.
 - **Targeted commands**
   - `npm run lint` — Markdown + link linting
   - `npm test` — Vitest suites
