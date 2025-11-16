@@ -25,10 +25,10 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-10b981" alt="MIT" /></a>
 </p>
 
-> **AGI Alpha Node v0 metabolizes cognition into $AGIALPHA with owner-grade sovereignty.** It aligns ENS, staking, telemetry, and health attestation so every packet, proof, and payout stays bound to the operator’s authority.
+> **AGI Alpha Node v0 metabolizes cognition into $AGIALPHA while keeping the operator in absolute command.** Every heartbeat, proof, and payout is attestable, deterministic, and tied to owner-held controls.
 
 ```mermaid
-graph LR
+graph TD
   Owner((Owner)) -->|Directives| ControlPlane[Control Plane]
   ControlPlane -->|Schedules| OrchestratorMesh[Orchestrator Mesh]
   OrchestratorMesh -->|Dispatch α-work| IntelligenceSwarm[Intelligence Swarm]
@@ -43,25 +43,26 @@ graph LR
 
 1. [Mission Snapshot](#mission-snapshot)
 2. [Quickstart](#quickstart)
-3. [Health Attestation Mesh](#health-attestation-mesh)
-4. [$AGIALPHA Treasury & Owner Authority](#agialpha-treasury--owner-authority)
-5. [ENS-Aligned Identity Fabric](#ens-aligned-identity-fabric)
-6. [Autonomous Job Orchestration](#autonomous-job-orchestration)
-7. [Observability Stack](#observability-stack)
-8. [Testing & CI Gates](#testing--ci-gates)
-9. [Deployment Vectors](#deployment-vectors)
-10. [Repository Atlas](#repository-atlas)
-11. [Reference Snippets](#reference-snippets)
+3. [Owner Command Surface](#owner-command-surface)
+4. [Health Attestation Mesh](#health-attestation-mesh)
+5. [$AGIALPHA Treasury](#agialpha-treasury)
+6. [ENS-Aligned Identity Fabric](#ens-aligned-identity-fabric)
+7. [Autonomous Job Orchestration](#autonomous-job-orchestration)
+8. [Observability Stack](#observability-stack)
+9. [Testing & CI Gates](#testing--ci-gates)
+10. [Deployment Vectors](#deployment-vectors)
+11. [Repository Atlas](#repository-atlas)
+12. [Reference Snippets](#reference-snippets)
 
 ---
 
 ## Mission Snapshot
 
-- **Canonical treasury binding** — The runtime is locked to the 18-decimal `$AGIALPHA` contract [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) for every staking, reward, and settlement action.
-- **Owner-dominated controls** — Governance, pausing, validator rosters, stake withdrawal, identity registration, and controller updates remain exclusively in the owner’s hands (`AlphaNodeManager.sol`).
-- **Deterministic attestation** — Health pings are canonicalized, signed, and independently verifiable to guarantee liveness and identity integrity.
-- **Production-hardening** — Markdown + link linting, Vitest suites, Solidity lint/compile, subgraph builds, Docker smoke tests, and security audits are enforced as required PR checks.
-- **Operator empathy** — Scripts, Helm charts, and Docker images let non-technical operators deploy without touching internals while keeping full override control.
+- **Canonical treasury binding** — Hardwired to the 18-decimal `$AGIALPHA` contract [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) for staking, rewards, and settlement.
+- **Owner-dominated controls** — Pausing, validator rosters, identity registration, controller updates, stake withdrawal, and governance signaling stay exclusively with the contract owner (`AlphaNodeManager.sol`).
+- **Deterministic attestations** — Canonical JSON, signed payloads, and independent verification keep liveness and identity integrity provable.
+- **Production-hardening** — Markdown + link linting, Vitest suites, coverage, Solidity lint/compile, subgraph builds, Docker smoke, npm audit, and policy gates are enforced in CI and required on PRs/main.
+- **Operator empathy** — Docker, Helm, scripts, and CLI taps let non-technical operators deploy and validate without touching internals while retaining full override authority.
 
 ---
 
@@ -84,10 +85,10 @@ flowchart LR
    npm ci
    ```
 
-   Node.js **20.18+** is enforced in `package.json` for deterministic builds.
+   Node.js **20.18+** is enforced for deterministic builds.
 
 2. **Configure identity & payouts**
-   - Copy `.env.example` to `.env` and fill ENS label/name, payout targets, telemetry endpoints, staking thresholds, and RPC endpoints.
+   - Copy `.env.example` → `.env` and fill ENS label/name, payout targets, telemetry endpoints, staking thresholds, and RPC endpoints.
    - Provide signing material through `ALPHA_NODE_KEYFILE` (JSON keyfile) or `NODE_PRIVATE_KEY` so live attestations match your ENS-published pubkey.
    - Verify ENS alignment before launching:
 
@@ -102,7 +103,7 @@ flowchart LR
    npm run ci:verify
    ```
 
-   Runs markdown + link linting, Vitest, coverage, Solidity lint/compile, subgraph builds, npm audit (high), policy/branch gates.
+   Executes linting, tests, coverage, Solidity hygiene, subgraph build, npm audit (high), and policy/branch gates.
 
 4. **Launch the orchestrator**
 
@@ -111,7 +112,30 @@ flowchart LR
    node src/index.js container --once
    ```
 
-   Bootstrap hydrates ENS, governance, staking posture, telemetry, and health gate before dispatching α-work.
+   Bootstrap hydrates ENS, governance, staking posture, telemetry, and the health gate before dispatching α-work.
+
+---
+
+## Owner Command Surface
+
+```mermaid
+flowchart TD
+  subgraph Owner Control
+    P[Pause / Unpause]
+    V[Validator Roster]
+    I[Identity Register / Update / Revoke]
+    W[Stake Withdraw]
+    G[Governance Signals]
+  end
+  P & V & I & W & G --> AlphaNodeManager[(AlphaNodeManager.sol)]
+  AlphaNodeManager --> Runtime[Node Runtime]
+  Runtime --> Telemetry[Telemetry + Health Gate]
+  Telemetry --> OwnerFeedback[Operator Dashboards]
+```
+
+- **Complete override authority** — `contracts/AlphaNodeManager.sol` empowers the owner to pause/unpause, update validator sets, register or rotate ENS identities, alter identity status, and withdraw stake.
+- **Runtime enforcement** — Services in `src/services/` (governance, staking, rewards, control plane) read owner directives and refuse execution when the health gate or treasury posture is off-policy.
+- **Token discipline** — Staking and payouts are normalized to wei precision against the canonical `$AGIALPHA` address; non-canonical overrides are rejected at config parsing.
 
 ---
 
@@ -134,24 +158,14 @@ flowchart TD
   subgraph Verification
     F --> H[verifyAttestation]
     H --> I[verifyAgainstENS]
+    H --> J[scripts/attestation-verify.ts]
   end
 ```
 
-- **Schema** — [`src/attestation/schema.ts`](src/attestation/schema.ts) defines `HealthAttestation` v1 with `timestamp`, `ensName`, `peerId`, `nodeVersion`, `multiaddrs`, optional `fuses/expiry/latency/meta`, and `status` (`healthy | degraded | unhealthy`). Canonical JSON serialization keeps signatures stable.
-- **Emission** — [`src/attestation/health_service.ts`](src/attestation/health_service.ts) builds attestations from `NodeIdentity`, measures latency, signs via node keypair, emits through an `EventEmitter` and optional callback, and can pretty-print to stdout for dev observability.
-- **Verification** — [`src/attestation/verify.ts`](src/attestation/verify.ts) recomputes canonical digests and verifies `secp256k1` or `ed25519` signatures. `verifyAgainstENS` reloads the ENS identity to prevent drift from owner-declared records.
-- **Dev tap** — Start a periodic signer in any runtime:
-
-  ```ts
-  import { startHealthChecks } from './src/attestation/health_service.js';
-  import { loadNodeIdentity } from './src/identity/loader.js';
-  import { loadKeypair } from './src/identity/keys.js';
-
-  const identity = await loadNodeIdentity('1.alpha.node.agi.eth');
-  const keypair = await loadKeypair();
-  const handle = startHealthChecks(identity, keypair, { intervalMs: 30_000, logToConsole: true });
-  // handle.stop() when shutting down
-  ```
+- **Schema** — [`src/attestation/schema.ts`](src/attestation/schema.ts) defines `HealthAttestation` v1 (`timestamp`, `ensName`, `peerId`, `nodeVersion`, `multiaddrs`, optional `fuses/expiry/latency/meta`, `status: healthy | degraded | unhealthy`) plus canonical serialization helpers for stable signatures.
+- **Emission** — [`src/attestation/health_service.ts`](src/attestation/health_service.ts) builds attestations from `NodeIdentity`, measures latency, signs via the node keypair, emits through an `EventEmitter` and callback, and can pretty-print to stdout for dev observability.
+- **Verification** — [`src/attestation/verify.ts`](src/attestation/verify.ts) recomputes canonical digests and verifies `secp256k1` or `ed25519` signatures. `verifyAgainstENS` reloads ENS identity to prevent drift from owner-declared records.
+- **CLI verifier** — `npm run attestation:verify -- --file signed.json --ens alpha.node.eth --print` loads the ENS identity (or a local `NodeIdentity` JSON) and exits non-zero on failure.
 
 ### Sample signed attestation
 
@@ -175,12 +189,11 @@ flowchart TD
 
 ---
 
-## $AGIALPHA Treasury & Owner Authority
+## $AGIALPHA Treasury
 
-- **Token constants** — `$AGIALPHA`, 18 decimals, canonical address enforced in [`src/constants/token.js`](src/constants/token.js) and [`src/config/schema.js`](src/config/schema.js). Any divergent override is rejected.
-- **Owner powers** — [`contracts/AlphaNodeManager.sol`](contracts/AlphaNodeManager.sol) grants the owner exclusive control to pause/unpause, set validators, register/revoke ENS identities, swap controllers, toggle identity status, and withdraw stake. Stake deposits require active identities and honor the canonical token.
-- **Runtime governance** — CLI and services in [`src/services/governance.js`](src/services/governance.js), [`src/services/governanceLedger.js`](src/services/governanceLedger.js), [`src/services/governanceStatus.js`](src/services/governanceStatus.js) surface owner-only directives for emissions, validator thresholds, and payout tuning.
-- **Payout fidelity** — Staking, reward, and treasury loops in [`src/services/staking.js`](src/services/staking.js), [`src/services/rewards.js`](src/services/rewards.js), and [`src/services/economics.js`](src/services/economics.js) normalize token math to wei precision so treasury accounting never drifts.
+- **Token constants** — `$AGIALPHA`, 18 decimals, canonical address enforced in [`src/constants/token.js`](src/constants/token.js) and [`src/config/schema.js`](src/config/schema.js). Divergent overrides are rejected.
+- **Treasury runtime** — Staking, reward, and treasury loops in [`src/services/staking.js`](src/services/staking.js), [`src/services/rewards.js`](src/services/rewards.js), and [`src/services/economics.js`](src/services/economics.js) normalize token math to wei precision.
+- **Ledger discipline** — Validation and settlement events (`recordAlphaWUMint`, `recordAlphaWUValidation`, `recordAlphaWUAcceptance`, `applySlash`) emit on-chain proofs that downstream subgraphs can index without ambiguity.
 
 ---
 
@@ -203,6 +216,15 @@ flowchart TD
 
 ## Observability Stack
 
+```mermaid
+flowchart LR
+  Metrics[Prometheus Exporter] -->|Gauges| AlphaMetrics[src/telemetry/alphaMetrics.js]
+  AlphaMetrics --> HealthGate[src/services/healthGate.js]
+  AlphaMetrics --> Orchestrator[src/services/jobLifecycle.js]
+  HealthGate --> Monitoring[src/telemetry/monitoring.js]
+  Monitoring --> Dashboards[(Grafana/Alerts)]
+```
+
 - **Metrics** — [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) exposes Prometheus metrics populated by gauges in [`src/telemetry/alphaMetrics.js`](src/telemetry/alphaMetrics.js).
 - **AlphaWU signals** — [`src/telemetry/alphaWuTelemetry.js`](src/telemetry/alphaWuTelemetry.js) records execution and reward traces for every α-work unit.
 - **Healthcheck endpoint** — [`src/healthcheck.js`](src/healthcheck.js) provides liveness probes aligned with the health gate and identity posture.
@@ -223,8 +245,8 @@ flowchart LR
   Tests & Lint & Coverage & Solidity & Subgraph & Docker & Security --> Gate[Required Checks]
 ```
 
-- **Full sweep** — `npm run ci:verify` mirrors the GitHub Actions workflow: linting, tests, coverage, Solidity hygiene, subgraph build, npm audit (high), health/branch gates.
-- **PR enforcement** — Required checks are listed in [`.github/required-checks.json`](.github/required-checks.json) and enforced on pull requests and `main`.
+- **One-command mirror** — `npm run ci:verify` executes linting, tests, coverage, Solidity hygiene, subgraph build, npm audit (high), and policy/branch gates.
+- **Required checks** — Enforced on PRs/main via [`.github/required-checks.json`](.github/required-checks.json): Lint Markdown & Links, Unit & Integration Tests, Coverage Report, Docker Build & Smoke Test, Solidity Lint & Compile, Subgraph TypeScript Build, Dependency Security Scan.
 - **Targeted commands**
   - `npm run lint` — Markdown + link linting
   - `npm test` — Vitest suites
@@ -232,6 +254,7 @@ flowchart LR
   - `npm run ci:solidity` — solhint + solc harness
   - `npm run ci:ts` — subgraph codegen + build
   - `npm run ci:security` — npm audit (high)
+  - `npm run attestation:verify -- --file signed.json --ens <name>` — validate attestation signatures
 
 ---
 
@@ -257,7 +280,7 @@ flowchart LR
 
 | Path | Purpose |
 | --- | --- |
-| `src/attestation/` | Health schema, signer, and verifier helpers. |
+| `src/attestation/` | Health schema, signer, verifier, and CLI helpers. |
 | `src/identity/` | ENS identity loaders, key handling, DNSAddr normalization. |
 | `src/services/` | Governance, staking, rewards, control plane, lifecycle, telemetry gates. |
 | `src/orchestrator/` | Node bootstrap, monitor loop, runtime coordination. |
@@ -265,24 +288,23 @@ flowchart LR
 | `src/validator/` | Validator runtime and quorum enforcement. |
 | `contracts/` | Solidity contracts (AlphaNodeManager, access control, interfaces). |
 | `deploy/helm/` | Kubernetes deployment artifacts. |
-| `scripts/` | CI gates, ENS inspection, solc harness, badge publisher. |
+| `scripts/` | CI gates, ENS inspection, attestation verification, solc harness, badge publisher. |
 | `test/` | Vitest suites covering orchestration, ENS, governance, attestation, telemetry. |
 
 ---
 
 ## Reference Snippets
 
-- **Verify a signed attestation against ENS**
+- **Run the attestation verifier (ENS-backed)**
 
   ```bash
-  node --input-type=module <<'NODE'
-  import { readFileSync } from 'node:fs';
-  import { verifyAgainstENS } from './src/attestation/verify.js';
+  npm run attestation:verify -- --file signed-attestation.json --ens alpha.node.eth --print
+  ```
 
-  const signed = JSON.parse(readFileSync('signed-attestation.json', 'utf8'));
-  const ok = await verifyAgainstENS(signed.attestation.ensName, signed);
-  console.log(`Attestation valid: ${ok}`);
-  NODE
+- **Run the attestation verifier with a local NodeIdentity JSON**
+
+  ```bash
+  npm run attestation:verify -- --file signed-attestation.json --identity identity.json
   ```
 
 - **Regenerate subgraph manifest and build**
@@ -297,4 +319,4 @@ flowchart LR
   node -e "import { startMonitoringServer } from './src/telemetry/monitoring.js'; startMonitoringServer({ port: 9090 });"
   ```
 
-Harness these primitives to operate a controlled, ever-advancing cognitive network that keeps the owner at the helm while continuously emitting verifiable health, treasury, and governance signals.
+Operate this node as a sovereign, ever-accelerating cognitive engine: health attestations are provable, treasury flows are deterministic, and every control surface answers only to the owner.
