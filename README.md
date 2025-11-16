@@ -30,7 +30,7 @@
 
 > **AGI Alpha Node v0** is the cognitive yield engine that turns heterogeneous agentic work into verifiable α‑Work Units (α‑WU), anchors them to the `$AGIALPHA` treasury (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals), and keeps every lever under the owner’s command—pause, re-weight, rotate validators, refresh baselines, and reroute rewards without redeploying code.
 
-**Non-negotiable guarantees**
+## Non-negotiable guarantees
 
 - **Owner total command**: pause/unpause, swap validator sets, rewrite identity controllers, and redirect/stage rewards directly from `AlphaNodeManager` without migrating contracts.
 - **Reproducible data spine**: migrations + seeds initialize providers, task types, runs, telemetry, alpha indices, and constituent weights with indexes on provider/day for instant dashboards.
@@ -196,7 +196,7 @@ erDiagram
 
 - **Repositories**: CRUD helpers for each entity enforce JSON/tags serialization, timestamp updates, and provider/task lookups.
 
-**Repository usage example**
+### Repository usage example
 
 ```js
 import { initializeDatabase } from './src/persistence/database.js';
@@ -217,7 +217,7 @@ taskRuns.update(run.id, { status: 'completed', completed_at: new Date().toISOStr
 - **Owner powers**: pause/unpause, validator rotation (`setValidator`), identity lifecycle (`registerIdentity`, `updateIdentityController`, `setIdentityStatus`, `revokeIdentity`), α‑WU lifecycle events (`recordAlphaWUMint`, `recordAlphaWUValidation`, `recordAlphaWUAcceptance`), slashing, and treasury withdrawals (`withdrawStake`).
 - **Validator safety**: active identity checks gate staking and validation actions; stake balances are tracked per controller.
 
-**Owner command palette (no redeploys required)**
+### Owner command palette (no redeploys required)
 
 - `pause()` / `unpause()` — emergency stops or resumes the entire node surface.
 - `setValidator(address validator, bool active)` — rotate validator sets instantly.
