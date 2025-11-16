@@ -47,19 +47,20 @@ graph LR
 
 1. [Constellation Overview](#constellation-overview)
 2. [Quickstart Sequence](#quickstart-sequence)
-3. [$AGIALPHA Treasury Engine](#agialpha-treasury-engine)
-4. [ENS Control Fabric](#ens-control-fabric)
-5. [Node Identity Fabric](#node-identity-fabric)
-6. [Identity Assurance Playbook](#identity-assurance-playbook)
-7. [Identity Boot Sequence](#identity-boot-sequence)
-8. [Autonomous Job Lifecycle](#autonomous-job-lifecycle)
-9. [Owner Command Authority](#owner-command-authority)
-10. [Operator Console](#operator-console)
-11. [Observability & Governance](#observability--governance)
-12. [CI & Release Ramparts](#ci--release-ramparts)
-13. [Deployment Vectors](#deployment-vectors)
-14. [Repository Atlas](#repository-atlas)
-15. [Reference Library](#reference-library)
+3. [Health Attestation Mesh](#health-attestation-mesh)
+4. [$AGIALPHA Treasury Engine](#agialpha-treasury-engine)
+5. [ENS Control Fabric](#ens-control-fabric)
+6. [Node Identity Fabric](#node-identity-fabric)
+7. [Identity Assurance Playbook](#identity-assurance-playbook)
+8. [Identity Boot Sequence](#identity-boot-sequence)
+9. [Autonomous Job Lifecycle](#autonomous-job-lifecycle)
+10. [Owner Command Authority](#owner-command-authority)
+11. [Operator Console](#operator-console)
+12. [Observability & Governance](#observability--governance)
+13. [CI & Release Ramparts](#ci--release-ramparts)
+14. [Deployment Vectors](#deployment-vectors)
+15. [Repository Atlas](#repository-atlas)
+16. [Reference Library](#reference-library)
 
 ---
 
@@ -121,6 +122,37 @@ flowchart LR
    ```
 
    The bootstrapper hydrates ENS, governance, staking, and telemetry state before handing off α-work scheduling.
+
+---
+
+## Health Attestation Mesh
+
+```mermaid
+flowchart TD
+  subgraph Identity
+    A[NodeIdentity snapshot] --> B(createHealthAttestation)
+  end
+  subgraph Signing
+    B --> C(signHealthAttestation)
+    C --> D(startHealthChecks)
+  end
+  subgraph Emission
+    D --> E[EventEmitter / onAttestation callbacks]
+    E --> F[Telemetry exporters]
+    E --> G[Stdout dev taps]
+  end
+  subgraph Verification
+    F --> H[verifyAttestation]
+    H --> I[verifyAgainstENS]
+  end
+```
+
+- **Canonical health schema** — [`src/attestation/schema.ts`](src/attestation/schema.ts) defines a stable, human-readable `HealthAttestation` (`version: v1`) that carries ENS name, peerId, fuses/expiry, multiaddrs, runtime version, and status/latency metadata so every emission is deterministic.
+- **Signed pings on a timer** — [`src/attestation/health_service.ts`](src/attestation/health_service.ts) hydrates the attestation from the live `NodeIdentity`, signs it with the operator’s keypair, emits it through an `EventEmitter` or callback, and can log prettified JSON to stdout for dev-mode visibility.
+- **Independent verification** — [`src/attestation/verify.ts`](src/attestation/verify.ts) recomputes digests with the canonical serializer, supports `secp256k1` and `ed25519`, and checks recovered keys against the ENS-published pubkey. `verifyAgainstENS` reloads identity data on demand so attestations cannot drift from the owner’s declared records.
+- **Owner-first controls** — The owner can pause or resume health emission by controlling the key material, adjusting timers, or shutting down the emitter; signatures cannot verify unless the ENS pubkey, peerId, and node metadata match the owner’s records.
+
+These primitives keep the node’s health contractually bound to the ENS identity, letting telemetry backends, dashboards, or other nodes trust pings without manual reconciliation.
 
 ---
 
@@ -334,7 +366,7 @@ Each command shares ergonomic helpers for signer selection, JSON-RPC configurati
 
 ## Observability & Governance
 
-- **Health gates**: The bootstrapper publishes health snapshots and ENS allowlists to halt workloads if telemetry degrades.
+- **Signed health gates**: Periodic attestations from [`startHealthChecks`](src/attestation/health_service.ts) are signed against the ENS-declared pubkey and can be independently verified before orchestration resumes.
 - **Metrics**: Prometheus counters & histograms export α-work throughput, validator performance, and reward curves for dashboards.
 - **Governance ledger**: Structured event journaling tracks validator status, staking posture, and orchestrator directives for audit trails.
 - **Offline resilience**: Snapshot + replay primitives guarantee that disconnected nodes can resynchronise once connectivity returns.
