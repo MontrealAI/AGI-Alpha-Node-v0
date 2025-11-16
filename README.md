@@ -192,14 +192,36 @@ console.log('Use X-API-Key: YOUR_SECRET_API_KEY for provider', provider.name);
 - **Endpoints**: `POST /ingest/task-runs`, `POST /ingest/energy`,
   `POST /ingest/quality`.
 - **Auth**: `X-API-Key` or `Authorization: Bearer <api-key>`; keys stored hashed
-  with provider scoping and last-used tracking.
+  with provider scoping, quotas, and last-used tracking.
 - **Validation**: JSON Schema v0 (`spec/task_run_telemetry.schema.json`,
   `spec/energy_report.schema.json`, `spec/quality_eval.schema.json`) compiled
   with Ajv; structured errors returned on failure.
 - **Idempotency**: `idempotency_key` per task run; duplicates are rejected with
-  collision logging.
+  collision logging and payload hash comparison.
 - **Rate limiting**: stubbed counters emit `X-RateLimit-*` headers for
   observability.
+- **Owner safety**: all telemetry remains under owner governance—pause, revoke,
+  or rotate providers and keys without redeploying contracts.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Provider
+  participant Gateway as Ingestion Gateway
+  participant Validator as JSON Schema v0
+  participant DB as SQLite Spine
+
+  Provider->>Gateway: POST /ingest/task-runs (TaskRunTelemetry)
+  Gateway->>Validator: Validate schema_version=v0
+  Validator-->>Gateway: Structured errors (400) on failure
+  Gateway->>DB: Persist provider_api_keys touch + task_runs (idempotent)
+  Provider->>Gateway: POST /ingest/energy | /ingest/quality
+  Gateway->>Validator: Validate references + payloads
+  Gateway->>DB: Persist energy_reports / quality_evaluations
+  Gateway-->>Provider: 202 Accepted + rate limit headers
+```
+
+### Payload examples
 
 ```bash
 curl -X POST http://localhost:8080/ingest/task-runs \
@@ -298,16 +320,23 @@ Seeds include high-signal task types (`code-refactor`, `research-dossier`,
   persisted for non-dry runs.
 - AlphaNodeManager and staking/reward engines remain fully owner-modifiable for
   upgrades, emission rewrites, and pause/unpause flows without redeployment.
+- Contract owner can rotate validators, rewrite weighting logic, pause
+  settlement, adjust quotas, or reroute incentives instantly to safeguard
+  high-stakes AGI job flows.
 
 ## CI, quality gates, and release rigor
 
 - **Checks enforced on PRs and `main`**: markdown lint, link validation, JS/TS
   tests, coverage, Solidity lint + compilation, subgraph codegen/build,
-  security audit stub, policy & branch gates.
+  security audit stub, policy & branch gates. Required checks are listed in
+  `.github/required-checks.json` and wired to the CI badge above.
 - **Run locally**: `npm run ci:verify` mirrors GitHub Actions. `npm run`
-  `coverage` emits c8/LCOV + JSON summary.
-- **Health probes**: `GET /healthz` and `GET /status` expose node readiness and
-  α‑WU telemetry snapshots.
+  `coverage` emits c8/LCOV + JSON summary. `npm run lint` aligns with the
+  markdown/link gates that guard `main`.
+- **Artifacts**: coverage and docker smoke logs are uploaded on every CI run so
+  operators can trace regressions back to exact builds.
+- **Release hygiene**: deterministic `npm ci`, pinned Node.js 20.18+, and
+  concurrency guards keep pipelines reproducible and fully visible.
 
 ## Operations playbook
 
@@ -315,6 +344,9 @@ Seeds include high-signal task types (`code-refactor`, `research-dossier`,
   verifier server, and metrics endpoint (`/metrics`, default 9464).
 - **Metrics**: Prometheus-compatible metrics powered by `prom-client`;
   `scripts/healthcheck.js` probes `/metrics` for readiness.
+- **Health**: `GET /healthz` and `GET /status` expose node readiness and α‑WU
+  telemetry snapshots; `/status/diagnostics` emits per-epoch breakdowns for
+  dashboards and alerting.
 - **Owner directives**: `GET/POST /governance/directives` allow out-of-band
   instructions (pause, reroute, notices) with full audit logging.
 
