@@ -18,25 +18,27 @@
   <a href="docs/testing.md">
     <img src="https://img.shields.io/badge/Quality-Tests%20%2B%20Coverage%20%2B%20Policies-14b8a6?logo=vitest&logoColor=white" alt="Quality gates" />
   </a>
+  <a href="https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa">
+    <img src="https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-ff3366?logo=ethereum&logoColor=white" alt="$AGIALPHA" />
+  </a>
+  <img src="https://img.shields.io/badge/Token%20Decimals-18%20dp-f97316?logo=ethereum&logoColor=white" alt="Token decimals" />
   <img src="https://img.shields.io/badge/Runtime-Node.js%2020.18%2B-43853d?logo=node.js&logoColor=white" alt="Runtime" />
   <img src="https://img.shields.io/badge/Solidity-0.8.26-363636?logo=solidity&logoColor=white" alt="Solidity" />
-  <a href="https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa"><img src="https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-ff3366?logo=ethereum&logoColor=white" alt="$AGIALPHA" /></a>
-  <img src="https://img.shields.io/badge/Owner%20Controls-Total%20Command-9333ea?logo=gnometerminal&logoColor=white" alt="Owner controls" />
   <a href="Dockerfile"><img src="https://img.shields.io/badge/Docker-Ready-2496ed?logo=docker&logoColor=white" alt="Docker" /></a>
   <a href="deploy/helm/agi-alpha-node"><img src="https://img.shields.io/badge/Helm-Chart-0ea5e9?logo=helm&logoColor=white" alt="Helm" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-10b981?logo=open-source-initiative&logoColor=white" alt="MIT" /></a>
   <a href="docs/testing.md"><img src="https://img.shields.io/badge/CI%20Playbook-Green%20by%20Design-06b6d4?logo=githubactions&logoColor=white" alt="Testing playbook" /></a>
   <img src="https://img.shields.io/badge/Data%20Spine-SQLite%20%2B%20Migrations-0f766e?logo=sqlite&logoColor=white" alt="Persistence" />
-  <img src="https://img.shields.io/badge/Token%20Decimals-18%20dp-f97316?logo=ethereum&logoColor=white" alt="Token decimals" />
+  <img src="https://img.shields.io/badge/Owner%20Controls-Total%20Command-9333ea?logo=gnometerminal&logoColor=white" alt="Owner controls" />
 </p>
 
-> **AGI Alpha Node v0** is the cognitive yield engine that turns heterogeneous agentic work into verifiable α‑Work Units (α‑WU), anchors every unit to the `$AGIALPHA` treasury (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals), and keeps every lever under the owner’s command—pause, re-weight, rotate validators, refresh baselines, reroute rewards, and rewrite participation rules without redeploying code. The stack is engineered so operators can stand up a production-critical node with a single command while still steering every parameter from a sovereign control plane.
+> **AGI Alpha Node v0** is the cognitive yield engine that turns heterogeneous agentic work into verifiable α‑Work Units (α‑WU), anchors every unit to the `$AGIALPHA` treasury (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals), and keeps every lever under the owner’s command—pause, re-weight, rotate validators, refresh baselines, reroute rewards, and rewrite participation rules without redeploying code.
 
 ## Table of contents
 
 - [Why this node](#why-this-node)
 - [Quickstart](#quickstart)
-- [System blueprint](#system-blueprint)
+- [Blueprint](#blueprint)
 - [Data spine: domain, migrations, seeds](#data-spine-domain-migrations-seeds)
 - [Repository layer](#repository-layer)
 - [Owner controls & on-chain levers](#owner-controls--on-chain-levers)
@@ -65,7 +67,7 @@ npm start -- --help       # explore runtime flags
 
 **One-liner for operators:** `npm ci && npm run ci:verify` executes the exact GitHub Actions pipeline locally.
 
-## System blueprint
+## Blueprint
 
 ```mermaid
 flowchart LR
@@ -140,13 +142,13 @@ SQLite migrations live in `src/persistence/migrations` and bootstrap the telemet
 | `providers` | Registered execution nodes with region, sector tags, energy mix, metadata | `name`, `operator_address`, `region`, `sector_tags[]`, `energy_mix`, `metadata`, timestamps |
 | `task_types` | Canonical α‑WU templates with difficulty coefficients | `name`, `description`, `difficulty_coefficient`, timestamps |
 | `task_runs` | Individual executions tied to providers & task types | `provider_id`, `task_type_id`, `status`, `raw_throughput`, `tokens_processed`, `tool_calls`, `novelty_score`, `quality_score`, lifecycle timestamps |
-| `quality_evaluations` | Evaluator-scored runs | `task_run_id`, `evaluator`, `score`, `notes`, `created_at` |
-| `energy_reports` | Energy/region signals per run | `task_run_id`, `kwh`, `energy_mix`, `carbon_intensity_gco2_kwh`, `cost_usd`, `region`, `created_at` |
-| `synthetic_labor_scores` | Synthetic labor uplift per provider/run | `provider_id`, `task_run_id`, `score`, `rationale`, `created_at` |
-| `index_values` | Headline Alpha Index values | `effective_date`, `headline_value`, `energy_adjustment`, `quality_adjustment`, `consensus_factor`, `created_at` |
-| `index_constituent_weights` | Provider weights for each index value | `index_value_id`, `provider_id`, `weight`, `created_at` |
+| `quality_evaluations` | Evaluator-scored runs | `task_run_id`, `evaluator`, `score`, `notes`, timestamps |
+| `energy_reports` | Energy/region signals per run | `task_run_id`, `kwh`, `energy_mix`, `carbon_intensity_gco2_kwh`, `cost_usd`, `region`, timestamps |
+| `synthetic_labor_scores` | Synthetic labor uplift per provider/run | `provider_id`, `task_run_id`, `score`, `rationale`, timestamps |
+| `index_values` | Headline Alpha Index values | `effective_date`, `headline_value`, `energy_adjustment`, `quality_adjustment`, `consensus_factor`, timestamps |
+| `index_constituent_weights` | Provider weights for each index value | `index_value_id`, `provider_id`, `weight`, timestamps |
 
-Indexes cover provider/day hotspots: `providers(region, created_at)`, `task_runs(provider_id, created_at, day)`, `index_values(effective_date)`, and composite uniqueness for `index_constituent_weights`.
+Indexes cover provider/day hotspots: `providers(region, created_at)`, `task_runs(provider_id, created_at, day)`, `index_values(effective_date)`, and uniqueness for `index_constituent_weights`.
 
 ### Migrate & seed
 
@@ -198,8 +200,14 @@ const run = runs.create({
   tokens_processed: 12000
 });
 
-quality.create({ task_run_id: run.id, evaluator: 'cognitive-audit', score: 0.93 });
-energy.create({ task_run_id: run.id, kwh: 4.2, energy_mix: 'hydro', region: 'na-east' });
+quality.update(
+  quality.create({ task_run_id: run.id, evaluator: 'cognitive-audit', score: 0.93 }).id,
+  { score: 0.95 }
+);
+energy.update(
+  energy.create({ task_run_id: run.id, kwh: 4.2, energy_mix: 'hydro', region: 'na-east' }).id,
+  { cost_usd: 1.9 }
+);
 
 const indexValue = indexValues.create({
   effective_date: '2024-02-01',
@@ -208,8 +216,10 @@ const indexValue = indexValues.create({
   quality_adjustment: 1.02,
   consensus_factor: 0.99
 });
-
-weights.create({ index_value_id: indexValue.id, provider_id: provider.id, weight: 0.42 });
+weights.update(
+  weights.create({ index_value_id: indexValue.id, provider_id: provider.id, weight: 0.42 }).id,
+  { weight: 0.5 }
+);
 ```
 
 ## Owner controls & on-chain levers
@@ -241,8 +251,7 @@ flowchart LR
 - **Required checks**: `.github/required-checks.json` enforces all gates on `main` and PRs.
 - **Workflow**: `.github/workflows/ci.yml` runs lint, policy gates, full Vitest suite (including persistence and on-chain harnesses), coverage export, Solidity lint/compile, subgraph codegen/build, high-severity npm audit, branch policy, and Docker smoke tests.
 - **Local parity**: `npm run ci:verify` mirrors the Actions matrix; coverage artifacts land in `coverage/` for downstream upload.
-
-The badge at the top of this README reflects the live status of `ci.yml` on `main`; contributions must land with green checks before merge.
+- **Badges**: the CI badge above reflects the live status of `ci.yml` on `main`; contributions must land with green checks before merge.
 
 ## Operations playbook
 

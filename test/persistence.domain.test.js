@@ -99,6 +99,10 @@ describe('persistence layer', () => {
 
     expect(evalRecord.score).toBeCloseTo(0.93);
 
+    const updatedEval = harness.quality.update(evalRecord.id, { score: 0.95, notes: 'Post-review uplift' });
+    expect(updatedEval.score).toBeCloseTo(0.95);
+    expect(updatedEval.notes).toContain('uplift');
+
     const energy = harness.energy.create({
       task_run_id: run.id,
       kwh: 4.2,
@@ -109,6 +113,10 @@ describe('persistence layer', () => {
     });
 
     expect(energy.kwh).toBeCloseTo(4.2);
+
+    const updatedEnergy = harness.energy.update(energy.id, { kwh: 4.5, cost_usd: 1.9 });
+    expect(updatedEnergy.kwh).toBeCloseTo(4.5);
+    expect(updatedEnergy.cost_usd).toBeCloseTo(1.9);
 
     const finished = harness.taskRuns.update(run.id, {
       status: 'completed',
@@ -140,6 +148,8 @@ describe('persistence layer', () => {
     });
 
     expect(score.score).toBeCloseTo(1.12);
+    const refreshed = harness.syntheticLabor.update(score.id, { score: 1.2 });
+    expect(refreshed.score).toBeCloseTo(1.2);
     expect(harness.syntheticLabor.listForProvider(provider.id)).toHaveLength(1);
   });
 
@@ -153,6 +163,9 @@ describe('persistence layer', () => {
     });
 
     expect(indexValue.headline_value).toBeCloseTo(101.25);
+    const patchedIndex = harness.indexValues.update(indexValue.id, { headline_value: 102, consensus_factor: 1.01 });
+    expect(patchedIndex.headline_value).toBeCloseTo(102);
+    expect(patchedIndex.consensus_factor).toBeCloseTo(1.01);
 
     const provider = harness.providers.findByName(DEFAULT_PROVIDERS[0].name);
     const weight = harness.indexWeights.create({
@@ -162,6 +175,8 @@ describe('persistence layer', () => {
     });
 
     expect(weight.weight).toBeCloseTo(0.42);
+    const adjustedWeight = harness.indexWeights.update(weight.id, { weight: 0.5 });
+    expect(adjustedWeight.weight).toBeCloseTo(0.5);
     expect(harness.indexWeights.listForIndexValue(indexValue.id)).toHaveLength(1);
   });
 });
