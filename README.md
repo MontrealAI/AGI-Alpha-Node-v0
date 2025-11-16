@@ -12,6 +12,7 @@
   <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml">
     <img src="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI" />
   </a>
+  <img src="https://img.shields.io/badge/CI-Green%20Pipeline-16a34a?logo=githubactions&logoColor=white" alt="CI Green" />
   <a href=".github/required-checks.json">
     <img src="https://img.shields.io/badge/PR%20Gate-Required%20Checks-8b5cf6?logo=github&logoColor=white" alt="Required PR checks" />
   </a>
@@ -27,6 +28,8 @@
 </p>
 
 > **AGI Alpha Node v0 metabolizes cognition into $AGIALPHA while keeping the operator in absolute command.** Every heartbeat, proof, and payout is attestable, deterministic, and tied to owner-held controls.
+
+> Built to feel like an inexhaustible co-processor: sovereign control for the owner, cryptographic attestations for verifiers, and ruthless CI discipline so every change lands clean.
 
 ```mermaid
 graph TD
@@ -62,6 +65,7 @@ graph TD
 - **Canonical treasury binding** — Hardwired to the 18-decimal `$AGIALPHA` contract [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) for staking, rewards, and settlement.
 - **Owner-dominated controls** — Pausing, validator rosters, identity registration, controller updates, stake withdrawal, and governance signaling stay exclusively with the contract owner (`AlphaNodeManager.sol`).
 - **Deterministic attestations** — Canonical JSON, signed payloads, and independent verification keep liveness and identity integrity provable.
+- **Live health plane** — `startHealthChecks` signs latency-aware attestations on a timer, emitting canonical payloads that telemetry and verifiers can trust without drift.
 - **Production-hardening** — Markdown + link linting, Vitest suites, coverage, Solidity lint/compile, subgraph builds, Docker smoke, npm audit, and policy gates are enforced in CI and required on PRs/main.
 - **Operator empathy** — Docker, Helm, scripts, and CLI taps let non-technical operators deploy and validate without touching internals while retaining full override authority.
 
@@ -78,7 +82,7 @@ flowchart LR
   E --> F[node src/index.js container --once]
 ```
 
-1. **Clone & install**
+1. **Clone & install (pulls cryptography deps such as @noble/ed25519)**
 
    ```bash
    git clone https://github.com/MontrealAI/AGI-Alpha-Node-v0.git
@@ -110,10 +114,15 @@ flowchart LR
 
    ```bash
    npm run demo:local       # seeds fixtures and observability loops
-   node src/index.js container --once
-   ```
+  node src/index.js container --once
+  ```
 
    Bootstrap hydrates ENS, governance, staking posture, telemetry, and the health gate before dispatching α-work.
+
+5. **Lock in CI parity**
+
+   - Run `npm run ci:verify` before every PR to mirror the enforced gate set.
+   - Confirm the green badge above stays green; required checks are enforced on `main` and PRs via branch protections and [`.github/required-checks.json`](.github/required-checks.json).
 
 ---
 
@@ -136,6 +145,7 @@ flowchart TD
 
 - **Complete override authority** — `contracts/AlphaNodeManager.sol` empowers the owner to pause/unpause, update validator sets, register or rotate ENS identities, alter identity status, and withdraw stake.
 - **Parameter agility** — Owner-set tunables (minimum stake, quorum thresholds, reward curves, fuses/expiry, attestation cadence) are read at runtime, allowing rapid pivots without redeploying contracts.
+- **Runtime overrides** — Owner-triggered updates immediately propagate through orchestrator services, attestation emission windows, and treasury logic, enabling responsive control of every critical parameter.
 - **Runtime enforcement** — Services in `src/services/` (governance, staking, rewards, control plane) read owner directives and refuse execution when the health gate or treasury posture is off-policy.
 - **Token discipline** — Staking and payouts are normalized to wei precision against the canonical `$AGIALPHA` address; non-canonical overrides are rejected at config parsing.
 
