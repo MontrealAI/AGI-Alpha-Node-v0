@@ -41,6 +41,7 @@
 - [System architecture](#system-architecture)
 - [Quickstart (non-technical friendly)](#quickstart-non-technical-friendly)
 - [Telemetry ingestion v0](#telemetry-ingestion-v0)
+- [Synthetic labor scoring engine (SLU)](#synthetic-labor-scoring-engine-slu)
 - [Provider authentication & deduplication](#provider-authentication--deduplication)
 - [Data spine & migrations](#data-spine--migrations)
 - [Owner controls & on-chain levers](#owner-controls--on-chain-levers)
@@ -115,6 +116,9 @@ npm install
 npm run db:migrate
 npm run db:seed
 npm start
+
+# compute Synthetic Labor Units for today (UTC)
+node src/index.js score:daily --date $(date -u +%F)
 ```
 
 Register an API key for telemetry uploads:
@@ -195,6 +199,59 @@ POST /ingest/quality
   }
 }
 ```
+
+## Synthetic labor scoring engine (SLU)
+
+> Daily conversion of telemetry into **Synthetic Labor Units (SLU)** per provider, with deterministic difficulty, energy, quality, and validator consensus factors baked into the ledger.
+
+```mermaid
+flowchart TB
+  subgraph Inputs[Telemetry Inputs]
+    tr[Task runs
+    • throughput
+    • tokens
+    • tool calls]
+    en[Energy reports
+    • kWh
+    • cost_usd]
+    qu[Quality evals
+    • human / auto scores]
+  end
+
+  subgraph Factors[Adjustment Factors]
+    diff[Difficulty
+    normalized to baseline bundle]
+    ea[Energy Adjustment
+    cost_baseline / cost_observed]
+    qa[Quality Adjustment
+    winsorized scores vs baseline]
+    vc[Validator Consensus
+    reproducibility stub]
+  end
+
+  Inputs --> diff
+  Inputs --> ea
+  Inputs --> qa
+  Inputs --> vc
+
+  subgraph Synth[SLU Forge]
+    sumRaw[Σ(raw_throughput × difficulty)]
+    computeSLU[SLU = raw × EA × QA × VC]
+  end
+
+  diff --> sumRaw
+  ea --> computeSLU
+  qa --> computeSLU
+  vc --> computeSLU
+  sumRaw --> computeSLU
+  computeSLU --> db[(synthetic_labor_scores)]
+```
+
+- **Difficulty coefficient**: blends task-type baselines with telemetry intensity (tokens_processed, tool_calls, steps) and normalizes to ~1.0 for the reference bundle.
+- **Energy adjustment (EA)**: `EA = baseline_cost_per_slu / observed_cost_per_slu` with caps to prevent outliers; estimated cost derived from `energy_reports.cost_usd` or kWh × baseline price when cost is absent.
+- **Quality adjustment (QA)**: winsorized quality scores (task-run quality plus gold evaluations) normalized against baseline quality (0.9) and bounded to avoid runaway boosts.
+- **Validator consensus (VC)**: stubbed reproducibility rate per task type/day; defaults to `1.0` when sparse.
+- **Daily job**: `node src/index.js score:daily --date 2024-05-01` persists per-provider rows with `{ raw_throughput, energy_adjustment, quality_adjustment, consensus_factor, slu, metadata }`.
 
 ## Provider authentication & deduplication
 

@@ -143,13 +143,20 @@ describe('persistence layer', () => {
     const score = harness.syntheticLabor.create({
       provider_id: provider.id,
       task_run_id: run.id,
-      score: 1.12,
-      rationale: 'Energy-optimal throughput with validator consensus'
+      measurement_date: '2024-03-01',
+      raw_throughput: 1.12,
+      energy_adjustment: 1.05,
+      quality_adjustment: 0.98,
+      consensus_factor: 1.02,
+      slu: 1.18,
+      rationale: 'Energy-optimal throughput with validator consensus',
+      metadata: { sample: true }
     });
 
-    expect(score.score).toBeCloseTo(1.12);
-    const refreshed = harness.syntheticLabor.update(score.id, { score: 1.2 });
-    expect(refreshed.score).toBeCloseTo(1.2);
+    expect(score.slu).toBeCloseTo(1.18);
+    const refreshed = harness.syntheticLabor.update(score.id, { slu: 1.2, measurement_date: '2024-03-02' });
+    expect(refreshed.slu).toBeCloseTo(1.2);
+    expect(refreshed.measurement_date).toBe('2024-03-02');
     expect(harness.syntheticLabor.listForProvider(provider.id)).toHaveLength(1);
   });
 
