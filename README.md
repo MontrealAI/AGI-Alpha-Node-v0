@@ -30,31 +30,42 @@
   <img src="https://img.shields.io/badge/Data%20Spine-SQLite%20%2B%20Migrations-0f766e?logo=sqlite&logoColor=white" alt="Persistence" />
 </p>
 
-> **AGI Alpha Node v0** is the cognitive yield engine that turns heterogeneous agentic work into verifiable α‑Work Units (α‑WU), anchors them to the `$AGIALPHA` treasury (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals), and keeps every lever under the owner’s command—pause, re-weight, rotate validators, refresh baselines, and reroute rewards without redeploying code.
+> **AGI Alpha Node v0** is a cognitive yield engine that turns heterogeneous agentic work into verifiable α‑Work Units (α‑WU), anchors them to the `$AGIALPHA` treasury (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals), and keeps every lever under the owner’s command—pause, re-weight, rotate validators, refresh baselines, and reroute rewards without redeploying code.
 
-## Quickstart (production-safe defaults)
+## Table of contents
+
+- [Why this node](#why-this-node)
+- [Quickstart](#quickstart)
+- [System architecture](#system-architecture)
+- [Data spine: entities and migrations](#data-spine-entities-and-migrations)
+- [Repositories & usage](#repositories--usage)
+- [Owner controls & on-chain levers](#owner-controls--on-chain-levers)
+- [CI, quality gates, and release rigor](#ci-quality-gates-and-release-rigor)
+- [Operations playbook](#operations-playbook)
+- [Contributing](#contributing)
+
+## Why this node
+
+- **Owner-first sovereignty**: every critical switch is held by the contract owner—pause/unpause, validator rotation, identity lifecycle, staking withdrawals, index rewrites, and slashing routines are callable without redeployment from `contracts/AlphaNodeManager.sol`.
+- **Deterministic data spine**: SQLite migrations seed providers, task types, runs, telemetry, α‑index values, and constituent weights with indexes on provider/day for instant dashboards and subgraph alignment.
+- **Production-safe defaults**: the CLI, seeds, and Helm chart mirror automation paths so non-specialists can bootstrap a high-stakes node with a single command stream.
+- **Always-on alpha extraction**: agentic swarms route jobs through provider meshes, generating synthetic labor, quality, and energy telemetry that continuously tune the `$AGIALPHA` flywheel.
+
+## Quickstart
 
 ```bash
 git clone https://github.com/MontrealAI/AGI-Alpha-Node-v0.git
 cd AGI-Alpha-Node-v0
-npm ci                    # installs native better-sqlite3, solc, vitest, etc.
-npm run db:migrate        # initializes SQLite spine (use AGI_ALPHA_DB_PATH to override)
+npm ci                    # installs native better-sqlite3, solc, vitest, subgraph toolchain
+npm run db:migrate        # initializes SQLite spine (override with AGI_ALPHA_DB_PATH)
 npm run db:seed           # loads canonical providers + task types
 npm test                  # full vitest suite, policy gates, persistence coverage
 npm start -- --help       # explore runtime flags
 ```
 
-## Operational notes
+**One-liner for operators:** `npm ci && npm run ci:verify` executes the exact GitHub Actions pipeline locally.
 
-- Owner-level directives live in `contracts/AlphaNodeManager.sol` and are callable without redeploys (pause/unpause, validator set rotation, staking/withdrawal, registry rewrites, reward redirects).
-- CI is enforced on `main` via `.github/required-checks.json`; every PR surfaces lint, policy, coverage, Solidity, and subgraph gates before merge.
-- Database CLI (`node src/persistence/cli.js <migrate|seed> [db]`) mirrors production automation so non-specialists can bootstrap nodes safely.
-
-## Non-negotiable guarantees
-
-- **Owner total command**: pause/unpause, swap validator sets, rewrite identity controllers, and redirect/stage rewards directly from `AlphaNodeManager` without migrating contracts.
-- **Reproducible data spine**: migrations + seeds initialize providers, task types, runs, telemetry, alpha indices, and constituent weights with indexes on provider/day for instant dashboards.
-- **Hardened delivery**: CI pins every gate (lint, links, policy/branch, JS/TS tests, Solidity checks, subgraph builds, audit scan, Docker smoke) and is enforced for PRs on `main`.
+## System architecture
 
 ```mermaid
 flowchart LR
@@ -89,166 +100,50 @@ flowchart TD
   Ledger -->|Index snapshots| H
 ```
 
-## Why this node
+## Data spine: entities and migrations
 
-- **Owner-first control**: every critical switch is held by the contract owner—pause/unpause, validator rotation, identity lifecycle, staking withdrawals, and slashing routines are callable without redeployment from `contracts/AlphaNodeManager.sol`.
-- **Deterministic data spine**: the node persists providers, task types, runs, telemetry, and α-index values through SQLite with migrations and seeds so that dashboards, subgraphs, and settlement always agree.
-- **Enterprise-grade gates**: CI enforces lint, tests, coverage, Solidity checks, TypeScript/subgraph builds, policy gates, security audit scan, and branch guards on every PR before merge.
-- **Operator clarity**: the README, CLI, and docs are wired for non-specialists—commands mirror production automation (`npm run ci:verify`, `node src/persistence/cli.js migrate`, etc.).
-
-## System topology
-
-```mermaid
-sequenceDiagram
-  participant Owner
-  participant Governance
-  participant ControlPlane
-  participant Orchestrator
-  participant Providers
-  participant Ledger
-  participant Treasury
-
-  Owner->>Governance: Set policy / validator set / pause state
-  Governance->>ControlPlane: Issue work baselines & guardrails
-  ControlPlane->>Orchestrator: Dispatch α‑WU batches
-  Orchestrator->>Providers: Execute task types (benchmarks, research, refactors)
-  Providers-->>Ledger: Telemetry, energy mix, quality evals, synthetic labor scores
-  Ledger-->>Governance: Alpha index values + constituent weights
-  Ledger-->>Treasury: Reward flows in $AGIALPHA
-  Owner->>Treasury: Oversight (withdrawals / redirects)
-```
-
-## Repository map
-
-- **Runtime**: `src/index.js` boots telemetry, health gates, orchestrator loops, and service wiring.
-- **Contracts**: `contracts/AlphaNodeManager.sol` (owner-led control plane, staking, validator registry) with canonical `$AGIALPHA` token address baked in.
-- **Persistence**: `src/persistence` contains SQLite migrations, seeders, repositories, and CLI entrypoints for repeatable data operations.
-- **Docs**: `docs/` holds identity, economics, manifesto, and ops guidance.
-- **Tests**: `test/` runs Vitest suites (JS + TS) covering governance, attestation, persistence, ENS, staking, and orchestrator behavior.
-- **Subgraph**: `subgraph/` contains Graph Node manifest generation and TypeScript bindings for on-chain indexing.
-
-## Core data model
-
-The storage layer encodes the AGI Alpha Index across providers and work units. All tables are created by `src/persistence/migrations/0001_core.sql` and wrapped by repositories in `src/persistence/repositories.js`.
-
-```mermaid
-erDiagram
-  providers ||--o{ task_runs : executes
-  task_types ||--o{ task_runs : templates
-  task_runs ||--o{ quality_evaluations : scored_by
-  task_runs ||--o{ energy_reports : energy_signature
-  providers ||--o{ synthetic_labor_scores : uplifted_by
-  index_values ||--o{ index_constituent_weights : weights
-  providers ||--o{ index_constituent_weights : contributes
-
-  providers {
-    integer id PK
-    text name
-    text region
-    text sector_tags
-    text energy_mix
-    text metadata
-  }
-  task_types {
-    integer id PK
-    text name
-    real difficulty_coefficient
-  }
-  task_runs {
-    integer id PK
-    integer provider_id FK
-    integer task_type_id FK
-    text status
-    real raw_throughput
-    integer tokens_processed
-    integer tool_calls
-    real novelty_score
-    real quality_score
-    text started_at
-    text completed_at
-  }
-  quality_evaluations {
-    integer id PK
-    integer task_run_id FK
-    text evaluator
-    real score
-    text notes
-  }
-  energy_reports {
-    integer id PK
-    integer task_run_id FK
-    real kwh
-    text energy_mix
-    real carbon_intensity_gco2_kwh
-    real cost_usd
-    text region
-  }
-  synthetic_labor_scores {
-    integer id PK
-    integer provider_id FK
-    integer task_run_id FK
-    real score
-    text rationale
-  }
-  index_values {
-    integer id PK
-    text effective_date
-    real headline_value
-    real energy_adjustment
-    real quality_adjustment
-    real consensus_factor
-  }
-  index_constituent_weights {
-    integer id PK
-    integer index_value_id FK
-    integer provider_id FK
-    real weight
-  }
-```
+SQLite migrations live in `src/persistence/migrations` and bootstrap the entire telemetry surface:
 
 | Entity | Purpose | Key fields |
 | --- | --- | --- |
-| `providers` | Registered execution nodes with region, sector tags, energy mix, metadata | `name`, `operator_address`, `region`, `sector_tags[]`, `energy_mix`, `metadata` |
-| `task_types` | Canonical α‑WU templates with difficulty coefficients | `name`, `description`, `difficulty_coefficient` |
-| `task_runs` | Individual executions tied to providers & task types | `provider_id`, `task_type_id`, `status`, `raw_throughput`, `tokens_processed`, `tool_calls`, `novelty_score`, `quality_score`, timestamps |
-| `quality_evaluations` | Evaluator-scored runs | `task_run_id`, `evaluator`, `score`, `notes` |
-| `energy_reports` | Energy/region signals per run | `task_run_id`, `kwh`, `energy_mix`, `carbon_intensity_gco2_kwh`, `cost_usd`, `region` |
-| `synthetic_labor_scores` | Synthetic labor uplift per provider/run | `provider_id`, `task_run_id`, `score`, `rationale` |
-| `index_values` | Headline Alpha Index values | `effective_date`, `headline_value`, `energy_adjustment`, `quality_adjustment`, `consensus_factor` |
-| `index_constituent_weights` | Provider weights for each index value | `index_value_id`, `provider_id`, `weight` |
+| `providers` | Registered execution nodes with region, sector tags, energy mix, metadata | `name`, `operator_address`, `region`, `sector_tags[]`, `energy_mix`, `metadata`, timestamps |
+| `task_types` | Canonical α‑WU templates with difficulty coefficients | `name`, `description`, `difficulty_coefficient`, timestamps |
+| `task_runs` | Individual executions tied to providers & task types | `provider_id`, `task_type_id`, `status`, `raw_throughput`, `tokens_processed`, `tool_calls`, `novelty_score`, `quality_score`, lifecycle timestamps |
+| `quality_evaluations` | Evaluator-scored runs | `task_run_id`, `evaluator`, `score`, `notes`, `created_at` |
+| `energy_reports` | Energy/region signals per run | `task_run_id`, `kwh`, `energy_mix`, `carbon_intensity_gco2_kwh`, `cost_usd`, `region`, `created_at` |
+| `synthetic_labor_scores` | Synthetic labor uplift per provider/run | `provider_id`, `task_run_id`, `score`, `rationale`, `created_at` |
+| `index_values` | Headline Alpha Index values | `effective_date`, `headline_value`, `energy_adjustment`, `quality_adjustment`, `consensus_factor`, `created_at` |
+| `index_constituent_weights` | Provider weights for each index value | `index_value_id`, `provider_id`, `weight`, `created_at` |
 
-### Migrations & seeds
+Indexes cover provider/day hotspots: `providers(region, created_at)`, `task_runs(provider_id, created_at, day)`, `index_values(effective_date)`, and composite uniqueness for `index_constituent_weights`.
 
-- **Apply migrations**
+### Migrate & seed
 
-  ```bash
-  npm run db:migrate            # uses AGI_ALPHA_DB_PATH or in-memory by default
-  node src/persistence/cli.js migrate data/alpha.sqlite
-  ```
+```bash
+npm run db:migrate            # uses AGI_ALPHA_DB_PATH or in-memory
+npm run db:seed               # seeds task types & providers
+node src/persistence/cli.js migrate data/alpha.sqlite
+node src/persistence/cli.js seed data/alpha.sqlite
+```
 
-- **Seed catalog**
+Seeds ship with high-signal task types (`code-refactor`, `research-dossier`, `data-cleanse`, `agent-benchmark`) and exemplar providers (`helios-labs`, `aurora-intel`) including sector tags, regions, and energy mixes.
 
-  ```bash
-  npm run db:seed               # same DB resolution rules
-  node src/persistence/cli.js seed data/alpha.sqlite
-  ```
+## Repositories & usage
 
-  Seeds cover task types (code-refactor, research-dossier, data-cleanse, agent-benchmark) and sample providers (hydro + wind mixes) from `src/persistence/seeds.js`.
-
-- **Repositories**: CRUD helpers for each entity enforce JSON/tags serialization, timestamp updates, and provider/task lookups.
-
-### Repository usage example
+CRUD repositories wrap serialization (JSON metadata, sector tags) and timestamps for every entity.
 
 ```js
-import { initializeDatabase } from '../src/persistence/database.js';
+import { initializeDatabase } from './src/persistence/database.js';
 import {
   ProviderRepository,
   TaskTypeRepository,
   TaskRunRepository,
   QualityEvaluationRepository,
-  EnergyReportRepository
-} from '../src/persistence/repositories.js';
-import { seedAll } from '../src/persistence/seeds.js';
+  EnergyReportRepository,
+  SyntheticLaborScoreRepository,
+  IndexValueRepository,
+  IndexConstituentWeightRepository
+} from './src/persistence/repositories.js';
 
 const db = initializeDatabase({ filename: 'data/alpha.sqlite', withSeed: true });
 const providers = new ProviderRepository(db);
@@ -256,6 +151,9 @@ const taskTypes = new TaskTypeRepository(db);
 const runs = new TaskRunRepository(db);
 const quality = new QualityEvaluationRepository(db);
 const energy = new EnergyReportRepository(db);
+const synthetic = new SyntheticLaborScoreRepository(db);
+const indexValues = new IndexValueRepository(db);
+const weights = new IndexConstituentWeightRepository(db);
 
 const provider = providers.findByName('helios-labs');
 const taskType = taskTypes.findByName('code-refactor');
@@ -272,23 +170,59 @@ const run = runs.create({
 quality.create({ task_run_id: run.id, evaluator: 'cognitive-audit', score: 0.93 });
 energy.create({ task_run_id: run.id, kwh: 4.2, energy_mix: 'hydro', region: 'na-east' });
 
-console.log(runs.getById(run.id));
+const indexValue = indexValues.create({
+  effective_date: '2024-02-01',
+  headline_value: 101.25,
+  energy_adjustment: 0.98,
+  quality_adjustment: 1.02,
+  consensus_factor: 0.99
+});
+
+weights.create({ index_value_id: indexValue.id, provider_id: provider.id, weight: 0.42 });
 ```
 
-### CI & release discipline
+## Owner controls & on-chain levers
+
+`contracts/AlphaNodeManager.sol` binds the `$AGIALPHA` token (18 decimals, `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`) to a control plane designed for full operator command:
+
+- **Pause / resume** the entire node surface (`pause`, `unpause`).
+- **Validator lifecycle**: add/remove validators, rotate sets, and gate participation (`setValidator`).
+- **Identity mastery**: register ENS nodes, update controllers, revoke or deactivate controllers, and enforce active identities for staking (`registerIdentity`, `updateIdentityController`, `setIdentityStatus`, `revokeIdentity`).
+- **Staking & treasury routing**: deposit/withdraw `$AGIALPHA` stakes with owner-directed withdrawals (`stake`, `withdrawStake`).
+- **Safety rails**: strict address/ENS validation, immutable token binding, and explicit error codes for every critical path.
+
+These controls are callable without redeployments, keeping governance nimble while retaining absolute owner authority.
+
+## CI, quality gates, and release rigor
 
 ```mermaid
 flowchart LR
-  Lint[Markdown + Links] --> Tests[Vitest JS/TS]
+  Lint[Markdown + Links + Policy] --> Tests[Vitest JS/TS]
   Tests --> Coverage[Coverage + Upload]
   Coverage --> Solidity[Solhint + solc smoke]
   Solidity --> Subgraph[Subgraph build]
   Subgraph --> Security[High-severity npm audit]
-  Security --> Policy[Health + Branch gates]
-  Policy --> Docker[Docker build + runtime help]
+  Security --> Branch[Branch Gate]
+  Branch --> Docker[Docker build + runtime help]
   Docker --> Merge[PR Merge Allowed]
 ```
 
-- `npm run ci:verify` replicates the GitHub Actions pipeline locally.
-- Required checks for PRs and `main` are tracked in `.github/required-checks.json` and rendered in the badges above.
-- Coverage artifacts and subgraph codegen are uploaded on every CI run to keep downstream analytics aligned.
+- **Required checks**: `.github/required-checks.json` enforces all gates on `main` and PRs.
+- **Workflow**: `.github/workflows/ci.yml` runs lint, policy gates, full Vitest suite (including persistence and on-chain harnesses), coverage export, Solidity lint/compile, subgraph codegen/build, high-severity npm audit, branch policy, and Docker smoke tests.
+- **Local parity**: `npm run ci:verify` mirrors the Actions matrix; coverage artifacts land in `coverage/` for downstream upload.
+
+## Operations playbook
+
+- **Database lifecycle**: `node src/persistence/cli.js migrate|seed [db]` mirrors production automation for migrations and seeds.
+- **Runtime**: `npm start -- --help` surfaces all flags; environment variables (e.g., `AGI_ALPHA_DB_PATH`, telemetry endpoints, ENS config) are documented inline in `src/index.js`.
+- **Subgraph**: `npm run simulate:subgraph` renders manifests; `npm run ci:ts` performs full build/codegen.
+- **Docker & Helm**: `docker build -t agi-alpha-node:local .` then `docker run agi-alpha-node:local --help`; Helm chart lives in `deploy/helm/agi-alpha-node` for cluster rollout.
+
+## Contributing
+
+1. `npm ci` (native modules included).
+2. `npm run ci:verify` before opening a PR.
+3. Keep docs and diagrams aligned with code; link updates require `npm run lint:links` to stay green.
+4. PRs must keep the CI badge green and respect `.github/required-checks.json`.
+
+AGI Alpha Node is engineered to stay ahead of any market edge: autonomous swarms learn faster, coordinate tighter, and deliver deterministic yield signals powered by `$AGIALPHA`.
