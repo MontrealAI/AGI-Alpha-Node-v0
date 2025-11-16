@@ -205,6 +205,26 @@ export class QualityEvaluationRepository {
     return this.getById(result.lastInsertRowid);
   }
 
+  update(id, updates) {
+    const stmt = this.db.prepare(`
+      UPDATE quality_evaluations
+      SET evaluator = COALESCE(@evaluator, evaluator),
+          score = COALESCE(@score, score),
+          notes = COALESCE(@notes, notes),
+          updated_at = datetime('now')
+      WHERE id = @id
+    `);
+
+    stmt.run({
+      id,
+      evaluator: updates.evaluator ?? null,
+      score: updates.score ?? null,
+      notes: updates.notes ?? null
+    });
+
+    return this.getById(id);
+  }
+
   getById(id) {
     return this.db.prepare('SELECT * FROM quality_evaluations WHERE id = ?').get(id);
   }
@@ -226,6 +246,30 @@ export class EnergyReportRepository {
     `);
     const result = stmt.run(entry);
     return this.getById(result.lastInsertRowid);
+  }
+
+  update(id, updates) {
+    const stmt = this.db.prepare(`
+      UPDATE energy_reports
+      SET kwh = COALESCE(@kwh, kwh),
+          energy_mix = COALESCE(@energy_mix, energy_mix),
+          carbon_intensity_gco2_kwh = COALESCE(@carbon_intensity_gco2_kwh, carbon_intensity_gco2_kwh),
+          cost_usd = COALESCE(@cost_usd, cost_usd),
+          region = COALESCE(@region, region),
+          updated_at = datetime('now')
+      WHERE id = @id
+    `);
+
+    stmt.run({
+      id,
+      kwh: updates.kwh ?? null,
+      energy_mix: updates.energy_mix ?? null,
+      carbon_intensity_gco2_kwh: updates.carbon_intensity_gco2_kwh ?? null,
+      cost_usd: updates.cost_usd ?? null,
+      region: updates.region ?? null
+    });
+
+    return this.getById(id);
   }
 
   getById(id) {
@@ -251,6 +295,28 @@ export class SyntheticLaborScoreRepository {
     return this.getById(result.lastInsertRowid);
   }
 
+  update(id, updates) {
+    const stmt = this.db.prepare(`
+      UPDATE synthetic_labor_scores
+      SET provider_id = COALESCE(@provider_id, provider_id),
+          task_run_id = COALESCE(@task_run_id, task_run_id),
+          score = COALESCE(@score, score),
+          rationale = COALESCE(@rationale, rationale),
+          updated_at = datetime('now')
+      WHERE id = @id
+    `);
+
+    stmt.run({
+      id,
+      provider_id: updates.provider_id ?? null,
+      task_run_id: updates.task_run_id ?? null,
+      score: updates.score ?? null,
+      rationale: updates.rationale ?? null
+    });
+
+    return this.getById(id);
+  }
+
   getById(id) {
     return this.db.prepare('SELECT * FROM synthetic_labor_scores WHERE id = ?').get(id);
   }
@@ -274,6 +340,30 @@ export class IndexValueRepository {
     `);
     const result = stmt.run(entry);
     return this.getById(result.lastInsertRowid);
+  }
+
+  update(id, updates) {
+    const stmt = this.db.prepare(`
+      UPDATE index_values
+      SET effective_date = COALESCE(@effective_date, effective_date),
+          headline_value = COALESCE(@headline_value, headline_value),
+          energy_adjustment = COALESCE(@energy_adjustment, energy_adjustment),
+          quality_adjustment = COALESCE(@quality_adjustment, quality_adjustment),
+          consensus_factor = COALESCE(@consensus_factor, consensus_factor),
+          updated_at = datetime('now')
+      WHERE id = @id
+    `);
+
+    stmt.run({
+      id,
+      effective_date: updates.effective_date ?? null,
+      headline_value: updates.headline_value ?? null,
+      energy_adjustment: updates.energy_adjustment ?? null,
+      quality_adjustment: updates.quality_adjustment ?? null,
+      consensus_factor: updates.consensus_factor ?? null
+    });
+
+    return this.getById(id);
   }
 
   getById(id) {
@@ -303,6 +393,26 @@ export class IndexConstituentWeightRepository {
     `);
     const result = stmt.run(entry);
     return this.getById(result.lastInsertRowid);
+  }
+
+  update(id, updates) {
+    const stmt = this.db.prepare(`
+      UPDATE index_constituent_weights
+      SET index_value_id = COALESCE(@index_value_id, index_value_id),
+          provider_id = COALESCE(@provider_id, provider_id),
+          weight = COALESCE(@weight, weight),
+          updated_at = datetime('now')
+      WHERE id = @id
+    `);
+
+    stmt.run({
+      id,
+      index_value_id: updates.index_value_id ?? null,
+      provider_id: updates.provider_id ?? null,
+      weight: updates.weight ?? null
+    });
+
+    return this.getById(id);
   }
 
   getById(id) {
