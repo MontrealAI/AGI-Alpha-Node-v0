@@ -31,6 +31,7 @@
     "ci:policy": "node scripts/verify-health-gate.mjs",
     "ci:branch": "node scripts/verify-branch-gate.mjs",
     "ci:verify": "npm run ci:lint && npm run ci:test && npm run ci:coverage && npm run ci:solidity && npm run ci:ts && npm run ci:security && npm run ci:policy && npm run ci:branch",
+    "attestation:verify": "tsx scripts/attestation-verify.ts",
     "simulate:subgraph": "node scripts/subgraph-simulation.js",
     "prepare": "node -e \"const { existsSync } = require('node:fs'); const { join } = require('node:path'); const script = join(process.cwd(), 'scripts/prepare-husky.cjs'); if (!existsSync(script)) { console.log('husky prepare script missing; skipping'); process.exit(0); } require(script);\""
   },

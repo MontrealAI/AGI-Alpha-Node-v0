@@ -1,4 +1,5 @@
 import { EventEmitter } from 'node:events';
+import * as ed from '@noble/ed25519';
 import { SigningKey, Wallet } from 'ethers';
 import pino from 'pino';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -35,8 +36,38 @@ function buildIdentity(): { nodeIdentity: NodeIdentity; keypair: NodeKeypair } {
   return { nodeIdentity, keypair };
 }
 
+function hex(value: Uint8Array): string {
+  return `0x${Buffer.from(value).toString('hex')}`;
+}
+
+async function buildEd25519Identity(): Promise<{ nodeIdentity: NodeIdentity; keypair: NodeKeypair }> {
+  const privateKeyBytes = ed.utils.randomPrivateKey();
+  const publicKeyBytes = await ed.getPublicKeyAsync(privateKeyBytes);
+
+  const nodeIdentity: NodeIdentity = {
+    ensName: 'ed.alpha.node.eth',
+    peerId: 'peer-id-ed-test',
+    pubkey: { x: hex(publicKeyBytes), y: '0x00' },
+    multiaddrs: ['/ip4/127.0.0.1/tcp/4002'],
+    metadata: {
+      'node.role': 'validator',
+      'node.version': '1.0.0'
+    }
+  };
+
+  const keypair: NodeKeypair = {
+    type: 'ed25519',
+    privateKey: hex(privateKeyBytes),
+    publicKey: nodeIdentity.pubkey
+  };
+
+  return { nodeIdentity, keypair };
+}
+
 afterEach(() => {
   vi.useRealTimers();
+  vi.restoreAllMocks();
+  vi.resetModules();
 });
 
 describe('attestation verification', () => {
@@ -46,6 +77,14 @@ describe('attestation verification', () => {
       latencyMs: 12,
       meta: { scope: 'unit-test' }
     });
+
+    const signed = await signHealthAttestation(attestation, keypair);
+    await expect(verifyAttestation(signed, nodeIdentity)).resolves.toBe(true);
+  });
+
+  it('verifies a valid ed25519 attestation', async () => {
+    const { nodeIdentity, keypair } = await buildEd25519Identity();
+    const attestation = createHealthAttestation(nodeIdentity, 'healthy', { latencyMs: 5 });
 
     const signed = await signHealthAttestation(attestation, keypair);
     await expect(verifyAttestation(signed, nodeIdentity)).resolves.toBe(true);
@@ -75,6 +114,20 @@ describe('attestation verification', () => {
         nodeIdentity
       )
     ).resolves.toBe(false);
+  });
+
+  it('loads NodeIdentity through verifyAgainstENS before verifying signatures', async () => {
+    const { nodeIdentity, keypair } = buildIdentity();
+    const attestation = createHealthAttestation(nodeIdentity, 'healthy', { latencyMs: 21 });
+    const signed = await signHealthAttestation(attestation, keypair);
+
+    const loadNodeIdentity = vi.fn().mockResolvedValue(nodeIdentity);
+    vi.doMock('../src/identity/loader.js', () => ({ loadNodeIdentity }));
+
+    const { verifyAgainstENS } = await import('../src/attestation/verify.js');
+
+    await expect(verifyAgainstENS(nodeIdentity.ensName, signed)).resolves.toBe(true);
+    expect(loadNodeIdentity).toHaveBeenCalledWith(nodeIdentity.ensName);
   });
 });
 
