@@ -10,30 +10,26 @@
 
 <p align="center">
   <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml">
-    <img src="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml/badge.svg" alt="CI" />
+    <img src="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI" />
   </a>
   <a href=".github/required-checks.json">
     <img src="https://img.shields.io/badge/PR%20Gate-Required%20Checks-8b5cf6?logo=github&logoColor=white" alt="Required PR checks" />
   </a>
-  <img src="https://img.shields.io/badge/Lint-Markdown%20%2B%20Links-0ea5e9?logo=markdown&logoColor=white" alt="Lint" />
-  <img src="https://img.shields.io/badge/Tests-Vitest%20246%E2%9C%94-84cc16?logo=vitest&logoColor=white" alt="Vitest" />
-  <img src="https://img.shields.io/badge/Coverage-83.6%25-brightgreen?logo=codecov&logoColor=white" alt="Coverage" />
-  <img src="https://img.shields.io/badge/Security-npm%20audit%20(high)-0f766e?logo=npm&logoColor=white" alt="Security" />
-  <img src="https://img.shields.io/badge/Subgraph-Graph%20codegen-6366f1?logo=thegraph&logoColor=white" alt="Subgraph" />
-  <a href="Dockerfile"><img src="https://img.shields.io/badge/Docker-Production%20Image-2496ed?logo=docker&logoColor=white" alt="Docker" /></a>
-  <a href="deploy/helm/agi-alpha-node"><img src="https://img.shields.io/badge/Helm-Ready-0ea5e9?logo=helm&logoColor=white" alt="Helm" /></a>
-  <img src="https://img.shields.io/badge/Node.js-20.18%2B-43853d?logo=node.js&logoColor=white" alt="Runtime" />
+  <img src="https://img.shields.io/badge/Tests-Vitest%20249%E2%9C%94-84cc16?logo=vitest&logoColor=white" alt="Vitest" />
+  <img src="https://img.shields.io/badge/Runtime-Node.js%2020.18%2B-43853d?logo=node.js&logoColor=white" alt="Runtime" />
   <img src="https://img.shields.io/badge/Solidity-0.8.26-363636?logo=solidity&logoColor=white" alt="Solidity" />
   <a href="https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa"><img src="https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-ff3366?logo=ethereum&logoColor=white" alt="$AGIALPHA" /></a>
-  <img src="https://img.shields.io/badge/Owner%20Controls-Total%20Sovereignty-9333ea?logo=gnometerminal&logoColor=white" alt="Owner controls" />
+  <img src="https://img.shields.io/badge/Owner%20Controls-Total%20Command-9333ea?logo=gnometerminal&logoColor=white" alt="Owner controls" />
+  <a href="Dockerfile"><img src="https://img.shields.io/badge/Docker-Ready-2496ed?logo=docker&logoColor=white" alt="Docker" /></a>
+  <a href="deploy/helm/agi-alpha-node"><img src="https://img.shields.io/badge/Helm-Chart-0ea5e9?logo=helm&logoColor=white" alt="Helm" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-10b981" alt="MIT" /></a>
 </p>
 
-> **AGI Alpha Node v0 is the living machine that metabolizes cognition into $AGIALPHA.** It is engineered to keep its owner in absolute command, mirroring their ENS identity, staking posture, governance directives, and telemetry with zero drift.
+> **AGI Alpha Node v0 metabolizes cognition into $AGIALPHA with owner-grade sovereignty.** It aligns ENS, staking, telemetry, and health attestation so every packet, proof, and payout stays bound to the operator’s authority.
 
 ```mermaid
 graph LR
-  Owner((Owner)) -->|Configure| ControlPlane[Control Plane]
+  Owner((Owner)) -->|Directives| ControlPlane[Control Plane]
   ControlPlane -->|Schedules| OrchestratorMesh[Orchestrator Mesh]
   OrchestratorMesh -->|Dispatch α-work| IntelligenceSwarm[Intelligence Swarm]
   IntelligenceSwarm -->|Proofs & Metrics| LedgerTelemetry[Ledger + Telemetry]
@@ -45,36 +41,31 @@ graph LR
 
 ## Table of Contents
 
-1. [Constellation Overview](#constellation-overview)
-2. [Quickstart Sequence](#quickstart-sequence)
+1. [Mission Snapshot](#mission-snapshot)
+2. [Quickstart](#quickstart)
 3. [Health Attestation Mesh](#health-attestation-mesh)
-4. [$AGIALPHA Treasury Engine](#agialpha-treasury-engine)
-5. [ENS Control Fabric](#ens-control-fabric)
-6. [Node Identity Fabric](#node-identity-fabric)
-7. [Identity Assurance Playbook](#identity-assurance-playbook)
-8. [Identity Boot Sequence](#identity-boot-sequence)
-9. [Autonomous Job Lifecycle](#autonomous-job-lifecycle)
-10. [Owner Command Authority](#owner-command-authority)
-11. [Operator Console](#operator-console)
-12. [Observability & Governance](#observability--governance)
-13. [CI & Release Ramparts](#ci--release-ramparts)
-14. [Deployment Vectors](#deployment-vectors)
-15. [Repository Atlas](#repository-atlas)
-16. [Reference Library](#reference-library)
+4. [$AGIALPHA Treasury & Owner Authority](#agialpha-treasury--owner-authority)
+5. [ENS-Aligned Identity Fabric](#ens-aligned-identity-fabric)
+6. [Autonomous Job Orchestration](#autonomous-job-orchestration)
+7. [Observability Stack](#observability-stack)
+8. [Testing & CI Gates](#testing--ci-gates)
+9. [Deployment Vectors](#deployment-vectors)
+10. [Repository Atlas](#repository-atlas)
+11. [Reference Snippets](#reference-snippets)
 
 ---
 
-## Constellation Overview
+## Mission Snapshot
 
-- **$AGIALPHA treasury engine** — The runtime is hard-wired to the canonical 18-decimal token contract [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa), powering staking, payouts, and liquidity loops.
-- **Owner-dominated controls** — The AlphaNodeManager contract exposes pause/resume, emission gates, stake withdrawals, validator rosters, and identity governance entirely under the owner’s address.
-- **Deterministic orchestration** — Workflows from discovery → execution → validation → settlement are orchestrated in [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js), ensuring each α-work unit is audited and journaled.
-- **Identity-first runtime** — The bootstrapper hydrates ENS metadata, `_dnsaddr` multiaddrs, and the signing key before any diagnostics run, guaranteeing that the live peerId, pubkey, and libp2p endpoints exactly match the ENS records.
-- **Production-ready packaging** — Docker, Helm, CI gates, lint/test/coverage/security chains, and subgraph build tooling ship in-tree so non-technical operators can deploy without touching internals.
+- **Canonical treasury binding** — The runtime is locked to the 18-decimal `$AGIALPHA` contract [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) for every staking, reward, and settlement action.
+- **Owner-dominated controls** — Governance, pausing, validator rosters, stake withdrawal, identity registration, and controller updates remain exclusively in the owner’s hands (`AlphaNodeManager.sol`).
+- **Deterministic attestation** — Health pings are canonicalized, signed, and independently verifiable to guarantee liveness and identity integrity.
+- **Production-hardening** — Markdown + link linting, Vitest suites, Solidity lint/compile, subgraph builds, Docker smoke tests, and security audits are enforced as required PR checks.
+- **Operator empathy** — Scripts, Helm charts, and Docker images let non-technical operators deploy without touching internals while keeping full override control.
 
 ---
 
-## Quickstart Sequence
+## Quickstart
 
 ```mermaid
 flowchart LR
@@ -85,7 +76,7 @@ flowchart LR
   E --> F[node src/index.js container --once]
 ```
 
-1. **Clone & install dependencies**
+1. **Clone & install**
 
    ```bash
    git clone https://github.com/MontrealAI/AGI-Alpha-Node-v0.git
@@ -93,17 +84,16 @@ flowchart LR
    npm ci
    ```
 
-   Node.js 20.18+ is enforced via the `package.json` engines field for reproducible builds.
+   Node.js **20.18+** is enforced in `package.json` for deterministic builds.
 
 2. **Configure identity & payouts**
-   - Duplicate `.env.example`, fill in ENS label/name, payout routes, telemetry, and staking settings.
-   - Optional ENS overrides (`ALPHA_NODE_*`) let you pin RPC endpoints, registries, and resolvers when running on bespoke networks.
-   - Supply signing material via `ALPHA_NODE_KEYFILE` (JSON keyfile) or `NODE_PRIVATE_KEY` so local attestations match the ENS-published pubkey before workloads launch.
-   - Verify the published records match reality before booting:
+   - Copy `.env.example` to `.env` and fill ENS label/name, payout targets, telemetry endpoints, staking thresholds, and RPC endpoints.
+   - Provide signing material through `ALPHA_NODE_KEYFILE` (JSON keyfile) or `NODE_PRIVATE_KEY` so live attestations match your ENS-published pubkey.
+   - Verify ENS alignment before launching:
 
      ```bash
      npm run ens:inspect -- --name <your-node>.eth
-     node -e "import { loadNodeIdentity } from './src/identity/loader.js'; (async()=>console.log(await loadNodeIdentity('<your-node>.eth')) )();"
+     node -e "import { loadNodeIdentity } from './src/identity/loader.js'; (async()=>console.log(await loadNodeIdentity('<your-node>.eth')))();"
      ```
 
 3. **Mirror CI locally**
@@ -112,7 +102,7 @@ flowchart LR
    npm run ci:verify
    ```
 
-   The command fans out into linting, vitest suites, coverage, Solidity hygiene, subgraph builds, policy gates, and security audits—identical to the GitHub Actions workflow.
+   Runs markdown + link linting, Vitest, coverage, Solidity lint/compile, subgraph builds, npm audit (high), policy/branch gates.
 
 4. **Launch the orchestrator**
 
@@ -121,7 +111,7 @@ flowchart LR
    node src/index.js container --once
    ```
 
-   The bootstrapper hydrates ENS, governance, staking, and telemetry state before handing off α-work scheduling.
+   Bootstrap hydrates ENS, governance, staking posture, telemetry, and health gate before dispatching α-work.
 
 ---
 
@@ -137,9 +127,9 @@ flowchart TD
     C --> D(startHealthChecks)
   end
   subgraph Emission
-    D --> E[EventEmitter / onAttestation callbacks]
+    D --> E[EventEmitter / callbacks]
     E --> F[Telemetry exporters]
-    E --> G[Stdout dev taps]
+    E --> G[Stdout dev tap]
   end
   subgraph Verification
     F --> H[verifyAttestation]
@@ -147,300 +137,164 @@ flowchart TD
   end
 ```
 
-- **Canonical health schema** — [`src/attestation/schema.ts`](src/attestation/schema.ts) defines a stable, human-readable `HealthAttestation` (`version: v1`) that carries ENS name, peerId, fuses/expiry, multiaddrs, runtime version, and status/latency metadata so every emission is deterministic.
-- **Signed pings on a timer** — [`src/attestation/health_service.ts`](src/attestation/health_service.ts) hydrates the attestation from the live `NodeIdentity`, signs it with the operator’s keypair, emits it through an `EventEmitter` or callback, and can log prettified JSON to stdout for dev-mode visibility.
-- **Independent verification** — [`src/attestation/verify.ts`](src/attestation/verify.ts) recomputes digests with the canonical serializer, supports `secp256k1` and `ed25519`, and checks recovered keys against the ENS-published pubkey. `verifyAgainstENS` reloads identity data on demand so attestations cannot drift from the owner’s declared records.
-- **Owner-first controls** — The owner can pause or resume health emission by controlling the key material, adjusting timers, or shutting down the emitter; signatures cannot verify unless the ENS pubkey, peerId, and node metadata match the owner’s records.
+- **Schema** — [`src/attestation/schema.ts`](src/attestation/schema.ts) defines `HealthAttestation` v1 with `timestamp`, `ensName`, `peerId`, `nodeVersion`, `multiaddrs`, optional `fuses/expiry/latency/meta`, and `status` (`healthy | degraded | unhealthy`). Canonical JSON serialization keeps signatures stable.
+- **Emission** — [`src/attestation/health_service.ts`](src/attestation/health_service.ts) builds attestations from `NodeIdentity`, measures latency, signs via node keypair, emits through an `EventEmitter` and optional callback, and can pretty-print to stdout for dev observability.
+- **Verification** — [`src/attestation/verify.ts`](src/attestation/verify.ts) recomputes canonical digests and verifies `secp256k1` or `ed25519` signatures. `verifyAgainstENS` reloads the ENS identity to prevent drift from owner-declared records.
+- **Dev tap** — Start a periodic signer in any runtime:
 
-These primitives keep the node’s health contractually bound to the ENS identity, letting telemetry backends, dashboards, or other nodes trust pings without manual reconciliation.
+  ```ts
+  import { startHealthChecks } from './src/attestation/health_service.js';
+  import { loadNodeIdentity } from './src/identity/loader.js';
+  import { loadKeypair } from './src/identity/keys.js';
 
----
+  const identity = await loadNodeIdentity('1.alpha.node.agi.eth');
+  const keypair = await loadKeypair();
+  const handle = startHealthChecks(identity, keypair, { intervalMs: 30_000, logToConsole: true });
+  // handle.stop() when shutting down
+  ```
 
-## $AGIALPHA Treasury Engine
+### Sample signed attestation
 
-| Property | Value |
-| --- | --- |
-| **Symbol** | `$AGIALPHA` |
-| **Canonical contract** | `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` |
-| **Decimals** | `18` (fixed and enforced across runtime + contracts) |
-| **Runtime sources** | [`src/constants/token.js`](src/constants/token.js), [`src/services/token.js`](src/services/token.js), [`src/config/schema.js`](src/config/schema.js) |
-| **Contract binding** | [`contracts/AlphaNodeManager.sol`](contracts/AlphaNodeManager.sol) `CANONICAL_AGIALPHA` constant |
-| **Tests** | [`test/token.test.js`](test/token.test.js), [`test/config.test.js`](test/config.test.js) |
-
-```mermaid
-graph TD
-  subgraph Treasury Loop
-    OwnerWallet[(Owner Wallet)] -->|Stake $AGIALPHA| StakeManager
-    StakeManager -->|Validator Shares| Validators
-    Validators -->|Proofs & Scores| RewardEngine
-    RewardEngine -->|Epoch Rewards| TreasuryEscrow[(Treasury)]
-    TreasuryEscrow -->|Release $AGIALPHA| OwnerWallet
-    TreasuryEscrow -->|Job Rewards| AlphaWorkers
-  end
-  OwnerWallet -. CLI Governance .-> StakeManager
-  OwnerWallet -. CLI Governance .-> RewardEngine
+```json
+{
+  "attestation": {
+    "version": "v1",
+    "timestamp": "2024-06-01T00:00:00.000Z",
+    "ensName": "alpha.node.eth",
+    "peerId": "12D3KooXexample",
+    "role": "orchestrator",
+    "nodeVersion": "1.0.0",
+    "multiaddrs": ["/dns4/example.com/tcp/443/wss/p2p/12D3KooXexample"],
+    "status": "healthy",
+    "latencyMs": 42
+  },
+  "signature": "0x…",
+  "signatureType": "secp256k1"
+}
 ```
 
-- `$AGIALPHA` addresses are normalized before any transaction is crafted. Overrides that diverge from the canonical checksum are rejected to keep emissions bound to the treasury asset.
-- The staking manager, emission manager, PlatformIncentives, and reward engines all expect 18-decimal accounting; CLI helpers automatically parse decimal input into wei precision.
-- Governance commands in [`src/index.js`](src/index.js) expose owner-only transactions for adjusting minimum stake, validator thresholds, emission rates, share splits, and treasury sinks so the token loop always obeys the operator.
+---
+
+## $AGIALPHA Treasury & Owner Authority
+
+- **Token constants** — `$AGIALPHA`, 18 decimals, canonical address enforced in [`src/constants/token.js`](src/constants/token.js) and [`src/config/schema.js`](src/config/schema.js). Any divergent override is rejected.
+- **Owner powers** — [`contracts/AlphaNodeManager.sol`](contracts/AlphaNodeManager.sol) grants the owner exclusive control to pause/unpause, set validators, register/revoke ENS identities, swap controllers, toggle identity status, and withdraw stake. Stake deposits require active identities and honor the canonical token.
+- **Runtime governance** — CLI and services in [`src/services/governance.js`](src/services/governance.js), [`src/services/governanceLedger.js`](src/services/governanceLedger.js), [`src/services/governanceStatus.js`](src/services/governanceStatus.js) surface owner-only directives for emissions, validator thresholds, and payout tuning.
+- **Payout fidelity** — Staking, reward, and treasury loops in [`src/services/staking.js`](src/services/staking.js), [`src/services/rewards.js`](src/services/rewards.js), and [`src/services/economics.js`](src/services/economics.js) normalize token math to wei precision so treasury accounting never drifts.
 
 ---
 
-## ENS Control Fabric
+## ENS-Aligned Identity Fabric
 
-```mermaid
-sequenceDiagram
-  participant Operator
-  participant ENS
-  participant Runtime
-  participant Ethereum as Ethereum / $AGIALPHA
-  Operator->>ENS: Publish name, pubkey, TXT, _dnsaddr
-  Runtime->>ENS: loadEnsConfig() + getResolver()
-  Runtime->>ENS: loadNodeIdentity()
-  Runtime->>Ethereum: Stake + attestations (pubkey validated)
-  Ethereum-->>Operator: Rewards, telemetry, sovereign overrides
-```
-
-- `src/ens/config.ts` normalises RPC endpoints, registries, resolvers, and NameWrapper defaults for mainnet, Sepolia, or overrides injected via environment variables.
-- `src/ens/client.ts` wraps ethers.js to fetch resolvers, pubkeys, TXT records, contenthash, and NameWrapper fuse/expiry data with consistent error handling.
-- Health gates and governance policies block workloads until ENS state satisfies allowlists and owner directives (`scripts/verify-health-gate.mjs`).
+- **Identity loader** — [`src/identity/loader.ts`](src/identity/loader.ts) hydrates ENS pubkeys, peerIds, `_dnsaddr` multiaddrs, fuses, expiry, and metadata before any orchestrator work is scheduled.
+- **Resolver tooling** — [`src/ens/config.ts`](src/ens/config.ts) and [`src/ens/client.ts`](src/ens/client.ts) encapsulate ENS registry/resolver addresses, while [`src/identity/dnsaddr.ts`](src/identity/dnsaddr.ts) normalizes multiaddrs for libp2p alignment.
+- **Health gate** — [`src/services/healthGate.js`](src/services/healthGate.js) ties stake posture, heartbeat freshness, and diagnostics into a single decision point so orchestrators only run when identities are healthy and funded.
 
 ---
 
-## Node Identity Fabric
+## Autonomous Job Orchestration
 
-| Capability | Implementation | Notes |
-| --- | --- | --- |
-| Canonical identity snapshot | [`src/identity/loader.ts`](src/identity/loader.ts) | Fetches resolver, pubkey, TXT metadata, `_dnsaddr` multiaddrs, and NameWrapper data into a single `NodeIdentity`. |
-| `_dnsaddr` → libp2p | [`src/identity/dnsaddr.ts`](src/identity/dnsaddr.ts) | Sanitises TXT fragments, extracts `dnsaddr=` multiaddrs, deduplicates, and feeds libp2p dialers. |
-| Key management | [`src/identity/keys.ts`](src/identity/keys.ts) | Loads secp256k1 / ed25519 keyfiles, derives pubkeys, and enforces ENS parity via `validateKeypairAgainstENS`. |
-| Runtime enforcement | [`src/identity/bootstrap.js`](src/identity/bootstrap.js) + [`src/orchestrator/bootstrap.js`](src/orchestrator/bootstrap.js) | The bootstrapper lazily loads the TypeScript identity modules via `tsx/esm`, hydrates ENS state, validates the keypair, and refuses to continue if anything drifts from the on-chain record. |
+- **Lifecycle kernel** — [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js) drives discovery → execution → validation → settlement for α-work units with auditable journaling.
+- **Control plane** — [`src/services/controlPlane.js`](src/services/controlPlane.js) accepts owner directives and routes workloads into the orchestrator mesh.
+- **Validator loop** — [`src/validator/validatorLoop.js`](src/validator/validatorLoop.js) and [`src/validator/runtime.js`](src/validator/runtime.js) enforce validation, quorum, and proof replay discipline.
+- **Swarm intelligence** — [`src/intelligence/swarmOrchestrator.js`](src/intelligence/swarmOrchestrator.js), [`src/intelligence/planning.js`](src/intelligence/planning.js), and [`src/intelligence/learningLoop.js`](src/intelligence/learningLoop.js) coordinate autonomous agents while respecting owner priorities.
 
-### NodeIdentity schema (single source of truth)
+---
 
-| Field | Type | Source | Purpose |
-| --- | --- | --- | --- |
-| `ensName` | `string` | ENS name (normalized lower-case) | Canonical label that binds peer + staking identity. |
-| `peerId` | `string` | TXT (`node.peerId` / `peerId`) | Ensures libp2p node identity mirrors ENS. |
-| `pubkey.x` / `pubkey.y` | `0x`-prefixed hex | ENS `pubkey` record | secp256k1 coordinates for signature parity checks. |
-| `multiaddrs` | `string[]` | `_dnsaddr.<ens>` TXT with `dnsaddr=` prefixes | Dialable libp2p endpoints for swarms and orchestrators. |
-| `metadata` | `Record<string,string>` | ENS TXT records | Versioning, role, status, and custom node descriptors. |
-| `fuses` / `expiry` | `number?` | ENS NameWrapper | Ownership guarantees and expiry awareness for operator UX. |
+## Observability Stack
 
-`loadNodeIdentity()` hydrates every field above, while `validateKeypairAgainstENS()` refuses to proceed if the locally loaded signing keypair deviates from the ENS-published pubkey—preserving the owner’s sovereignty over attestations and payouts.
+- **Metrics** — [`src/telemetry/monitoring.js`](src/telemetry/monitoring.js) exposes Prometheus metrics populated by gauges in [`src/telemetry/alphaMetrics.js`](src/telemetry/alphaMetrics.js).
+- **AlphaWU signals** — [`src/telemetry/alphaWuTelemetry.js`](src/telemetry/alphaWuTelemetry.js) records execution and reward traces for every α-work unit.
+- **Healthcheck endpoint** — [`src/healthcheck.js`](src/healthcheck.js) provides liveness probes aligned with the health gate and identity posture.
+
+---
+
+## Testing & CI Gates
 
 ```mermaid
 flowchart LR
-  ENS[(ENS Resolver / NameWrapper)] -->|pubkey + TXT| Loader{{loadNodeIdentity}}
-  DNS[_dnsaddr TXT_] --> Loader
-  Loader --> IdentityCache[NodeIdentity Snapshot]
-  IdentityCache --> Keycheck[validateKeypairAgainstENS]
-  Keycheck --> Owner{Owner Console}
-  IdentityCache --> HealthGate
-  IdentityCache --> Telemetry
+  PR[PR/Main] --> Lint[Lint Markdown+Links]
+  PR --> Tests[Vitest]
+  PR --> Coverage[Coverage]
+  PR --> Solidity[Solhint+Compile]
+  PR --> Subgraph[Subgraph Build]
+  PR --> Docker[Docker Smoke]
+  PR --> Security[npm audit --audit-level=high]
+  Tests & Lint & Coverage & Solidity & Subgraph & Docker & Security --> Gate[Required Checks]
 ```
 
-The loader fails fast when a resolver is missing, when the ENS pubkey is absent, or when `node.peerId` metadata is undefined—preventing half-hydrated runtimes from emitting attestations. `validateKeypairAgainstENS` computes the local secp256k1 public key and compares it with ENS-published coordinates; mismatches throw `NodeKeyValidationError`, ensuring attestations always originate from the declared identity.
-
----
-
-## Identity Assurance Playbook
-
-```mermaid
-flowchart TB
-  subgraph ENS Surface
-    A1[Resolver] --> A2[pubkey]
-    A1 --> A3[TXT + _dnsaddr]
-    A1 --> A4[NameWrapper fuses + expiry]
-  end
-  subgraph Local Vault
-    B1[loadNodeKeypair]
-    B2[validateKeypairAgainstENS]
-  end
-  subgraph Runtime Gate
-    C1[Health gate]
-    C2[Telemetry + bootstrap]
-  end
-  A2 & A3 & A4 -->|loadNodeIdentity| B1
-  B1 -->|derive pubkey| B2
-  B2 -->|success| C1
-  B2 -. fail fast .-> X([Exit 1])
-  C1 --> C2
-```
-
-1. **Probe ENS surface** — `npm run ens:inspect -- --name <ens>` dumps resolver, pubkey, TXT, `_dnsaddr`, NameWrapper fuses, and expiry so discrepancies are caught before runtime boot.
-2. **Hydrate canonical snapshot** — `loadNodeIdentity('<ens>')` normalises coordinates and strips noise from TXT records, returning `multiaddrs`, `metadata`, and NameWrapper state for downstream consumers.
-3. **Enforce key parity** — `loadNodeKeypair()` accepts JSON keyfiles or `NODE_PRIVATE_KEY` and `validateKeypairAgainstENS()` verifies the derived secp256k1 coordinates match the ENS pubkey. Mismatches throw `NodeKeyValidationError` and abort startup with a non-zero exit.
-4. **Libp2p reachability** — `_dnsaddr.<ens>` TXT entries beginning with `dnsaddr=` are parsed by `parseDnsaddr`, ensuring that only valid multiaddrs enter the orchestrator mesh.
-5. **Operational gate** — Health gates, telemetry, and orchestrators only unlock after a successful identity + key alignment, preventing unsigned traffic or stale peerIds from ever emitting attestations.
-
-These steps guarantee the contract owner retains total control over identity, reachability, and signing authority before a single job is scheduled.
-
----
-
-## Identity Boot Sequence
-
-```mermaid
-sequenceDiagram
-  participant Operator
-  participant ENS
-  participant Loader as Identity Loader
-  participant KeyVault as Local Key Vault
-  participant Gate as Health Gate
-  participant Mesh as Orchestrator Mesh
-  Operator->>ENS: Publish ENS name + pubkey + TXT + _dnsaddr
-  Loader->>ENS: getResolver(), getPubkey(), getTextRecord()
-  Loader-->>KeyVault: NodeIdentity snapshot
-  KeyVault-->>Loader: loadNodeKeypair()
-  Loader->>KeyVault: validateKeypairAgainstENS()
-  Loader->>Gate: Verified identity + multiaddrs
-  Gate->>Mesh: Unlock scheduling + telemetry
-```
-
-1. **Resolver hydrate** — `loadNodeIdentity` normalises the ENS name, resolves the NameWrapper metadata, and assembles the canonical peerId + metadata bundle.
-2. **Dnsaddr sweep** — `_dnsaddr.${ensName}` TXT records and inline overrides are parsed via `parseDnsaddr`, yielding a deduplicated libp2p multiaddr array for the swarm dialers.
-3. **Key alignment** — `loadNodeKeypair` ingests keyfiles or `NODE_PRIVATE_KEY`, derives secp256k1 coordinates, and `validateKeypairAgainstENS` enforces parity before any orchestrator code runs.
-4. **Health gate signal** — Once ENS + key material match, the bootstrapper primes the health gate, telemetry, and job lifecycle modules so that every subsequent component consumes the verified identity snapshot.
-
-This sequencing ensures that even offline-first launches keep the owner’s declared ENS record, libp2p presence, and staking address perfectly aligned before the control plane starts emitting α-work.
-
----
-
-## Autonomous Job Lifecycle
-
-```mermaid
-stateDiagram-v2
-  [*] --> Discover
-  Discover --> Plan
-  Plan --> Dispatch
-  Dispatch --> Execute
-  Execute --> Validate
-  Validate --> Settle
-  Settle --> Journal
-  Journal --> [*]
-  Execute --> Retry: Health gate pulse
-  Validate --> Slash: Owner-only directive
-```
-
-- **Discovery & Planning** — [`src/intelligence/planning.js`](src/intelligence/planning.js) and [`src/intelligence/swarmOrchestrator.js`](src/intelligence/swarmOrchestrator.js) score opportunities, build agent meshes, and push missions into the orchestrator queue.
-- **Dispatch & Execution** — [`src/orchestrator/nodeRuntime.js`](src/orchestrator/nodeRuntime.js) and [`src/services/jobLifecycle.js`](src/services/jobLifecycle.js) bind jobs to execution contexts, journal every state change, and emit Prometheus metrics.
-- **Validation & Settlement** — Validators submit proofs via [`src/network/verifierServer.js`](src/network/verifierServer.js); staking posture is confirmed before `AlphaWUMinted`, `AlphaWUValidated`, and `AlphaWUAccepted` events are emitted, feeding subgraph analytics and payout automation.
-- **Journaling & Replay** — [`src/services/offlineSnapshot.js`](src/services/offlineSnapshot.js) captures deterministic snapshots so disconnected nodes can replay work and resurface telemetry instantly.
-
----
-
-## Owner Command Authority
-
-The AlphaNodeManager contract gives the owner complete control over the staking treasury, validator roster, and identity ledger.
-
-| Control Surface | Entry Points | Owner Powers |
-| --- | --- | --- |
-| **Execution kill switch** | `pause()`, `unpause()` | Freeze or resume every staking + orchestration call in a single transaction, ensuring emergency stops propagate instantly. |
-| **Validator + identity registry** | `setValidator`, `registerIdentity`, `setIdentityStatus`, `updateIdentityController`, `revokeIdentity` | Assign, rotate, or retire controllers and validator wallets while keeping ENS nodes mapped to the right operators. |
-| **Treasury + stake** | `stake`, `withdrawStake`, `applySlash` | Enforce deposits, drain treasury funds to approved recipients, or slash a validator after telemetry or audit triggers. |
-| **Alpha Work telemetry** | `recordAlphaWUMint`, `recordAlphaWUValidation`, `recordAlphaWUAcceptance` | Emit authoritative lifecycle events so off-chain agents, subgraphs, and dashboards mirror the owner’s source of truth. |
-
-`CANONICAL_AGIALPHA` binds the runtime to the treasury token, guaranteeing that emitted rewards and slash penalties always reference the canonical 18-decimal asset the ecosystem expects.
-
----
-
-## Operator Console
-
-The CLI in [`src/index.js`](src/index.js) exposes every on-chain lever so the contract owner can update parameters, pause systems, or retarget incentives in seconds.
-
-| Domain | Representative command | Purpose |
-| --- | --- | --- |
-| **Stake posture** | `node src/index.js governance minimum-stake --stake-manager <addr> --amount 12_500` | Raise/lower the StakeManager minimum stake (18-decimal `$AGIALPHA`). |
-| **Validator quorum** | `node src/index.js governance validator-threshold --stake-manager <addr> --threshold 5` | Enforce validator quorum requirements before attestations count. |
-| **Emission policy** | `node src/index.js governance emission-per-epoch --emission-manager <addr> --amount 250` | Adjust emission flow, cap, epoch length, or multipliers for staking rewards. |
-| **Platform incentives** | `node src/index.js governance incentives-minimum --incentives <addr> --amount 5_000` | Reconfigure PlatformIncentives stake floors, heartbeat windows, and activation fees. |
-| **Reward splits** | `node src/index.js governance global-shares --reward-engine <addr> --operator-bps 6000 --validator-bps 3000 --treasury-bps 1000` | Redefine how `$AGIALPHA` yields are split between operators, validators, and treasury sinks. |
-| **Registry upgrades** | `node src/index.js governance registry-upgrade --stake-manager <addr> --type job --address <new>` | Hot-swap job/identity registries, job modules, or WorkMeter delegates. |
-| **System pause** | `node src/index.js governance system-pause --system-pause <addr> --action pause` | Encode pause/resume payloads that instantly halt orchestrators, validators, and payouts. |
-| **Identity ops** | `node src/index.js governance identity-delegate --identity-registry <addr> --operator <addr> --allowed true` | Delegate or revoke operator access, enforce ENS allowlists, and realign controllers. |
-
-Each command shares ergonomic helpers for signer selection, JSON-RPC configuration, decimal parsing, and transaction preview output—making it possible for non-technical operators to execute governance actions without bespoke scripts.
-
----
-
-## Observability & Governance
-
-- **Signed health gates**: Periodic attestations from [`startHealthChecks`](src/attestation/health_service.ts) are signed against the ENS-declared pubkey and can be independently verified before orchestration resumes.
-- **Metrics**: Prometheus counters & histograms export α-work throughput, validator performance, and reward curves for dashboards.
-- **Governance ledger**: Structured event journaling tracks validator status, staking posture, and orchestrator directives for audit trails.
-- **Offline resilience**: Snapshot + replay primitives guarantee that disconnected nodes can resynchronise once connectivity returns.
-
----
-
-## CI & Release Ramparts
-
-```mermaid
-stateDiagram-v2
-  [*] --> Lint: markdownlint + link checks
-  Lint --> Tests: vitest suites
-  Tests --> Coverage: c8 summary
-  Coverage --> Solidity: solhint + solc compile
-  Solidity --> Subgraph: manifest render + codegen
-  Subgraph --> Docker: build + smoke test
-  Docker --> Security: npm audit --omit=dev
-  Security --> Policy: health/branch gates
-  Policy --> Badges: status + coverage gist update
-  Badges --> [*]
-```
-
-`npm run ci:verify` executes the full quality gauntlet enforced on every pull request and the `main` branch, matching the GitHub Actions workflow one-to-one.
-
-| Stage | Command | Purpose |
-| --- | --- | --- |
-| Markdown & link lint | `npm run lint` | Style, accessibility, and documentation integrity, including governance docs and manifesto pages. |
-| Unit & integration tests | `npm run test` | Vitest suite covering orchestration, governance, ENS tooling, identity loaders, and telemetry. |
-| Coverage | `npm run coverage` | Generates text + LCOV + JSON reports, uploaded as artifacts for historical tracking. |
-| Solidity hygiene | `npm run ci:solidity` | Runs `solhint` plus deterministic solc builds for AlphaNodeManager and interfaces. |
-| Subgraph build | `npm run ci:ts` | Renders the manifest, runs Graph codegen, and compiles the WASM bundle consumed by analytics swarms. |
-| Security audit | `npm run ci:security` | Enforces high-severity dependency audits on production deps. |
-| Policy gates | `npm run ci:policy` + `npm run ci:branch` | Health gate enforcement, branch naming rules, and governance guardrails before merge. |
-
-Pull requests must surface the CI badge shown above and satisfy `.github/required-checks.json`, ensuring branch protection keeps the command surface green.
-
-### Visibility + enforcement guardrails
-
-- The CI badge reflects the same workflow that gates `main` and every pull request; no bypass paths exist for lint, tests, coverage, Solidity hygiene, subgraph builds, or audits.
-- Branch protection consumes `.github/required-checks.json`, so adding a new check automatically blocks merges until it is green, preserving the owner’s operational guarantees.
-- The Docker smoke test runs against the tip commit SHA, confirming that the published image exports the CLI help surface even when RPC endpoints are stubbed—catching container regressions before promotion.
+- **Full sweep** — `npm run ci:verify` mirrors the GitHub Actions workflow: linting, tests, coverage, Solidity hygiene, subgraph build, npm audit (high), health/branch gates.
+- **PR enforcement** — Required checks are listed in [`.github/required-checks.json`](.github/required-checks.json) and enforced on pull requests and `main`.
+- **Targeted commands**
+  - `npm run lint` — Markdown + link linting
+  - `npm test` — Vitest suites
+  - `npm run coverage` — c8 coverage report
+  - `npm run ci:solidity` — solhint + solc harness
+  - `npm run ci:ts` — subgraph codegen + build
+  - `npm run ci:security` — npm audit (high)
 
 ---
 
 ## Deployment Vectors
 
-- **Docker**: A production-grade image is built from the root `Dockerfile`, bundling runtime binaries, ENS tooling, and metrics exporters.
-- **Helm**: `deploy/helm/agi-alpha-node` ships a chart with config maps, secrets, liveness probes, and resource envelopes for Kubernetes clusters.
-- **Subgraph**: The `/subgraph` workspace contains the Graph protocol manifest + generated bindings so validators can stream events into analytics stacks.
+- **Docker** — Build and smoke-test locally:
+
+  ```bash
+  docker build -t agi-alpha-node:local .
+  docker run --rm \
+    -e NODE_LABEL=smoke-test \
+    -e OPERATOR_ADDRESS=0x0000000000000000000000000000000000000001 \
+    -e RPC_URL=https://rpc.invalid \
+    agi-alpha-node:local --help
+  ```
+
+- **Helm** — Production chart at [`deploy/helm/agi-alpha-node`](deploy/helm/agi-alpha-node).
+- **Subgraph** — Subgraph build pipeline lives in [`subgraph/`](subgraph/) and is exercised by `npm run ci:ts`.
 
 ---
 
 ## Repository Atlas
 
-| Path | Description |
+| Path | Purpose |
 | --- | --- |
-| `src/` | Node runtime, orchestrator, telemetry, staking, ENS wiring, and validation logic. |
-| `scripts/` | Operational tooling including ENS inspection, health/branch guards, and Solidity harnesses. |
-| `contracts/` | Solidity sources for AlphaNodeManager and shared interfaces. |
-| `deploy/` | Helm chart and infra automation. |
-| `docs/` | Economics, governance manifesto, and operator handbook. |
-| `subgraph/` | Graph protocol workspace for analytics pipelines. |
-| `test/` | Vitest coverage over runtime, governance, ENS, and contract surrogates. |
+| `src/attestation/` | Health schema, signer, and verifier helpers. |
+| `src/identity/` | ENS identity loaders, key handling, DNSAddr normalization. |
+| `src/services/` | Governance, staking, rewards, control plane, lifecycle, telemetry gates. |
+| `src/orchestrator/` | Node bootstrap, monitor loop, runtime coordination. |
+| `src/intelligence/` | Planning, learning, swarm orchestration, stress harnesses. |
+| `src/validator/` | Validator runtime and quorum enforcement. |
+| `contracts/` | Solidity contracts (AlphaNodeManager, access control, interfaces). |
+| `deploy/helm/` | Kubernetes deployment artifacts. |
+| `scripts/` | CI gates, ENS inspection, solc harness, badge publisher. |
+| `test/` | Vitest suites covering orchestration, ENS, governance, attestation, telemetry. |
 
 ---
 
-## Reference Library
+## Reference Snippets
 
-- [Docs index](docs/README.md) — platform overview, operator flows, and governance hooks.
-- [Node identity authority](docs/identity.md) — ENS resolution, key alignment, and libp2p topology guides.
-- [Economics primer](docs/economics.md) — staking parameters, flywheel modelling, and token incentives.
-- [Manifesto](docs/manifesto.md) — guiding principles for distributed cognition and fair governance.
-- [Helm chart](deploy/helm/agi-alpha-node) — Kubernetes deployment templates.
-- [$AGIALPHA token](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) — canonical treasury asset.
-- [CI workflow](.github/workflows/ci.yml) — enforced automated quality gates.
+- **Verify a signed attestation against ENS**
 
-The code, docs, and tooling in this repository form the operational chassis for a machine that tirelessly channels intelligence, liquidity, and governance back to its owner.
+  ```bash
+  node --input-type=module <<'NODE'
+  import { readFileSync } from 'node:fs';
+  import { verifyAgainstENS } from './src/attestation/verify.js';
+
+  const signed = JSON.parse(readFileSync('signed-attestation.json', 'utf8'));
+  const ok = await verifyAgainstENS(signed.attestation.ensName, signed);
+  console.log(`Attestation valid: ${ok}`);
+  NODE
+  ```
+
+- **Regenerate subgraph manifest and build**
+
+  ```bash
+  npm run ci:ts
+  ```
+
+- **Run Prometheus monitoring locally**
+
+  ```bash
+  node -e "import { startMonitoringServer } from './src/telemetry/monitoring.js'; startMonitoringServer({ port: 9090 });"
+  ```
+
+Harness these primitives to operate a controlled, ever-advancing cognitive network that keeps the owner at the helm while continuously emitting verifiable health, treasury, and governance signals.
