@@ -217,7 +217,7 @@ flowchart TD
 ```
 
 - **Schema** — [`src/attestation/schema.ts`](src/attestation/schema.ts) defines `HealthAttestation` v1 (`timestamp`, `ensName`, `peerId`, `nodeVersion`, `multiaddrs`, optional `fuses/expiry/latency/meta`, `status: healthy | degraded | unhealthy`) plus canonical serialization helpers.
-- **Signing & verification** — [`src/attestation/verify.js`](src/attestation/verify.js) signs with secp256k1 or ed25519 and rehydrates ENS-published keys before verifying signatures.
+- **Signing & verification** — [`src/attestation/verify.ts`](src/attestation/verify.ts) signs with secp256k1 or ed25519 and rehydrates ENS-published keys before verifying signatures.
 - **Spans as truth** — `startHealthChecks` attaches ENS, peer ID, role, version, expiry/fuses, DNSAddr presence, status, latency, and signature type to every `node.healthcheck` span, marking errors for degraded/unhealthy states.
 
 ---
@@ -282,7 +282,7 @@ flowchart TD
 
 ## Reference Snippets
 
-**Initialize telemetry with OTLP exporter**
+### Initialize telemetry with OTLP exporter
 
 ```bash
 ALPHA_NODE_OTEL_EXPORTER=otlp \
@@ -291,19 +291,19 @@ ALPHA_NODE_OTEL_SAMPLING_RATIO=0.5 \
 node src/index.js container --once
 ```
 
-**Verify a signed health attestation against ENS**
+### Verify a signed health attestation against ENS
 
 ```bash
 npm run attestation:verify -- --ens-name 1.alpha.node.agi.eth --file ./signed-attestation.json
 ```
 
-**Run the full CI gate locally (mirrors branch protection)**
+### Run the full CI gate locally (mirrors branch protection)
 
 ```bash
 npm run ci:verify
 ```
 
-**Execute the Docker smoke test locally**
+### Execute the Docker smoke test locally
 
 ```bash
 docker build --tag agi-alpha-node:dev .
