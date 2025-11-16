@@ -20,6 +20,8 @@
   </a>
   <img src="https://img.shields.io/badge/Telemetry%20Schemas-v0-16a34a?logo=json&logoColor=white" alt="Telemetry schema version" />
   <img src="https://img.shields.io/badge/Observability-c8%20%7C%20vitest%20%7C%20OTel-0ea5e9?logo=testinglibrary&logoColor=white" alt="Coverage" />
+  <img src="https://img.shields.io/badge/Index%20Engine-GSLI%20Rebalancing-10b981?logo=apacheairflow&logoColor=white" alt="Index engine" />
+  <img src="https://img.shields.io/badge/Test%20Matrix-vitest%20%7C%20solc%20%7C%20markdownlint-22c55e?logo=vitest&logoColor=white" alt="Test matrix" />
   <a href="https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa">
     <img src="https://img.shields.io/badge/$AGIALPHA-0xa61a...a1fa-ff3366?logo=ethereum&logoColor=white" alt="$AGIALPHA" />
   </a>
@@ -45,6 +47,7 @@
 - [Quickstart (non-technical friendly)](#quickstart-non-technical-friendly)
 - [Telemetry ingestion v0](#telemetry-ingestion-v0)
 - [Synthetic labor scoring engine (SLU)](#synthetic-labor-scoring-engine-slu)
+- [Global Synthetic Labor Index (GSLI)](#global-synthetic-labor-index-gsli)
 - [Provider authentication & deduplication](#provider-authentication--deduplication)
 - [Owner controls & on-chain levers](#owner-controls--on-chain-levers)
 - [Data spine & migrations](#data-spine--migrations)
@@ -119,8 +122,11 @@ graph TD
 3. **Boot the node locally**: `npm start` launches the API + orchestration server with seeded providers and task types.
 4. **Dry-run telemetry**: `npm run demo:local` fires the local cluster simulator; observe persisted records in the SQLite spine.
 5. **Score a day of labor**: `node src/index.js score:daily --date 2024-05-01` prints per-provider SLU with difficulty, energy, quality, and validator consensus adjustments.
-6. **Operate via CLI**: `node src/index.js --help` lists governance, staking, lifecycle, telemetry, scoring, and antifragility commands; each subcommand validates inputs and prints tabular outputs for easy auditing.
-7. **Container + Helm**: `docker build -t agi-alpha-node:local .` for a portable image, or use `deploy/helm/agi-alpha-node` to drop into Kubernetes with the same health and telemetry probes.
+6. **Rebalance the GSLI**: `node src/index.js index:rebalance --date 2024-05-02 --cap 15 --min-slu 2` applies capped work-share weights and records exclusions.
+7. **Inspect the headline index**: `node src/index.js index:daily --date 2024-05-02` reports `Index_t` with the active `weight_set_id` and `divisor_version`.
+8. **Simulate + backfill**: `node src/index.js index:simulate --days 90` generates synthetic telemetry, backfills 90d of index history, and prints the latest headline value.
+9. **Operate via CLI**: `node src/index.js --help` lists governance, staking, lifecycle, telemetry, scoring, and antifragility commands; each subcommand validates inputs and prints tabular outputs for easy auditing.
+10. **Container + Helm**: `docker build -t agi-alpha-node:local .` for a portable image, or use `deploy/helm/agi-alpha-node` to drop into Kubernetes with the same health and telemetry probes.
 
 ## Telemetry ingestion v0
 
@@ -236,6 +242,39 @@ flowchart TB
 - **Daily job**: `node src/index.js score:daily --date YYYY-MM-DD` persists per-provider rows with `{ raw_throughput, energy_adjustment, quality_adjustment, consensus_factor, slu, metadata }` inside `synthetic_labor_scores`.
 - **Synthetic labor seeds**: `npm run db:seed` hydrates providers and task archetypes so SLU scoring is immediately runnable.
 
+## Global Synthetic Labor Index (GSLI)
+
+> Fully versioned, owner-steerable Global Synthetic Labor Index that rebalances monthly, caps constituent risk, and records every exclusion reason for replayable audits.
+
+```mermaid
+flowchart LR
+  subgraph Eligibility[Daily Eligibility]
+    last30[Σ SLU over last 30d] --> gate{≥ min threshold?}
+    gate -->|yes| Eligible[Provider eligible]
+    gate -->|no| Excluded[Exclusion recorded + rationale]
+  end
+
+  subgraph Rebalance[Monthly Rebalance (90d lookback)]
+    Eligible --> weights[Compute work-share weights w_i = SLU_i / Σ SLU_j]
+    weights --> cap[Cap @ 15% per provider\nrenormalize residual]
+    cap --> weightSet[Persist weight_set_id + divisor_version]
+  end
+
+  weightSet --> IndexDay[Index_t = Σ(w_i_base × SLU_i_t) / BaseDivisor]
+  IndexDay --> Ledger[(index_values with divisor_version)]
+  weightSet --> Audit[(index_constituent_weights + exclusions)]
+```
+
+- **Eligibility + exclusions**: Providers must clear a configurable 30d SLU floor; exclusions are logged in `index_constituent_exclusions` with observed SLU for post-mortems.
+- **Capped weights**: Work-share weights are normalized then capped (default 15%) with iterative redistribution; caps and base weights are tied to a `weight_set_id` and `divisor_version` for reproducibility.
+- **Index ledger**: Daily values land in `index_values` with `{ headline_value, base_divisor, weight_set_id }` so dashboards can replay any divisor version.
+- **CLI**:
+  - `node src/index.js index:rebalance --date 2024-07-01 --cap 15 --min-slu 5` -> new weight_set with exclusions and capped weights.
+  - `node src/index.js index:daily --date 2024-07-15` -> computes `Index_t` against the latest weight set.
+  - `node src/index.js index:simulate --days 90` -> generates synthetic telemetry, backfills 90d of index history, and prints the latest headline value.
+- **Backfill harness**: `index:simulate` shares the same SQLite spine as SLU scoring, ensuring synthetic telemetry, weights, and index values remain coherent for demos and CI artifacts.
+
+
 ## Provider authentication & deduplication
 
 - **Auth**: `X-API-Key` or `Authorization: Bearer <api-key>`; keys are stored hashed and scoped per provider with last-used timestamps and labels.
@@ -248,11 +287,12 @@ flowchart TB
 - **Total command**: The owner (or multisig) can pause/unpause, rotate validators, update identity controllers, flip identity status, revoke identities, withdraw stake, and apply slashes—all exposed in `AlphaNodeManager` without redeployment.
 - **Sovereign staking**: Owner-initiated stake withdrawals and validator-gated recording ensure rewards remain under explicit operator control; staking token hard-bound to `$AGIALPHA` (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals).
 - **Governance payload builder**: `/governance` endpoints and `src/services/governance.js` craft calldata with dry-run previews, ledger recording, and signature fields for multisig submission.
+- **Index levers**: `index:rebalance` and `index:daily` keep `weight_set_id`, `divisor_version`, and daily index values under explicit operator command—pause, reroute, or retune parameters without re-deploying.
 - **Health gates**: `scripts/verify-health-gate.mjs` enforces operational readiness; `scripts/verify-branch-gate.mjs` blocks unsafe branches, mirroring branch protection on `main`.
 
 ## Data spine & migrations
 
-- **Schema**: Core tables (`providers`, `task_types`, `task_runs`, `energy_reports`, `quality_evaluations`, `synthetic_labor_scores`, `index_values`) live in SQLite with index coverage for provider + day queries.
+- **Schema**: Core tables (`providers`, `task_types`, `task_runs`, `energy_reports`, `quality_evaluations`, `synthetic_labor_scores`, `index_weight_sets`, `index_constituent_weights`, `index_constituent_exclusions`, `index_values`) live in SQLite with index coverage for provider + day queries.
 - **Migrations**: `npm run db:migrate` applies migration files; `npm run db:seed` hydrates baseline providers, task archetypes, and telemetry exemplars.
 - **Subgraph alignment**: `scripts/render-subgraph-manifest.mjs` keeps `subgraph/` manifests synchronized with runtime schemas for downstream indexing.
 

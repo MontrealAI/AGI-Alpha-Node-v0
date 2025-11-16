@@ -75,6 +75,8 @@ import { createLifecycleJournal } from './services/lifecycleJournal.js';
 import { buildEpochPayload } from './services/oracleExport.js';
 import { buildEnsRecordTemplate } from './ens/ens_config.js';
 import { createSyntheticLaborEngine } from './services/syntheticLaborEngine.js';
+import { createGlobalIndexEngine } from './services/globalIndexEngine.js';
+import { initializeDatabase } from './persistence/database.js';
 
 const program = new Command();
 
@@ -126,6 +128,34 @@ function parseWindowList(input) {
     .split(',')
     .map((value) => value.trim())
     .filter((value, index, array) => value.length > 0 && array.indexOf(value) === index);
+}
+
+function toDateOnly(value) {
+  if (!value) return null;
+  const parsed = Date.parse(value);
+  if (Number.isNaN(parsed)) return null;
+  return new Date(parsed).toISOString().slice(0, 10);
+}
+
+function addDays(date, offset) {
+  const parsed = toDateOnly(date);
+  if (!parsed) return null;
+  const d = new Date(parsed);
+  d.setUTCDate(d.getUTCDate() + offset);
+  return d.toISOString().slice(0, 10);
+}
+
+function enumerateDates(startDate, endDate) {
+  const start = toDateOnly(startDate);
+  const end = toDateOnly(endDate);
+  if (!start || !end) return [];
+  const dates = [];
+  let cursor = start;
+  while (cursor <= end) {
+    dates.push(cursor);
+    cursor = addDays(cursor, 1);
+  }
+  return dates;
 }
 
 function formatBps(value) {
@@ -3201,6 +3231,177 @@ program
           slu: score.slu
         }))
       );
+    } catch (error) {
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
+  });
+
+program
+  .command('index:rebalance')
+  .description('Rebalance Global Synthetic Labor Index constituents with capped weights')
+  .option('--date <date>', 'ISO date (YYYY-MM-DD) for the rebalance', new Date().toISOString().slice(0, 10))
+  .option('--cap <percent>', 'Maximum provider weight percentage', '15')
+  .option('--min-slu <value>', 'Minimum 30d SLU required for eligibility', '1')
+  .option('--lookback <days>', 'Lookback window in days for base weights', '90')
+  .action((options) => {
+    try {
+      const asOfDate = toDateOnly(options.date) ?? new Date().toISOString().slice(0, 10);
+      const capPercent = Number.parseFloat(options.cap ?? '15');
+      const minimumSlu30d = Number.parseFloat(options.minSlu ?? '1');
+      const lookbackDays = Number.parseInt(options.lookback ?? '90', 10);
+      if (!Number.isFinite(capPercent) || !Number.isFinite(minimumSlu30d) || !Number.isFinite(lookbackDays)) {
+        throw new Error('cap, min-slu, and lookback must be numeric');
+      }
+
+      const indexEngine = createGlobalIndexEngine();
+      const weightSet = indexEngine.rebalance({
+        asOfDate,
+        capPercent,
+        minimumSlu30d,
+        lookbackDays
+      });
+
+      const weights = indexEngine.constituentWeights.listForWeightSet(weightSet.id);
+      const exclusions = indexEngine.exclusions.listForWeightSet(weightSet.id);
+
+      console.log(chalk.bold(`Weight set ${weightSet.id} effective ${weightSet.effective_date}`));
+      console.table(
+        weights.map((entry) => ({
+          provider_id: entry.provider_id,
+          weight: entry.weight,
+          capped: Boolean(entry.metadata?.capped)
+        }))
+      );
+
+      if (exclusions.length > 0) {
+        console.log(chalk.gray('Exclusions'));
+        console.table(
+          exclusions.map((entry) => ({
+            provider_id: entry.provider_id,
+            reason: entry.reason,
+            observed_slu: entry.metadata?.observed_slu ?? 0
+          }))
+        );
+      }
+    } catch (error) {
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
+  });
+
+program
+  .command('index:daily')
+  .description('Compute the Global Synthetic Labor Index value for a date')
+  .option('--date <date>', 'ISO date (YYYY-MM-DD) to compute', new Date().toISOString().slice(0, 10))
+  .option('--weight-set <id>', 'Optional weight set id to use')
+  .action((options) => {
+    try {
+      const measurementDate = toDateOnly(options.date) ?? new Date().toISOString().slice(0, 10);
+      const weightSetId = options.weightSet ? Number.parseInt(options.weightSet, 10) : null;
+      const indexEngine = createGlobalIndexEngine();
+      const indexValue = indexEngine.computeIndexValue(measurementDate, weightSetId);
+
+      console.log(chalk.bold(`Index value for ${indexValue.effective_date}`));
+      console.table({
+        weightSetId: indexValue.weight_set_id,
+        headline: indexValue.headline_value,
+        baseDivisor: indexValue.base_divisor,
+        divisorVersion: indexValue.divisor_version
+      });
+    } catch (error) {
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
+  });
+
+function simulateTelemetryDay(engine, measurementDate, drift = 0) {
+  const providers = engine.providers.list();
+  const taskTypes = engine.taskTypes.list();
+  const taskType = taskTypes[0] ?? engine.taskTypes.create({
+    name: 'synthetic-demo',
+    description: 'Synthetic telemetry generator',
+    difficulty_coefficient: 1.05
+  });
+
+  providers.forEach((provider, index) => {
+    const baseThroughput = 5 + index + (drift % 3);
+    const qualityScore = 0.82 + (index * 0.03) - (drift % 2 === 0 ? 0.02 : -0.01);
+    const run = engine.taskRuns.create({
+      provider_id: provider.id,
+      task_type_id: taskType.id,
+      status: 'completed',
+      raw_throughput: baseThroughput,
+      tokens_processed: 5500 + index * 250,
+      tool_calls: 2 + (index % 2),
+      quality_score: qualityScore,
+      started_at: `${measurementDate}T00:00:00Z`,
+      completed_at: `${measurementDate}T00:10:00Z`
+    });
+
+    engine.energyReports.create({
+      task_run_id: run.id,
+      kwh: 1.2 + index * 0.2,
+      cost_usd: 0.12 + drift * 0.01,
+      region: provider.region ?? 'demo-region',
+      energy_mix: provider.energy_mix ?? 'synthetic',
+      carbon_intensity_gco2_kwh: 18 + index
+    });
+
+    engine.qualityEvaluations.create({
+      task_run_id: run.id,
+      evaluator: 'synthetic',
+      score: Math.min(0.98, qualityScore + 0.05),
+      notes: 'synthetic backfill'
+    });
+  });
+
+  engine.computeDailyScores(measurementDate);
+}
+
+program
+  .command('index:simulate')
+  .description('Generate synthetic telemetry and backfill a 90-day Global Synthetic Labor Index history')
+  .option('--days <count>', 'Number of days to backfill', '90')
+  .option('--end <date>', 'End date (YYYY-MM-DD) for the backfill window', new Date().toISOString().slice(0, 10))
+  .option('--cap <percent>', 'Maximum provider weight percentage', '15')
+  .option('--min-slu <value>', 'Minimum 30d SLU required for eligibility', '1')
+  .action((options) => {
+    try {
+      const days = Number.parseInt(options.days ?? '90', 10);
+      const endDate = toDateOnly(options.end) ?? new Date().toISOString().slice(0, 10);
+      const startDate = addDays(endDate, -1 * (days - 1));
+      const capPercent = Number.parseFloat(options.cap ?? '15');
+      const minimumSlu30d = Number.parseFloat(options.minSlu ?? '1');
+
+      if (!Number.isFinite(days) || days <= 0) {
+        throw new Error('days must be a positive integer');
+      }
+      if (!startDate) {
+        throw new Error('Invalid end date supplied');
+      }
+
+      const db = initializeDatabase({ withSeed: true });
+      const laborEngine = createSyntheticLaborEngine({ db });
+      const indexEngine = createGlobalIndexEngine({ db });
+
+      const dates = enumerateDates(startDate, endDate);
+      dates.forEach((date, index) => simulateTelemetryDay(laborEngine, date, index));
+
+      const backfill = indexEngine.backfillIndexHistory({
+        startDate,
+        endDate,
+        capPercent,
+        minimumSlu30d
+      });
+
+      const latest = backfill.indexValues[backfill.indexValues.length - 1];
+      console.log(chalk.bold(`Backfilled ${backfill.indexValues.length} days from ${startDate} to ${endDate}`));
+      console.table({
+        latestDate: latest?.effective_date,
+        latestHeadline: latest?.headline_value,
+        activeWeightSet: latest?.weight_set_id
+      });
     } catch (error) {
       console.error(chalk.red(error.message));
       process.exitCode = 1;
