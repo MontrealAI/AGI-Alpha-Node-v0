@@ -45,7 +45,7 @@ function normalizeMetric(value, reference, floor = 0.25, ceiling = 4) {
 export function computeDifficultyCoefficient(taskType, metrics = {}) {
   const base = Number(taskType?.difficulty_coefficient ?? 1) || 1;
   const tokens = metrics.tokens_processed ?? metrics.token_count ?? 0;
-  const toolCalls = metrics.tool_calls ?? 0;
+  const toolCalls = metrics.tool_calls ?? metrics.tool_calls_count ?? 0;
   const steps = metrics.steps ?? metrics.step_count ?? metrics?.metadata?.steps ?? 0;
 
   const tokenIntensity = normalizeMetric(tokens, REFERENCE_TOKENS, 0.25, 3.5);
@@ -60,9 +60,12 @@ export function computeDifficultyCoefficient(taskType, metrics = {}) {
   return roundTo(base * blended, 4);
 }
 
-function computeEnergyAdjustment({ rawThroughput, totalCostUsd, totalKwh }) {
+export function computeEnergyAdjustment({ rawThroughput, totalCostUsd, totalKwh }) {
   if (!Number.isFinite(rawThroughput) || rawThroughput <= 0) {
-    return { energyAdjustment: 1, metadata: { energyCostPerSlu: null, baselineCostPerSlu: null } };
+    return {
+      energyAdjustment: 1,
+      metadata: { energyCostPerSlu: null, baselineCostPerSlu: BASELINE_ENERGY_PRICE * BASELINE_KWH_PER_SLU }
+    };
   }
 
   const observedCost = Number.isFinite(totalCostUsd) && totalCostUsd > 0
@@ -72,7 +75,10 @@ function computeEnergyAdjustment({ rawThroughput, totalCostUsd, totalKwh }) {
       : null;
 
   if (observedCost === null || observedCost <= 0) {
-    return { energyAdjustment: 1, metadata: { energyCostPerSlu: null, baselineCostPerSlu: null } };
+    return {
+      energyAdjustment: 1,
+      metadata: { energyCostPerSlu: null, baselineCostPerSlu: BASELINE_ENERGY_PRICE * BASELINE_KWH_PER_SLU }
+    };
   }
 
   const energyCostPerSlu = observedCost / rawThroughput;
@@ -86,7 +92,7 @@ function winsorizeQuality(scores = []) {
   return scores.map((value) => clamp(value, 0.1, 1.75));
 }
 
-function computeQualityAdjustment({ qualitySignals }) {
+export function computeQualityAdjustment({ qualitySignals }) {
   if (!qualitySignals || qualitySignals.length === 0) {
     return { qualityAdjustment: 1, metadata: { observedQuality: null, baselineQuality: BASELINE_QUALITY } };
   }
@@ -96,9 +102,9 @@ function computeQualityAdjustment({ qualitySignals }) {
   return { qualityAdjustment, metadata: { observedQuality: average, baselineQuality: BASELINE_QUALITY } };
 }
 
-function computeConsensusFactor(taskRuns) {
+export function computeConsensusFactor(taskRuns) {
   if (!taskRuns || taskRuns.length === 0) {
-    return { consensusFactor: 1, metadata: { reproducibility: null } };
+    return { consensusFactor: 1, metadata: { reproducibility: null, taskTypesObserved: 0 } };
   }
   const runsByTaskType = new Map();
   for (const run of taskRuns) {
@@ -117,12 +123,12 @@ function computeConsensusFactor(taskRuns) {
   }
 
   if (reproducibilityScores.length === 0) {
-    return { consensusFactor: 1, metadata: { reproducibility: null } };
+    return { consensusFactor: 1, metadata: { reproducibility: null, taskTypesObserved: runsByTaskType.size } };
   }
 
   const average = reproducibilityScores.reduce((acc, value) => acc + value, 0) / reproducibilityScores.length;
   const consensusFactor = roundTo(clamp(average, MIN_CONSENSUS_FACTOR, MAX_CONSENSUS_FACTOR), 4);
-  return { consensusFactor, metadata: { reproducibility: average } };
+  return { consensusFactor, metadata: { reproducibility: average, taskTypesObserved: runsByTaskType.size } };
 }
 
 function resolveRunDate(run) {

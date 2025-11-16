@@ -36,7 +36,7 @@
   <img src="https://img.shields.io/badge/Owner%20Controls-Total%20Command-9333ea?logo=gnometerminal&logoColor=white" alt="Owner controls" />
 </p>
 
-> **AGI Alpha Node v0** is the cognitive yield engine that metabolizes heterogeneous agentic labor into verifiable α‑Work Units (α‑WU) and Synthetic Labor Units (SLU), composes them into a treasury-backed index, and keeps every lever under the owner’s fingertips—pause, reroute, rewrite, or relaunch without redeploying. It is the machine designed to bend markets while remaining absolutely obedient to its owner.
+> **AGI Alpha Node v0** metabolizes heterogeneous agentic labor into verifiable α‑Work Units (α‑WU) and Synthetic Labor Units (SLU), prices the yield against energy, quality, and consensus, and routes the `$AGIALPHA` treasury (token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) under complete owner command. Everything can be paused, rerouted, or retuned without redeploying.
 
 ## Table of contents
 
@@ -55,11 +55,11 @@
 
 ## Why this node
 
-- **Owner-first sovereignty**: The contract owner steers every critical parameter—pauses, validator rotation, identity lifecycle, staking thresholds, emission multipliers, treasury routing, and governance ledgers—without altering deployed code. Command surfaces live in `contracts/AlphaNodeManager.sol` and governance helpers in `src/services/governance.js`.
-- **Telemetry-ingestion hardened**: JSON Schema–verified payloads, hashed API keys, provider-aware rate-limit stubs, and idempotent task-run recording keep provider signals pristine while rejecting duplicates or malformed submissions.
+- **Owner-first sovereignty**: The owner steers every critical parameter—pauses, validator rotation, identity lifecycle, staking thresholds, emission multipliers, treasury routing, and governance ledgers—without altering deployed code. Command surfaces live in `contracts/AlphaNodeManager.sol` with orchestration helpers in `src/services/governance.js`.
+- **Telemetry-ingestion hardened**: JSON Schema–verified payloads, hashed API keys, provider-aware rate-limit stubs, and idempotent task-run recording keep signals pristine while rejecting duplicates or malformed submissions.
 - **Deterministic data spine**: SQLite migrations seed providers, task types, runs, telemetry, SLU snapshots, α‑index values, and constituent weights with indexes on provider/day for immediate dashboards and subgraph alignment.
 - **Production-safe defaults**: The CLI, seeds, CI gates, Helm chart, and Docker build mirror automation paths so a non-specialist can bootstrap a production-critical node with a handful of commands.
-- **Continuous alpha extraction**: Agentic swarms route jobs through provider meshes, generating synthetic labor, quality, and energy telemetry that continuously tune the `$AGIALPHA` flywheel (token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals).
+- **Continuous alpha extraction**: Agentic swarms route jobs through provider meshes, generating synthetic labor, quality, and energy telemetry that continuously tune the `$AGIALPHA` flywheel.
 
 ## System architecture
 
@@ -83,6 +83,7 @@ graph TD
     Validator -->|TaskRunTelemetry| TaskRuns[(task_runs)]
     Validator -->|EnergyReportPayload| Energy[(energy_reports)]
     Validator -->|QualityEvalPayload| Quality[(quality_evaluations)]
+    Validator -->|ValidatorConsensus| VC[(synthetic_labor_scores.metadata)]
     TaskRuns --> Dedup[Idempotency Guard]
   end
 
@@ -113,16 +114,17 @@ graph TD
 
 ## Quickstart (non-technical friendly)
 
-1. **Install runtime**: Node.js 20.18+ and npm 10+ (already vendored via `.nvmrc` expectations). Run `npm ci` in the repo root for deterministic dependencies.
-2. **Boot the node locally**: `npm start` launches the API + orchestration server with seeded providers and task types.
-3. **Dry-run telemetry**: `npm run demo:local` fires the local cluster simulator; observe persisted records in the SQLite spine.
-4. **Score a day of labor**: `node src/index.js score:daily --date 2024-05-01` prints per-provider SLU with difficulty, energy, quality, and validator consensus adjustments.
-5. **Operate via CLI**: `node src/index.js --help` lists governance, staking, lifecycle, telemetry, scoring, and antifragility commands; each subcommand validates inputs and prints tabular outputs for easy auditing.
-6. **Container + Helm**: `docker build -t agi-alpha-node:local .` for a portable image, or use `deploy/helm/agi-alpha-node` to drop into Kubernetes with the same health and telemetry probes.
+1. **Install runtime**: Node.js 20.18+ and npm 10+. Run `npm ci` in the repo root for deterministic dependencies.
+2. **Bootstrap the data spine**: `npm run db:migrate && npm run db:seed` to hydrate providers, task archetypes, and telemetry exemplars.
+3. **Boot the node locally**: `npm start` launches the API + orchestration server with seeded providers and task types.
+4. **Dry-run telemetry**: `npm run demo:local` fires the local cluster simulator; observe persisted records in the SQLite spine.
+5. **Score a day of labor**: `node src/index.js score:daily --date 2024-05-01` prints per-provider SLU with difficulty, energy, quality, and validator consensus adjustments.
+6. **Operate via CLI**: `node src/index.js --help` lists governance, staking, lifecycle, telemetry, scoring, and antifragility commands; each subcommand validates inputs and prints tabular outputs for easy auditing.
+7. **Container + Helm**: `docker build -t agi-alpha-node:local .` for a portable image, or use `deploy/helm/agi-alpha-node` to drop into Kubernetes with the same health and telemetry probes.
 
 ## Telemetry ingestion v0
 
-- **Schemas**: Task runs (`spec/task_run_telemetry.schema.json`), energy reports (`spec/energy_report.schema.json`), and quality evaluations (`spec/quality_eval.schema.json`) are enforced via AJV before persistence.
+- **Schemas**: Task runs (`spec/task_run_telemetry.schema.json`), energy reports (`spec/energy_report.schema.json`), quality evaluations (`spec/quality_eval.schema.json`), and validator consensus telemetry (`spec/validator_consensus.schema.json`) are enforced via AJV before persistence.
 - **Versioning & provenance**: Every stored record carries `schema_version`, metadata (notes, task label, request fingerprint), and a payload hash for auditability.
 - **Rate-limit stub**: Per-provider windows are tracked and surfaced via `X-RateLimit-*` headers to prepare for enforced throttling.
 - **Example payloads**:
@@ -145,7 +147,7 @@ POST /ingest/task-runs
     "tool_calls": 3,
     "quality_score": 0.94
   },
-  "metadata": { "environment": "prod" },
+  "metadata": { "environment": "prod", "steps": 8 },
   "notes": "routed via meta-agentic swarm"
 }
 ```
@@ -178,9 +180,20 @@ POST /ingest/quality
 }
 ```
 
+```json
+POST /ingest/validator-consensus
+{
+  "schema_version": "v0",
+  "provider": { "provider_id": 12 },
+  "measurement_date": "2024-07-01",
+  "reproducibility": 0.82,
+  "notes": "deterministic replays across 5 identical prompts"
+}
+```
+
 ## Synthetic labor scoring engine (SLU)
 
-> Daily conversion of telemetry into **Synthetic Labor Units (SLU)** per provider, with deterministic difficulty, energy, quality, and validator consensus factors baked into the ledger.
+> Daily conversion of telemetry into **Synthetic Labor Units (SLU)** per provider, with deterministic difficulty, energy, quality, and validator consensus factors baked into the ledger and stored in `synthetic_labor_scores`.
 
 ```mermaid
 flowchart TB
@@ -188,12 +201,13 @@ flowchart TB
     tr[Task runs\n• throughput\n• tokens\n• tool calls\n• steps]
     en[Energy reports\n• kWh\n• cost_usd]
     qu[Quality evals\n• human / auto scores]
+    vcSig[Validator consensus\n• reproducibility rate]
   end
 
   subgraph Factors[Adjustment Factors]
     diff[Difficulty\nnormalized to baseline bundle]
-    ea[Energy Adjustment\ncost_baseline / cost_observed]
-    qa[Quality Adjustment\nwinsorized scores vs baseline]
+    ea[Energy Adjustment\nbaseline_cost_per_slu / observed_cost_per_slu]
+    qa[Quality Adjustment\nwinsorized mean vs baseline]
     vc[Validator Consensus\nreproducibility stub]
   end
 
@@ -215,10 +229,10 @@ flowchart TB
   computeSLU --> db[(synthetic_labor_scores)]
 ```
 
-- **Difficulty coefficient**: blends task-type baselines with telemetry intensity (`tokens_processed`, `tool_calls`, `steps`) and normalizes to ~1.0 for the reference bundle.
+- **Difficulty coefficient**: blends task-type baselines with telemetry intensity (`tokens_processed`, `tool_calls`, `steps`), normalizing to ~1.0 for the reference bundle while respecting task-type difficulty weights.
 - **Energy adjustment (EA)**: `EA = baseline_cost_per_slu / observed_cost_per_slu` with caps to prevent outliers; estimated cost derived from `energy_reports.cost_usd` or `kWh × baseline price` when cost is absent.
 - **Quality adjustment (QA)**: winsorized quality signals (task-run quality plus gold evaluations) normalized against baseline quality (0.9) and bounded to avoid runaway boosts.
-- **Validator consensus (VC)**: stubbed reproducibility rate per task type/day; defaults to `1.0` when sparse.
+- **Validator consensus (VC)**: reproducibility rate from repeated test runs, aggregated per task type/day; defaults to `1.0` when sparse.
 - **Daily job**: `node src/index.js score:daily --date YYYY-MM-DD` persists per-provider rows with `{ raw_throughput, energy_adjustment, quality_adjustment, consensus_factor, slu, metadata }` inside `synthetic_labor_scores`.
 - **Synthetic labor seeds**: `npm run db:seed` hydrates providers and task archetypes so SLU scoring is immediately runnable.
 
@@ -226,7 +240,7 @@ flowchart TB
 
 - **Auth**: `X-API-Key` or `Authorization: Bearer <api-key>`; keys are stored hashed and scoped per provider with last-used timestamps and labels.
 - **Idempotency**: `idempotency_key` on `TaskRunTelemetry` is mandatory; duplicates are rejected with payload-hash verification to detect collisions.
-- **Task resolution**: Energy and quality payloads resolve task runs by `idempotency_key` or `external_id`; missing runs yield a 404 with a structured message.
+- **Task resolution**: Energy, quality, and validator-consensus payloads resolve task runs by `idempotency_key` or `external_id`; missing runs yield a 404 with a structured message.
 - **Suspicious patterns**: Collisions and malformed payloads are logged for operator review.
 
 ## Owner controls & on-chain levers
@@ -266,7 +280,7 @@ flowchart TB
 
 ## Appendix: Specs & references
 
-- **Telemetry schemas**: `spec/task_run_telemetry.schema.json`, `spec/energy_report.schema.json`, `spec/quality_eval.schema.json` (all v0).
+- **Telemetry schemas**: `spec/task_run_telemetry.schema.json`, `spec/energy_report.schema.json`, `spec/quality_eval.schema.json`, `spec/validator_consensus.schema.json` (all v0).
 - **Persistence**: `src/persistence/database.js` (bootstrap), repositories in `src/persistence/repositories.js`, seeds in `src/persistence/seeds.js`.
 - **Ingestion services**: `src/services/telemetryIngestion.js` (validation, auth, rate-limit stubs, deduplication, persistence).
 - **Network APIs**: `src/network/apiServer.js` exposes ingestion endpoints, governance payload builders, lifecycle routes, and oracle exports.

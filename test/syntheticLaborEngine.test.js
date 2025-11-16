@@ -2,7 +2,11 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { initializeDatabase } from '../src/persistence/database.js';
 import { seedProviders, seedTaskTypes, DEFAULT_PROVIDERS, DEFAULT_TASK_TYPES } from '../src/persistence/seeds.js';
 import { EnergyReportRepository, QualityEvaluationRepository, TaskRunRepository, TaskTypeRepository } from '../src/persistence/repositories.js';
-import { createSyntheticLaborEngine } from '../src/services/syntheticLaborEngine.js';
+import {
+  computeConsensusFactor,
+  computeEnergyAdjustment,
+  createSyntheticLaborEngine
+} from '../src/services/syntheticLaborEngine.js';
 
 function setupHarness() {
   const db = initializeDatabase({ filename: ':memory:' });
@@ -168,5 +172,60 @@ describe('SyntheticLaborEngine', () => {
     expect(score.quality_adjustment).toBe(1);
     expect(score.consensus_factor).toBe(1);
     expect(score.slu).toBeCloseTo(score.raw_throughput, 4);
+  });
+
+  it('caps consensus factor when reproducibility drops', () => {
+    const provider = harness.engine.providers.findByName(DEFAULT_PROVIDERS[0].name);
+    const taskType = harness.taskTypes.findByName(DEFAULT_TASK_TYPES[0].name);
+    const consensusDate = '2024-05-05';
+
+    harness.taskRuns.create({
+      provider_id: provider.id,
+      task_type_id: taskType.id,
+      status: 'completed',
+      raw_throughput: 5,
+      started_at: `${consensusDate}T00:00:00Z`,
+      completed_at: `${consensusDate}T00:05:00Z`
+    });
+    harness.taskRuns.create({
+      provider_id: provider.id,
+      task_type_id: taskType.id,
+      status: 'failed',
+      raw_throughput: 5,
+      started_at: `${consensusDate}T01:00:00Z`,
+      completed_at: `${consensusDate}T01:05:00Z`
+    });
+    harness.taskRuns.create({
+      provider_id: provider.id,
+      task_type_id: taskType.id,
+      status: 'completed',
+      raw_throughput: 5,
+      started_at: `${consensusDate}T02:00:00Z`,
+      completed_at: `${consensusDate}T02:05:00Z`
+    });
+
+    const score = harness.engine.computeDailyScoreForProvider(provider.id, consensusDate);
+
+    expect(score.consensus_factor).toBeCloseTo(0.7, 4);
+    expect(score.slu).toBeLessThan(score.raw_throughput);
+  });
+
+  it('defaults VC to neutral when no repeated work exists', () => {
+    const runs = [
+      { task_type_id: 1, status: 'completed' },
+      { task_type_id: 2, status: 'completed' }
+    ];
+    const { consensusFactor, metadata } = computeConsensusFactor(runs);
+
+    expect(consensusFactor).toBe(1);
+    expect(metadata.reproducibility).toBeNull();
+    expect(metadata.taskTypesObserved).toBe(2);
+  });
+
+  it('derives energy cost per SLU baseline when no cost is present', () => {
+    const { energyAdjustment, metadata } = computeEnergyAdjustment({ rawThroughput: 10, totalKwh: 0.5 });
+    expect(energyAdjustment).toBeGreaterThan(0);
+    expect(metadata.energyCostPerSlu).toBeCloseTo(0.006, 3);
+    expect(metadata.baselineCostPerSlu).toBeCloseTo(0.06, 2);
   });
 });

@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ValidatorConsensusTelemetry",
+  "description": "Validator consensus and reproducibility signals emitted per provider and measurement date to support SLU VC factor.",
+  "type": "object",
+  "required": ["schema_version", "provider", "measurement_date", "reproducibility"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "v0",
+      "description": "Schema version tag"
+    },
+    "provider": {
+      "type": "object",
+      "description": "Provider linkage",
+      "required": ["provider_id"],
+      "properties": {
+        "provider_id": {
+          "type": ["integer", "string"],
+          "description": "Internal provider identifier"
+        },
+        "external_id": {
+          "type": "string",
+          "description": "Optional external correlation id"
+        }
+      }
+    },
+    "measurement_date": {
+      "type": "string",
+      "format": "date",
+      "description": "UTC date the consensus was measured"
+    },
+    "reproducibility": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Observed reproducibility rate from repeated validator executions"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional operator comments"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Arbitrary consensus evidence or validation traces"
+    }
+  },
+  "additionalProperties": false
+}
