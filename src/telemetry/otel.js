@@ -46,6 +46,10 @@ export function initTelemetry(config) {
     spanProcessors
   });
 
+  if (spanProcessors.length && providerInstance._activeSpanProcessor?._spanProcessors?.length === 0) {
+    providerInstance._activeSpanProcessor._spanProcessors.push(...spanProcessors);
+  }
+
   providerInstance.register();
   tracerInstance = providerInstance.getTracer('agi-alpha-node');
 
