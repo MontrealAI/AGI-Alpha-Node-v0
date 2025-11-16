@@ -82,6 +82,35 @@ describe('SyntheticLaborEngine', () => {
     expect(scoreB.measurement_date).toBe(measurementDate);
   });
 
+  it('derives energy cost from kWh when explicit cost is missing', () => {
+    const provider = harness.engine.providers.findByName(DEFAULT_PROVIDERS[0].name);
+    const taskType = harness.taskTypes.findByName(DEFAULT_TASK_TYPES[0].name);
+    const energyOnlyDate = '2024-05-04';
+
+    const run = harness.taskRuns.create({
+      provider_id: provider.id,
+      task_type_id: taskType.id,
+      status: 'completed',
+      raw_throughput: 6,
+      started_at: `${energyOnlyDate}T00:00:00Z`,
+      completed_at: `${energyOnlyDate}T00:10:00Z`
+    });
+
+    harness.energy.create({
+      task_run_id: run.id,
+      kwh: 15,
+      cost_usd: null,
+      region: 'na-east',
+      energy_mix: null,
+      carbon_intensity_gco2_kwh: null
+    });
+
+    const score = harness.engine.computeDailyScoreForProvider(provider.id, energyOnlyDate);
+
+    expect(score.energy_adjustment).toBeLessThan(1);
+    expect(score.energy_adjustment).toBeCloseTo(0.25, 4);
+  });
+
   it('penalizes lower quality signals', () => {
     const provider = harness.engine.providers.findByName(DEFAULT_PROVIDERS[0].name);
     const taskType = harness.taskTypes.findByName(DEFAULT_TASK_TYPES[1].name);

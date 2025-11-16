@@ -65,9 +65,9 @@ function computeEnergyAdjustment({ rawThroughput, totalCostUsd, totalKwh }) {
     return { energyAdjustment: 1, metadata: { energyCostPerSlu: null, baselineCostPerSlu: null } };
   }
 
-  const observedCost = Number.isFinite(totalCostUsd)
+  const observedCost = Number.isFinite(totalCostUsd) && totalCostUsd > 0
     ? totalCostUsd
-    : Number.isFinite(totalKwh)
+    : Number.isFinite(totalKwh) && totalKwh > 0
       ? totalKwh * BASELINE_ENERGY_PRICE
       : null;
 
