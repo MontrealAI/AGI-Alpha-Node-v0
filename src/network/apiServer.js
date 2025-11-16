@@ -43,6 +43,13 @@ import { buildStakeAndActivateTx } from '../services/staking.js';
 import { recordGovernanceAction } from '../services/governanceLedger.js';
 import { buildEpochPayload } from '../services/oracleExport.js';
 import { getLifetimeAlphaWU, getRecentEpochSummaries } from '../services/metering.js';
+import {
+  TelemetryAuthError,
+  TelemetryConflictError,
+  TelemetryIngestionService,
+  TelemetryNotFoundError,
+  TelemetryValidationError
+} from '../services/telemetryIngestion.js';
 
 function jsonResponse(res, statusCode, payload) {
   const body = JSON.stringify(payload, (_, value) => (typeof value === 'bigint' ? value.toString() : value));
@@ -51,6 +58,19 @@ function jsonResponse(res, statusCode, payload) {
     'Content-Length': Buffer.byteLength(body)
   });
   res.end(body);
+}
+
+function applyRateLimitHeaders(res, rateLimit) {
+  if (!rateLimit) return;
+  if (rateLimit.limit !== undefined) {
+    res.setHeader('X-RateLimit-Limit', rateLimit.limit);
+  }
+  if (rateLimit.remaining !== undefined) {
+    res.setHeader('X-RateLimit-Remaining', Math.max(rateLimit.remaining, 0));
+  }
+  if (rateLimit.windowEndsAt instanceof Date) {
+    res.setHeader('X-RateLimit-Reset', Math.floor(rateLimit.windowEndsAt.getTime() / 1000));
+  }
 }
 
 function parseRequestBody(req) {
@@ -72,6 +92,18 @@ function parseRequestBody(req) {
       })
       .on('error', (error) => reject(error));
   });
+}
+
+function extractApiKey(req) {
+  const headerKey = req.headers?.['x-api-key'];
+  if (typeof headerKey === 'string' && headerKey.trim().length > 0) {
+    return headerKey.trim();
+  }
+  const authHeader = req.headers?.authorization;
+  if (typeof authHeader === 'string' && authHeader.toLowerCase().startsWith('bearer ')) {
+    return authHeader.slice(7).trim();
+  }
+  return null;
 }
 
 function cloneValue(value) {
@@ -801,7 +833,8 @@ export function startAgentApi({
   logger = pino({ level: 'info', name: 'agent-api' }),
   ownerToken = null,
   ledgerRoot = process.cwd(),
-  healthGate = null
+  healthGate = null,
+  telemetry = null
 } = {}) {
   const jobs = new Map();
   const lifecycleJobs = new Map();
@@ -823,6 +856,13 @@ export function startAgentApi({
       ledgerEntries: 0
     }
   };
+
+  const telemetryService =
+    telemetry instanceof TelemetryIngestionService
+      ? telemetry
+      : new TelemetryIngestionService({
+          logger: typeof logger.child === 'function' ? logger.child({ subsystem: 'telemetry' }) : logger
+        });
 
   const resolveHealthGateState = () => (healthGate ? healthGate.getState() : null);
 
@@ -849,6 +889,30 @@ export function startAgentApi({
           ? cloneValue(ownerDirectives.context)
           : {}
     };
+  }
+
+  function buildRequestMeta(req) {
+    return {
+      ip: req.socket?.remoteAddress ?? null,
+      userAgent: req.headers?.['user-agent'] ?? null
+    };
+  }
+
+  function handleTelemetryFailure(res, error) {
+    if (
+      error instanceof TelemetryAuthError ||
+      error instanceof TelemetryValidationError ||
+      error instanceof TelemetryConflictError ||
+      error instanceof TelemetryNotFoundError
+    ) {
+      const payload = {
+        error: error.message,
+        details: error.details ?? undefined
+      };
+      jsonResponse(res, error.statusCode ?? 400, payload);
+      return true;
+    }
+    return false;
   }
 
   async function handleGovernanceRequest(req, res, schema, builder) {
@@ -940,6 +1004,80 @@ export function startAgentApi({
     try {
       if (!req.url) {
         jsonResponse(res, 404, { error: 'Not found' });
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/ingest/task-runs') {
+        try {
+          const body = await parseRequestBody(req);
+          const apiKey = extractApiKey(req);
+          const result = telemetryService.ingestTaskRun({
+            payload: body ?? {},
+            apiKey,
+            requestMeta: buildRequestMeta(req)
+          });
+          applyRateLimitHeaders(res, result.rateLimit);
+          jsonResponse(res, 202, {
+            task_run: result.taskRun,
+            provider: { id: result.provider.id, name: result.provider.name, region: result.provider.region }
+          });
+        } catch (error) {
+          if (handleTelemetryFailure(res, error)) {
+            return;
+          }
+          logger.error(error, 'Task run telemetry ingest failed');
+          jsonResponse(res, 500, { error: 'Internal server error' });
+        }
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/ingest/energy') {
+        try {
+          const body = await parseRequestBody(req);
+          const apiKey = extractApiKey(req);
+          const result = telemetryService.ingestEnergy({
+            payload: body ?? {},
+            apiKey,
+            requestMeta: buildRequestMeta(req)
+          });
+          applyRateLimitHeaders(res, result.rateLimit);
+          jsonResponse(res, 202, {
+            energy_report: result.energyReport,
+            task_run: { id: result.taskRun.id, external_id: result.taskRun.external_id },
+            provider: { id: result.provider.id, name: result.provider.name }
+          });
+        } catch (error) {
+          if (handleTelemetryFailure(res, error)) {
+            return;
+          }
+          logger.error(error, 'Energy telemetry ingest failed');
+          jsonResponse(res, 500, { error: 'Internal server error' });
+        }
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/ingest/quality') {
+        try {
+          const body = await parseRequestBody(req);
+          const apiKey = extractApiKey(req);
+          const result = telemetryService.ingestQuality({
+            payload: body ?? {},
+            apiKey,
+            requestMeta: buildRequestMeta(req)
+          });
+          applyRateLimitHeaders(res, result.rateLimit);
+          jsonResponse(res, 202, {
+            quality_evaluation: result.qualityEvaluation,
+            task_run: { id: result.taskRun.id, external_id: result.taskRun.external_id },
+            provider: { id: result.provider.id, name: result.provider.name }
+          });
+        } catch (error) {
+          if (handleTelemetryFailure(res, error)) {
+            return;
+          }
+          logger.error(error, 'Quality telemetry ingest failed');
+          jsonResponse(res, 500, { error: 'Internal server error' });
+        }
         return;
       }
 
@@ -1693,6 +1831,7 @@ export function startAgentApi({
     server,
     port,
     offlineMode,
+    telemetry: telemetryService,
     stop: () =>
       new Promise((resolve) => {
         server.close(() => {

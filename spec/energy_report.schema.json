@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/MontrealAI/AGI-Alpha-Node-v0/spec/energy_report.schema.json",
+  "title": "EnergyReportPayload v0",
+  "type": "object",
+  "required": ["schema_version", "task", "energy"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "v0"
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "idempotency_key": {
+          "type": "string",
+          "minLength": 8
+        },
+        "external_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "anyOf": [
+        { "required": ["idempotency_key"] },
+        { "required": ["external_id"] }
+      ]
+    },
+    "energy": {
+      "type": "object",
+      "required": ["kwh"],
+      "additionalProperties": false,
+      "properties": {
+        "kwh": {
+          "type": "number",
+          "minimum": 0
+        },
+        "energy_mix": { "type": "string" },
+        "carbon_intensity_gco2_kwh": { "type": "number" },
+        "cost_usd": { "type": "number" },
+        "region": { "type": "string" }
+      }
+    },
+    "metadata": {
+      "type": "object"
+    }
+  }
+}

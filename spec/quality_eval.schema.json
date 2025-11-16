@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/MontrealAI/AGI-Alpha-Node-v0/spec/quality_eval.schema.json",
+  "title": "QualityEvalPayload v0",
+  "type": "object",
+  "required": ["schema_version", "task", "quality"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "v0"
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "idempotency_key": { "type": "string", "minLength": 8 },
+        "external_id": { "type": "string", "minLength": 1 }
+      },
+      "anyOf": [
+        { "required": ["idempotency_key"] },
+        { "required": ["external_id"] }
+      ]
+    },
+    "quality": {
+      "type": "object",
+      "required": ["score"],
+      "additionalProperties": false,
+      "properties": {
+        "score": { "type": "number" },
+        "evaluator": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    },
+    "metadata": { "type": "object" }
+  }
+}

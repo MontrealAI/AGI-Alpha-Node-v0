@@ -83,6 +83,44 @@ export class ProviderRepository {
   }
 }
 
+export class ProviderApiKeyRepository {
+  constructor(db) {
+    this.db = db;
+  }
+
+  create(entry) {
+    const stmt = this.db.prepare(`
+      INSERT INTO provider_api_keys (provider_id, hashed_key, label, rate_limit_quota)
+      VALUES (@provider_id, @hashed_key, @label, @rate_limit_quota)
+    `);
+    const result = stmt.run({
+      ...entry,
+      rate_limit_quota: entry.rate_limit_quota ?? 1200
+    });
+    return this.getById(result.lastInsertRowid);
+  }
+
+  getById(id) {
+    return this.db.prepare('SELECT * FROM provider_api_keys WHERE id = ?').get(id);
+  }
+
+  findActiveByHash(hashedKey) {
+    return this.db
+      .prepare('SELECT * FROM provider_api_keys WHERE hashed_key = ? AND revoked_at IS NULL')
+      .get(hashedKey);
+  }
+
+  touchLastUsed(id) {
+    this.db.prepare("UPDATE provider_api_keys SET last_used_at = datetime('now') WHERE id = ?").run(id);
+    return this.getById(id);
+  }
+
+  revoke(id) {
+    this.db.prepare("UPDATE provider_api_keys SET revoked_at = datetime('now') WHERE id = ?").run(id);
+    return this.getById(id);
+  }
+}
+
 export class TaskTypeRepository {
   constructor(db) {
     this.db = db;
@@ -135,8 +173,8 @@ export class TaskRunRepository {
 
   create(taskRun) {
     const stmt = this.db.prepare(`
-      INSERT INTO task_runs (provider_id, task_type_id, external_id, status, raw_throughput, tokens_processed, tool_calls, novelty_score, quality_score, started_at, completed_at)
-      VALUES (@provider_id, @task_type_id, @external_id, @status, @raw_throughput, @tokens_processed, @tool_calls, @novelty_score, @quality_score, @started_at, @completed_at)
+      INSERT INTO task_runs (provider_id, task_type_id, external_id, status, raw_throughput, tokens_processed, tool_calls, novelty_score, quality_score, started_at, completed_at, idempotency_key, schema_version, payload_hash, metadata)
+      VALUES (@provider_id, @task_type_id, @external_id, @status, @raw_throughput, @tokens_processed, @tool_calls, @novelty_score, @quality_score, @started_at, @completed_at, @idempotency_key, @schema_version, @payload_hash, @metadata)
     `);
     const result = stmt.run({
       provider_id: taskRun.provider_id,
@@ -149,7 +187,11 @@ export class TaskRunRepository {
       novelty_score: taskRun.novelty_score ?? null,
       quality_score: taskRun.quality_score ?? null,
       started_at: taskRun.started_at ?? null,
-      completed_at: taskRun.completed_at ?? null
+      completed_at: taskRun.completed_at ?? null,
+      idempotency_key: taskRun.idempotency_key ?? null,
+      schema_version: taskRun.schema_version ?? null,
+      payload_hash: taskRun.payload_hash ?? null,
+      metadata: taskRun.metadata ? serializeJson(taskRun.metadata) : null
     });
     return this.getById(result.lastInsertRowid);
   }
@@ -165,6 +207,10 @@ export class TaskRunRepository {
           quality_score = COALESCE(@quality_score, quality_score),
           started_at = COALESCE(@started_at, started_at),
           completed_at = COALESCE(@completed_at, completed_at),
+          idempotency_key = COALESCE(@idempotency_key, idempotency_key),
+          schema_version = COALESCE(@schema_version, schema_version),
+          payload_hash = COALESCE(@payload_hash, payload_hash),
+          metadata = COALESCE(@metadata, metadata),
           updated_at = datetime('now')
       WHERE id = @id
     `);
@@ -177,17 +223,46 @@ export class TaskRunRepository {
       novelty_score: updates.novelty_score ?? null,
       quality_score: updates.quality_score ?? null,
       started_at: updates.started_at ?? null,
-      completed_at: updates.completed_at ?? null
+      completed_at: updates.completed_at ?? null,
+      idempotency_key: updates.idempotency_key ?? null,
+      schema_version: updates.schema_version ?? null,
+      payload_hash: updates.payload_hash ?? null,
+      metadata: updates.metadata ? serializeJson(updates.metadata) : null
     });
     return this.getById(id);
   }
 
   getById(id) {
-    return this.db.prepare('SELECT * FROM task_runs WHERE id = ?').get(id);
+    const row = this.db.prepare('SELECT * FROM task_runs WHERE id = ?').get(id);
+    return row ? this.#map(row) : undefined;
   }
 
   listByProvider(providerId) {
-    return this.db.prepare('SELECT * FROM task_runs WHERE provider_id = ? ORDER BY created_at DESC').all(providerId);
+    return this.db
+      .prepare('SELECT * FROM task_runs WHERE provider_id = ? ORDER BY created_at DESC')
+      .all(providerId)
+      .map((row) => this.#map(row));
+  }
+
+  findByExternalId(providerId, externalId) {
+    const row = this.db
+      .prepare('SELECT * FROM task_runs WHERE provider_id = ? AND external_id = ?')
+      .get(providerId, externalId);
+    return row ? this.#map(row) : undefined;
+  }
+
+  findByIdempotencyKey(providerId, idempotencyKey) {
+    const row = this.db
+      .prepare('SELECT * FROM task_runs WHERE provider_id = ? AND idempotency_key = ?')
+      .get(providerId, idempotencyKey);
+    return row ? this.#map(row) : undefined;
+  }
+
+  #map(row) {
+    return {
+      ...row,
+      metadata: parseJson(row.metadata, {})
+    };
   }
 }
 
@@ -198,10 +273,14 @@ export class QualityEvaluationRepository {
 
   create(entry) {
     const stmt = this.db.prepare(`
-      INSERT INTO quality_evaluations (task_run_id, evaluator, score, notes)
-      VALUES (@task_run_id, @evaluator, @score, @notes)
+      INSERT INTO quality_evaluations (task_run_id, evaluator, score, notes, schema_version, metadata)
+      VALUES (@task_run_id, @evaluator, @score, @notes, @schema_version, @metadata)
     `);
-    const result = stmt.run(entry);
+    const result = stmt.run({
+      ...entry,
+      schema_version: entry.schema_version ?? null,
+      metadata: entry.metadata ? serializeJson(entry.metadata) : null
+    });
     return this.getById(result.lastInsertRowid);
   }
 
@@ -211,6 +290,8 @@ export class QualityEvaluationRepository {
       SET evaluator = COALESCE(@evaluator, evaluator),
           score = COALESCE(@score, score),
           notes = COALESCE(@notes, notes),
+          schema_version = COALESCE(@schema_version, schema_version),
+          metadata = COALESCE(@metadata, metadata),
           updated_at = datetime('now')
       WHERE id = @id
     `);
@@ -219,18 +300,31 @@ export class QualityEvaluationRepository {
       id,
       evaluator: updates.evaluator ?? null,
       score: updates.score ?? null,
-      notes: updates.notes ?? null
+      notes: updates.notes ?? null,
+      schema_version: updates.schema_version ?? null,
+      metadata: updates.metadata ? serializeJson(updates.metadata) : null
     });
 
     return this.getById(id);
   }
 
   getById(id) {
-    return this.db.prepare('SELECT * FROM quality_evaluations WHERE id = ?').get(id);
+    const row = this.db.prepare('SELECT * FROM quality_evaluations WHERE id = ?').get(id);
+    return row ? this.#map(row) : undefined;
   }
 
   listForTaskRun(taskRunId) {
-    return this.db.prepare('SELECT * FROM quality_evaluations WHERE task_run_id = ? ORDER BY created_at DESC').all(taskRunId);
+    return this.db
+      .prepare('SELECT * FROM quality_evaluations WHERE task_run_id = ? ORDER BY created_at DESC')
+      .all(taskRunId)
+      .map((row) => this.#map(row));
+  }
+
+  #map(row) {
+    return {
+      ...row,
+      metadata: parseJson(row.metadata, {})
+    };
   }
 }
 
@@ -241,10 +335,14 @@ export class EnergyReportRepository {
 
   create(entry) {
     const stmt = this.db.prepare(`
-      INSERT INTO energy_reports (task_run_id, kwh, energy_mix, carbon_intensity_gco2_kwh, cost_usd, region)
-      VALUES (@task_run_id, @kwh, @energy_mix, @carbon_intensity_gco2_kwh, @cost_usd, @region)
+      INSERT INTO energy_reports (task_run_id, kwh, energy_mix, carbon_intensity_gco2_kwh, cost_usd, region, schema_version, metadata)
+      VALUES (@task_run_id, @kwh, @energy_mix, @carbon_intensity_gco2_kwh, @cost_usd, @region, @schema_version, @metadata)
     `);
-    const result = stmt.run(entry);
+    const result = stmt.run({
+      ...entry,
+      schema_version: entry.schema_version ?? null,
+      metadata: entry.metadata ? serializeJson(entry.metadata) : null
+    });
     return this.getById(result.lastInsertRowid);
   }
 
@@ -256,6 +354,8 @@ export class EnergyReportRepository {
           carbon_intensity_gco2_kwh = COALESCE(@carbon_intensity_gco2_kwh, carbon_intensity_gco2_kwh),
           cost_usd = COALESCE(@cost_usd, cost_usd),
           region = COALESCE(@region, region),
+          schema_version = COALESCE(@schema_version, schema_version),
+          metadata = COALESCE(@metadata, metadata),
           updated_at = datetime('now')
       WHERE id = @id
     `);
@@ -266,18 +366,31 @@ export class EnergyReportRepository {
       energy_mix: updates.energy_mix ?? null,
       carbon_intensity_gco2_kwh: updates.carbon_intensity_gco2_kwh ?? null,
       cost_usd: updates.cost_usd ?? null,
-      region: updates.region ?? null
+      region: updates.region ?? null,
+      schema_version: updates.schema_version ?? null,
+      metadata: updates.metadata ? serializeJson(updates.metadata) : null
     });
 
     return this.getById(id);
   }
 
   getById(id) {
-    return this.db.prepare('SELECT * FROM energy_reports WHERE id = ?').get(id);
+    const row = this.db.prepare('SELECT * FROM energy_reports WHERE id = ?').get(id);
+    return row ? this.#map(row) : undefined;
   }
 
   listForTaskRun(taskRunId) {
-    return this.db.prepare('SELECT * FROM energy_reports WHERE task_run_id = ? ORDER BY created_at DESC').all(taskRunId);
+    return this.db
+      .prepare('SELECT * FROM energy_reports WHERE task_run_id = ? ORDER BY created_at DESC')
+      .all(taskRunId)
+      .map((row) => this.#map(row));
+  }
+
+  #map(row) {
+    return {
+      ...row,
+      metadata: parseJson(row.metadata, {})
+    };
   }
 }
 
