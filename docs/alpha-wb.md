@@ -50,10 +50,36 @@ flowchart TD
   subgraph Yield
     EA & QA & VC --> D[computeConstituentAlphaWU]
     D --> W[rebalanceConstituentWeights]
-    W --> IDX[computeAlphaWorkBenchmarkIndex]
+  W --> IDX[computeAlphaWorkBenchmarkIndex]
   end
   IDX --> Dashboard[[αWB + Sector / Geo / Energy Sub‑Indices]]
 ```
+
+### Default parameters (owner‑tunable)
+
+`DEFAULT_ALPHA_WB_CONFIG` sets a safe, audit‑ready baseline while keeping every knob owner‑controlled through `ALPHA_WB`:
+
+| Field | Default | Purpose |
+| --- | --- | --- |
+| `baselineEnergyCostPerKwh` | `0.12` | Reference cost to normalize energy efficiency. |
+| `baselineEnergyPerAlphaWU` | `1` | Baseline kWh per α‑WU for EA. |
+| `baselineQuality` | `1` | Reference quality score for QA. |
+| `baselineConsensus` | `0.99` | Expected validator replay consensus. |
+| `energyAdjustmentFloor` / `Cap` | `0.65` / `1.25` | Anti‑gaming clamps on EA. |
+| `qualityAdjustmentFloor` / `Cap` | `0.6` / `1.5` | Anti‑gaming clamps on QA. |
+| `consensusAdjustmentFloor` / `Cap` | `0.8` / `1.05` | Replay + slashing sensitivity. |
+| `rebalanceCap` / `Floor` | `0.15` / `0.01` | Diversification controls for work‑share weighting. |
+| `smoothingWindowDays` | `90` | Rolling window for constituent work‑share inputs. |
+| `baseDivisor` | `1000` | Divisor for the headline αWB_t index. |
+
+Runtime validation (see `src/config/schema.js`) enforces floor < cap and positive divisors before accepting overrides.
+
+### Governance & anti‑gaming
+
+- **Validator consensus + slashing:** Replay audits feed `computeValidatorConsensus`, while on‑chain `applySlash` events (see `contracts/AlphaNodeManager.sol`) penalize irreproducibility and fraud.
+- **Energy cost honesty:** EA caps/floors plus cross‑checks against utility/cloud invoices limit under‑reported costs; telemetry expects signed kWh + hardware profiles.
+- **Quality integrity:** QA draws from adversarial sets and human evals with winsorization to keep outliers from skewing αWB.
+- **Weighting discipline:** `rebalanceConstituentWeights` applies diversification caps/floors so no single fleet can dominate the headline index.
 
 ## Configuration Surface (`ALPHA_WB`)
 

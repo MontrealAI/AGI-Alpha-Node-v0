@@ -2,6 +2,9 @@
   "ignorePatterns": [
     {
       "pattern": "^https://etherscan\\.io/"
+    },
+    {
+      "pattern": "^#"
     }
   ],
   "aliveStatusCodes": [200, 206, 403]
