@@ -44,7 +44,7 @@ npm test                  # full vitest suite, policy gates, persistence coverag
 npm start -- --help       # explore runtime flags
 ```
 
-**Operational notes**
+## Operational notes
 
 - Owner-level directives live in `contracts/AlphaNodeManager.sol` and are callable without redeploys (pause/unpause, validator set rotation, staking/withdrawal, registry rewrites, reward redirects).
 - CI is enforced on `main` via `.github/required-checks.json`; every PR surfaces lint, policy, coverage, Solidity, and subgraph gates before merge.
