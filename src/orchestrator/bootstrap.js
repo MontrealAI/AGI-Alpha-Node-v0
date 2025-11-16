@@ -18,6 +18,8 @@ import { createAlphaWuTelemetry } from '../telemetry/alphaWuTelemetry.js';
 import { startValidatorRuntime } from '../validator/runtime.js';
 import { createQuorumEngine } from '../settlement/quorumEngine.js';
 import { getNodeEnsName } from '../ens/ens_config.js';
+import { initTelemetry } from '../telemetry/otel.js';
+import { loadTelemetryConfig } from '../telemetry/config.js';
 import {
   loadNodeIdentityRecord,
   loadNodeKeypairFromSource,
@@ -100,6 +102,8 @@ export async function bootstrapContainer({
       Object.entries(overrides).filter(([, value]) => value !== undefined)
     )
   );
+
+  initTelemetry(loadTelemetryConfig(process.env, logger));
 
   await hydrateOperatorPrivateKey(config, { logger });
 

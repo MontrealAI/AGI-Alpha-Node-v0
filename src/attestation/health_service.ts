@@ -1,10 +1,12 @@
 import { EventEmitter } from 'node:events';
 import { performance } from 'node:perf_hooks';
+import { SpanStatusCode, context, trace } from '@opentelemetry/api';
 import pino, { type Logger } from 'pino';
 import type { NodeIdentity, NodeKeypair } from '../identity/types.js';
 import type { HealthAttestation, SignedHealthAttestation } from './schema.js';
 import { createHealthAttestation, serializeSignedAttestation } from './schema.js';
 import { signHealthAttestation } from './verify.js';
+import { getTracer } from '../telemetry/otel.js';
 
 export interface HealthCheckOptions {
   readonly intervalMs?: number;
@@ -25,6 +27,10 @@ export interface HealthCheckHandle {
 }
 
 const DEFAULT_INTERVAL_MS = 30_000;
+
+function hasDnsaddrRecord(multiaddrs: string[]): boolean {
+  return multiaddrs.some((addr) => addr.includes('/dnsaddr/') || addr.startsWith('/dns') || addr.includes('/dns/'));
+}
 
 async function defaultMeasureLatency(): Promise<number> {
   const start = performance.now();
@@ -59,16 +65,38 @@ export function startHealthChecks(
   const measureLatency = opts.measureLatency ?? defaultMeasureLatency;
   const statusEvaluator = opts.statusEvaluator ?? defaultStatus;
   const logToConsole = opts.logToConsole ?? false;
+  const tracer = getTracer();
 
   const emitAttestation = async () => {
+    const span = tracer.startSpan('node.healthcheck', {
+      attributes: {
+        'agent.ens': nodeIdentity.ensName,
+        'agent.peer_id': nodeIdentity.peerId,
+        'agent.version': opts.nodeVersion ?? nodeIdentity.metadata?.['node.version'],
+        'agent.role': opts.role ?? nodeIdentity.metadata?.['node.role'],
+        'ens.fuses': nodeIdentity.fuses,
+        'ens.expiry': nodeIdentity.expiry,
+        'dnsaddr.present': hasDnsaddrRecord(nodeIdentity.multiaddrs),
+        'attestation.signature_type': keypair.type
+      }
+    });
+
     let latencyMs: number | undefined;
     try {
       latencyMs = await measureLatency();
+      if (latencyMs !== undefined) {
+        span.setAttribute('check.latency_ms', latencyMs);
+      }
     } catch (error) {
+      span.recordException(error as Error);
+      span.setStatus({ code: SpanStatusCode.ERROR, message: 'Health latency measurement failed' });
       logger.error({ err: error }, 'Health latency measurement failed');
     }
 
-    const attestation = createHealthAttestation(nodeIdentity, statusEvaluator(latencyMs), {
+    const status = statusEvaluator(latencyMs);
+    span.setAttribute('check.status', status);
+
+    const attestation = createHealthAttestation(nodeIdentity, status, {
       timestamp: new Date().toISOString(),
       role: opts.role,
       nodeVersion: opts.nodeVersion,
@@ -76,18 +104,30 @@ export function startHealthChecks(
       meta: opts.meta
     });
 
-    const signed = await signHealthAttestation(attestation, keypair);
+    try {
+      const signed = await signHealthAttestation(attestation, keypair);
 
-    if (opts.onAttestation) {
-      opts.onAttestation(signed);
-    }
+      if (opts.onAttestation) {
+        opts.onAttestation(signed);
+      }
 
-    emitter.emit('attestation', signed);
+      emitter.emit('attestation', signed);
 
-    if (logToConsole) {
-      console.log(serializeSignedAttestation(signed));
-    } else {
-      logger.debug?.({ attestation: signed.attestation }, 'Health attestation emitted');
+      if (logToConsole) {
+        console.log(serializeSignedAttestation(signed));
+      } else {
+        logger.debug?.({ attestation: signed.attestation }, 'Health attestation emitted');
+      }
+
+      if (status !== 'healthy') {
+        span.setStatus({ code: SpanStatusCode.ERROR, message: `Health status reported as ${status}` });
+      }
+    } catch (error) {
+      span.recordException(error as Error);
+      span.setStatus({ code: SpanStatusCode.ERROR, message: 'Health attestation emission failed' });
+      logger.error({ err: error }, 'Health attestation emission failed');
+    } finally {
+      context.with(trace.setSpan(context.active(), span), () => span.end());
     }
   };
 
