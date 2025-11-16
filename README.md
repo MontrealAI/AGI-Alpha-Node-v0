@@ -26,9 +26,29 @@
   <a href="Dockerfile"><img src="https://img.shields.io/badge/Docker-Ready-2496ed?logo=docker&logoColor=white" alt="Docker" /></a>
   <a href="deploy/helm/agi-alpha-node"><img src="https://img.shields.io/badge/Helm-Chart-0ea5e9?logo=helm&logoColor=white" alt="Helm" /></a>
   <a href="docs/testing.md"><img src="https://img.shields.io/badge/CI%20Playbook-Green%20by%20Design-06b6d4?logo=githubactions&logoColor=white" alt="Testing playbook" /></a>
+  <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/graphs/contributors"><img src="https://img.shields.io/github/contributors/MontrealAI/AGI-Alpha-Node-v0?label=Contributors&color=2563eb&logo=github" alt="Contributors" /></a>
+  <img src="https://img.shields.io/badge/Data%20Spine-SQLite%20%2B%20Migrations-0f766e?logo=sqlite&logoColor=white" alt="Persistence" />
 </p>
 
 > **AGI Alpha Node v0** is the cognitive yield engine that turns heterogeneous agentic work into verifiable α‑Work Units (α‑WU), anchors them to the `$AGIALPHA` treasury (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals), and keeps every lever under the owner’s command—pause, re-weight, rotate validators, refresh baselines, and reroute rewards without redeploying code.
+
+## Quickstart (production-safe defaults)
+
+```bash
+git clone https://github.com/MontrealAI/AGI-Alpha-Node-v0.git
+cd AGI-Alpha-Node-v0
+npm ci                    # installs native better-sqlite3, solc, vitest, etc.
+npm run db:migrate        # initializes SQLite spine (use AGI_ALPHA_DB_PATH to override)
+npm run db:seed           # loads canonical providers + task types
+npm test                  # full vitest suite, policy gates, persistence coverage
+npm start -- --help       # explore runtime flags
+```
+
+**Operational notes**
+
+- Owner-level directives live in `contracts/AlphaNodeManager.sol` and are callable without redeploys (pause/unpause, validator set rotation, staking/withdrawal, registry rewrites, reward redirects).
+- CI is enforced on `main` via `.github/required-checks.json`; every PR surfaces lint, policy, coverage, Solidity, and subgraph gates before merge.
+- Database CLI (`node src/persistence/cli.js <migrate|seed> [db]`) mirrors production automation so non-specialists can bootstrap nodes safely.
 
 ## Non-negotiable guarantees
 
@@ -46,6 +66,27 @@ flowchart LR
   LedgerTelemetry -->|αWU Metering| AlphaWB[Global α‑WU Benchmark]
   LedgerTelemetry -->|Rewards $AGIALPHA| Treasury[(0xa61a3b3a130a9c20768eebf97e21515a6046a1fa)]
   AlphaWB -->|αWB_t & Sector Slices| Dashboards[[Operator Dashboards]]
+```
+
+```mermaid
+flowchart TD
+  subgraph Ledger[Data & Telemetry Spine]
+    A[Providers] --> B[Task Runs]
+    B --> C[Quality Evaluations]
+    B --> D[Energy Reports]
+    B --> E[Synthetic Labor Scores]
+    F[Index Values] --> G[Index Constituent Weights]
+    A --> G
+  end
+
+  subgraph Contracts[On-chain Control]
+    H[AlphaNodeManager]
+    I[$AGIALPHA Token]
+  end
+
+  Owner[[Owner Multisig]] -->|Pause / Reweight / Update metadata| H
+  H -->|Reward signals| I
+  Ledger -->|Index snapshots| H
 ```
 
 ## Why this node
@@ -199,94 +240,55 @@ erDiagram
 ### Repository usage example
 
 ```js
-import { initializeDatabase } from './src/persistence/database.js';
-import { ProviderRepository, TaskRunRepository } from './src/persistence/repositories.js';
+import { initializeDatabase } from '../src/persistence/database.js';
+import {
+  ProviderRepository,
+  TaskTypeRepository,
+  TaskRunRepository,
+  QualityEvaluationRepository,
+  EnergyReportRepository
+} from '../src/persistence/repositories.js';
+import { seedAll } from '../src/persistence/seeds.js';
 
-const db = initializeDatabase({ withSeed: true });
+const db = initializeDatabase({ filename: 'data/alpha.sqlite', withSeed: true });
 const providers = new ProviderRepository(db);
-const taskRuns = new TaskRunRepository(db);
+const taskTypes = new TaskTypeRepository(db);
+const runs = new TaskRunRepository(db);
+const quality = new QualityEvaluationRepository(db);
+const energy = new EnergyReportRepository(db);
 
 const provider = providers.findByName('helios-labs');
-const run = taskRuns.create({ provider_id: provider.id, status: 'running', external_id: 'alpha-run-007' });
-taskRuns.update(run.id, { status: 'completed', completed_at: new Date().toISOString() });
+const taskType = taskTypes.findByName('code-refactor');
+
+const run = runs.create({
+  provider_id: provider.id,
+  task_type_id: taskType.id,
+  external_id: 'alpha-run-001',
+  status: 'running',
+  raw_throughput: 1.2,
+  tokens_processed: 12000
+});
+
+quality.create({ task_run_id: run.id, evaluator: 'cognitive-audit', score: 0.93 });
+energy.create({ task_run_id: run.id, kwh: 4.2, energy_mix: 'hydro', region: 'na-east' });
+
+console.log(runs.getById(run.id));
 ```
 
-## Smart contract control surface
+### CI & release discipline
 
-- **Contract**: `contracts/AlphaNodeManager.sol` defaults to staking token `$AGIALPHA` at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` with owner-overridable directives.
-- **Owner powers**: pause/unpause, validator rotation (`setValidator`), identity lifecycle (`registerIdentity`, `updateIdentityController`, `setIdentityStatus`, `revokeIdentity`), α‑WU lifecycle events (`recordAlphaWUMint`, `recordAlphaWUValidation`, `recordAlphaWUAcceptance`), slashing, and treasury withdrawals (`withdrawStake`).
-- **Validator safety**: active identity checks gate staking and validation actions; stake balances are tracked per controller.
+```mermaid
+flowchart LR
+  Lint[Markdown + Links] --> Tests[Vitest JS/TS]
+  Tests --> Coverage[Coverage + Upload]
+  Coverage --> Solidity[Solhint + solc smoke]
+  Solidity --> Subgraph[Subgraph build]
+  Subgraph --> Security[High-severity npm audit]
+  Security --> Policy[Health + Branch gates]
+  Policy --> Docker[Docker build + runtime help]
+  Docker --> Merge[PR Merge Allowed]
+```
 
-### Owner command palette (no redeploys required)
-
-- `pause()` / `unpause()` — emergency stops or resumes the entire node surface.
-- `setValidator(address validator, bool active)` — rotate validator sets instantly.
-- `registerIdentity(bytes32 ensNode, address controller)` and `updateIdentityController` — rewrite controller bindings while keeping ENS continuity.
-- `setIdentityStatus` / `revokeIdentity` — disable or purge actors that fall out of compliance.
-- `withdrawStake(address recipient, uint256 amount)` — route funds to new treasuries or cold storage on demand.
-
-## Quickstart
-
-1. **Install dependencies** (Node.js 20.18+):
-
-   ```bash
-   npm ci
-   ```
-
-2. **Run full verification locally**:
-
-   ```bash
-   npm run ci:verify
-   ```
-
-3. **Launch runtime** with your operator settings:
-
-   ```bash
-   export OPERATOR_ADDRESS=0x0000000000000000000000000000000000000001
-   export RPC_URL=https://your-rpc
-   npm start -- --help
-   ```
-
-4. **Bootstrap data** for dashboards:
-
-   ```bash
-   node src/persistence/cli.js migrate data/alpha.sqlite
-   node src/persistence/cli.js seed data/alpha.sqlite
-   ```
-
-5. **Docker/Helm**: use the `Dockerfile` for container builds or `deploy/helm/agi-alpha-node` for cluster rollouts.
-
-## Observability & telemetry
-
-- OpenTelemetry traces are initialized in `src/telemetry` and exported via OTLP HTTP; metrics are exposed through `prom-client` counters/gauges.
-- Health gates live in `src/healthcheck.js` with CLI test coverage in `test/healthGate.test.js` and runtime probes.
-- Logging uses structured `pino` across orchestrator, governance, and identity services for deterministic audit trails.
-
-## Continuous integration & quality gates
-
-- **Workflow**: `.github/workflows/ci.yml` runs markdown lint, link checks, policy/branch gates, JS/TS tests, coverage, Solidity lint + compilation, subgraph build, npm audit, and Docker smoke tests on every push/PR to `main`.
-- **One-command parity**: `npm run ci:verify` mirrors the workflow locally.
-- **Job lineup**: `lint` (markdown + links + gates), `test` (JS/TS), `solidity` (solhint + `scripts/run-solc.mjs`), `typescript` (subgraph render/build), `coverage` (reports + artifact upload), and `docker-smoke` (image + runtime help smoke). All run on Node.js 20.x.
-- **Required checks**: `.github/required-checks.json` locks PR merges to green CI; badges above reflect the live status.
-- **Coverage artifacts**: generated via `npm run coverage` and uploaded in CI for traceability.
-- **Security/audit posture**: `npm run ci:security` (high severity gate) and `npm run ci:policy` + `npm run ci:branch` enforce operational guardrails.
-
-## Subgraph and ENS utilities
-
-- Subgraph manifest rendering lives in `scripts/render-subgraph-manifest.mjs` with TypeScript bindings under `subgraph/`.
-- ENS inspection/verification scripts: `scripts/ens-inspect.ts`, `scripts/attestation-verify.ts`, and associated tests in `test/ens*` keep identity wiring consistent.
-
-## Testing matrix
-
-- Run the full suite: `npm test` (Vitest) and `npm run coverage` for reports.
-- Solidity checks: `npm run ci:solidity` (solhint + `scripts/run-solc.mjs`).
-- Markdown/link lint: `npm run lint`.
-- Policy gates: `npm run ci:policy` and `npm run ci:branch` enforce operational guardrails.
-
-## Deployment posture
-
-- **Configuration**: `.env` (or environment variables) configures RPC endpoints, operator addresses, telemetry exporters, and storage paths.
-- **Resilience**: WAL-enabled SQLite with foreign keys prevents partial writes; migrations are idempotent and tracked in `schema_migrations`.
-- **Upgrades**: Owner controls cover pausing, validator rotation, identity updates, and stake withdrawals without contract redeploys, keeping production uptime while governance evolves.
-
-AGI Alpha Nodes harvest α from autonomous agent swarms, settle rewards in `$AGIALPHA`, and keep operators in sovereign control. Deploy, gate, observe, and iterate—every artifact here is production-ready and enforced by green CI.
+- `npm run ci:verify` replicates the GitHub Actions pipeline locally.
+- Required checks for PRs and `main` are tracked in `.github/required-checks.json` and rendered in the badges above.
+- Coverage artifacts and subgraph codegen are uploaded on every CI run to keep downstream analytics aligned.
