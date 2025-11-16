@@ -3,6 +3,7 @@ import { initializeDatabase } from '../src/persistence/database.js';
 import {
   EnergyReportRepository,
   IndexConstituentWeightRepository,
+  IndexWeightSetRepository,
   IndexValueRepository,
   ProviderRepository,
   QualityEvaluationRepository,
@@ -26,7 +27,8 @@ function createHarness() {
     energy: new EnergyReportRepository(db),
     syntheticLabor: new SyntheticLaborScoreRepository(db),
     indexValues: new IndexValueRepository(db),
-    indexWeights: new IndexConstituentWeightRepository(db)
+    indexWeights: new IndexConstituentWeightRepository(db),
+    indexWeightSets: new IndexWeightSetRepository(db)
   };
 }
 
@@ -161,12 +163,24 @@ describe('persistence layer', () => {
   });
 
   it('stores index values with constituent weights', () => {
+    const weightSet = harness.indexWeightSets.create({
+      effective_date: '2024-02-01',
+      lookback_window_days: 90,
+      cap: 0.15,
+      base_divisor: 1,
+      divisor_version: 'v1',
+      metadata: { source: 'test' }
+    });
+
     const indexValue = harness.indexValues.create({
       effective_date: '2024-02-01',
       headline_value: 101.25,
       energy_adjustment: 0.98,
       quality_adjustment: 1.02,
-      consensus_factor: 0.99
+      consensus_factor: 0.99,
+      weight_set_id: weightSet.id,
+      base_divisor: 1,
+      divisor_version: 'v1'
     });
 
     expect(indexValue.headline_value).toBeCloseTo(101.25);
@@ -176,9 +190,11 @@ describe('persistence layer', () => {
 
     const provider = harness.providers.findByName(DEFAULT_PROVIDERS[0].name);
     const weight = harness.indexWeights.create({
+      weight_set_id: weightSet.id,
       index_value_id: indexValue.id,
       provider_id: provider.id,
-      weight: 0.42
+      weight: 0.42,
+      metadata: { capped: false }
     });
 
     expect(weight.weight).toBeCloseTo(0.42);

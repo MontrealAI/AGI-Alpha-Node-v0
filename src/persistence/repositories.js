@@ -501,6 +501,40 @@ export class SyntheticLaborScoreRepository {
     return row ? this.#map(row) : undefined;
   }
 
+  listInDateRange(startDate, endDate) {
+    return this.db
+      .prepare(
+        `SELECT * FROM synthetic_labor_scores
+         WHERE measurement_date BETWEEN @start AND @end
+         ORDER BY measurement_date ASC, provider_id ASC`
+      )
+      .all({ start: startDate, end: endDate })
+      .map((row) => this.#map(row));
+  }
+
+  sumSluByProvider(startDate, endDate) {
+    return this.db
+      .prepare(
+        `SELECT provider_id, SUM(slu) as total_slu, COUNT(DISTINCT measurement_date) as days_observed
+         FROM synthetic_labor_scores
+         WHERE measurement_date BETWEEN @start AND @end
+         GROUP BY provider_id`
+      )
+      .all({ start: startDate, end: endDate })
+      .map((row) => ({
+        provider_id: row.provider_id,
+        total_slu: Number(row.total_slu ?? 0),
+        days_observed: Number(row.days_observed ?? 0)
+      }));
+  }
+
+  listForDate(measurementDate) {
+    return this.db
+      .prepare('SELECT * FROM synthetic_labor_scores WHERE measurement_date = ? ORDER BY provider_id ASC')
+      .all(measurementDate)
+      .map((row) => this.#map(row));
+  }
+
   #map(row) {
     return {
       ...row,
@@ -516,10 +550,33 @@ export class IndexValueRepository {
 
   create(entry) {
     const stmt = this.db.prepare(`
-      INSERT INTO index_values (effective_date, headline_value, energy_adjustment, quality_adjustment, consensus_factor)
-      VALUES (@effective_date, @headline_value, @energy_adjustment, @quality_adjustment, @consensus_factor)
+      INSERT INTO index_values (
+        effective_date,
+        headline_value,
+        energy_adjustment,
+        quality_adjustment,
+        consensus_factor,
+        weight_set_id,
+        base_divisor,
+        divisor_version
+      )
+      VALUES (
+        @effective_date,
+        @headline_value,
+        @energy_adjustment,
+        @quality_adjustment,
+        @consensus_factor,
+        @weight_set_id,
+        @base_divisor,
+        @divisor_version
+      )
     `);
-    const result = stmt.run(entry);
+    const result = stmt.run({
+      ...entry,
+      weight_set_id: entry.weight_set_id ?? null,
+      base_divisor: entry.base_divisor ?? 1,
+      divisor_version: entry.divisor_version ?? 'v1'
+    });
     return this.getById(result.lastInsertRowid);
   }
 
@@ -531,6 +588,9 @@ export class IndexValueRepository {
           energy_adjustment = COALESCE(@energy_adjustment, energy_adjustment),
           quality_adjustment = COALESCE(@quality_adjustment, quality_adjustment),
           consensus_factor = COALESCE(@consensus_factor, consensus_factor),
+          weight_set_id = COALESCE(@weight_set_id, weight_set_id),
+          base_divisor = COALESCE(@base_divisor, base_divisor),
+          divisor_version = COALESCE(@divisor_version, divisor_version),
           updated_at = datetime('now')
       WHERE id = @id
     `);
@@ -541,7 +601,10 @@ export class IndexValueRepository {
       headline_value: updates.headline_value ?? null,
       energy_adjustment: updates.energy_adjustment ?? null,
       quality_adjustment: updates.quality_adjustment ?? null,
-      consensus_factor: updates.consensus_factor ?? null
+      consensus_factor: updates.consensus_factor ?? null,
+      weight_set_id: updates.weight_set_id ?? null,
+      base_divisor: updates.base_divisor ?? null,
+      divisor_version: updates.divisor_version ?? null
     });
 
     return this.getById(id);
@@ -569,35 +632,45 @@ export class IndexConstituentWeightRepository {
 
   create(entry) {
     const stmt = this.db.prepare(`
-      INSERT INTO index_constituent_weights (index_value_id, provider_id, weight)
-      VALUES (@index_value_id, @provider_id, @weight)
+      INSERT INTO index_constituent_weights (weight_set_id, index_value_id, provider_id, weight, metadata)
+      VALUES (@weight_set_id, @index_value_id, @provider_id, @weight, @metadata)
     `);
-    const result = stmt.run(entry);
+    const result = stmt.run({
+      ...entry,
+      weight_set_id: entry.weight_set_id ?? null,
+      index_value_id: entry.index_value_id ?? null,
+      metadata: entry.metadata ? serializeJson(entry.metadata) : null
+    });
     return this.getById(result.lastInsertRowid);
   }
 
   update(id, updates) {
     const stmt = this.db.prepare(`
       UPDATE index_constituent_weights
-      SET index_value_id = COALESCE(@index_value_id, index_value_id),
+      SET weight_set_id = COALESCE(@weight_set_id, weight_set_id),
+          index_value_id = COALESCE(@index_value_id, index_value_id),
           provider_id = COALESCE(@provider_id, provider_id),
           weight = COALESCE(@weight, weight),
+          metadata = COALESCE(@metadata, metadata),
           updated_at = datetime('now')
       WHERE id = @id
     `);
 
     stmt.run({
       id,
+      weight_set_id: updates.weight_set_id ?? null,
       index_value_id: updates.index_value_id ?? null,
       provider_id: updates.provider_id ?? null,
-      weight: updates.weight ?? null
+      weight: updates.weight ?? null,
+      metadata: updates.metadata ? serializeJson(updates.metadata) : null
     });
 
     return this.getById(id);
   }
 
   getById(id) {
-    return this.db.prepare('SELECT * FROM index_constituent_weights WHERE id = ?').get(id);
+    const row = this.db.prepare('SELECT * FROM index_constituent_weights WHERE id = ?').get(id);
+    return row ? this.#map(row) : undefined;
   }
 
   listForIndexValue(indexValueId) {
@@ -605,6 +678,131 @@ export class IndexConstituentWeightRepository {
       .prepare(
         'SELECT * FROM index_constituent_weights WHERE index_value_id = ? ORDER BY weight DESC, provider_id ASC'
       )
-      .all(indexValueId);
+      .all(indexValueId)
+      .map((row) => this.#map(row));
+  }
+
+  listForWeightSet(weightSetId) {
+    return this.db
+      .prepare(
+        'SELECT * FROM index_constituent_weights WHERE weight_set_id = ? ORDER BY weight DESC, provider_id ASC'
+      )
+      .all(weightSetId)
+      .map((row) => this.#map(row));
+  }
+
+  #map(row) {
+    return {
+      ...row,
+      metadata: parseJson(row.metadata, {})
+    };
+  }
+}
+
+export class IndexWeightSetRepository {
+  constructor(db) {
+    this.db = db;
+  }
+
+  create(entry) {
+    const stmt = this.db.prepare(`
+      INSERT INTO index_weight_sets (effective_date, lookback_window_days, cap, base_divisor, divisor_version, metadata)
+      VALUES (@effective_date, @lookback_window_days, @cap, @base_divisor, @divisor_version, @metadata)
+    `);
+    const result = stmt.run({
+      ...entry,
+      metadata: entry.metadata ? serializeJson(entry.metadata) : null
+    });
+    return this.getById(result.lastInsertRowid);
+  }
+
+  update(id, updates) {
+    const stmt = this.db.prepare(`
+      UPDATE index_weight_sets
+      SET effective_date = COALESCE(@effective_date, effective_date),
+          lookback_window_days = COALESCE(@lookback_window_days, lookback_window_days),
+          cap = COALESCE(@cap, cap),
+          base_divisor = COALESCE(@base_divisor, base_divisor),
+          divisor_version = COALESCE(@divisor_version, divisor_version),
+          metadata = COALESCE(@metadata, metadata),
+          updated_at = datetime('now')
+      WHERE id = @id
+    `);
+
+    stmt.run({
+      id,
+      effective_date: updates.effective_date ?? null,
+      lookback_window_days: updates.lookback_window_days ?? null,
+      cap: updates.cap ?? null,
+      base_divisor: updates.base_divisor ?? null,
+      divisor_version: updates.divisor_version ?? null,
+      metadata: updates.metadata ? serializeJson(updates.metadata) : null
+    });
+
+    return this.getById(id);
+  }
+
+  getById(id) {
+    const row = this.db.prepare('SELECT * FROM index_weight_sets WHERE id = ?').get(id);
+    return row ? this.#map(row) : undefined;
+  }
+
+  findLatest() {
+    const row = this.db.prepare('SELECT * FROM index_weight_sets ORDER BY effective_date DESC, created_at DESC LIMIT 1').get();
+    return row ? this.#map(row) : undefined;
+  }
+
+  listRecent(limit = 12) {
+    return this.db
+      .prepare('SELECT * FROM index_weight_sets ORDER BY effective_date DESC, created_at DESC LIMIT ?')
+      .all(limit)
+      .map((row) => this.#map(row));
+  }
+
+  #map(row) {
+    return {
+      ...row,
+      metadata: parseJson(row.metadata, {})
+    };
+  }
+}
+
+export class IndexConstituentExclusionRepository {
+  constructor(db) {
+    this.db = db;
+  }
+
+  create(entry) {
+    const stmt = this.db.prepare(`
+      INSERT INTO index_constituent_exclusions (weight_set_id, provider_id, reason, metadata)
+      VALUES (@weight_set_id, @provider_id, @reason, @metadata)
+    `);
+    const result = stmt.run({
+      ...entry,
+      metadata: entry.metadata ? serializeJson(entry.metadata) : null
+    });
+    return this.getById(result.lastInsertRowid);
+  }
+
+  listForWeightSet(weightSetId) {
+    return this.db
+      .prepare(
+        'SELECT * FROM index_constituent_exclusions WHERE weight_set_id = ? ORDER BY provider_id ASC'
+      )
+      .all(weightSetId)
+      .map((row) => ({
+        ...row,
+        metadata: parseJson(row.metadata, {})
+      }));
+  }
+
+  getById(id) {
+    const row = this.db.prepare('SELECT * FROM index_constituent_exclusions WHERE id = ?').get(id);
+    return row
+      ? {
+          ...row,
+          metadata: parseJson(row.metadata, {})
+        }
+      : undefined;
   }
 }
