@@ -26,19 +26,18 @@
   <a href="Dockerfile"><img src="https://img.shields.io/badge/Docker-Ready-2496ed?logo=docker&logoColor=white" alt="Docker" /></a>
   <a href="deploy/helm/agi-alpha-node"><img src="https://img.shields.io/badge/Helm-Chart-0ea5e9?logo=helm&logoColor=white" alt="Helm" /></a>
   <a href="docs/testing.md"><img src="https://img.shields.io/badge/CI%20Playbook-Green%20by%20Design-06b6d4?logo=githubactions&logoColor=white" alt="Testing playbook" /></a>
-  <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/graphs/contributors"><img src="https://img.shields.io/github/contributors/MontrealAI/AGI-Alpha-Node-v0?label=Contributors&color=2563eb&logo=github" alt="Contributors" /></a>
   <img src="https://img.shields.io/badge/Data%20Spine-SQLite%20%2B%20Migrations-0f766e?logo=sqlite&logoColor=white" alt="Persistence" />
 </p>
 
-> **AGI Alpha Node v0** is a cognitive yield engine that turns heterogeneous agentic work into verifiable α‑Work Units (α‑WU), anchors them to the `$AGIALPHA` treasury (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals), and keeps every lever under the owner’s command—pause, re-weight, rotate validators, refresh baselines, and reroute rewards without redeploying code.
+> **AGI Alpha Node v0** is the cognitive yield engine that continuously turns heterogeneous agentic work into verifiable α‑Work Units (α‑WU), anchors them to the `$AGIALPHA` treasury (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals), and keeps every lever under the owner’s command—pause, re-weight, rotate validators, refresh baselines, and reroute rewards without redeploying code.
 
 ## Table of contents
 
 - [Why this node](#why-this-node)
 - [Quickstart](#quickstart)
-- [System architecture](#system-architecture)
-- [Data spine: entities and migrations](#data-spine-entities-and-migrations)
-- [Repositories & usage](#repositories--usage)
+- [System blueprint](#system-blueprint)
+- [Data spine: domain, migrations, seeds](#data-spine-domain-migrations-seeds)
+- [Repository layer](#repository-layer)
 - [Owner controls & on-chain levers](#owner-controls--on-chain-levers)
 - [CI, quality gates, and release rigor](#ci-quality-gates-and-release-rigor)
 - [Operations playbook](#operations-playbook)
@@ -65,7 +64,7 @@ npm start -- --help       # explore runtime flags
 
 **One-liner for operators:** `npm ci && npm run ci:verify` executes the exact GitHub Actions pipeline locally.
 
-## System architecture
+## System blueprint
 
 ```mermaid
 flowchart LR
@@ -100,9 +99,9 @@ flowchart TD
   Ledger -->|Index snapshots| H
 ```
 
-## Data spine: entities and migrations
+## Data spine: domain, migrations, seeds
 
-SQLite migrations live in `src/persistence/migrations` and bootstrap the entire telemetry surface:
+SQLite migrations live in `src/persistence/migrations` and bootstrap the telemetry surface end-to-end. Core entities:
 
 | Entity | Purpose | Key fields |
 | --- | --- | --- |
@@ -126,9 +125,9 @@ node src/persistence/cli.js migrate data/alpha.sqlite
 node src/persistence/cli.js seed data/alpha.sqlite
 ```
 
-Seeds ship with high-signal task types (`code-refactor`, `research-dossier`, `data-cleanse`, `agent-benchmark`) and exemplar providers (`helios-labs`, `aurora-intel`) including sector tags, regions, and energy mixes.
+Seeds include high-signal task types (`code-refactor`, `research-dossier`, `data-cleanse`, `agent-benchmark`) and exemplar providers (`helios-labs`, `aurora-intel`) including sector tags, regions, and energy mixes.
 
-## Repositories & usage
+## Repository layer
 
 CRUD repositories wrap serialization (JSON metadata, sector tags) and timestamps for every entity.
 
@@ -183,7 +182,7 @@ weights.create({ index_value_id: indexValue.id, provider_id: provider.id, weight
 
 ## Owner controls & on-chain levers
 
-`contracts/AlphaNodeManager.sol` binds the `$AGIALPHA` token (18 decimals, `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`) to a control plane designed for full operator command:
+`contracts/AlphaNodeManager.sol` binds the `$AGIALPHA` token (18 decimals, `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`) to a control plane engineered for total owner command:
 
 - **Pause / resume** the entire node surface (`pause`, `unpause`).
 - **Validator lifecycle**: add/remove validators, rotate sets, and gate participation (`setValidator`).
@@ -191,7 +190,7 @@ weights.create({ index_value_id: indexValue.id, provider_id: provider.id, weight
 - **Staking & treasury routing**: deposit/withdraw `$AGIALPHA` stakes with owner-directed withdrawals (`stake`, `withdrawStake`).
 - **Safety rails**: strict address/ENS validation, immutable token binding, and explicit error codes for every critical path.
 
-These controls are callable without redeployments, keeping governance nimble while retaining absolute owner authority.
+These controls are callable without redeployments, keeping governance nimble while retaining absolute owner authority to update parameters, pause flows, or redirect incentives instantly.
 
 ## CI, quality gates, and release rigor
 
