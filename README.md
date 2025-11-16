@@ -28,7 +28,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-10b981" alt="MIT" /></a>
 </p>
 
-> **AGI Alpha Node v0 metabolizes cognition into $AGIALPHA while keeping the operator in absolute command.** Every heartbeat, proof, and payout is attestable, deterministic, and backed by ruthlessly enforced CI.
+> **AGI Alpha Node v0 metabolizes cognition into $AGIALPHA while keeping the operator in absolute command.** Every heartbeat, proof, and payout is attestable, deterministic, and backed by ruthlessly enforced CI. The stack is tuned as the definitive autonomous machine for exploiting alpha at planetary scale—yet still bends entirely to owner directives.
 
 ```mermaid
 graph TD
@@ -65,6 +65,7 @@ graph TD
 - **Live health plane** — `startHealthChecks` signs latency-aware attestations on a timer, emits telemetry spans, and exposes canonical payloads for verifiers and dashboards.
 - **Production-hardening** — Markdown + link linting, Vitest suites, coverage, Solidity lint/compile, subgraph builds, Docker smoke, npm audit, and policy gates are enforced in CI and required on PRs/main.
 - **Operator empathy** — Docker, Helm, scripts, and CLI taps let non-technical operators deploy and validate without touching internals while retaining full override authority.
+- **Runway to dominance** — A self-reinforcing swarm loops telemetry, attestations, and incentives into a flywheel that compounds reach, revenue, and control for the owner without sacrificing safety.
 
 ---
 
@@ -221,8 +222,8 @@ sequenceDiagram
   Exporter-->>Node: Console spans (dev fallback)
 ```
 
-- **Config surface** — `src/telemetry/config.ts` reads `ALPHA_NODE_OTEL_EXPORTER=otlp|console|none`, `ALPHA_NODE_OTLP_ENDPOINT`, and `ALPHA_NODE_OTEL_SAMPLING_RATIO` (0..1). Misconfigurations are logged without crashing.
-- **Tracer bootstrap** — `src/telemetry/otel.ts` sets `service.name=agi-alpha-node`, wires OTLP exporters when available, and falls back to console spans for local development. `getTracer()` exposes the singleton tracer to any module.
+- **Config surface** — `src/telemetry/config.js` reads `ALPHA_NODE_OTEL_EXPORTER=otlp|console|none`, `ALPHA_NODE_OTLP_ENDPOINT`, and `ALPHA_NODE_OTEL_SAMPLING_RATIO` (0..1). Misconfigurations are logged without crashing.
+- **Tracer bootstrap** — `src/telemetry/otel.js` sets `service.name=agi-alpha-node`, wires OTLP exporters when available, and falls back to console spans for local development. `getTracer()` exposes the singleton tracer to any module.
 - **Health as spans** — Every health loop produces a `node.healthcheck` span with rich attributes and error status when degraded/unhealthy. Latency failures or signing issues are recorded as exceptions for downstream collectors.
 - **Metrics** — Existing Prometheus gauges (`src/telemetry/alphaMetrics.js`) continue to expose validator/stake throughput; OTel spans complement them with traceability across nodes.
 - **Env toggles** — Switch exporter modes without code edits by updating environment variables; console mode keeps developers unblocked when OTLP endpoints are absent.
@@ -264,6 +265,20 @@ node src/index.js container --once
 - **One-liner CI parity** — `npm run ci:verify` chains markdown linting, link linting, Vitest, coverage via `c8`, Solidity lint/compile, subgraph codegen/build, npm audit (high), policy gates, and branch protection verification.
 - **Branch protections** — CI checks are mandatory on PRs and `main`; badges above stay green only when the full gate set passes.
 - **Unit coverage** — Attestation signing/verification, ENS hydration, and telemetry span emission are exercised in `test/` with deterministic key material.
+
+```mermaid
+flowchart LR
+  subgraph CI Gate [Required CI Gate]
+    Lint[Markdown + Links] --> Tests[Vitest + Coverage]
+    Tests --> Solidity[Solhint + solc]
+    Solidity --> Subgraph[Codegen + Build]
+    Subgraph --> Security[NPM Audit (high)]
+    Security --> Policy[Health + Branch Gates]
+  end
+  Developer((Contributor)) -->|git push / PR| CI Gate
+  CI Gate -->|all green| Badge[(CI Badge)]
+  CI Gate -->|fail| Blocker[[PR blocked]]
+```
 
 ---
 
