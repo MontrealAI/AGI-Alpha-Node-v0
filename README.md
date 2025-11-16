@@ -28,7 +28,7 @@
   <img src="https://img.shields.io/badge/Security-Dependency%20Scan%20on%20CI-f43f5e?logo=npm&logoColor=white" alt="Dependency security scan" />
 </p>
 
-> **AGI Alpha Node v0** is the sovereign cognitive yield engine that turns heterogeneous agentic work into verifiable α‑WU, anchors it to the `$AGIALPHA` treasury, and keeps every lever under the owner’s command—pause, re-weight, rotate validators, rebase benchmark baselines, and reroute rewards without redeploying code. It behaves like a production-grade capital index for autonomous work with fully owner-driven controls.
+> **AGI Alpha Node v0** is the sovereign cognitive yield engine that turns heterogeneous agentic work into verifiable α‑WU, anchors it to the `$AGIALPHA` treasury, and keeps every lever under the owner’s command—pause, re-weight, rotate validators, rebase benchmark baselines, and reroute rewards without redeploying code. It behaves like a production-grade capital index for autonomous work with fully owner-driven controls and the decisiveness expected from a superintelligent operator.
 
 ```mermaid
 flowchart LR
@@ -48,16 +48,17 @@ flowchart LR
 1. [Mission Snapshot](#mission-snapshot)
 2. [Treasury & Tokenization](#treasury--tokenization)
 3. [Architecture Atlas](#architecture-atlas)
-4. [α‑WU Benchmark Blueprint](#alpha-wu-benchmark-blueprint)
-5. [Owner Command Surface](#owner-command-surface)
-6. [Operations Quickstart](#operations-quickstart)
-7. [Benchmark Configuration](#benchmark-configuration)
-8. [Telemetry & Observability](#telemetry--observability)
-9. [Health & Attestation Mesh](#health--attestation-mesh)
-10. [Testing & CI Gates](#testing--ci-gates)
-11. [Deployment Vectors](#deployment-vectors)
-12. [Repository Atlas](#repository-atlas)
-13. [Reference Snippets](#reference-snippets)
+4. [α‑WB Benchmark at a Glance](#α-wb-benchmark-at-a-glance)
+5. [α‑WU Benchmark Blueprint](#alpha-wu-benchmark-blueprint)
+6. [Owner Command Surface](#owner-command-surface)
+7. [Operations Quickstart](#operations-quickstart)
+8. [Benchmark Configuration](#benchmark-configuration)
+9. [Telemetry & Observability](#telemetry--observability)
+10. [Health & Attestation Mesh](#health--attestation-mesh)
+11. [Testing & CI Gates](#testing--ci-gates)
+12. [Deployment Vectors](#deployment-vectors)
+13. [Repository Atlas](#repository-atlas)
+14. [Reference Snippets](#reference-snippets)
 
 ---
 
@@ -110,6 +111,42 @@ flowchart LR
   RuntimeOverrides -->|env & config| OrchestratorRuntime[Orchestrator Runtime]
   ValidatorFleet -->|consensus + slash signals| αWBControl[αWB Normalizer]
   αWBControl -->|owner can reweight anytime| AlphaWBIndex[[αWB Index Output]]
+```
+
+## α‑WB Benchmark at a Glance
+
+- **Unit of account (α‑WU):** Reference bundle of doc-writing, code edits, research lookups, and data transforms at baseline difficulty/quality; rebalanced quarterly with drift caps.
+- **Raw throughput:** `tasksCompleted × TaskDifficultyCoefficient` using open rubrics (tokens processed, steps, tool calls, novelty); baseline bundle = 1.0.
+- **Adjustments:**
+  - **Energy adjustment (EA):** `EA = cost_baseline / cost_observed`, using kWh × regionalized pricing; clamped to deter energy-washing.
+  - **Quality adjustment (QA):** `QA = quality_observed / quality_baseline`, winsorized via caps/floors with human + adversarial + outcome signals.
+  - **Validator consensus (VC):** Replay audits, deterministic seeds, and slashing deliver `VC = consensus_rate_adjusted` for reproducibility.
+- **Per-constituent yield:** `αWU_i = Raw_Throughput_i × EA_i × QA_i × VC_i`.
+- **Index construction:** Free-float work-share weights (caps/floors, rolling 90 days) → headline `αWB_t = Σ(weight_i × αWU_i) / Base_Divisor` plus sector/geo/energy sub-indices.
+- **Data + governance:** Signed telemetry (kWh, hardware profile, tokens, wall-clock), validator registry, randomized audits, multiplier caps, and clawbacks for misreporting.
+- **Owner primacy:** All baselines, caps, and routing knobs stay owner-controlled via env overrides and contract calls; pausing and validator rotation are instantaneous.
+
+```mermaid
+flowchart TD
+  subgraph Metering
+    TDC[Task Difficulty Coefficients]
+    Tasks[Tasks Completed]
+    Tasks --> Raw[Raw Throughput]
+    TDC --> Raw
+  end
+  subgraph Adjustments
+    Energy[Energy per α‑WU + kWh pricing] --> EA[EA]
+    Quality[Human + adversarial + outcome QA] --> QA
+    Consensus[Replay + slash proofs] --> VC[VC]
+  end
+  Raw --> Yield[αWU_i]
+  EA --> Yield
+  QA --> Yield
+  VC --> Yield
+  Yield --> Weights[Work-Share Weights]
+  Weights --> Index[αWB_t]
+  Index --> Sectors[Sector / Geo / Energy Slices]
+  Index --> Dashboard[[αWB‑Daily Dashboard]]
 ```
 
 <a id="alpha-wu-benchmark-blueprint"></a>
@@ -227,6 +264,17 @@ flowchart LR
 - **Coverage:** `npm run coverage` (c8 + Vitest) exports `coverage/coverage-summary.json`; badge tracks statements (currently 83.7%).
 - **Security:** `npm run ci:security` runs `npm audit --omit=dev --audit-level=high` and surfaces dependency risks; enforced in CI.
 - **Branch / policy gates:** `npm run ci:policy` validates health/ENS allowlists; `npm run ci:branch` enforces naming and ENS bindings.
+- **PR enforcement:** Protect `main` by applying [required checks](.github/required-checks.json); every badge above corresponds to a workflow job.
+
+| CI Gate (required) | Local parity command | Workflow job |
+| --- | --- | --- |
+| Markdown + link lint | `npm run lint:md && npm run lint:links` | Lint Markdown & Links |
+| Test matrix | `npm test` | Unit & Integration Tests |
+| Coverage report | `npm run coverage` | Coverage Report |
+| Solidity lint/compile | `npm run ci:solidity` | Solidity Lint & Compile |
+| Subgraph TS build | `npm run ci:ts` | Subgraph TypeScript Build |
+| Docker smoke | `docker build -t agi-alpha-node:dev . && docker run --rm agi-alpha-node:dev --help` | Docker Build & Smoke Test |
+| Security audit | `npm run ci:security` | Dependency Security Scan |
 
 ## Deployment Vectors
 

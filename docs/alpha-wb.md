@@ -36,6 +36,14 @@
 7. **Headline index** — `computeAlphaWorkBenchmarkIndex`: `αWB_t = Σ(weight_i × αWU_i) / baseDivisor`, with sector/geo/energy sub‑indices enabled by labels.
 8. **Metering bridge** — `deriveThroughputFromSegments`: aggregates metering snapshots into TDC inputs using quality multipliers as difficulty hints.
 
+| Factor | Formula | Signals consumed | Anti-gaming guardrails |
+| --- | --- | --- | --- |
+| Raw throughput | `tasksCompleted × TaskDifficultyCoefficient` | Metered segments, task metadata (tokens, steps, tool calls, novelty) | Schema validation on segment inputs; non-negative task counts only |
+| EA (energy) | `EA = cost_baseline / cost_observed` | kWh per α‑WU, regional electricity pricing | Floor/cap clamps to prevent energy-washing; cross-check against hardware profiles |
+| QA (quality) | `QA = quality_observed / quality_baseline` | Human evals, adversarial suites, outcome metrics (bugs, NPS, hallucinations) | Winsorized caps/floors; hidden tests rotate regularly |
+| VC (consensus) | `VC = max(0, consensusRate - reproducibilityPenalty - slashRate)` | Validator replays, deterministic seeds, slash events | Slash hooks in `AlphaNodeManager`, replay sampling, deterministic tooling |
+| αWU_i | `Raw × EA × QA × VC` | Aggregates the three factors with throughput | Schema-enforced inputs; owner-controlled caps and divisors |
+
 ```mermaid
 flowchart TD
   subgraph Capture
