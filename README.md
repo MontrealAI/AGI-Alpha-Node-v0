@@ -117,7 +117,7 @@ SQLite migrations live in `src/persistence/migrations` and bootstrap the entire 
 
 Indexes cover provider/day hotspots: `providers(region, created_at)`, `task_runs(provider_id, created_at, day)`, `index_values(effective_date)`, and composite uniqueness for `index_constituent_weights`.
 
-**Migrate & seed**
+### Migrate & seed
 
 ```bash
 npm run db:migrate            # uses AGI_ALPHA_DB_PATH or in-memory
