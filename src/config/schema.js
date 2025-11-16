@@ -13,6 +13,7 @@ import {
   BENCHMARK_WEIGHTS,
   cloneDefaultWorkUnitConfig
 } from '../constants/workUnits.js';
+import { DEFAULT_ALPHA_WB_CONFIG } from '../services/alphaBenchmark.js';
 
 const addressRegex = /^0x[a-fA-F0-9]{40}$/;
 
@@ -306,6 +307,66 @@ const workUnitsSchema = z.union([z.undefined(), z.any()]).transform((value, ctx)
   }
 });
 
+function coerceAlphaWbConfig(value) {
+  const parsed = parseJsonLike(value, 'ALPHA_WB') ?? {};
+  const config = { ...DEFAULT_ALPHA_WB_CONFIG };
+
+  const assign = (field, { positive = false, integer = false } = {}) => {
+    if (parsed[field] !== undefined) {
+      config[field] = coerceNumeric(parsed[field], {
+        label: `ALPHA_WB.${field}`,
+        positive,
+        integer
+      });
+    }
+  };
+
+  assign('baselineEnergyCostPerKwh', { positive: true });
+  assign('baselineEnergyPerAlphaWU', { positive: true });
+  assign('baselineQuality', { positive: true });
+  assign('baselineConsensus', { positive: true });
+  assign('energyAdjustmentFloor', { positive: true });
+  assign('energyAdjustmentCap', { positive: true });
+  assign('qualityAdjustmentFloor', { positive: true });
+  assign('qualityAdjustmentCap', { positive: true });
+  assign('consensusAdjustmentFloor', { positive: true });
+  assign('consensusAdjustmentCap', { positive: true });
+  assign('rebalanceCap', { positive: true });
+  assign('rebalanceFloor', { positive: true });
+  assign('smoothingWindowDays', { positive: true, integer: true });
+  assign('baseDivisor', { positive: true, integer: true });
+
+  if (config.energyAdjustmentFloor > config.energyAdjustmentCap) {
+    throw new Error('ALPHA_WB.energyAdjustmentFloor must be <= energyAdjustmentCap');
+  }
+  if (config.qualityAdjustmentFloor > config.qualityAdjustmentCap) {
+    throw new Error('ALPHA_WB.qualityAdjustmentFloor must be <= qualityAdjustmentCap');
+  }
+  if (config.consensusAdjustmentFloor > config.consensusAdjustmentCap) {
+    throw new Error('ALPHA_WB.consensusAdjustmentFloor must be <= consensusAdjustmentCap');
+  }
+  if (config.rebalanceFloor > config.rebalanceCap) {
+    throw new Error('ALPHA_WB.rebalanceFloor must be <= rebalanceCap');
+  }
+  if (config.baselineConsensus > 1.5) {
+    throw new Error('ALPHA_WB.baselineConsensus must be realistic (<= 1.5)');
+  }
+
+  return config;
+}
+
+const alphaWbSchema = z.union([z.undefined(), z.any()]).transform((value, ctx) => {
+  try {
+    return coerceAlphaWbConfig(value);
+  } catch (error) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: error instanceof Error ? error.message : String(error)
+    });
+    return z.NEVER;
+  }
+});
+
 export const configSchema = z
   .object({
     RPC_URL: z.string().url().default('https://rpc.ankr.com/eth'),
@@ -506,6 +567,7 @@ export const configSchema = z
         return trimmed.length ? trimmed : undefined;
       }),
     WORK_UNITS: workUnitsSchema,
+    ALPHA_WB: alphaWbSchema,
     VALIDATION_MINIMUM_VOTES: z.coerce.number().int().min(1).default(3),
     VALIDATION_QUORUM_BPS: z.coerce.number().int().min(1).max(10_000).default(6_667),
     VALIDATOR_SOURCE_TYPE: z.string().optional().default('memory'),
