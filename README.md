@@ -48,7 +48,7 @@ flowchart LR
 1. [Mission Snapshot](#mission-snapshot)
 2. [Treasury & Tokenization](#treasury--tokenization)
 3. [Architecture Atlas](#architecture-atlas)
-4. [α‑WB Benchmark at a Glance](#α-wb-benchmark-at-a-glance)
+4. [α‑WB Benchmark at a Glance](#alpha-wb-benchmark-at-a-glance)
 5. [α‑WU Benchmark Blueprint](#alpha-wu-benchmark-blueprint)
 6. [Owner Command Surface](#owner-command-surface)
 7. [Operations Quickstart](#operations-quickstart)
@@ -112,6 +112,8 @@ flowchart LR
   ValidatorFleet -->|consensus + slash signals| αWBControl[αWB Normalizer]
   αWBControl -->|owner can reweight anytime| AlphaWBIndex[[αWB Index Output]]
 ```
+
+<a id="alpha-wb-benchmark-at-a-glance"></a>
 
 ## α‑WB Benchmark at a Glance
 
