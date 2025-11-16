@@ -4,6 +4,19 @@
 
 > One comparable index for autonomous work, continuously adjusted for energy, quality, and validator consensus.
 
+## Sprint pillars (v0 blueprint)
+
+1. **Unit of account (α‑WU):** Reference bundle of doc-writing, code edits, research lookups, and data transforms (baseline difficulty/quality) with quarterly, capped rebalancing.
+2. **Raw throughput:** Tasks completed × Task Difficulty Coefficient (tokens processed, steps, tool calls, novelty) normalized to 1.0 for the reference bundle.
+3. **Energy adjustment (EA):** `EA = cost_baseline / cost_observed`, computed from kWh + regional pricing and clamped by floor/cap.
+4. **Quality adjustment (QA):** Human evals, adversarial suites, outcome metrics (bugs, support tickets, NPS, hallucination/error rate) feed a winsorized ratio.
+5. **Validator consensus (VC):** Independent replays with slashing for irreproducibility or data poisoning; consensus rewards honest reporting.
+6. **Per‑constituent yield:** `αWU_i = Raw × EA × QA × VC` emitted with diagnostic breakdowns.
+7. **Index construction:** Free‑float work-share weights (caps/floors) → headline `αWB_t = Σ(weight_i × αWU_i) / Base_Divisor` plus sector/geo/energy sub‑indices.
+8. **Data pipeline & privacy:** Signed telemetry (kWh, hardware profiles, tokens, wall‑clock), redacted task logs, eval payloads, validator registry, and monthly method notes with randomized audits.
+9. **Anti‑gaming controls:** Hidden gold tasks, replay audits, cost attestation cross‑checks, anomaly detection on latency/cache/tool APIs, multiplier caps, and clawbacks for misreporting.
+10. **MVP rollout:** Publish spec + rubrics → onboard 5–10 diverse providers for 30‑day shadow audits → release αWB‑Daily dashboard + sector slices → lock v1.0 after 90 days of variance data.
+
 ## Primer: why αWB exists
 
 - **Unit of account (α‑WU):** 1 α‑WU equals a reference task bundle (doc-writing, code edits, research lookups, data transforms) at baseline difficulty and quality. Bundles rebalance quarterly to mirror live task mix without overfitting.

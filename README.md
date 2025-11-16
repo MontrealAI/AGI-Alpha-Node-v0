@@ -26,9 +26,10 @@
   <a href="deploy/helm/agi-alpha-node"><img src="https://img.shields.io/badge/Helm-Chart-0ea5e9?logo=helm&logoColor=white" alt="Helm" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-10b981" alt="MIT" /></a>
   <a href="docs/alpha-wb.md"><img src="https://img.shields.io/badge/αWB-Spec%20Online-f97316?logo=semanticweb&logoColor=white" alt="αWB spec" /></a>
+  <a href="docs/testing.md"><img src="https://img.shields.io/badge/CI%20Playbook-Green%20by%20Design-06b6d4?logo=githubactions&logoColor=white" alt="Testing playbook" /></a>
 </p>
 
-> **AGI Alpha Node v0** concentrates a sovereign cognitive core into verifiable on‑chain proof, compounding `$AGIALPHA` while the owner retains uncompromised command. Every pulse is attestable, deterministic, and observable—deployable by a non‑technical operator yet tuned for market‑moving autonomy.
+> **AGI Alpha Node v0** compresses a sovereign cognitive core into verifiable on‑chain proof, continuously compounding `$AGIALPHA` while the owner retains uncompromised command over every parameter. Each beat is attestable, deterministic, observable, and ready to launch by a non‑technical operator—yet tuned to feel like a cathedral‑grade intelligence engine.
 
 ```mermaid
 flowchart TD
@@ -44,27 +45,34 @@ flowchart TD
 ## Table of Contents
 
 1. [Mission Snapshot](#mission-snapshot)
-2. [Architecture Pulse](#architecture-pulse)
-3. [Alpha-WB Benchmark](#alpha-wb-benchmark)
-4. [Owner Command Surface](#owner-command-surface)
-5. [Quickstart](#quickstart)
-6. [Telemetry Surface](#telemetry-surface)
-7. [Health Attestation Mesh](#health-attestation-mesh)
-8. [Testing & CI Gates](#testing--ci-gates)
-9. [Deployment Vectors](#deployment-vectors)
-10. [Repository Atlas](#repository-atlas)
-11. [Reference Snippets](#reference-snippets)
+2. [Treasury + Tokenization](#treasury--tokenization)
+3. [Architecture Pulse](#architecture-pulse)
+4. [Alpha-WB Benchmark](#alpha-wb-benchmark)
+5. [Owner Command Surface](#owner-command-surface)
+6. [Quickstart](#quickstart)
+7. [Telemetry Surface](#telemetry-surface)
+8. [Health Attestation Mesh](#health-attestation-mesh)
+9. [Testing & CI Gates](#testing--ci-gates)
+10. [Deployment Vectors](#deployment-vectors)
+11. [Repository Atlas](#repository-atlas)
+12. [Reference Snippets](#reference-snippets)
 
 ---
 
 ## Mission Snapshot
 
-- **Canonical treasury binding** — Hardwired to the 18‑decimal `$AGIALPHA` contract [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) for staking, rewards, and settlement.
-- **Owner-dominated controls** — Pausing, validator rosters, identity registration/rotation, stake withdrawals, benchmark baselines, and governance signaling remain exclusively with the contract owner (`AlphaNodeManager.sol`).
+- **Canonical treasury binding** — Hardwired to the 18‑decimal `$AGIALPHA` contract [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) for staking, rewards, and settlement; every yield motion routes through that anchor.
+- **Owner-dominated controls** — Pausing, validator rosters, identity registration/rotation, stake withdrawals, α‑WB baselines, and governance signaling remain exclusively with the contract owner (`AlphaNodeManager.sol`), granting full ability to update/override at will.
 - **Deterministic attestations** — Canonical JSON, signed payloads, and independent verification keep liveness and identity integrity provable.
 - **Live health plane** — `startHealthChecks` signs latency-aware attestations, emits OpenTelemetry spans, and exposes canonical payloads for verifiers and dashboards.
 - **Production-hardening** — Markdown + link linting, Vitest suites, coverage, Solidity lint/compile, subgraph builds, Docker smoke, npm audit, and policy/branch gates are enforced in CI and required on PRs/main.
 - **Global productivity gauge** — α‑WU metering feeds the α‑WB benchmark, delivering a live, energy‑aware, quality‑aware “S&P 500 for autonomous work.”
+
+## Treasury + Tokenization
+
+- **Yield asset:** `$AGIALPHA` (18 decimals) at [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) anchors staking, validator collateral, rewards, and settlement hooks.
+- **Owner primacy:** The owner can pause/unpause, rotate validators, slash or reward, redirect staking flows, and refresh benchmark parameters without redeploying code.
+- **Economic flywheel:** More α‑work → more α‑WU → more `$AGIALPHA` demand/staking → deeper validator security → richer α‑work pipelines.
 
 ---
 
@@ -118,18 +126,39 @@ flowchart TD
   Index --> SubIdx[Sector / Geo / Energy Sub‑Indices]
 ```
 
-- **Unit of account (α‑WU):** 1 α‑WU equals a reference bundle of doc-writing, code edits, research lookups, and data transforms at baseline difficulty/quality. Bundles rebalance quarterly to mirror live task mix without overfitting.
-- **Raw throughput:** Tasks completed × Task Difficulty Coefficient derived from open rubrics (tokens, steps, novelty, tool calls).
-- **Energy adjustment (EA):** `EA = cost_baseline / cost_observed`, capped/floored against energy‑washing.
-- **Quality adjustment (QA):** Human evals, adversarial suites, outcome metrics, and hallucination/error tracking feed a winsorized quality ratio.
-- **Validator consensus (VC):** Independent replays + slash rules reward reproducibility; penalties reduce the consensus factor.
-- **Index math:** `αWU_i = Raw × EA × QA × VC`; headline `αWB_t = Σ(weight_i × αWU_i) / Base_Divisor` with diversification caps/floors and sector/geo/energy sub‑indices ready for dashboards.
+### Blueprint pillars (α‑WU → αWB)
 
-MVP rollout: publish the v0 spec and rubrics, onboard 5–10 diverse providers for 30‑day shadow audits, release αWB‑Daily plus sector sub‑indices, then lock v1.0 after 90 days of live variance data.
+1. **Unit of account:** Reference α‑WU bundle (doc-writing, code edits, research, data transforms) rebalanced quarterly using live market task mix with diversification caps.
+2. **Raw throughput:** Tasks completed × Task Difficulty Coefficient (tokens, steps, novelty, tool calls) normalized to 1.0 for the reference bundle.
+3. **Energy adjustment (EA):** `EA = cost_baseline / cost_observed` derived from kWh and regional pricing; clamped to avoid energy-washing.
+4. **Quality adjustment (QA):** Human evals, adversarial sets, outcome metrics (bugs, NPS, hallucination/error rates) feed a winsorized quality ratio.
+5. **Validator consensus (VC):** Independent replays plus slashing for irreproducible results; consensus rewards honesty.
+6. **Per-constituent yield:** `αWU_i = Raw × EA × QA × VC` emitted alongside raw/adjusted diagnostics.
+7. **Index construction:** Free-float work-share weights with caps/floors; headline `αWB_t = Σ(weight_i × αWU_i) / Base_Divisor` plus sector/geo/energy sub‑indices.
+8. **Data pipeline:** Signed telemetry (kWh, hardware profiles, tokens, wall-clock), anonymized task logs, eval payloads, and validator registry roll into reproducible audit trails.
+9. **Anti-gaming:** Hidden gold tasks, replay audits, cost attestation cross-checks, anomaly detection on latency/cache/tool APIs, and multiplier caps with clawbacks.
+10. **Fast rollout:** Ship v0 spec + rubrics → onboard 5–10 providers for 30‑day shadow audits → launch αWB‑Daily dashboard → lock v1.0 after 90 days of variance data.
 
 ---
 
 ## Owner Command Surface
+
+```mermaid
+sequenceDiagram
+  participant Owner
+  participant AlphaNodeManager.sol
+  participant Validators
+  participant Orchestrator
+  participant αWB
+  Owner->>AlphaNodeManager.sol: pause() / unpause()
+  Owner->>AlphaNodeManager.sol: setValidator(addr, active)
+  Owner->>AlphaNodeManager.sol: registerIdentity(ensNode, controller)
+  Owner->>AlphaNodeManager.sol: withdrawStake(recipient, amount)
+  Owner->>AlphaNodeManager.sol: applySlash(id, validator, amount)
+  AlphaNodeManager.sol-->>Validators: emits governance + slash events
+  Orchestrator->>αWB: metering + quality + energy feeds
+  Owner->>Orchestrator: overrides ALPHA_WB baselines via env
+```
 
 - **Pausable runtime:** `pause` / `unpause` keep the entire node authority under the owner’s hand (`AlphaNodeManager.sol`).
 - **Validator governance:** `setValidator`, `applySlash`, and validator-only acceptance ensure consensus integrity with reproducibility penalties.
