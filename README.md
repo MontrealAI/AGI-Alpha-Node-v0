@@ -222,8 +222,8 @@ sequenceDiagram
   Exporter-->>Node: Console spans (dev fallback)
 ```
 
-- **Config surface** — `src/telemetry/config.js` reads `ALPHA_NODE_OTEL_EXPORTER=otlp|console|none`, `ALPHA_NODE_OTLP_ENDPOINT`, and `ALPHA_NODE_OTEL_SAMPLING_RATIO` (0..1). Misconfigurations are logged without crashing.
-- **Tracer bootstrap** — `src/telemetry/otel.js` sets `service.name=agi-alpha-node`, wires OTLP exporters when available, and falls back to console spans for local development. `getTracer()` exposes the singleton tracer to any module.
+- **Config surface** — `src/telemetry/config.js` (typed mirror: `src/telemetry/config.ts`) reads `ALPHA_NODE_OTEL_EXPORTER=otlp|console|none`, `ALPHA_NODE_OTLP_ENDPOINT`, and `ALPHA_NODE_OTEL_SAMPLING_RATIO` (0..1). Misconfigurations are logged without crashing.
+- **Tracer bootstrap** — `src/telemetry/otelCore.js` (exports mirrored by `src/telemetry/otel.ts` / `otel.js`) sets `service.name=agi-alpha-node`, wires OTLP exporters when available, and falls back to console spans for local development. `getTracer()` exposes the singleton tracer to any module.
 - **Health as spans** — Every health loop produces a `node.healthcheck` span with rich attributes and error status when degraded/unhealthy. Latency failures or signing issues are recorded as exceptions for downstream collectors.
 - **Metrics** — Existing Prometheus gauges (`src/telemetry/alphaMetrics.js`) continue to expose validator/stake throughput; OTel spans complement them with traceability across nodes.
 - **Env toggles** — Switch exporter modes without code edits by updating environment variables; console mode keeps developers unblocked when OTLP endpoints are absent.
