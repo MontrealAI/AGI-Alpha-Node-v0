@@ -74,6 +74,7 @@ import { createJobLifecycle } from './services/jobLifecycle.js';
 import { createLifecycleJournal } from './services/lifecycleJournal.js';
 import { buildEpochPayload } from './services/oracleExport.js';
 import { buildEnsRecordTemplate } from './ens/ens_config.js';
+import { createSyntheticLaborEngine } from './services/syntheticLaborEngine.js';
 
 const program = new Command();
 
@@ -3173,6 +3174,33 @@ intelligence
 
       console.log(chalk.gray(`Recommended focus: ${stress.recommendedFocus.join(', ')}`));
       console.log(chalk.gray(`Antifragile gain: ${stress.antifragileGain}`));
+    } catch (error) {
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
+  });
+
+program
+  .command('score:daily')
+  .description('Compute Synthetic Labor Units per provider for a given UTC date')
+  .option('--date <date>', 'ISO date (YYYY-MM-DD) to score', new Date().toISOString().slice(0, 10))
+  .action((options) => {
+    try {
+      const measurementDate = options.date ?? new Date().toISOString().slice(0, 10);
+      const engine = createSyntheticLaborEngine();
+      const scores = engine.computeDailyScores(measurementDate);
+
+      console.log(chalk.bold(`Synthetic Labor Scores for ${measurementDate}`));
+      console.table(
+        scores.map((score) => ({
+          provider: engine.providers.getById(score.provider_id)?.name ?? score.provider_id,
+          rawThroughput: score.raw_throughput,
+          energyAdjustment: score.energy_adjustment,
+          qualityAdjustment: score.quality_adjustment,
+          consensusFactor: score.consensus_factor,
+          slu: score.slu
+        }))
+      );
     } catch (error) {
       console.error(chalk.red(error.message));
       process.exitCode = 1;

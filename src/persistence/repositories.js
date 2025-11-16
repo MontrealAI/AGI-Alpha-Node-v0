@@ -401,10 +401,46 @@ export class SyntheticLaborScoreRepository {
 
   create(entry) {
     const stmt = this.db.prepare(`
-      INSERT INTO synthetic_labor_scores (provider_id, task_run_id, score, rationale)
-      VALUES (@provider_id, @task_run_id, @score, @rationale)
+      INSERT INTO synthetic_labor_scores (
+        provider_id,
+        task_run_id,
+        measurement_date,
+        raw_throughput,
+        energy_adjustment,
+        quality_adjustment,
+        consensus_factor,
+        slu,
+        rationale,
+        schema_version,
+        metadata
+      )
+      VALUES (
+        @provider_id,
+        @task_run_id,
+        @measurement_date,
+        @raw_throughput,
+        @energy_adjustment,
+        @quality_adjustment,
+        @consensus_factor,
+        @slu,
+        @rationale,
+        @schema_version,
+        @metadata
+      )
     `);
-    const result = stmt.run(entry);
+    const result = stmt.run({
+      provider_id: entry.provider_id,
+      task_run_id: entry.task_run_id ?? null,
+      measurement_date: entry.measurement_date ?? new Date().toISOString().slice(0, 10),
+      raw_throughput: entry.raw_throughput ?? 0,
+      energy_adjustment: entry.energy_adjustment ?? 1,
+      quality_adjustment: entry.quality_adjustment ?? 1,
+      consensus_factor: entry.consensus_factor ?? 1,
+      slu: entry.slu ?? 0,
+      rationale: entry.rationale ?? null,
+      schema_version: entry.schema_version ?? null,
+      metadata: entry.metadata ? serializeJson(entry.metadata) : null
+    });
     return this.getById(result.lastInsertRowid);
   }
 
@@ -413,8 +449,15 @@ export class SyntheticLaborScoreRepository {
       UPDATE synthetic_labor_scores
       SET provider_id = COALESCE(@provider_id, provider_id),
           task_run_id = COALESCE(@task_run_id, task_run_id),
-          score = COALESCE(@score, score),
+          measurement_date = COALESCE(@measurement_date, measurement_date),
+          raw_throughput = COALESCE(@raw_throughput, raw_throughput),
+          energy_adjustment = COALESCE(@energy_adjustment, energy_adjustment),
+          quality_adjustment = COALESCE(@quality_adjustment, quality_adjustment),
+          consensus_factor = COALESCE(@consensus_factor, consensus_factor),
+          slu = COALESCE(@slu, slu),
           rationale = COALESCE(@rationale, rationale),
+          schema_version = COALESCE(@schema_version, schema_version),
+          metadata = COALESCE(@metadata, metadata),
           updated_at = datetime('now')
       WHERE id = @id
     `);
@@ -423,21 +466,46 @@ export class SyntheticLaborScoreRepository {
       id,
       provider_id: updates.provider_id ?? null,
       task_run_id: updates.task_run_id ?? null,
-      score: updates.score ?? null,
-      rationale: updates.rationale ?? null
+      measurement_date: updates.measurement_date ?? null,
+      raw_throughput: updates.raw_throughput ?? null,
+      energy_adjustment: updates.energy_adjustment ?? null,
+      quality_adjustment: updates.quality_adjustment ?? null,
+      consensus_factor: updates.consensus_factor ?? null,
+      slu: updates.slu ?? null,
+      rationale: updates.rationale ?? null,
+      schema_version: updates.schema_version ?? null,
+      metadata: updates.metadata ? serializeJson(updates.metadata) : null
     });
 
     return this.getById(id);
   }
 
   getById(id) {
-    return this.db.prepare('SELECT * FROM synthetic_labor_scores WHERE id = ?').get(id);
+    const row = this.db.prepare('SELECT * FROM synthetic_labor_scores WHERE id = ?').get(id);
+    return row ? this.#map(row) : undefined;
   }
 
   listForProvider(providerId) {
     return this.db
-      .prepare('SELECT * FROM synthetic_labor_scores WHERE provider_id = ? ORDER BY created_at DESC')
-      .all(providerId);
+      .prepare('SELECT * FROM synthetic_labor_scores WHERE provider_id = ? ORDER BY measurement_date DESC, created_at DESC')
+      .all(providerId)
+      .map((row) => this.#map(row));
+  }
+
+  findByProviderAndDate(providerId, measurementDate) {
+    const row = this.db
+      .prepare(
+        'SELECT * FROM synthetic_labor_scores WHERE provider_id = ? AND measurement_date = ? ORDER BY created_at DESC LIMIT 1'
+      )
+      .get(providerId, measurementDate);
+    return row ? this.#map(row) : undefined;
+  }
+
+  #map(row) {
+    return {
+      ...row,
+      metadata: parseJson(row.metadata, {})
+    };
   }
 }
 
