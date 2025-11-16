@@ -31,6 +31,8 @@
     "ci:policy": "node scripts/verify-health-gate.mjs",
     "ci:branch": "node scripts/verify-branch-gate.mjs",
     "ci:verify": "npm run ci:lint && npm run ci:test && npm run ci:coverage && npm run ci:solidity && npm run ci:ts && npm run ci:security && npm run ci:policy && npm run ci:branch",
+    "db:migrate": "node src/persistence/cli.js migrate",
+    "db:seed": "node src/persistence/cli.js seed",
     "attestation:verify": "tsx scripts/attestation-verify.ts",
     "simulate:subgraph": "node scripts/subgraph-simulation.js",
     "prepare": "node -e \"const { existsSync } = require('node:fs'); const { join } = require('node:path'); const script = join(process.cwd(), 'scripts/prepare-husky.cjs'); if (!existsSync(script)) { console.log('husky prepare script missing; skipping'); process.exit(0); } require(script);\""
@@ -50,6 +52,7 @@
     "commander": "^11.1.0",
     "dotenv": "^16.4.5",
     "ethers": "^6.11.1",
+    "better-sqlite3": "^9.4.5",
     "pino": "^8.15.1",
     "prom-client": "^14.2.0",
     "tsx": "^4.20.6",
