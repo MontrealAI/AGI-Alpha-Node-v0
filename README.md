@@ -1,4 +1,4 @@
-# AGI Alpha Node v0 · Command the Cognitive Armada ⚡
+# AGI Alpha Node v0 · Cognitive Yield Engine ⚡
 
 <!-- markdownlint-disable MD013 MD033 -->
 <p align="center">
@@ -9,17 +9,15 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml">
-    <img src="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI" />
+  <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml?query=branch%3Amain">
+    <img src="https://img.shields.io/github/actions/workflow/status/MontrealAI/AGI-Alpha-Node-v0/ci.yml?branch=main&label=CI&logo=githubactions&logoColor=white" alt="CI status" />
   </a>
-  <img src="https://img.shields.io/badge/CI-Green%20Pipeline-16a34a?logo=githubactions&logoColor=white" alt="CI Green" />
   <a href=".github/required-checks.json">
-    <img src="https://img.shields.io/badge/PR%20Gate-Required%20Checks-8b5cf6?logo=github&logoColor=white" alt="Required PR checks" />
+    <img src="https://img.shields.io/badge/PR%20Gates-Required%20on%20Main-8b5cf6?logo=github" alt="Required PR checks" />
   </a>
-  <img src="https://img.shields.io/badge/Tests-Vitest%20ready-84cc16?logo=vitest&logoColor=white" alt="Vitest" />
-  <img src="https://img.shields.io/badge/Telemetry-OpenTelemetry%20wired-0ea5e9?logo=opentelemetry&logoColor=white" alt="OpenTelemetry" />
-  <img src="https://img.shields.io/badge/Branch%20Protection-Enforced-ef4444?logo=git&logoColor=white" alt="Branch protection" />
   <img src="https://img.shields.io/badge/Runtime-Node.js%2020.18%2B-43853d?logo=node.js&logoColor=white" alt="Runtime" />
+  <img src="https://img.shields.io/badge/Tests-Vitest%20Suite-84cc16?logo=vitest&logoColor=white" alt="Vitest" />
+  <img src="https://img.shields.io/badge/Observability-OpenTelemetry%20%2B%20Prometheus-0ea5e9?logo=opentelemetry&logoColor=white" alt="Telemetry" />
   <img src="https://img.shields.io/badge/Solidity-0.8.26-363636?logo=solidity&logoColor=white" alt="Solidity" />
   <a href="https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa"><img src="https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-ff3366?logo=ethereum&logoColor=white" alt="$AGIALPHA" /></a>
   <img src="https://img.shields.io/badge/Owner%20Controls-Total%20Command-9333ea?logo=gnometerminal&logoColor=white" alt="Owner controls" />
@@ -28,7 +26,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-10b981" alt="MIT" /></a>
 </p>
 
-> **AGI Alpha Node v0 metabolizes cognition into $AGIALPHA while keeping the operator in absolute command.** Every heartbeat, proof, and payout is attestable, deterministic, and backed by ruthlessly enforced CI. The stack is tuned as the definitive autonomous machine for exploiting alpha at planetary scale—yet still bends entirely to owner directives.
+> **AGI Alpha Node v0** channels autonomous cognition into on-chain proof, relentlessly compounding $AGIALPHA while the operator retains absolute control. Every heartbeat is attestable, deterministic, and observable—designed to be deployed by a non-technical owner yet formidable enough to reshape markets.
 
 ```mermaid
 graph TD
@@ -45,9 +43,9 @@ graph TD
 1. [Mission Snapshot](#mission-snapshot)
 2. [Architecture Pulse](#architecture-pulse)
 3. [Quickstart](#quickstart)
-4. [Owner Command Surface](#owner-command-surface)
-5. [Health Attestation Mesh](#health-attestation-mesh)
-6. [OpenTelemetry & Observability](#opentelemetry--observability)
+4. [Telemetry Surface](#telemetry-surface)
+5. [Owner Command Surface](#owner-command-surface)
+6. [Health Attestation Mesh](#health-attestation-mesh)
 7. [$AGIALPHA Treasury](#agialpha-treasury)
 8. [Identity & ENS Fabric](#identity--ens-fabric)
 9. [Testing & CI Gates](#testing--ci-gates)
@@ -60,12 +58,12 @@ graph TD
 ## Mission Snapshot
 
 - **Canonical treasury binding** — Hardwired to the 18-decimal `$AGIALPHA` contract [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) for staking, rewards, and settlement.
-- **Owner-dominated controls** — Pausing, validator rosters, identity registration, controller updates, stake withdrawal, and governance signaling stay exclusively with the contract owner (`AlphaNodeManager.sol`).
+- **Owner-dominated controls** — Pausing, validator rosters, identity registration/rotation, stake withdrawals, and governance signaling stay exclusively with the contract owner (`AlphaNodeManager.sol`).
 - **Deterministic attestations** — Canonical JSON, signed payloads, and independent verification keep liveness and identity integrity provable.
-- **Live health plane** — `startHealthChecks` signs latency-aware attestations on a timer, emits telemetry spans, and exposes canonical payloads for verifiers and dashboards.
-- **Production-hardening** — Markdown + link linting, Vitest suites, coverage, Solidity lint/compile, subgraph builds, Docker smoke, npm audit, and policy gates are enforced in CI and required on PRs/main.
+- **Live health plane** — `startHealthChecks` signs latency-aware attestations, emits OpenTelemetry spans, and exposes canonical payloads for verifiers and dashboards.
+- **Production-hardening** — Markdown + link linting, Vitest suites, coverage, Solidity lint/compile, subgraph builds, Docker smoke, npm audit, and policy/branch gates are enforced in CI and required on PRs/main.
 - **Operator empathy** — Docker, Helm, scripts, and CLI taps let non-technical operators deploy and validate without touching internals while retaining full override authority.
-- **Runway to dominance** — A self-reinforcing swarm loops telemetry, attestations, and incentives into a flywheel that compounds reach, revenue, and control for the owner without sacrificing safety.
+- **Runway to dominance** — A self-reinforcing swarm loops telemetry, attestations, and incentives into a flywheel that compounds reach, revenue, and control for the owner.
 
 ---
 
@@ -87,7 +85,7 @@ flowchart LR
   H --> A
 ```
 
-- **Control Plane** — Owner-owned governance calls flow through `AlphaNodeManager.sol`, adjusting stake thresholds, validator rosters, and runtime overrides in real time.
+- **Control Plane** — Owner-owned governance calls flow through `AlphaNodeManager.sol`, adjusting validator sets, identity lifecycles, and runtime overrides in real time.
 - **Runtime Orchestration** — `src/orchestrator/bootstrap.js` hydrates identity, stakes, telemetry, health gates, validator runtimes, and orchestrator loops before dispatching α-work.
 - **Telemetry Spine** — OpenTelemetry spans plus Prometheus metrics capture every health beat; console exporters keep local dev frictionless while OTLP endpoints ship spans upstream.
 
@@ -149,6 +147,28 @@ flowchart LR
 
 ---
 
+## Telemetry Surface
+
+```mermaid
+flowchart TD
+  Env[Env toggles] -->|ALPHA_NODE_OTEL_EXPORTER<br/>ALPHA_NODE_OTLP_ENDPOINT<br/>ALPHA_NODE_OTEL_SAMPLING_RATIO| Init(initTelemetry)
+  Init --> Tracer[Tracer: service.name=agi-alpha-node]
+  Tracer -->|node.healthcheck spans| OTLP[OTLP Exporter]
+  Tracer -->|dev fallback| Console[ConsoleSpanExporter]
+  Tracer --> Metrics[Prometheus Gauges]
+  Metrics --> Dashboards[Dashboards / Alerts]
+```
+
+- `src/telemetry/config.ts|js` reads runtime env:
+  - `ALPHA_NODE_OTEL_EXPORTER=otlp|console|none`
+  - `ALPHA_NODE_OTLP_ENDPOINT=https://otel-collector.example.com/v1/traces`
+  - `ALPHA_NODE_OTEL_SAMPLING_RATIO=0.25` (clips to `[0,1]`).
+- `src/telemetry/otel.ts` initializes a singleton tracer with `service.name=agi-alpha-node`, OTLP when configured, and console exporter fallback for local dev.
+- `src/attestation/health_service.ts` wraps every health emission in a `node.healthcheck` span, attaching ENS, peer ID, role, version, fuses, expiry, DNSAddr presence, status, latency, and signature type—flagging errors for degraded/unhealthy states.
+- Misconfiguration is logged (never crashes) and toggling envs swaps exporters without code changes.
+
+---
+
 ## Owner Command Surface
 
 ```mermaid
@@ -167,8 +187,7 @@ flowchart TD
 ```
 
 - **Complete override authority** — `contracts/AlphaNodeManager.sol` empowers the owner to pause/unpause, update validator sets, register or rotate ENS identities, alter identity status, and withdraw stake.
-- **Parameter agility** — Owner-set tunables (minimum stake, quorum thresholds, reward curves, fuses/expiry, attestation cadence) are read at runtime, allowing rapid pivots without redeploying contracts.
-- **Runtime overrides** — Owner-triggered updates immediately propagate through orchestrator services, attestation emission windows, and treasury logic, enabling responsive control of every critical parameter.
+- **Parameter agility** — Owner-set tunables (validator roster, staking posture, heartbeat cadence, attestation role/version metadata) are read at runtime, enabling rapid pivots without redeploying contracts.
 - **Runtime enforcement** — Services in `src/services/` (governance, staking, rewards, control plane) read owner directives and refuse execution when the health gate or treasury posture is off-policy.
 
 ---
@@ -197,138 +216,104 @@ flowchart TD
   J --> K[Branch protections & CI badges]
 ```
 
-- **Schema** — [`src/attestation/schema.ts`](src/attestation/schema.ts) defines `HealthAttestation` v1 (`timestamp`, `ensName`, `peerId`, `nodeVersion`, `multiaddrs`, optional `fuses/expiry/latency/meta`, `status: healthy | degraded | unhealthy`) plus canonical serialization helpers for stable signatures.
-- **Emission** — [`src/attestation/health_service.ts`](src/attestation/health_service.ts) builds attestations from `NodeIdentity`, measures latency, signs via the node keypair, emits through an `EventEmitter`, and wraps each cycle in an OpenTelemetry `node.healthcheck` span (attributes: ENS, peer ID, version, role, fuses, expiry, DNSAddr presence, status, latency, signature type).
-- **Verification** — [`src/attestation/verify.ts`](src/attestation/verify.ts) recomputes canonical digests and verifies `secp256k1` or `ed25519` signatures. `verifyAgainstENS` reloads ENS identity to prevent drift from owner-declared records.
-- **CLI verifier** — `npm run attestation:verify -- --file signed.json --ens alpha.node.eth --print` loads the ENS identity (or a local `NodeIdentity` JSON) and exits non-zero on failure.
-- **Execution trace** — A single command (`npm run ci:verify`) reinstalls deterministic deps (including `@noble/ed25519`), reruns attestations, and locks the badges above to green before any PR merges.
-
----
-
-## OpenTelemetry & Observability
-
-```mermaid
-sequenceDiagram
-  participant Node
-  participant Telemetry as Telemetry Config
-  participant Tracer
-  participant Exporter as OTLP/Console
-  participant Collector
-
-  Telemetry->>Tracer: initTelemetry(loadTelemetryConfig())
-  Node->>Tracer: startSpan("node.healthcheck")
-  Tracer-->>Exporter: Batch / SimpleSpanProcessor
-  Exporter-->>Collector: OTLP HTTP (if configured)
-  Exporter-->>Node: Console spans (dev fallback)
-```
-
-- **Config surface** — `src/telemetry/config.js` (typed mirror: `src/telemetry/config.ts`) reads `ALPHA_NODE_OTEL_EXPORTER=otlp|console|none`, `ALPHA_NODE_OTLP_ENDPOINT`, and `ALPHA_NODE_OTEL_SAMPLING_RATIO` (0..1). Misconfigurations are logged without crashing.
-- **Tracer bootstrap** — `src/telemetry/otelCore.js` (exports mirrored by `src/telemetry/otel.ts` / `otel.js`) sets `service.name=agi-alpha-node`, wires OTLP exporters when available, and falls back to console spans for local development. `getTracer()` exposes the singleton tracer to any module.
-- **Health as spans** — Every health loop produces a `node.healthcheck` span with rich attributes and error status when degraded/unhealthy. Latency failures or signing issues are recorded as exceptions for downstream collectors.
-- **Metrics** — Existing Prometheus gauges (`src/telemetry/alphaMetrics.js`) continue to expose validator/stake throughput; OTel spans complement them with traceability across nodes.
-- **Env toggles** — Switch exporter modes without code edits by updating environment variables; console mode keeps developers unblocked when OTLP endpoints are absent.
-
-### Telemetry quickstart
-
-```bash
-# Ship spans to OTLP endpoint
-export ALPHA_NODE_OTEL_EXPORTER=otlp
-export ALPHA_NODE_OTLP_ENDPOINT="https://otel.example.com/v1/traces"
-export ALPHA_NODE_OTEL_SAMPLING_RATIO=0.5
-
-# Or keep console spans locally
-export ALPHA_NODE_OTEL_EXPORTER=console
-
-node src/index.js container --once
-```
+- **Schema** — [`src/attestation/schema.ts`](src/attestation/schema.ts) defines `HealthAttestation` v1 (`timestamp`, `ensName`, `peerId`, `nodeVersion`, `multiaddrs`, optional `fuses/expiry/latency/meta`, `status: healthy | degraded | unhealthy`) plus canonical serialization helpers.
+- **Signing & verification** — [`src/attestation/verify.ts`](src/attestation/verify.ts) signs with secp256k1 or ed25519 and rehydrates ENS-published keys before verifying signatures.
+- **Spans as truth** — `startHealthChecks` attaches ENS, peer ID, role, version, expiry/fuses, DNSAddr presence, status, latency, and signature type to every `node.healthcheck` span, marking errors for degraded/unhealthy states.
 
 ---
 
 ## $AGIALPHA Treasury
 
-- **Token binding** — `$AGIALPHA` at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals) is hardwired for staking, rewards, and settlement; overrides are rejected at config parsing.
-- **Stake management** — Staking, rewards, and penalties are enforced by owner-controlled policy; deficits and recommended actions are summarized in `src/orchestrator/bootstrap.js` during startup.
-- **Governance ledger** — Governance actions can be recorded for auditing (`scripts` + `docs/economics.md` outline emission logic and projections).
+- **Token** — `$AGIALPHA` ERC-20 at [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) (18 decimals) is wired as the canonical staking asset.
+- **Staking orchestration** — Ledger + on-chain flows are mediated through `AlphaNodeManager.sol` and the orchestrator, ensuring only owner-approved validators can record validations or accept work.
+- **Rewards flywheel** — Telemetry and attestations feed adaptive incentives, pulling more validators/agents in as performance compounds.
 
 ---
 
 ## Identity & ENS Fabric
 
-- **ENS alignment** — `src/ens/` utilities hydrate ENS records, fuses, expiry, and resolver data before runtime begins. Health gates can be forced via `HEALTH_GATE_OVERRIDE_ENS` while keeping signatures in sync with ENS keys.
-- **Key discipline** — `src/identity/bootstrap.js` validates local keypairs against ENS-published pubkeys (`secp256k1` or `ed25519`).
-- **Metadata** — Node role/version metadata travels with attestations for downstream dashboards and trace attributes.
+- **ENS hydration** — `src/identity/loader.js` and `src/ens/` utilities fetch ENS pubkeys, fuses, expiry, and multiaddrs for runtime alignment.
+- **Key alignment** — Bootstrap validates local keypairs against ENS records; mismatches halt startup to prevent false attestations.
+- **DNSAddr guardrails** — `src/identity/dnsaddr.ts` ensures multiaddrs carry `dnsaddr` presence, tracked in telemetry spans for observability.
 
 ---
 
 ## Testing & CI Gates
 
-- **One-liner CI parity** — `npm run ci:verify` chains markdown linting, link linting, Vitest, coverage via `c8`, Solidity lint/compile, subgraph codegen/build, npm audit (high), policy gates, and branch protection verification.
-- **Branch protections** — CI checks are mandatory on PRs and `main`; badges above stay green only when the full gate set passes.
-- **Unit coverage** — Attestation signing/verification, ENS hydration, and telemetry span emission are exercised in `test/` with deterministic key material.
+- **Local parity:**
 
-```mermaid
-flowchart LR
-  subgraph CI Gate [Required CI Gate]
-    Lint[Markdown + Links] --> Tests[Vitest + Coverage]
-    Tests --> Solidity[Solhint + solc]
-    Solidity --> Subgraph[Codegen + Build]
-    Subgraph --> Security[NPM Audit (high)]
-    Security --> Policy[Health + Branch Gates]
-  end
-  Developer((Contributor)) -->|git push / PR| CI Gate
-  CI Gate -->|all green| Badge[(CI Badge)]
-  CI Gate -->|fail| Blocker[[PR blocked]]
-```
+  ```bash
+  npm run lint          # markdown + link lint
+  npm run test          # vitest suites
+  npm run coverage      # c8 + vitest coverage
+  npm run lint:sol      # solhint
+  npm run test:sol      # solidity compile & checks
+  npm run ci:ts         # subgraph codegen/build
+  npm run ci:security   # npm audit (high)
+  npm run ci:policy     # health gate policy
+  npm run ci:branch     # branch protection enforcement
+  ```
+
+- **CI enforcement:** `.github/workflows/ci.yml` runs all gates on PRs and `main`; badges are published from the `badges` job when `main` is green. Branch protection mirrors [`.github/required-checks.json`](.github/required-checks.json).
+- **Smoke parity:** Docker build + `--help` smoke test ensures the containerized CLI stays bootable.
 
 ---
 
 ## Deployment Vectors
 
-- **Docker** — `Dockerfile` ships a deterministic image; mount `.env` or pass env vars directly to align with CI.
-- **Helm** — `deploy/helm/agi-alpha-node` provides Kubernetes deployment manifests with health/metrics ports exposed.
-- **Local demo** — `npm run demo:local` spins up fixtures and telemetry loops for rapid iteration without mainnet exposure.
+- **Container:** `docker build --tag agi-alpha-node:latest .` then run with env overrides for ENS, RPC endpoints, telemetry exporters, and payout addresses.
+- **Helm:** `deploy/helm/agi-alpha-node` charts wire config, secrets, and service endpoints for Kubernetes operators.
+- **Bare metal / VM:** `node src/index.js container --once` bootstraps ENS, telemetry, staking posture, and health gate, then dispatches orchestrator and validator runtimes as configured.
 
 ---
 
 ## Repository Atlas
 
-- `contracts/` — `AlphaNodeManager.sol` owner controls, incentives, staking bindings.
-- `src/attestation/` — Health attestation schema, signing, verification, and telemetry-wrapped emission.
-- `src/telemetry/` — Prometheus gauges plus OpenTelemetry tracer/config.
-- `src/orchestrator/` — Bootstrap, monitor loop, stake activation, swarm orchestration, validator runtime hooks.
-- `scripts/` — ENS inspection, attestation verification, solc harness, subgraph rendering, branch/health gates.
-- `docs/` — Identity, economics, telemetry schemas, operator runbooks, and deployment guides.
+- `src/orchestrator/` — Bootstrap, monitor loops, stake activation, validator runtime wiring.
+- `src/attestation/` — Health attestations, signing, schema, verification, and span instrumentation.
+- `src/telemetry/` — OpenTelemetry initialization (`otel.ts`/`otelCore.js`), env parsing (`config.ts`/`config.js`), metrics, and Alpha-Wu telemetry helpers.
+- `src/identity/` — ENS loaders, keypair alignment, DNSAddr validation.
+- `contracts/` — `AlphaNodeManager.sol` with owner-only pause/unpause, validator management, identity lifecycle, staking, mint/validate/acceptance recording, and slashing hooks.
+- `scripts/` — ENS inspection, branch/policy gates, coverage badge publisher, local cluster demo, Solidity runner, and manifest rendering.
+- `subgraph/` — Codegen/build hooks for indexing Alpha Work Units and treasury posture.
+- `docs/` — Economics, manifesto, identity guidance, and auxiliary briefs.
 
 ---
 
 ## Reference Snippets
 
-### Verify an attestation file
+### Initialize telemetry with OTLP exporter
 
 ```bash
-npm run attestation:verify -- --file signed.json --ens alpha.node.eth --print
+ALPHA_NODE_OTEL_EXPORTER=otlp \
+ALPHA_NODE_OTLP_ENDPOINT=https://otel.example.com/v1/traces \
+ALPHA_NODE_OTEL_SAMPLING_RATIO=0.5 \
+node src/index.js container --once
 ```
 
-### Launch a single-cycle container
+### Verify a signed health attestation against ENS
 
 ```bash
-node src/index.js container --once \
-  --label demo-core \
-  --ens-name demo.alpha.node.agi.eth \
-  --rpc-url https://rpc.ankr.com/eth
+npm run attestation:verify -- --ens-name 1.alpha.node.agi.eth --file ./signed-attestation.json
 ```
 
-### Instrumented health check (programmatic)
+### Run the full CI gate locally (mirrors branch protection)
 
-```ts
-import { startHealthChecks } from './src/attestation/health_service.js';
-import { loadTelemetryConfig } from './src/telemetry/config.js';
-import { initTelemetry } from './src/telemetry/otel.js';
-
-initTelemetry(loadTelemetryConfig());
-const handle = startHealthChecks(nodeIdentity, keypair, { role: 'orchestrator', nodeVersion: '1.0.0' });
-
-handle.emitter.on('attestation', (signed) => console.log('Signed attestation', signed));
+```bash
+npm run ci:verify
 ```
 
-Operate boldly: every loop is attestable, every control is owner-held, and the CI gate stays green.
+### Execute the Docker smoke test locally
+
+```bash
+docker build --tag agi-alpha-node:dev .
+docker run --rm \
+  -e NODE_LABEL=smoke-test \
+  -e OPERATOR_ADDRESS=0x0000000000000000000000000000000000000001 \
+  -e RPC_URL=https://rpc.invalid \
+  agi-alpha-node:dev --help
+```
+
+---
+
+**Expect deterministic control, uncompromising observability, and an execution flywheel tuned for perpetual alpha—always under the owner’s command.**
