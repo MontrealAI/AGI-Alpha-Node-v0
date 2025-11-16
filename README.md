@@ -28,7 +28,6 @@
 </p>
 
 > **AGI Alpha Node v0 metabolizes cognition into $AGIALPHA while keeping the operator in absolute command.** Every heartbeat, proof, and payout is attestable, deterministic, and tied to owner-held controls.
-
 > Built to feel like an inexhaustible co-processor: sovereign control for the owner, cryptographic attestations for verifiers, and ruthless CI discipline so every change lands clean.
 
 ```mermaid
@@ -93,6 +92,7 @@ flowchart LR
    Node.js **20.18+** is enforced for deterministic builds.
 
 2. **Configure identity & payouts**
+
    - Copy `.env.example` → `.env` and fill ENS label/name, payout targets, telemetry endpoints, staking thresholds, and RPC endpoints.
    - Provide signing material through `ALPHA_NODE_KEYFILE` (JSON keyfile) or `NODE_PRIVATE_KEY` so live attestations match your ENS-published pubkey.
    - Verify ENS alignment before launching:
@@ -114,8 +114,8 @@ flowchart LR
 
    ```bash
    npm run demo:local       # seeds fixtures and observability loops
-  node src/index.js container --once
-  ```
+   node src/index.js container --once
+   ```
 
    Bootstrap hydrates ENS, governance, staking posture, telemetry, and the health gate before dispatching α-work.
 
