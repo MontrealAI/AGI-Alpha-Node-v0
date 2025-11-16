@@ -17,6 +17,12 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['better-sqlite3']
   },
+  server: {
+    deps: {
+      // Ensure native bindings bypass the Vite transform pipeline
+      external: ['better-sqlite3']
+    }
+  },
   ssr: {
     external: ['better-sqlite3']
   }
