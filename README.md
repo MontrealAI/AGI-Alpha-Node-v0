@@ -224,7 +224,7 @@ sequenceDiagram
 - **Independent verification** — [`src/attestation/verify.ts`](src/attestation/verify.ts) replays the digest using the ENS-published pubkey and confirms signatures for both `secp256k1` and `ed25519` payloads. `verifyAgainstENS()` hydrates identity on demand for CLI or CI guards.
 - **Portable JSON** — Attestations prefer canonical ordering, ISO timestamps, declared roles, fuses/expiry mirrors, and multiaddrs direct from the ENS surface, yielding artefacts ready for dashboards, subgraphs, or external auditors.
 
-**Minimal dev loop**
+### Minimal dev loop
 
 ```bash
 node -e "import { loadNodeIdentity } from './src/identity/loader.js';
