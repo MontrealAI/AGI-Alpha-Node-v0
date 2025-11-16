@@ -7,6 +7,15 @@ import { startAgentApi } from '../src/network/apiServer.js';
 import { loadConfig } from '../src/config/env.js';
 import { resetMetering, startSegment, stopSegment } from '../src/services/metering.js';
 import { MODEL_CLASSES, SLA_PROFILES, VRAM_TIERS } from '../src/constants/workUnits.js';
+import { initializeDatabase } from '../src/persistence/database.js';
+import {
+  ProviderRepository,
+  EnergyReportRepository,
+  QualityEvaluationRepository,
+  TaskRunRepository
+} from '../src/persistence/repositories.js';
+import { seedProviders, seedTaskTypes } from '../src/persistence/seeds.js';
+import { TelemetryIngestionService } from '../src/services/telemetryIngestion.js';
 
 const noopLogger = { info: () => {}, warn: () => {}, error: () => {} };
 const OWNER_TOKEN = 'test-owner-token';
@@ -171,6 +180,87 @@ describe('agent API server', () => {
       epoch.bySlaProfile[SLA_PROFILES.STANDARD],
       5
     );
+  });
+
+  it('ingests provider telemetry with schema validation and idempotency', async () => {
+    const db = initializeDatabase({ filename: ':memory:' });
+    seedTaskTypes(db);
+    seedProviders(db);
+    const telemetryService = new TelemetryIngestionService({ db, logger: noopLogger });
+    const providers = new ProviderRepository(db);
+    const provider = providers.list()[0];
+    const apiKey = 'api-key-test-1';
+    telemetryService.registerApiKey({ providerId: provider.id, apiKey, label: 'rest-ingest' });
+
+    api = startAgentApi({
+      port: 0,
+      logger: noopLogger,
+      ownerToken: OWNER_TOKEN,
+      ledgerRoot: ledgerDir,
+      telemetry: telemetryService
+    });
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    const baseUrl = buildBaseUrl(api.server);
+
+    const taskPayload = {
+      schema_version: 'v0',
+      idempotency_key: 'task-telemetry-1',
+      task_type: 'research-dossier',
+      status: 'completed',
+      external_id: 'ext-telemetry-1',
+      timing: { started_at: '2024-01-01T00:00:00Z', completed_at: '2024-01-01T00:05:00Z' },
+      metrics: { tokens_processed: 2048, quality_score: 0.93 },
+      metadata: { device: 'gpu-a100' }
+    };
+
+    const taskResponse = await fetch(`${baseUrl}/ingest/task-runs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+      body: JSON.stringify(taskPayload)
+    });
+    expect(taskResponse.status).toBe(202);
+    const taskBody = await taskResponse.json();
+    expect(taskBody.task_run.schema_version).toBe('v0');
+    expect(taskBody.task_run.idempotency_key).toBe(taskPayload.idempotency_key);
+
+    const duplicate = await fetch(`${baseUrl}/ingest/task-runs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+      body: JSON.stringify(taskPayload)
+    });
+    expect(duplicate.status).toBe(409);
+
+    const energyPayload = {
+      schema_version: 'v0',
+      task: { idempotency_key: taskPayload.idempotency_key },
+      energy: { kwh: 1.25, region: 'na-east' }
+    };
+    const energyResponse = await fetch(`${baseUrl}/ingest/energy`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+      body: JSON.stringify(energyPayload)
+    });
+    expect(energyResponse.status).toBe(202);
+
+    const qualityPayload = {
+      schema_version: 'v0',
+      task: { idempotency_key: taskPayload.idempotency_key },
+      quality: { score: 0.91, evaluator: 'qa-suite' }
+    };
+    const qualityResponse = await fetch(`${baseUrl}/ingest/quality`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+      body: JSON.stringify(qualityPayload)
+    });
+    expect(qualityResponse.status).toBe(202);
+
+    const energyRepo = new EnergyReportRepository(db);
+    const qualityRepo = new QualityEvaluationRepository(db);
+    const runs = new TaskRunRepository(db);
+    const ingestedRun = runs.findByIdempotencyKey(provider.id, taskPayload.idempotency_key);
+    expect(ingestedRun).toBeDefined();
+    expect(energyRepo.listForTaskRun(ingestedRun.id)).toHaveLength(1);
+    expect(qualityRepo.listForTaskRun(ingestedRun.id)).toHaveLength(1);
   });
 
   it('exposes governance directives and crafts owner payloads', async () => {

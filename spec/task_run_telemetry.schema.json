@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/MontrealAI/AGI-Alpha-Node-v0/spec/task_run_telemetry.schema.json",
+  "title": "TaskRunTelemetry v0",
+  "type": "object",
+  "required": ["schema_version", "idempotency_key", "task_type", "status"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "v0"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 8
+    },
+    "task_type": {
+      "type": "string",
+      "minLength": 1
+    },
+    "task_label": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["queued", "running", "completed", "failed", "errored"]
+    },
+    "external_id": {
+      "type": "string"
+    },
+    "timing": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "started_at": {
+          "type": "string"
+        },
+        "completed_at": {
+          "type": "string"
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "raw_throughput": {
+          "type": "number"
+        },
+        "tokens_processed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tool_calls": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "novelty_score": {
+          "type": "number"
+        },
+        "quality_score": {
+          "type": "number"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object"
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}
