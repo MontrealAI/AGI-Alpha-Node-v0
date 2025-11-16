@@ -26,7 +26,7 @@
   <a href="docs/testing.md"><img src="https://img.shields.io/badge/CI%20Playbook-Green%20by%20Design-06b6d4?logo=githubactions&logoColor=white" alt="Testing playbook" /></a>
 </p>
 
-> **AGI Alpha Node v0** is the sovereign cognitive yield engine that turns heterogeneous agentic work into verifiable α‑WU, anchors it to the `$AGIALPHA` treasury, and keeps every lever under the owner’s command—pause, re-weight, rotate validators, refresh baselines, and reroute rewards without redeploying code.
+> **AGI Alpha Node v0** is the cognitive yield engine that turns heterogeneous agentic work into verifiable α‑Work Units (α‑WU), anchors them to the `$AGIALPHA` treasury (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`), and keeps every lever under the owner’s command—pause, re-weight, rotate validators, refresh baselines, and reroute rewards without redeploying code.
 
 ```mermaid
 flowchart LR
@@ -38,248 +38,133 @@ flowchart LR
   LedgerTelemetry -->|αWU Metering| AlphaWB[Global α‑WU Benchmark]
   LedgerTelemetry -->|Rewards $AGIALPHA| Treasury[(0xa61a3b3a130a9c20768eebf97e21515a6046a1fa)]
   AlphaWB -->|αWB_t & Sector Slices| Dashboards[[Operator Dashboards]]
-  Dashboards -->|Observability Loop| Owner
 ```
 
-## Table of Contents
+## Why this node
 
-1. [Mission Snapshot](#mission-snapshot)
-2. [Treasury & Tokenization](#treasury--tokenization)
-3. [Architecture Atlas](#architecture-atlas)
-4. [Core Domain Model & Persistence](#core-domain-model--persistence)
-5. [Owner Command Surface](#owner-command-surface)
-6. [Operations Quickstart](#operations-quickstart)
-7. [Benchmark Configuration](#benchmark-configuration)
-8. [Telemetry & Observability](#telemetry--observability)
-9. [Health & Attestation Mesh](#health--attestation-mesh)
-10. [Testing & CI Gates](#testing--ci-gates)
-11. [Deployment Vectors](#deployment-vectors)
-12. [Repository Atlas](#repository-atlas)
-13. [Reference Snippets](#reference-snippets)
+- **Owner-first control**: every critical switch is held by the contract owner—pause/unpause, validator rotation, identity lifecycle, staking withdrawals, and slashing routines are callable without redeployment from `contracts/AlphaNodeManager.sol`.
+- **Deterministic data spine**: the node persists providers, task types, runs, telemetry, and α-index values through SQLite with migrations and seeds so that dashboards, subgraphs, and settlement always agree.
+- **Enterprise-grade gates**: CI enforces lint, tests, coverage, Solidity checks, TypeScript/subgraph builds, policy gates, security audit scan, and branch guards on every PR before merge.
+- **Operator clarity**: the README, CLI, and docs are wired for non-specialists—commands mirror production automation (`npm run ci:verify`, `node src/persistence/cli.js migrate`, etc.).
 
----
-
-## Mission Snapshot
-
-- **Canonical treasury binding** — Hardwired to the 18‑decimal `$AGIALPHA` contract [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) for staking, rewards, and settlement.
-- **Owner primacy everywhere** — Pausing, validator rosters, identity registration/rotation, stake withdrawals, α‑WB baselines, and governance signaling remain exclusively with the contract owner (`AlphaNodeManager.sol`).
-- **Deterministic attestations** — Canonical JSON, signed payloads, and independent verification keep liveness and identity integrity provable across validators.
-- **Production hardening** — Markdown + link linting, Vitest suites, coverage, Solidity lint/compile, subgraph builds, Docker smoke, npm audit, and policy/branch gates are enforced in CI and required on PRs/main.
-- **Global productivity gauge** — α‑WU metering feeds the α‑WB benchmark, delivering a live, energy‑aware, quality‑aware “S&P 500 for autonomous work.”
-
-## Treasury & Tokenization
-
-- **Yield asset:** `$AGIALPHA` (18 decimals) at [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) anchors staking, validator collateral, rewards, and settlement hooks.
-- **Owner control:** The owner can pause/unpause, rotate validators, slash or reward, redirect staking flows, and refresh benchmark parameters without redeploying code.
-- **Economic flywheel:** More α‑work → more α‑WU → more `$AGIALPHA` demand/staking → deeper validator security → richer α‑work pipelines.
-- **Dynamic modulation:** Owner-level overrides can re-weight constituents, refresh baselines, and pause emissions to keep the treasury in perfect control while running AGI job markets at production pace.
-
-## Architecture Atlas
-
-```mermaid
-flowchart TD
-  subgraph Control
-    A[Owner Directives] --> B[Governance + Pausing]
-    B --> C[Stake + Rewards + Benchmark Baselines]
-  end
-  subgraph Runtime
-    C --> D[Orchestrator]
-    D --> E[Intelligence Swarm]
-    E --> F[Work Unit Proofs]
-    F --> G[Ledger + Telemetry]
-  end
-  G --> H{{Health Gate}}
-  G --> I[αWB Normalizer]
-  I --> J[αWB Dashboard]
-  H --> A
-```
-
-- **Control Plane** — `AlphaNodeManager.sol` exposes owner-only levers: pause/unpause, validator rotation, identity lifecycle, stake movement, slash triggers, and benchmark baselines.
-- **Runtime Orchestration** — `src/orchestrator/bootstrap.js` hydrates identity, stakes, telemetry, health gates, validator runtimes, and orchestrator loops before dispatching α‑work.
-- **Telemetry Spine** — OpenTelemetry spans plus Prometheus metrics capture every health beat; console exporters keep local dev frictionless while OTLP endpoints ship spans upstream.
-- **Validator Mesh** — Validators are owner-rotated, slashable, and replay workloads deterministically; the consensus factor feeds directly into α‑WB calculations.
-
-```mermaid
-flowchart LR
-  Owner((Owner)) -->|setValidator / applySlash / pause / withdrawStake| AlphaNodeManager{{AlphaNodeManager.sol}}
-  AlphaNodeManager -->|events + roles| ValidatorFleet[Validator Fleet]
-  AlphaNodeManager -->|payout routes + baselines| RuntimeOverrides[Runtime Overrides]
-  RuntimeOverrides -->|env & config| OrchestratorRuntime[Orchestrator Runtime]
-  ValidatorFleet -->|consensus + slash signals| αWBControl[αWB Normalizer]
-  αWBControl -->|owner can reweight anytime| AlphaWBIndex[[αWB Index Output]]
-```
-
-## Core Domain Model & Persistence
-
-AGI Alpha Nodes now ship a structured persistence layer that reflects providers, runs, telemetry, and index weights with first-class migrations and seed data.
-
-```mermaid
-classDiagram
-  class Provider {
-    +id
-    +name
-    +operator_address
-    +region
-    +sector_tags
-    +energy_mix
-    +metadata
-  }
-  class TaskType {
-    +id
-    +name
-    +difficulty_coefficient
-    +description
-  }
-  class TaskRun {
-    +id
-    +provider_id
-    +task_type_id
-    +status
-    +raw_throughput
-    +tokens_processed
-    +tool_calls
-    +novelty_score
-    +quality_score
-    +timestamps
-  }
-  class QualityEval {
-    +task_run_id
-    +evaluator
-    +score
-    +notes
-  }
-  class EnergyReport {
-    +task_run_id
-    +kwh
-    +energy_mix
-    +carbon_intensity
-    +cost_usd
-    +region
-  }
-  class SyntheticLaborScore {
-    +provider_id
-    +task_run_id
-    +score
-    +rationale
-  }
-  class IndexValue {
-    +effective_date
-    +headline_value
-    +energy_adjustment
-    +quality_adjustment
-    +consensus_factor
-  }
-  class IndexConstituentWeight {
-    +index_value_id
-    +provider_id
-    +weight
-  }
-  Provider <|-- TaskRun
-  TaskType <|-- TaskRun
-  TaskRun <|-- QualityEval
-  TaskRun <|-- EnergyReport
-  TaskRun <|-- SyntheticLaborScore
-  IndexValue <|-- IndexConstituentWeight
-  Provider <|-- IndexConstituentWeight
-```
-
-- **Migrations:** Stored in `src/persistence/migrations` with `schema_migrations` tracking; includes indices on `provider_id`, `created_at`, and day buckets for rapid analytics.
-- **Seeds:** Canonical task types (with difficulty coefficients) and exemplar providers with region + sector tags (`npm run db:seed`).
-- **Repositories:** Typed repositories for Providers, TaskTypes, TaskRuns, QualityEvaluations, EnergyReports, SyntheticLaborScores, IndexValues, and IndexConstituentWeights live in `src/persistence/repositories.js`.
-- **Owner observability:** Region, sector tags, energy mix, and metadata are captured to support owner-directed rebalancing and pausing decisions.
-
-### Database commands
-
-```bash
-npm run db:migrate   # Apply migrations to the configured database (AGI_ALPHA_DB_PATH or :memory:)
-npm run db:seed      # Seed task types and providers
-```
-
-## Owner Command Surface
+## System topology
 
 ```mermaid
 sequenceDiagram
   participant Owner
-  participant AlphaNodeManager.sol
-  participant Validators
+  participant Governance
+  participant ControlPlane
   participant Orchestrator
+  participant Providers
+  participant Ledger
+  participant Treasury
 
-  Owner->>AlphaNodeManager.sol: pause() / unpause()
-  Owner->>AlphaNodeManager.sol: setValidator(addr, active)
-  Owner->>AlphaNodeManager.sol: registerIdentity(ensNode, controller)
-  Owner->>AlphaNodeManager.sol: withdrawStake(recipient, amount)
-  AlphaNodeManager.sol->>Validators: validator roster + slash events
-  Validators-->>Owner: attested validations / consensus state
-  Orchestrator-->>Owner: telemetry + αWU metrics
+  Owner->>Governance: Set policy / validator set / pause state
+  Governance->>ControlPlane: Issue work baselines & guardrails
+  ControlPlane->>Orchestrator: Dispatch α‑WU batches
+  Orchestrator->>Providers: Execute task types (benchmarks, research, refactors)
+  Providers-->>Ledger: Telemetry, energy mix, quality evals, synthetic labor scores
+  Ledger-->>Governance: Alpha index values + constituent weights
+  Ledger-->>Treasury: Reward flows in $AGIALPHA
+  Owner->>Treasury: Oversight (withdrawals / redirects)
 ```
 
-- **Total command authority:** The contract owner controls pausing, validator activation, identity rotation, staking withdrawals, payout routing, and benchmark recalibration without redeploying.
-- **Runtime overrides:** Environment-driven knobs (validation quorum, profiles, payout addresses) remain owner-editable for rapid operator action.
+## Repository map
 
-## Operations Quickstart
+- **Runtime**: `src/index.js` boots telemetry, health gates, orchestrator loops, and service wiring.
+- **Contracts**: `contracts/AlphaNodeManager.sol` (owner-led control plane, staking, validator registry) with canonical `$AGIALPHA` token address baked in.
+- **Persistence**: `src/persistence` contains SQLite migrations, seeders, repositories, and CLI entrypoints for repeatable data operations.
+- **Docs**: `docs/` holds identity, economics, manifesto, and ops guidance.
+- **Tests**: `test/` runs Vitest suites (JS + TS) covering governance, attestation, persistence, ENS, staking, and orchestrator behavior.
+- **Subgraph**: `subgraph/` contains Graph Node manifest generation and TypeScript bindings for on-chain indexing.
 
-```bash
-npm install              # Installs dependencies (Node.js 20.18+)
-npm run db:migrate       # Bring the persistence layer online
-npm run db:seed          # Load canonical task types and sample providers
-npm test                 # Execute Vitest suite (includes persistence coverage)
-node src/index.js --help # Discover runtime flags
-```
+## Core data model
 
-- Configure environment via `.env` (see `src/config/schema.js`). Defaults pin `$AGIALPHA` at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`.
-- `scripts/local_cluster.mjs` spins a local orchestrator cluster; `docs/testing.md` details CI parity workflows.
+The storage layer encodes the AGI Alpha Index across providers and work units. All tables are created by `src/persistence/migrations/0001_core.sql` and wrapped by repositories in `src/persistence/repositories.js`.
 
-## Benchmark Configuration
+| Entity | Purpose | Key fields |
+| --- | --- | --- |
+| `providers` | Registered execution nodes with region, sector tags, energy mix, metadata | `name`, `operator_address`, `region`, `sector_tags[]`, `energy_mix`, `metadata` |
+| `task_types` | Canonical α‑WU templates with difficulty coefficients | `name`, `description`, `difficulty_coefficient` |
+| `task_runs` | Individual executions tied to providers & task types | `provider_id`, `task_type_id`, `status`, `raw_throughput`, `tokens_processed`, `tool_calls`, `novelty_score`, `quality_score`, timestamps |
+| `quality_evaluations` | Evaluator-scored runs | `task_run_id`, `evaluator`, `score`, `notes` |
+| `energy_reports` | Energy/region signals per run | `task_run_id`, `kwh`, `energy_mix`, `carbon_intensity_gco2_kwh`, `cost_usd`, `region` |
+| `synthetic_labor_scores` | Synthetic labor uplift per provider/run | `provider_id`, `task_run_id`, `score`, `rationale` |
+| `index_values` | Headline Alpha Index values | `effective_date`, `headline_value`, `energy_adjustment`, `quality_adjustment`, `consensus_factor` |
+| `index_constituent_weights` | Provider weights for each index value | `index_value_id`, `provider_id`, `weight` |
 
-- **Unit of account (α‑WU):** Reference bundle of doc‑writing, code edits, research lookups, and data transforms at baseline difficulty/quality.
-- **Adjustments:** Energy (`EA = cost_baseline / cost_observed`), quality (`QA = quality_observed / quality_baseline`), validator consensus (`VC` via replay + slash proofs).
-- **Index construction:** Free-float work-share weights (caps/floors, rolling 90 days) → headline `αWB_t` plus sector/geo/energy sub-indices; owner can reweight constituents in real time.
+### Migrations & seeds
 
-## Telemetry & Observability
+- **Apply migrations**: `node src/persistence/cli.js migrate [dbPath]` (defaults to in-memory).
+- **Seed catalog**: `node src/persistence/cli.js seed [dbPath]` loads task types (code-refactor, research-dossier, data-cleanse, agent-benchmark) and sample providers (hydro + wind mixes) from `src/persistence/seeds.js`.
+- **Repositories**: CRUD helpers for each entity enforce JSON/tags serialization and timestamp updates.
 
-- OpenTelemetry traces + Prometheus metrics in `src/telemetry`; default console exporters for local use, OTLP endpoints for upstream collectors.
-- Health beacons and attestation payloads are signed and JSON-canonicalized for reproducible audits (`src/healthcheck.js`, `src/validation`).
+## Smart contract control surface
 
-## Health & Attestation Mesh
+- **Contract**: `contracts/AlphaNodeManager.sol` defaults to staking token `$AGIALPHA` at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` with owner-overridable directives.
+- **Owner powers**: pause/unpause, validator rotation (`setValidator`), identity lifecycle (`registerIdentity`, `updateIdentityController`, `setIdentityStatus`, `revokeIdentity`), α‑WU lifecycle events (`recordAlphaWUMint`, `recordAlphaWUValidation`, `recordAlphaWUAcceptance`), slashing, and treasury withdrawals (`withdrawStake`).
+- **Validator safety**: active identity checks gate staking and validation actions; stake balances are tracked per controller.
 
-- `startHealthChecks` emits liveness signals with latency-aware signatures; `verifierServer` exposes canonical payloads for dashboards and third-party auditors.
-- Owner-controlled allowlists keep validation traffic restricted to registered ENS identities.
+## Quickstart
 
-## Testing & CI Gates
+1. **Install dependencies** (Node.js 20.18+):
 
-- **Required checks:** Markdown lint, link validation, Vitest, coverage, Solidity lint/compile, subgraph build, npm audit, policy gate, branch gate.
-- **Local parity:** `npm run ci:verify` executes the full gate stack.
-- **Coverage:** `npm run coverage` produces lcov + JSON summaries for dashboards.
+   ```bash
+   npm ci
+   ```
 
-## Deployment Vectors
+2. **Run full verification locally**:
 
-- **Docker:** `docker build -t agi-alpha-node:local .` then run with `NODE_LABEL`, `OPERATOR_ADDRESS`, and `RPC_URL` exports; CI smoke-tests `--help` output.
-- **Helm:** Charts in `deploy/helm/agi-alpha-node` support Kubernetes rollouts with observability baked in.
-- **Subgraph:** `npm --prefix subgraph run build:ci` keeps indexers aligned with emitted events.
+   ```bash
+   npm run ci:verify
+   ```
 
-## Repository Atlas
+3. **Launch runtime** with your operator settings:
 
-- `contracts/` — Solidity sources including `AlphaNodeManager.sol` (owner authority, pausing, validator sets, slashing, mint/accept hooks).
-- `src/` — Runtime orchestration, telemetry, validation, persistence, ENS, attestation, and services.
-- `scripts/` — CI support (branch/health gates, ENS inspection, solc harnesses, subgraph manifest rendering).
-- `docs/` — αWB specification, testing playbook, economics, identity, and manifesto.
+   ```bash
+   export OPERATOR_ADDRESS=0x0000000000000000000000000000000000000001
+   export RPC_URL=https://your-rpc
+   npm start -- --help
+   ```
 
-## Reference Snippets
+4. **Bootstrap data** for dashboards:
 
-```solidity
-// Owner keeps full command — pause, rotate validators, re-route stakes
-function pause() external onlyOwner { paused = true; emit Paused(msg.sender); }
-function setValidator(address validator, bool active) external onlyOwner { /* ... */ }
-function applySlash(bytes32 id, address validator, uint256 amount) external onlyOwner { /* ... */ }
-```
+   ```bash
+   node src/persistence/cli.js migrate data/alpha.sqlite
+   node src/persistence/cli.js seed data/alpha.sqlite
+   ```
 
-```bash
-# Persistence lifecycle
-npm run db:migrate
-npm run db:seed
-```
+5. **Docker/Helm**: use the `Dockerfile` for container builds or `deploy/helm/agi-alpha-node` for cluster rollouts.
 
-```bash
-# End-to-end CI gate (local parity)
-npm run ci:verify
-```
+## Observability & telemetry
+
+- OpenTelemetry traces are initialized in `src/telemetry` and exported via OTLP HTTP; metrics are exposed through `prom-client` counters/gauges.
+- Health gates live in `src/healthcheck.js` with CLI test coverage in `test/healthGate.test.js` and runtime probes.
+- Logging uses structured `pino` across orchestrator, governance, and identity services for deterministic audit trails.
+
+## Continuous integration & quality gates
+
+- **Workflow**: `.github/workflows/ci.yml` runs markdown lint, link checks, policy/branch gates, JS/TS tests, coverage, Solidity lint + compilation, subgraph build, npm audit, and Docker smoke tests on every push/PR to `main`.
+- **One-command parity**: `npm run ci:verify` mirrors the workflow locally.
+- **Required checks**: `.github/required-checks.json` locks PR merges to green CI; badges above reflect the live status.
+- **Coverage artifacts**: generated via `npm run coverage` and uploaded in CI for traceability.
+
+## Subgraph and ENS utilities
+
+- Subgraph manifest rendering lives in `scripts/render-subgraph-manifest.mjs` with TypeScript bindings under `subgraph/`.
+- ENS inspection/verification scripts: `scripts/ens-inspect.ts`, `scripts/attestation-verify.ts`, and associated tests in `test/ens*` keep identity wiring consistent.
+
+## Testing matrix
+
+- Run the full suite: `npm test` (Vitest) and `npm run coverage` for reports.
+- Solidity checks: `npm run ci:solidity` (solhint + `scripts/run-solc.mjs`).
+- Markdown/link lint: `npm run lint`.
+- Policy gates: `npm run ci:policy` and `npm run ci:branch` enforce operational guardrails.
+
+## Deployment posture
+
+- **Configuration**: `.env` (or environment variables) configures RPC endpoints, operator addresses, telemetry exporters, and storage paths.
+- **Resilience**: WAL-enabled SQLite with foreign keys prevents partial writes; migrations are idempotent and tracked in `schema_migrations`.
+- **Upgrades**: Owner controls cover pausing, validator rotation, identity updates, and stake withdrawals without contract redeploys, keeping production uptime while governance evolves.
+
+AGI Alpha Nodes harvest α from autonomous agent swarms, settle rewards in `$AGIALPHA`, and keep operators in sovereign control. Deploy, gate, observe, and iterate—every artifact here is production-ready and enforced by green CI.
