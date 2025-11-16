@@ -25,9 +25,10 @@
   <a href="deploy/helm/agi-alpha-node"><img src="https://img.shields.io/badge/Helm-Chart-0ea5e9?logo=helm&logoColor=white" alt="Helm" /></a>
   <a href="docs/alpha-wb.md"><img src="https://img.shields.io/badge/αWB-Spec%20Online-f97316?logo=semanticweb&logoColor=white" alt="αWB spec" /></a>
   <a href="docs/testing.md"><img src="https://img.shields.io/badge/CI%20Playbook-Green%20by%20Design-06b6d4?logo=githubactions&logoColor=white" alt="Testing playbook" /></a>
+  <img src="https://img.shields.io/badge/Security-Dependency%20Scan%20on%20CI-f43f5e?logo=npm&logoColor=white" alt="Dependency security scan" />
 </p>
 
-> **AGI Alpha Node v0** is the sovereign cognitive yield engine that turns heterogeneous agentic work into verifiable α‑WU, anchors it to the `$AGIALPHA` treasury, and keeps every lever under the owner’s command—pause, re-weight, rotate validators, rebase benchmark baselines, and reroute rewards without redeploying code. It is engineered as a production-ready intelligence spine that behaves like a capital market index for autonomous work while remaining fully owner-controllable.
+> **AGI Alpha Node v0** is the sovereign cognitive yield engine that turns heterogeneous agentic work into verifiable α‑WU, anchors it to the `$AGIALPHA` treasury, and keeps every lever under the owner’s command—pause, re-weight, rotate validators, rebase benchmark baselines, and reroute rewards without redeploying code. It behaves like a production-grade capital index for autonomous work with fully owner-driven controls.
 
 ```mermaid
 flowchart LR
@@ -47,7 +48,7 @@ flowchart LR
 1. [Mission Snapshot](#mission-snapshot)
 2. [Treasury & Tokenization](#treasury--tokenization)
 3. [Architecture Atlas](#architecture-atlas)
-4. [α‑WU Benchmark (αWB) Blueprint](#alpha-wb-blueprint)
+4. [α‑WU Benchmark Blueprint](#alpha-wu-benchmark-blueprint)
 5. [Owner Command Surface](#owner-command-surface)
 6. [Operations Quickstart](#operations-quickstart)
 7. [Benchmark Configuration](#benchmark-configuration)
@@ -74,6 +75,7 @@ flowchart LR
 - **Yield asset:** `$AGIALPHA` (18 decimals) at [`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`](https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa) anchors staking, validator collateral, rewards, and settlement hooks.
 - **Owner control:** The owner can pause/unpause, rotate validators, slash or reward, redirect staking flows, and refresh benchmark parameters without redeploying code.
 - **Economic flywheel:** More α‑work → more α‑WU → more `$AGIALPHA` demand/staking → deeper validator security → richer α‑work pipelines.
+- **Dynamic modulation:** Owner-level overrides can re-weight constituents, refresh baselines, and pause emissions to keep the treasury in perfect control while running AGI job markets at production pace.
 
 ## Architecture Atlas
 
@@ -95,10 +97,11 @@ flowchart TD
   H --> A
 ```
 
-- **Control Plane** — Owner‑owned governance calls flow through `AlphaNodeManager.sol`, adjusting validator sets, identity lifecycles, runtime overrides, and α‑WB baselines in real time.
+- **Control Plane** — Owner-owned governance calls flow through `AlphaNodeManager.sol`, adjusting validator sets, identity lifecycles, runtime overrides, and α‑WB baselines in real time.
 - **Runtime Orchestration** — `src/orchestrator/bootstrap.js` hydrates identity, stakes, telemetry, health gates, validator runtimes, and orchestrator loops before dispatching α‑work.
 - **Telemetry Spine** — OpenTelemetry spans plus Prometheus metrics capture every health beat; console exporters keep local dev frictionless while OTLP endpoints ship spans upstream.
-  
+- **Validator Mesh** — Validators are owner-rotated, slashable, and replay workloads deterministically; the consensus factor feeds directly into α‑WB calculations.
+
 ```mermaid
 flowchart LR
   Owner((Owner)) -->|setValidator / applySlash / pause / withdrawStake| AlphaNodeManager{{AlphaNodeManager.sol}}
@@ -109,14 +112,14 @@ flowchart LR
   αWBControl -->|owner can reweight anytime| AlphaWBIndex[[αWB Index Output]]
 ```
 
-<a id="alpha-wb-blueprint"></a>
+<a id="alpha-wu-benchmark-blueprint"></a>
 
-## α‑WU Benchmark (αWB) Blueprint
+## α‑WU Benchmark Blueprint
 
 The α‑WB benchmark is the production blueprint for a global “S&P 500 of autonomous work,” priced in **α‑WU (alpha Work Units)** and robust to energy, quality, and validator consensus.
 
 ```mermaid
-flowchart LR
+flowchart TD
   subgraph Capture
     S[Metered Segments] --> TDC[Task Difficulty Coeff.]
   end
@@ -135,21 +138,9 @@ flowchart LR
   Index --> Sectors[Sector / Geo / Energy Sub‑Indices]
 ```
 
-- **Unit of account (α‑WU):** Reference bundle (doc‑writing, code edits, research, data transforms) rebalanced quarterly with capped drift.
-- **Raw throughput:** `tasksCompleted × TaskDifficultyCoefficient` using open rubrics (tokens, steps, tool calls, novelty) normalized to 1.0 for the reference bundle.
-- **Energy adjustment (EA):** `EA = cost_baseline / cost_observed`, derived from kWh + regional pricing with floor/cap defenses.
-- **Quality adjustment (QA):** Human evals, adversarial suites, and outcome metrics (bugs, NPS, hallucination/error rates) feed a winsorized ratio.
-- **Validator consensus (VC):** Independent replays plus slashing for irreproducibility or poisoning; consensus rewards honest reporting.
-- **Per‑constituent yield:** `αWU_i = Raw × EA × QA × VC`, emitted with diagnostics.
-- **Index construction:** Free‑float work‑share weights (caps/floors) → headline `αWB_t = Σ(weight_i × αWU_i) / Base_Divisor` plus sector/geo/energy slices.
-- **Data pipeline & anti‑gaming:** Signed telemetry (kWh, hardware profile, tokens, wall‑clock), validator registry, hidden gold tasks, replay audits, cost attestation cross‑checks, anomaly detection, multiplier caps, and clawbacks.
-- **MVP rollout:** Publish v0 spec + rubrics → onboard 5–10 diverse providers → run 30‑day shadow audits → ship **αWB‑Daily** dashboard → lock v1.0 after 90 days of variance data.
-
-### Sprint blueprint (matches the AGI Alpha Node development tasks)
-
-1. **Unit of account · α‑WU** — Reference bundle + quarterly, drift‑capped rebalancing to reflect real‑world task mix.
-2. **Raw throughput** — Meter tasks × Task Difficulty Coefficient sourced from open rubrics (tokens, steps, tool usage, novelty).
-3. **Energy adjustment (EA)** — Normalize by regionalized kWh pricing; clamp via `energyAdjustmentFloor`/`Cap` to avoid energy‑washing.
+1. **Unit of account · α‑WU** — Reference bundle (doc‑writing, code edits, research, data transforms) rebalanced quarterly with drift caps.
+2. **Raw throughput** — Meter `tasksCompleted × TaskDifficultyCoefficient` using open rubrics (tokens, steps, tool usage, novelty).
+3. **Energy adjustment (EA)** — `EA = cost_baseline / cost_observed`, normalized by regionalized kWh pricing and clamped to avoid energy‑washing.
 4. **Quality adjustment (QA)** — Human evals, adversarial/hidden tests, and outcome metrics flow into a winsorized ratio.
 5. **Validator consensus (VC)** — Replayable samples, deterministic seeds, and slash triggers for non‑reproducible work.
 6. **Per‑constituent yield** — `αWU_i = Raw × EA × QA × VC` with diagnostics for every factor.
@@ -158,26 +149,7 @@ flowchart LR
 9. **Anti‑gaming controls** — Hidden gold tasks, replay audits, cross‑checked energy attestations, latency/cache anomaly detection, multiplier caps, clawbacks.
 10. **Rollout path** — v0 spec → 30‑day shadow audits across 5–10 providers → **αWB‑Daily** dashboards → v1.0 lock after 90 days of variance data.
 
-```mermaid
-flowchart TD
-  subgraph αWB
-    Raw[Raw Throughput · tasks × TDC] --> EA[Energy Adjustment]
-    Raw --> QA[Quality Adjustment]
-    Raw --> VC[Validator Consensus]
-    EA --> Yield[αWU_i]
-    QA --> Yield
-    VC --> Yield
-    Yield --> Weights[Free-float Work Share]
-    Weights --> Headline[αWB_t Headline]
-    Weights --> Sectors[Sector / Geo / Energy Sub-indices]
-  end
-  Telemetry[Signed Telemetry + kWh + QA feeds] --> Raw
-  Validators[Owner-Rotated Validators] --> VC
-  Owner((Owner)) -. pause / update baselines /.-> Telemetry
-  Owner -. adjust caps + divisors /.-> Yield
-```
-
-See [`docs/alpha-wb.md`](docs/alpha-wb.md) and the runtime spine in [`src/services/alphaBenchmark.js`](src/services/alphaBenchmark.js).
+See [`docs/alpha-wb.md`](docs/alpha-wb.md) for the full spec and [`src/services/alphaBenchmark.js`](src/services/alphaBenchmark.js) for the executable calculus.
 
 ## Owner Command Surface
 
@@ -199,176 +171,85 @@ sequenceDiagram
   Owner->>Orchestrator: overrides ALPHA_WB baselines via env
 ```
 
-- **Pausable runtime:** `pause` / `unpause` keep the entire node authority under the owner’s hand (`AlphaNodeManager.sol`).
-- **Validator governance:** `setValidator`, `applySlash`, and validator‑only acceptance ensure consensus integrity with reproducibility penalties.
-- **Identity lifecycle:** `registerIdentity`, `updateIdentityController`, `setIdentityStatus`, and `revokeIdentity` grant the owner final say on ENS‑linked controllers.
-- **Staking flow:** Owner‑controlled `withdrawStake` alongside validator deposits keeps treasury safety intact while preserving emergency drains.
-- **Benchmark baselines:** Adjust α‑WB baselines and caps through `ALPHA_WB` without code edits; runtime picks up env changes at boot.
-- **Full owner override surface:** Pausing, payout rerouting, validator set rotation, and benchmark recalibration can be executed without redeploying—preserving complete business control over every parameter.
+- **Complete owner override:** The contract owner can pause/unpause, update validator sets, rotate identity controllers, refresh α‑WB baselines, and redirect rewards without redeploying contracts.
+- **Stake & payout routing:** Owner-driven `withdrawStake` and configurable reward paths keep treasury control centralized while validators remain slashable.
+- **Runtime levers:** Environment-driven overrides (`ALPHA_WB`, telemetry endpoints, validator manifests) allow rapid adjustment without code changes.
 
 ## Operations Quickstart
 
-```mermaid
-flowchart LR
-  A[Clone repository] --> B[npm ci]
-  B --> C[Copy .env.example → .env]
-  C --> D[Set ALPHA_WB JSON]
-  D --> E[npm run ci:verify]
-  E --> F[npm run demo:local]
-  F --> G[node src/index.js container --once]
+```bash
+npm ci
+npm start -- --help
+# or spin a local demo swarm
+npm run demo:local
 ```
 
-1. **Clone & install**
-
-   ```bash
-   git clone https://github.com/MontrealAI/AGI-Alpha-Node-v0.git
-   cd AGI-Alpha-Node-v0
-   npm ci
-   ```
-
-   Node.js **20.18+** is enforced for deterministic builds.
-
-2. **Configure identity, telemetry, payouts, and α‑WB**
-
-   - Copy `.env.example` → `.env` and fill ENS label/name, payout targets, telemetry exporters, OTLP endpoint (if any), staking thresholds, RPC endpoints, and `ALPHA_WB` JSON for benchmark baselines.
-   - Provide signing material through `ALPHA_NODE_KEYFILE` (JSON keyfile) or `NODE_PRIVATE_KEY` so live attestations match your ENS‑published pubkey.
-   - Verify ENS alignment before launching:
-
-     ```bash
-     npm run ens:inspect -- --name <your-node>.eth
-     node -e "import { loadNodeIdentity } from './src/identity/loader.js'; (async()=>console.log(await loadNodeIdentity('<your-node>.eth')))();"
-     ```
-
-3. **Mirror CI locally**
-
-   ```bash
-   npm run ci:verify
-   ```
-
-   This executes Markdown + link linting, Vitest suites, coverage, Solidity lint/compile, subgraph builds, npm audit, health/branch gates, and Docker smoke parity.
-
-4. **Run a local demo**
-
-   ```bash
-   npm run demo:local
-   node src/index.js container --once
-   ```
+- **Environment** — Requires Node.js 20.18+ and npm 10+. Core runtime entrypoint: `src/index.js` (CLI `agi-alpha-node`).
+- **Docker** — `docker build -t agi-alpha-node:dev .` then `docker run --rm agi-alpha-node:dev --help` for smoke testing.
+- **Subgraph tooling** — Render manifests with `node scripts/render-subgraph-manifest.mjs`; simulate indexing via `npm run simulate:subgraph`.
+- **Contracts** — Solidity 0.8.26; use `npm run lint:sol` and `npm run test:sol` for lint+compile checks.
 
 ## Benchmark Configuration
 
-`ALPHA_WB` carries owner‑tunable baselines without code edits (validated by `src/config/schema.js`):
-
-```bash
-export ALPHA_WB='{
-  "baselineEnergyCostPerKwh": 0.12,
-  "baselineEnergyPerAlphaWU": 1.0,
-  "baselineQuality": 1.0,
-  "baselineConsensus": 0.99,
-  "energyAdjustmentFloor": 0.65,
-  "energyAdjustmentCap": 1.25,
-  "qualityAdjustmentFloor": 0.6,
-  "qualityAdjustmentCap": 1.5,
-  "consensusAdjustmentFloor": 0.8,
-  "consensusAdjustmentCap": 1.05,
-  "rebalanceCap": 0.15,
-  "rebalanceFloor": 0.01,
-  "smoothingWindowDays": 90,
-  "baseDivisor": 1000
-}'
-```
-
-Floors must remain below caps; divisors and smoothing windows are positive integers; consensus baseline is bounded (`≤ 1.5`) to prevent runaway multipliers. Owner may rotate parameters as market data shifts while retaining pause authority on-chain.
+- **Runtime knobs:** Supply JSON via `ALPHA_WB` environment variable to tune baselines, caps, rebalancing windows, and divisors. Validation lives in `src/config/schema.js`.
+- **Energy/quality feeds:** `computeEnergyAdjustment`, `computeQualityAdjustment`, and `computeValidatorConsensus` accept observed telemetry; feeds can be rotated by owner without code edits.
+- **Weighting & caps:** `rebalanceConstituentWeights` enforces diversification caps/floors so no single fleet dominates the index; smoothing windows (default 90 days) stabilize work‑share inputs.
+- **Reference bundle:** Default α‑WU bundle uses doc-writing, code edits, research, and data transforms; rebalance quarterly with drift limits to mirror live task mix.
 
 ## Telemetry & Observability
 
-- **OpenTelemetry + Prometheus:** Metrics exported on `METRICS_PORT` (`9464` default), spans routed to OTLP endpoints when configured, with console fallbacks for local work.
-- **Health payloads:** `startHealthChecks` signs node state, validator roster, and latency data for downstream verifiers.
-- **Dashboards:** α‑WB outputs can be charted directly; see `docs/telemetry` for exporter details and dashboards.
-- **Energy & quality visibility:** Telemetry embeds the inputs needed for EA/QA so αWB snapshots can be re-run by validators, auditors, and dashboards without hidden dependencies.
+- **OpenTelemetry** — `src/telemetry/otel.js` exports spans; OTLP endpoint is opt-in via env, console exporter by default.
+- **Prometheus metrics** — `src/telemetry/monitoring.js` exposes `/metrics` with α‑WU, validator, and health signals.
+- **Canonical proofs** — `src/validation/alpha_wu_validator.js` and `src/services/alphaWorkUnits.js` normalize payloads for downstream verifiers.
+- **Dashboards** — α‑WB outputs are ready for dashboards and exchange-grade dissemination; sector/geography slices emerge from the same pipeline.
 
 ## Health & Attestation Mesh
 
-- **Attestation verify:** `npm run attestation:verify` cross‑checks payloads and signatures.
-- **Health gate policy:** `scripts/verify-health-gate.mjs` enforces allowlists/deny‑lists so only trusted ENS identities read the live health stream.
-- **Replayable proofs:** Metering segments and α‑WU computations are deterministic (`roundTo` guarded) enabling third‑party replays.
+- **ENS gating** — `docs/ens-identity-and-node-attestation-v0.0.1-alpha.md` plus `src/identity/loader.ts` enforce ENS alignment, key hydration, and DNSAddr checks.
+- **Health gate** — `src/services/healthGate.js` blocks emissions when telemetry, ENS, or stake posture degrade; owner overrides remain available for recovery.
+- **Attestation services** — `src/attestation/verify.ts` signs and validates structured payloads; `docs/ens-node-metadata.md` documents the canonical schema.
 
 ## Testing & CI Gates
 
 ```mermaid
 flowchart LR
-  L[Lint] -->|markdownlint + links| G[Green Gate]
-  T[Vitest] --> G
-  C8[Coverage] --> G
-  S[Solhint + solc] --> G
-  TS[Subgraph build] --> G
-  D[Docker smoke] --> G
-  A[Audit] --> G
-  P[Policy + Branch] --> G
-  G -->|PRs + main| Badge[(Badges + Required Checks)]
+  Lint[Lint Markdown & Links] --> Tests[Unit & Integration Tests]
+  Tests --> Coverage[Coverage Report]
+  Tests --> Sol[Solidity Lint & Compile]
+  Tests --> TS[Subgraph TypeScript Build]
+  Tests --> Docker[Docker Build & Smoke]
+  Tests --> Security[Dependency Security Scan]
+  Tests --> Policy[Policy + Branch Gates]
 ```
 
-| Check | Command | Scope |
-| --- | --- | --- |
-| Markdown & link lint | `npm run lint` | Ensures docs and references are pristine. |
-| Vitest + coverage | `npm run test`, `npm run coverage` | Exhaustive runtime + benchmark arithmetic validation. |
-| Solidity lint/compile | `npm run ci:solidity` | Keeps on-chain owner controls + staking flows clean and compilable. |
-| Subgraph build | `npm run ci:ts` | Validates The Graph manifest/typegen. |
-| Docker smoke | `docker build …` via CI | Proves containerized startup + CLI help. |
-| Security audit | `npm run ci:security` | Flags vulnerable deps (gated at `--audit-level=high`). |
-| Policy & branch gates | `npm run ci:policy && npm run ci:branch` | Enforces health allowlists and protected branch names. |
-
-- **One‑shot mirror:** `npm run ci:verify`
-- **Individual tasks:**
-  - Markdown lint: `npm run lint:md`
-  - Link lint: `npm run lint:links`
-  - Unit tests: `npm test`
-  - Coverage: `npm run coverage`
-  - Solidity lint/compile: `npm run ci:solidity`
-  - Subgraph build: `npm run ci:ts`
-  - Security: `npm run ci:security`
-  - Policy & branch gates: `npm run ci:policy && npm run ci:branch`
-- **Enforced on PRs/main:** see [`.github/required-checks.json`](.github/required-checks.json) for the exact required statuses.
+- **One-liner:** `npm run ci:verify` mirrors CI locally (lint, tests, coverage, Solidity checks, subgraph build, npm audit, policy + branch gates).
+- **Required checks:** See [`.github/required-checks.json`](.github/required-checks.json) for the enforced gates on PRs/main.
+- **Coverage:** `npm run coverage` (c8 + Vitest) exports `coverage/coverage-summary.json`; badge tracks statements (currently 83.7%).
+- **Security:** `npm run ci:security` runs `npm audit --omit=dev --audit-level=high` and surfaces dependency risks; enforced in CI.
+- **Branch / policy gates:** `npm run ci:policy` validates health/ENS allowlists; `npm run ci:branch` enforces naming and ENS bindings.
 
 ## Deployment Vectors
 
-- **Docker:** `docker build -t agi-alpha-node:local .` then run with envs for RPC, ENS name, payout addresses, and `ALPHA_WB` JSON.
-- **Helm:** Charts live at [`deploy/helm/agi-alpha-node`](deploy/helm/agi-alpha-node) for Kubernetes rollouts.
-- **Subgraph:** `npm --prefix subgraph run build:ci` builds the Graph Protocol manifest; see [`subgraph`](subgraph) for details.
+- **Docker & Helm** — Container build defined in [`Dockerfile`](Dockerfile); Helm chart in [`deploy/helm/agi-alpha-node`](deploy/helm/agi-alpha-node).
+- **Subgraph** — Generate manifests with `scripts/render-subgraph-manifest.mjs`; deploy via [`subgraph`](subgraph) workspace.
+- **Kubernetes** — Use the Helm chart for cluster-grade rollouts; configure OTLP, Prometheus scrape, and `ALPHA_WB` overrides via values files.
 
 ## Repository Atlas
 
-- `contracts/AlphaNodeManager.sol` — Owner‑controlled governance, pausing, validator registry, staking, and slash events; hard‑links the `$AGIALPHA` token.
-- `src/services/alphaBenchmark.js` — α‑WU arithmetic, clamps, weighting, and index construction.
-- `src/orchestrator/bootstrap.js` — Hydrates runtime identity, telemetry, validator setup, and orchestrator loops.
-- `src/identity` — ENS identity loading plus controller verification.
-- `docs/alpha-wb.md` — Full α‑WB benchmark spec and math; see `docs/testing.md` for CI/QA procedures.
-- `deploy/` — Dockerfile and Helm charts for production rollouts; `scripts/` contains policy and verification helpers.
+- **Contracts:** [`contracts/`](contracts) with `AlphaNodeManager.sol` (owner controls, validator gating, staking hooks) plus access primitives.
+- **Runtime:** [`src/`](src) services for orchestration, telemetry, governance, staking, validators, and α‑WB math.
+- **Specs & docs:** [`docs/`](docs) with α‑WB, α‑WU, economics, ENS identity, deployment, testing, and operator runbooks.
+- **Scripts:** [`scripts/`](scripts) for ENS inspection, manifest rendering, health/branch gates, and solc harnesses.
+- **Deploy:** [`deploy/`](deploy) holds Helm and infra manifests; [`subgraph/`](subgraph) contains the Graph stack.
 
 ## Reference Snippets
 
-### Compute a constituent yield
+> Compute constituent yield and headline α‑WB index with owner-tunable parameters.
 
 ```js
-import { computeConstituentAlphaWU } from './src/services/alphaBenchmark.js';
+import { computeConstituentAlphaWU, computeAlphaWorkBenchmarkIndex } from './src/services/alphaBenchmark.js';
 
-const alphaYield = computeConstituentAlphaWU({
-  label: 'validator-fleet-1',
-  tasksCompleted: 240,
-  taskDifficultyCoefficient: 1.15,
-  energyKwhPerAlphaWU: 0.92,
-  energyCostPerKwh: 0.11,
-  qualityScore: 1.08,
-  consensusRate: 0.99,
-  reproducibilityPenalty: 0.01
-});
-```
-
-### Build the headline index
-
-```js
-import { computeAlphaWorkBenchmarkIndex } from './src/services/alphaBenchmark.js';
-
-const { alphaWB, constituents } = computeAlphaWorkBenchmarkIndex([
+const constituents = [
   {
     label: 'Fleet-A',
     tasksCompleted: 200,
@@ -388,10 +269,13 @@ const { alphaWB, constituents } = computeAlphaWorkBenchmarkIndex([
     consensusRate: 0.93,
     workShare: 0.25
   }
-]);
+];
+
+const { alphaWB, constituents: weighted } = computeAlphaWorkBenchmarkIndex(constituents);
+console.log({ alphaWB, weighted });
 ```
 
-### Anchor to metering segments
+> Derive throughput straight from metering snapshots.
 
 ```js
 import { deriveThroughputFromSegments } from './src/services/alphaBenchmark.js';
@@ -400,6 +284,25 @@ import { getSegmentsSnapshot } from './src/services/metering.js';
 const throughput = deriveThroughputFromSegments(getSegmentsSnapshot());
 ```
 
----
+> Adjust α‑WB caps/baselines at runtime (owner-supplied JSON via env):
 
-AGI Alpha Node v0 is engineered to be the cognitive engine that compounds autonomous work into verifiable, owner‑governed yield—ready for production deployments, green‑lit CI, and global benchmarking in α‑WU.
+```bash
+export ALPHA_WB='{\
+  "baselineEnergyCostPerKwh": 0.12,\
+  "baselineEnergyPerAlphaWU": 1.0,\
+  "baselineQuality": 1.0,\
+  "baselineConsensus": 0.99,\
+  "energyAdjustmentFloor": 0.65,\
+  "energyAdjustmentCap": 1.25,\
+  "qualityAdjustmentFloor": 0.6,\
+  "qualityAdjustmentCap": 1.5,\
+  "consensusAdjustmentFloor": 0.8,\
+  "consensusAdjustmentCap": 1.05,\
+  "rebalanceCap": 0.15,\
+  "rebalanceFloor": 0.01,\
+  "smoothingWindowDays": 90,\
+  "baseDivisor": 1000\
+}'
+```
+
+AGI Alpha Node v0 is engineered for immediate, owner-controlled deployment: sovereign levers, reproducible telemetry, hardened CI, and a live α‑WU benchmark that captures the most valuable autonomous work on the planet.
