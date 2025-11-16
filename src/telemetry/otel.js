@@ -58,9 +58,10 @@ export function initTelemetry(config) {
     resource: resourceFromAttributes({
       'service.name': 'agi-alpha-node'
     }),
-    sampler,
-    spanProcessors
+    sampler
   });
+
+  spanProcessors.forEach((processor) => providerInstance.addSpanProcessor(processor));
 
   providerInstance.register();
   tracerInstance = providerInstance.getTracer('agi-alpha-node');
