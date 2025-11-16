@@ -1,4 +1,6 @@
 import { EventEmitter } from 'node:events';
+import { InMemorySpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import * as ed from '@noble/ed25519';
 import { SigningKey, Wallet } from 'ethers';
 import pino from 'pino';
@@ -153,5 +155,43 @@ describe('health check service', () => {
     await expect(verifyAttestation(emissions[0], nodeIdentity)).resolves.toBe(true);
 
     handle.stop();
+  });
+
+  it('records telemetry spans with health attributes', async () => {
+    vi.useFakeTimers();
+    const exporter = new InMemorySpanExporter();
+    const provider = new NodeTracerProvider({
+      spanProcessors: [new SimpleSpanProcessor(exporter)]
+    });
+    provider.register();
+
+    const { nodeIdentity, keypair } = buildIdentity();
+
+    const handle = startHealthChecks(nodeIdentity, keypair, {
+      intervalMs: 500,
+      measureLatency: async () => 42,
+      role: 'orchestrator',
+      nodeVersion: '1.2.3',
+      logger: pino({ level: 'silent' })
+    });
+
+    await vi.runOnlyPendingTimersAsync();
+    await vi.runOnlyPendingTimersAsync();
+
+    const spans = exporter.getFinishedSpans();
+    expect(spans.length).toBeGreaterThan(0);
+    const [span] = spans;
+    expect(span.name).toBe('node.healthcheck');
+    expect(span.attributes['agent.ens']).toBe(nodeIdentity.ensName);
+    expect(span.attributes['agent.peer_id']).toBe(nodeIdentity.peerId);
+    expect(span.attributes['agent.version']).toBe('1.2.3');
+    expect(span.attributes['agent.role']).toBe('orchestrator');
+    expect(span.attributes['check.status']).toBe('healthy');
+    expect(span.attributes['check.latency_ms']).toBe(42);
+    expect(span.attributes['attestation.signature_type']).toBe('secp256k1');
+    expect(span.attributes['dnsaddr.present']).toBe(false);
+
+    handle.stop();
+    await provider.shutdown();
   });
 });
