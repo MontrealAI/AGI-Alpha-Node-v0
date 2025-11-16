@@ -12,6 +12,8 @@ their output, and triage failures quickly.
 * **Solidity contract verification** — Compiles and exercises
   `AlphaNodeManager` against Anvil with
   `npx vitest run test/alphaNodeManager.contract.test.js`.
+* **Dependency security scan** — Runs `npm audit --omit=dev --audit-level=high`
+  via `npm run ci:security` to keep supply chain checks green.
 * **Script smoke tests** — Confirms manifest rendering plus ENS gate enforcement
   using `npx vitest run test/scripts.*.test.js`.
 * **Governance & ENS smoke** — Ensures owner directives and health gating work
@@ -84,6 +86,15 @@ npm run ci:verify
 
 Runs markdown linting, Vitest, coverage, Solidity lint+build, subgraph
 generation, security audit, and ENS gate checks exactly as CI will.
+
+### 7. Dependency security scan
+
+```bash
+npm run ci:security
+```
+
+Runs `npm audit --omit=dev --audit-level=high` to surface actionable
+vulnerabilities; also runs in CI as a required gate.
 
 ## Interpreting Output & Triaging Failures
 
