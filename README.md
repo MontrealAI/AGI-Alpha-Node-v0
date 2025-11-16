@@ -1,116 +1,62 @@
 # AGI Alpha Node v0 · Cognitive Yield Engine ⚡️
 
-<!-- markdownlint-disable MD013 MD033 -->
+<!-- markdownlint-disable MD012 MD013 MD033 -->
 <p align="center">
   <picture>
     <source srcset="1.alpha.node.agi.eth.svg" type="image/svg+xml" />
-    <img src="1.alpha.node.agi.eth.png" alt="AGI Alpha Node Insignia"
-      width="256" loading="lazy" decoding="async" />
+    <img src="1.alpha.node.agi.eth.png" alt="AGI Alpha Node Insignia" width="256" loading="lazy" decoding="async" />
   </picture>
 </p>
 
 <p align="center">
-  <a
-    href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml?query=branch%3Amain"
-  >
-    <img
-      src="https://img.shields.io/github/actions/workflow/status/MontrealAI/AGI-Alpha-Node-v0/ci.yml?branch=main&label=CI%20%2B%20Gates&logo=githubactions&logoColor=white"
-      alt="CI status"
-    />
+  <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml?query=branch%3Amain">
+    <img src="https://img.shields.io/github/actions/workflow/status/MontrealAI/AGI-Alpha-Node-v0/ci.yml?branch=main&label=CI%20%2B%20Gates&logo=githubactions&logoColor=white" alt="CI status" />
   </a>
   <a href=".github/required-checks.json">
-    <img
-      src="https://img.shields.io/badge/PR%20Gates-Required%20on%20Main-8b5cf6?logo=github"
-      alt="Required PR checks"
-    />
+    <img src="https://img.shields.io/badge/PR%20Gates-Required%20on%20Main-8b5cf6?logo=github" alt="Required PR checks" />
   </a>
-  <img
-    src="https://img.shields.io/badge/Telemetry%20Schemas-v0-16a34a?logo=json&logoColor=white"
-    alt="Telemetry schema version"
-  />
-  <img
-    src="https://img.shields.io/badge/CI%20Coverage-c8%20%2B%20vitest-0ea5e9?logo=testinglibrary&logoColor=white"
-    alt="Coverage"
-  />
+  <img src="https://img.shields.io/badge/Telemetry%20Schemas-v0-16a34a?logo=json&logoColor=white" alt="Telemetry schema version" />
+  <img src="https://img.shields.io/badge/Observability-c8%20%7C%20vitest%20%7C%20OTel-0ea5e9?logo=testinglibrary&logoColor=white" alt="Coverage" />
   <a href="https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa">
-    <img
-      src="https://img.shields.io/badge/$AGIALPHA-0xa61a...a1fa-ff3366?logo=ethereum&logoColor=white"
-      alt="$AGIALPHA"
-    />
+    <img src="https://img.shields.io/badge/$AGIALPHA-0xa61a...a1fa-ff3366?logo=ethereum&logoColor=white" alt="$AGIALPHA" />
   </a>
-  <img
-    src="https://img.shields.io/badge/Token%20Decimals-18%20dp-f97316?logo=ethereum&logoColor=white"
-    alt="Token decimals"
-  />
-  <img
-    src="https://img.shields.io/badge/Runtime-Node.js%2020.18%2B-43853d?logo=node.js&logoColor=white"
-    alt="Runtime"
-  />
-  <img
-    src="https://img.shields.io/badge/Solidity-0.8.26-363636?logo=solidity&logoColor=white"
-    alt="Solidity"
-  />
+  <img src="https://img.shields.io/badge/Token%20Decimals-18%20dp-f97316?logo=ethereum&logoColor=white" alt="Token decimals" />
+  <img src="https://img.shields.io/badge/Runtime-Node.js%2020.18%2B-43853d?logo=node.js&logoColor=white" alt="Runtime" />
+  <img src="https://img.shields.io/badge/Solidity-0.8.26-363636?logo=solidity&logoColor=white" alt="Solidity" />
   <a href="Dockerfile">
-    <img
-      src="https://img.shields.io/badge/Docker-Ready-2496ed?logo=docker&logoColor=white"
-      alt="Docker"
-    />
+    <img src="https://img.shields.io/badge/Docker-Ready-2496ed?logo=docker&logoColor=white" alt="Docker" />
   </a>
   <a href="deploy/helm/agi-alpha-node">
-    <img
-      src="https://img.shields.io/badge/Helm-Chart-0ea5e9?logo=helm&logoColor=white"
-      alt="Helm"
-    />
+    <img src="https://img.shields.io/badge/Helm-Chart-0ea5e9?logo=helm&logoColor=white" alt="Helm" />
   </a>
-  <img
-    src="https://img.shields.io/badge/Data%20Spine-SQLite%20%2B%20Migrations-0f766e?logo=sqlite&logoColor=white"
-    alt="Persistence"
-  />
-  <img
-    src="https://img.shields.io/badge/Owner%20Controls-Total%20Command-9333ea?logo=gnometerminal&logoColor=white"
-    alt="Owner controls"
-  />
+  <img src="https://img.shields.io/badge/Data%20Spine-SQLite%20%2B%20Migrations-0f766e?logo=sqlite&logoColor=white" alt="Persistence" />
+  <img src="https://img.shields.io/badge/Owner%20Controls-Total%20Command-9333ea?logo=gnometerminal&logoColor=white" alt="Owner controls" />
 </p>
 
-> **AGI Alpha Node v0** is the cognitive yield engine that turns heterogeneous
-> agentic work into verifiable α‑Work Units (α‑WU), anchors every unit to the
-> `$AGIALPHA` treasury (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18
-> decimals), and keeps every lever under the owner’s command—pause, re-weight,
-> rotate validators, refresh baselines, reroute rewards, and rewrite
-> participation rules without redeploying code.
+> **AGI Alpha Node v0** is the cognitive yield engine that metabolizes heterogeneous agentic labor into verifiable α‑Work Units (α‑WU), composes them into a treasury-backed index, and keeps every lever under the owner’s fingertips—pause, reroute, rewrite, or relaunch without redeploying.
 
 ## Table of contents
 
 - [Why this node](#why-this-node)
-- [Architecture at a glance](#architecture-at-a-glance)
-- [Quickstart](#quickstart)
+- [System architecture](#system-architecture)
+- [Quickstart (non-technical friendly)](#quickstart-non-technical-friendly)
 - [Telemetry ingestion v0](#telemetry-ingestion-v0)
-- [Data spine: domain, migrations, seeds](#data-spine-domain-migrations-seeds)
+- [Provider authentication & deduplication](#provider-authentication--deduplication)
+- [Data spine & migrations](#data-spine--migrations)
 - [Owner controls & on-chain levers](#owner-controls--on-chain-levers)
-- [CI, quality gates, and release rigor](#ci-quality-gates-and-release-rigor)
+- [CI, gates, and release discipline](#ci-gates-and-release-discipline)
 - [Operations playbook](#operations-playbook)
-- [Contributing](#contributing)
+- [Appendix: Specs & references](#appendix-specs--references)
 
 ## Why this node
 
-- **Owner-first sovereignty**: every critical switch is held by the contract
-  owner—pause/unpause, validator rotation, identity lifecycle, staking
-  withdrawals, index rewrites, and slashing routines are callable without
-  redeployment from `contracts/AlphaNodeManager.sol`.
-- **Telemetry-ingestion hardened**: JSON Schema–verified payloads, hashed API
-  keys, provider-aware rate-limit stubs, and idempotent task run recording keep
-  provider signals clean while rejecting duplicates.
-- **Deterministic data spine**: SQLite migrations seed providers, task types,
-  runs, telemetry, α‑index values, and constituent weights with indexes on
-  provider/day for instant dashboards and subgraph alignment.
-- **Production-safe defaults**: the CLI, seeds, CI gates, and Helm chart mirror
-  automation paths so non-specialists can bootstrap a high-stakes node with a
-  single command stream.
-- **Always-on alpha extraction**: agentic swarms route jobs through provider
-  meshes, generating synthetic labor, quality, and energy telemetry that
-  continuously tune the `$AGIALPHA` flywheel.
+- **Owner-first sovereignty**: The contract owner steers every critical parameter—pauses, validator rotation, identity lifecycle, staking thresholds, emission multipliers, treasury routing, and governance ledgers—without altering deployed code. Command surfaces live in `contracts/AlphaNodeManager.sol` and the governance helpers in `src/services/governance.js`.
+- **Telemetry-ingestion hardened**: JSON Schema–verified payloads, hashed API keys, provider-aware rate-limit stubs, and idempotent task-run recording keep provider signals pristine while rejecting duplicates or malformed submissions.
+- **Deterministic data spine**: SQLite migrations seed providers, task types, runs, telemetry, α‑index values, and constituent weights with indexes on provider/day for immediate dashboards and subgraph alignment.
+- **Production-safe defaults**: The CLI, seeds, CI gates, Helm chart, and Docker build mirror automation paths so a non-specialist can bootstrap a production-critical node with a handful of commands.
+- **Continuous alpha extraction**: Agentic swarms route jobs through provider meshes, generating synthetic labor, quality, and energy telemetry that continuously tune the `$AGIALPHA` flywheel (token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals).
 
-## Architecture at a glance
+## System architecture
 
 ```mermaid
 flowchart LR
@@ -160,7 +106,7 @@ graph TD
   Control -->|Treasury Signals| Token[$AGIALPHA 0xa61a...a1fa]
 ```
 
-## Quickstart
+## Quickstart (non-technical friendly)
 
 ```bash
 git clone https://github.com/MontrealAI/AGI-Alpha-Node-v0.git
@@ -170,6 +116,8 @@ npm run db:migrate
 npm run db:seed
 npm start
 ```
+
+Register an API key for telemetry uploads:
 
 ```bash
 node -e "import { initializeDatabase } from './src/persistence/database.js';
@@ -189,169 +137,105 @@ console.log('Use X-API-Key: YOUR_SECRET_API_KEY for provider', provider.name);
 
 ## Telemetry ingestion v0
 
-- **Endpoints**: `POST /ingest/task-runs`, `POST /ingest/energy`,
-  `POST /ingest/quality`.
-- **Auth**: `X-API-Key` or `Authorization: Bearer <api-key>`; keys stored hashed
-  with provider scoping, quotas, and last-used tracking.
-- **Validation**: JSON Schema v0 (`spec/task_run_telemetry.schema.json`,
-  `spec/energy_report.schema.json`, `spec/quality_eval.schema.json`) compiled
-  with Ajv; structured errors returned on failure.
-- **Idempotency**: `idempotency_key` per task run; duplicates are rejected with
-  collision logging and payload hash comparison.
-- **Rate limiting**: stubbed counters emit `X-RateLimit-*` headers for
-  observability.
-- **Owner safety**: all telemetry remains under owner governance—pause, revoke,
-  or rotate providers and keys without redeploying contracts.
+- **Endpoints**: `POST /ingest/task-runs`, `POST /ingest/energy`, `POST /ingest/quality`.
+- **Schemas**: AJV-compiled v0 definitions live in `spec/task_run_telemetry.schema.json`, `spec/energy_report.schema.json`, and `spec/quality_eval.schema.json` (all require `schema_version: "v0"`).
+- **Structured errors**: Invalid submissions respond with a machine-readable `{ error, details[] }` envelope; missing references respond with 404; idempotent collisions respond with 409 and a related task-run id.
+- **Versioning & provenance**: Every stored record carries `schema_version`, metadata (notes, task label, request fingerprint), and a payload hash for auditability.
+- **Rate-limit stub**: Per-provider windows are tracked and surfaced via `X-RateLimit-*` headers to prepare for enforced throttling.
 
-```mermaid
-sequenceDiagram
-  autonumber
-  participant Provider
-  participant Gateway as Ingestion Gateway
-  participant Validator as JSON Schema v0
-  participant DB as SQLite Spine
+### Example payloads
 
-  Provider->>Gateway: POST /ingest/task-runs (TaskRunTelemetry)
-  Gateway->>Validator: Validate schema_version=v0
-  Validator-->>Gateway: Structured errors (400) on failure
-  Gateway->>DB: Persist provider_api_keys touch + task_runs (idempotent)
-  Provider->>Gateway: POST /ingest/energy | /ingest/quality
-  Gateway->>Validator: Validate references + payloads
-  Gateway->>DB: Persist energy_reports / quality_evaluations
-  Gateway-->>Provider: 202 Accepted + rate limit headers
+```json
+POST /ingest/task-runs
+{
+  "schema_version": "v0",
+  "idempotency_key": "alpha-run-001",
+  "task_type": "portfolio-optimizer",
+  "task_label": "alpha:portfolio",
+  "status": "completed",
+  "timing": {
+    "started_at": "2024-07-01T00:00:00Z",
+    "completed_at": "2024-07-01T00:00:04Z"
+  },
+  "metrics": {
+    "raw_throughput": 2.4,
+    "tokens_processed": 9231,
+    "tool_calls": 3,
+    "quality_score": 0.94
+  },
+  "metadata": { "environment": "prod" },
+  "notes": "routed via meta-agentic swarm"
+}
 ```
 
-### Payload examples
-
-```bash
-curl -X POST http://localhost:8080/ingest/task-runs \
-  -H 'Content-Type: application/json' \
-  -H 'X-API-Key: YOUR_SECRET_API_KEY' \
-  -d '{
-    "schema_version": "v0",
-    "idempotency_key": "task-telemetry-1",
-    "task_type": "research-dossier",
-    "status": "completed",
-    "external_id": "ext-telemetry-1",
-    "timing": {
-      "started_at": "2024-01-01T00:00:00Z",
-      "completed_at": "2024-01-01T00:05:00Z"
-    },
-    "metrics": {"tokens_processed": 2048, "quality_score": 0.93},
-    "metadata": {"device": "gpu-a100"}
-  }'
+```json
+POST /ingest/energy
+{
+  "schema_version": "v0",
+  "task": { "idempotency_key": "alpha-run-001" },
+  "energy": {
+    "kwh": 0.42,
+    "energy_mix": "hydro",
+    "carbon_intensity_gco2_kwh": 12,
+    "cost_usd": 0.031,
+    "region": "ca-central-1"
+  }
+}
 ```
 
-```bash
-curl -X POST http://localhost:8080/ingest/energy \
-  -H 'Content-Type: application/json' \
-  -H 'X-API-Key: YOUR_SECRET_API_KEY' \
-  -d '{
-    "schema_version": "v0",
-    "task": {"idempotency_key": "task-telemetry-1"},
-    "energy": {
-      "kwh": 1.25,
-      "region": "na-east",
-      "carbon_intensity_gco2_kwh": 110
-    }
-  }'
+```json
+POST /ingest/quality
+{
+  "schema_version": "v0",
+  "task": { "external_id": "42" },
+  "quality": {
+    "evaluator": "provider",
+    "score": 0.97,
+    "notes": "meets governance acceptance threshold"
+  }
+}
 ```
 
-```bash
-curl -X POST http://localhost:8080/ingest/quality \
-  -H 'Content-Type: application/json' \
-  -H 'X-API-Key: YOUR_SECRET_API_KEY' \
-  -d '{
-    "schema_version": "v0",
-    "task": {"idempotency_key": "task-telemetry-1"},
-    "quality": {"score": 0.91, "evaluator": "qa-suite"}
-  }'
-```
+## Provider authentication & deduplication
 
-## Data spine: domain, migrations, seeds
+- **Auth**: `X-API-Key` or `Authorization: Bearer <api-key>`; keys are stored hashed and scoped per provider with last-used timestamps and labels.
+- **Idempotency**: `idempotency_key` on `TaskRunTelemetry` is mandatory; duplicates are rejected with payload-hash verification to detect collisions.
+- **Task resolution**: Energy and quality payloads resolve task runs by `idempotency_key` or `external_id`; missing runs yield a 404 with a structured message.
+- **Suspicious patterns**: Collisions and malformed payloads are logged for operator review.
 
-SQLite migrations live in `src/persistence/migrations` and bootstrap the
-telemetry surface end-to-end.
+## Data spine & migrations
 
-- **providers**: region-tagged execution nodes (`name`, `operator_address`,
-  `region`, `sector_tags[]`, `energy_mix`, `metadata`).
-- **provider_api_keys**: hashed API keys scoped to providers with quotas and
-  audit timestamps (`provider_id`, `hashed_key`, `label`, `rate_limit_quota`,
-  `last_used_at`, `revoked_at`).
-- **task_types**: canonical α‑WU templates (`name`, `description`,
-  `difficulty_coefficient`).
-- **task_runs**: executions tied to providers and task types with raw metrics
-  and idempotency metadata (`provider_id`, `task_type_id`, `external_id`,
-  `status`, `raw_throughput`, `tokens_processed`, `tool_calls`, `novelty_score`,
-  `quality_score`, `started_at`, `completed_at`, `idempotency_key`,
-  `schema_version`, `payload_hash`, `metadata`).
-- **quality_evaluations**: evaluator-scored runs with versioning (`task_run_id`,
-  `evaluator`, `score`, `notes`, `schema_version`, `metadata`).
-- **energy_reports**: per-run energy and region signals (`task_run_id`, `kwh`,
-  `energy_mix`, `carbon_intensity_gco2_kwh`, `cost_usd`, `region`,
-  `schema_version`, `metadata`).
-- **synthetic_labor_scores**: synthetic labor uplift per provider/run
-  (`provider_id`, `task_run_id`, `score`, `rationale`).
-- **index_values**: headline Alpha Index values (`effective_date`,
-  `headline_value`, `energy_adjustment`, `quality_adjustment`,
-  `consensus_factor`).
-- **index_constituent_weights**: provider weights per index value
-  (`index_value_id`, `provider_id`, `weight`).
-
-### Migrate & seed
-
-```bash
-npm run db:migrate            # uses AGI_ALPHA_DB_PATH or in-memory
-npm run db:seed               # seeds task types & providers
-node src/persistence/cli.js migrate data/alpha.sqlite
-node src/persistence/cli.js seed data/alpha.sqlite
-```
-
-Seeds include high-signal task types (`code-refactor`, `research-dossier`,
-`data-cleanse`, `agent-benchmark`) and exemplar providers (`helios-labs`,
-`aurora-intel`) including sector tags, regions, and energy mixes.
+- **Schema**: Core tables (`providers`, `task_types`, `task_runs`, `energy_reports`, `quality_evaluations`, synthetic labor metrics, index values) live in SQLite with index coverage for provider + day queries.
+- **Migrations**: `npm run db:migrate` applies migration files; `npm run db:seed` hydrates baseline providers, task archetypes, and telemetry exemplars.
+- **Subgraph alignment**: `scripts/render-subgraph-manifest.mjs` keeps `subgraph/` manifests synchronized with runtime schemas for downstream indexing.
 
 ## Owner controls & on-chain levers
 
-- Governance payload builders exposed at `POST /governance/*` (pause, minimum
-  stake, validator thresholds, registry upgrades, role shares, emission
-  schedules, dispute triggers, identity delegates, incentives controls).
-- Owner authentication uses `GOVERNANCE_API_TOKEN`; ledger entries are
-  persisted for non-dry runs.
-- AlphaNodeManager and staking/reward engines remain fully owner-modifiable for
-  upgrades, emission rewrites, and pause/unpause flows without redeployment.
-- Contract owner can rotate validators, rewrite weighting logic, pause
-  settlement, adjust quotas, or reroute incentives instantly to safeguard
-  high-stakes AGI job flows.
+- **AlphaNodeManager**: Owner-exclusive functions cover pauses, minimum stake, validator threshold/rotation, work meter windows, emission multipliers, treasury routes, dispute triggers, and job registry upgrades.
+- **Governance payload builder**: `/governance` endpoints and `src/services/governance.js` craft calldata with dry-run previews, ledger recording, and signature fields for multisig submission.
+- **Health gates**: `scripts/verify-health-gate.mjs` enforces operational readiness; `scripts/verify-branch-gate.mjs` blocks unsafe branches.
+- **Attestation & identity**: ENS identity hydration, attestation verification (`scripts/attestation-verify.ts`), and NameWrapper-aware ENS metadata keep node identity aligned with chain state.
 
-## CI, quality gates, and release rigor
+## CI, gates, and release discipline
 
-- **Checks enforced on PRs and `main`**: markdown lint, link validation, JS/TS
-  tests, coverage, Solidity lint + compilation, subgraph codegen/build,
-  security audit stub, policy & branch gates. Required checks are listed in
-  `.github/required-checks.json` and wired to the CI badge above.
-- **Run locally**: `npm run ci:verify` mirrors GitHub Actions. `npm run`
-  `coverage` emits c8/LCOV + JSON summary. `npm run lint` aligns with the
-  markdown/link gates that guard `main`.
-- **Artifacts**: coverage and docker smoke logs are uploaded on every CI run so
-  operators can trace regressions back to exact builds.
-- **Release hygiene**: deterministic `npm ci`, pinned Node.js 20.18+, and
-  concurrency guards keep pipelines reproducible and fully visible.
+- **Workflow coverage**: CI runs linting, link checks, tests, coverage (`c8 + vitest`), Solidity lint/compile, subgraph TypeScript build, Docker smoke test, security audit, and badge publication (`.github/workflows/ci.yml`).
+- **Required on PR & main**: All checks are enforced via `.github/required-checks.json`; PRs must satisfy every gate before merge.
+- **Badges**: CI status, schema version, coverage stack, token address, runtime, Solidity version, Docker readiness, Helm chart path, data spine, and owner-control guarantees are surfaced above for instant posture visibility.
 
 ## Operations playbook
 
-- **Runtime**: Node.js 20.18+, `npm start` serves the agent API (default 8080),
-  verifier server, and metrics endpoint (`/metrics`, default 9464).
-- **Metrics**: Prometheus-compatible metrics powered by `prom-client`;
-  `scripts/healthcheck.js` probes `/metrics` for readiness.
-- **Health**: `GET /healthz` and `GET /status` expose node readiness and α‑WU
-  telemetry snapshots; `/status/diagnostics` emits per-epoch breakdowns for
-  dashboards and alerting.
-- **Owner directives**: `GET/POST /governance/directives` allow out-of-band
-  instructions (pause, reroute, notices) with full audit logging.
+- **Run locally**: `npm start` boots the API + orchestration server; `npm run demo:local` launches the local cluster simulator.
+- **CLI help**: `node src/index.js --help` lists governance, staking, lifecycle, and telemetry commands.
+- **Observability**: OpenTelemetry exporters (`src/telemetry/otel*.ts`) emit traces; `src/telemetry/monitoring.js` exposes Prometheus metrics and health probes.
+- **Docker & Helm**: `docker build -t agi-alpha-node:local .` for containerized deployment; Helm chart scaffolding lives at `deploy/helm/agi-alpha-node`.
+- **Database maintenance**: `npm run db:migrate` / `npm run db:seed` keep the data spine aligned with schemas; backups are simple file copies of the SQLite database path.
 
-## Contributing
+## Appendix: Specs & references
 
-Pull requests are welcome. Please run `npm run ci:verify` before opening a PR
-and include context for any governance or telemetry changes. The ledger,
-schemas, and migrations are considered stability-critical surfaces.
+- **Telemetry schemas**: `spec/task_run_telemetry.schema.json`, `spec/energy_report.schema.json`, `spec/quality_eval.schema.json` (all v0).
+- **Persistence**: `src/persistence/database.js` (bootstrap), repositories in `src/persistence/repositories.js`, seeds in `src/persistence/seeds.js`.
+- **Ingestion services**: `src/services/telemetryIngestion.js` (validation, auth, rate-limit stubs, deduplication, persistence).
+- **Network APIs**: `src/network/apiServer.js` exposes ingestion endpoints, governance payload builders, lifecycle routes, and oracle exports.
+- **Token constants**: `$AGIALPHA` checksum address & decimals defined in `src/constants/token.js`.
+- **Health & gates**: Policy checks live in `scripts/verify-health-gate.mjs` and `scripts/verify-branch-gate.mjs`.
+
