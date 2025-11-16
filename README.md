@@ -22,14 +22,15 @@
   <img src="https://img.shields.io/badge/Solidity-0.8.26-363636?logo=solidity&logoColor=white" alt="Solidity" />
   <a href="https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa"><img src="https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-ff3366?logo=ethereum&logoColor=white" alt="$AGIALPHA" /></a>
   <img src="https://img.shields.io/badge/Owner%20Controls-Total%20Command-9333ea?logo=gnometerminal&logoColor=white" alt="Owner controls" />
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-10b981?logo=open-source-initiative&logoColor=white" alt="MIT" /></a>
   <a href="Dockerfile"><img src="https://img.shields.io/badge/Docker-Ready-2496ed?logo=docker&logoColor=white" alt="Docker" /></a>
   <a href="deploy/helm/agi-alpha-node"><img src="https://img.shields.io/badge/Helm-Chart-0ea5e9?logo=helm&logoColor=white" alt="Helm" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-10b981?logo=open-source-initiative&logoColor=white" alt="MIT" /></a>
   <a href="docs/testing.md"><img src="https://img.shields.io/badge/CI%20Playbook-Green%20by%20Design-06b6d4?logo=githubactions&logoColor=white" alt="Testing playbook" /></a>
   <img src="https://img.shields.io/badge/Data%20Spine-SQLite%20%2B%20Migrations-0f766e?logo=sqlite&logoColor=white" alt="Persistence" />
+  <img src="https://img.shields.io/badge/Token%20Decimals-18%20dp-f97316?logo=ethereum&logoColor=white" alt="Token decimals" />
 </p>
 
-> **AGI Alpha Node v0** is the cognitive yield engine that continuously turns heterogeneous agentic work into verifiable α‑Work Units (α‑WU), anchors them to the `$AGIALPHA` treasury (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals), and keeps every lever under the owner’s command—pause, re-weight, rotate validators, refresh baselines, and reroute rewards without redeploying code.
+> **AGI Alpha Node v0** is the cognitive yield engine that turns heterogeneous agentic work into verifiable α‑Work Units (α‑WU), anchors every unit to the `$AGIALPHA` treasury (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals), and keeps every lever under the owner’s command—pause, re-weight, rotate validators, refresh baselines, reroute rewards, and rewrite participation rules without redeploying code. The stack is engineered so operators can stand up a production-critical node with a single command while still steering every parameter from a sovereign control plane.
 
 ## Table of contents
 
@@ -97,6 +98,37 @@ flowchart TD
   Owner[[Owner Multisig]] -->|Pause / Reweight / Update metadata| H
   H -->|Reward signals| I
   Ledger -->|Index snapshots| H
+```
+
+```mermaid
+graph TD
+  subgraph Control[Owner Control Plane]
+    pause[Pause / Unpause]
+    rotate[Rotate Validators]
+    stakeOps[Stake Withdrawals]
+    identityOps[ENS Identity Lifecycle]
+    weights[Index Weights]
+  end
+  subgraph Data[Telemetry & Data Spine]
+    providers[(Providers)]
+    tasks[(Task Types)]
+    runs[(Task Runs)]
+    quality[(Quality Evals)]
+    energy[(Energy Reports)]
+    synth[(Synthetic Labor)]
+    idx[(Index Values)]
+  end
+  subgraph Agents[Agentic Swarm]
+    dispatch[Task Dispatch]
+    attest[Attestations]
+    rewards[Reward Signals]
+  end
+
+  Owner[[Owner Multisig]] --> Control
+  Control -->|Commands| Agents
+  Agents -->|α‑WU Proofs| Data
+  Data -->|αWB snapshots| Control
+  Control -->|Treasury Signals| Token[$AGIALPHA 0xa61a...a1fa]
 ```
 
 ## Data spine: domain, migrations, seeds
@@ -209,6 +241,8 @@ flowchart LR
 - **Required checks**: `.github/required-checks.json` enforces all gates on `main` and PRs.
 - **Workflow**: `.github/workflows/ci.yml` runs lint, policy gates, full Vitest suite (including persistence and on-chain harnesses), coverage export, Solidity lint/compile, subgraph codegen/build, high-severity npm audit, branch policy, and Docker smoke tests.
 - **Local parity**: `npm run ci:verify` mirrors the Actions matrix; coverage artifacts land in `coverage/` for downstream upload.
+
+The badge at the top of this README reflects the live status of `ci.yml` on `main`; contributions must land with green checks before merge.
 
 ## Operations playbook
 
