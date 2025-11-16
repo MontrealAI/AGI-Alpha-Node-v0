@@ -4,31 +4,27 @@
 
 > One comparable index for autonomous work, continuously adjusted for energy, quality, and validator consensus.
 
-## Why αWB exists
+## Primer: why αWB exists
 
-- **Unit of account (α‑WU):** 1 α‑WU equals a reference task bundle at baseline difficulty and quality. Bundles rebalance
-  quarterly to mirror live task mix without overfitting.
-- **Economic signal:** Operators, buyers, and policymakers see the quality‑adjusted cost of autonomous work at a glance.
-- **Owner control:** Baselines, caps, divisors, and validator penalties stay owner‑governed through `ALPHA_WB` env config and
-  contract‑level pause/override controls.
+- **Unit of account (α‑WU):** 1 α‑WU equals a reference task bundle (doc-writing, code edits, research lookups, data transforms) at baseline difficulty and quality. Bundles rebalance quarterly to mirror live task mix without overfitting.
+- **Economic signal:** Operators, buyers, and policymakers see the quality‑adjusted cost of autonomous work at a glance—think an “S&P 500 for autonomous work” priced in α‑WU.
+- **Owner control:** Baselines, caps, divisors, and validator penalties stay owner‑governed through `ALPHA_WB` env config and contract‑level pause/override controls.
 
 ## Computation Stack (Code)
 
-`src/services/alphaBenchmark.js` implements the v0 calculus:
+`src/services/alphaBenchmark.js` implements the v0 calculus end to end:
 
-- `computeRawThroughput` — tasks completed × Task Difficulty Coefficient (TDC).
-- `computeEnergyAdjustment` — `EA = cost_baseline / cost_observed`, clamped to anti‑gaming bounds.
-- `computeQualityAdjustment` — `QA = quality_observed / quality_baseline`, winsorized for stability.
-- `computeValidatorConsensus` — reproducibility/penalty aware consensus factor (`VC`).
-- `computeConstituentAlphaWU` — `αWU_i = Raw × EA × QA × VC`.
-- `rebalanceConstituentWeights` — free‑float work‑share weights with diversification caps and floors.
-- `computeAlphaWorkBenchmarkIndex` — headline `αWB_t = Σ(weight_i × αWU_i) / baseDivisor`.
-- `deriveThroughputFromSegments` — bridges metering segments into TDC inputs (uses quality multipliers as difficulty hints).
-
-## Data Plane
+1. **Raw throughput** — `computeRawThroughput`: tasks completed × Task Difficulty Coefficient (TDC). Difficulty comes from open rubrics (tokens processed, steps, tool calls, novelty).
+2. **Energy adjustment (EA)** — `computeEnergyAdjustment`: `EA = cost_baseline / cost_observed`, clamped via `energyAdjustmentFloor`/`Cap` to avoid energy‑washing.
+3. **Quality adjustment (QA)** — `computeQualityAdjustment`: `QA = quality_observed / quality_baseline`, winsorized by caps/floors. Quality is sourced from human evals, adversarial sets, and outcome metrics (bugs, NPS, hallucinations).
+4. **Validator consensus (VC)** — `computeValidatorConsensus`: rewards reproducibility, penalizes slash rates and reproducibility penalties.
+5. **Per‑constituent yield** — `computeConstituentAlphaWU`: `αWU_i = Raw × EA × QA × VC`.
+6. **Weighting** — `rebalanceConstituentWeights`: free‑float work share with diversification caps/floors and automatic normalization.
+7. **Headline index** — `computeAlphaWorkBenchmarkIndex`: `αWB_t = Σ(weight_i × αWU_i) / baseDivisor`, with sector/geo/energy sub‑indices enabled by labels.
+8. **Metering bridge** — `deriveThroughputFromSegments`: aggregates metering snapshots into TDC inputs using quality multipliers as difficulty hints.
 
 ```mermaid
-flowchart LR
+flowchart TD
   subgraph Capture
     A[Metered Segments] --> B[deriveThroughputFromSegments]
     B --> C[computeRawThroughput]
@@ -43,13 +39,8 @@ flowchart LR
     D --> W[rebalanceConstituentWeights]
     W --> IDX[computeAlphaWorkBenchmarkIndex]
   end
-  IDX --> Dashboard[[αWB + Sector Sub‑Indices]]
+  IDX --> Dashboard[[αWB + Sector / Geo / Energy Sub‑Indices]]
 ```
-
-- **Energy telemetry:** kWh per α‑WU plus regional energy prices feed `EA`, rewarding efficiency without allowing runaway
-  multipliers.
-- **Quality telemetry:** human evals, adversarial suites, and outcome metrics roll into `QA`, winsorized to avoid outlier spikes.
-- **Validator consensus:** independent replays and slash rates tune `VC`, incentivising reproducibility and honest reporting.
 
 ## Configuration Surface (`ALPHA_WB`)
 
@@ -74,11 +65,35 @@ export ALPHA_WB='{
 }'
 ```
 
-Validation rules (see `src/config/schema.js`):
+Validation rules (see `src/config/schema.js`): floors must not exceed caps (energy, quality, consensus, weights); `baselineConsensus` is bounded (≤ 1.5); divisors and smoothing windows are positive integers.
 
-- Floors must not exceed caps (energy, quality, consensus, weights).
-- `baselineConsensus` is sanity‑bounded (≤ 1.5) to prevent runaway scores.
-- Divisors and smoothing windows must be positive integers.
+## Index construction & governance
+
+- **Constituents:** Representative autonomous work providers (foundational agents, vertical services, on‑prem orchestrations) with published inclusion criteria and quarterly rebalancing.
+- **Weights:** Free‑float work share over rolling 90 days with diversification caps (e.g., 15% max) and minimum presence floors.
+- **Sector & geo slices:** Optional sector/geo/energy/compliance sub‑indices use the same math on filtered constituent sets.
+- **Validator consensus:** Independent validators re‑run samples under deterministic seeds/tooling; slash events reduce VC and trigger governance hooks.
+- **Owner levers:** Baselines, caps, divisors, smoothing windows, and validator penalties are owner-set via environment/contract controls; pausing freezes issuance/acceptance when needed.
+
+## Anti‑gaming defenses
+
+- Hidden gold tasks, replay audits, and randomized audit windows.
+- Cost attestation cross‑checks (utility bills or cloud invoices) to validate energy claims.
+- Caps on EA/QA multipliers; clawbacks for misreporting via slash events.
+- Anomaly detection on latency, cache hit rates, and tool API patterns.
+
+## Minimal math (readable)
+
+- **Cost‑per‑α‑WU (CPA):** `CPA = EnergyCost/αWU + PlatformFees/αWU`
+- **Quality‑adjusted price:** `QAP = CPA / QA`
+- **Sector index:** same headline formula, limited to sector constituents.
+
+## MVP rollout (fast path)
+
+1. Publish v0 spec with the reference task bundle and scoring rubrics.
+2. Onboard 5–10 diverse providers; run 30‑day shadow audits.
+3. Release **αWB‑Daily**, plus sector sub‑indices and a public dashboard.
+4. Iterate caps/multipliers from live variance data; lock v1.0 after 90 days.
 
 ## Usage Examples
 
@@ -136,19 +151,10 @@ import { getSegmentsSnapshot } from './src/services/metering.js';
 const throughput = deriveThroughputFromSegments(getSegmentsSnapshot());
 ```
 
-## Governance + Anti‑Gaming
-
-- **Owner override:** Pausing, validator rotation, staking posture, and benchmark baselines remain owner‑controlled. No
-  unauthorized caller can issue or accept α‑WU records (`AlphaNodeManager.sol`).
-- **Caps & winsorization:** Every multiplier is clamped to prevent energy‑washing or quality inflation.
-- **Validator slashing hooks:** Non‑reproducible results can be penalized through slashing events while consensus weights adjust
-  dynamically.
-
 ## Outcomes
 
 - **Operators:** Track ROI of agent fleets versus energy spend (Cost‑per‑α‑WU, Quality‑Adjusted Price).
 - **Buyers:** Compare providers on cost‑per‑α‑WU with transparent QA + VC scoring.
 - **Policy / infra:** Observe how grid prices and hardware efficiency shift real AI productivity in near real time.
 
-The αWB spine turns heterogeneous agent swarms into a single, tamper‑resistant productivity signal—ready for dashboards,
-smart‑contracts, and exchange‑grade dissemination.
+The αWB spine turns heterogeneous agent swarms into a single, tamper‑resistant productivity signal—ready for dashboards, smart‑contracts, and exchange‑grade dissemination.
