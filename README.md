@@ -228,6 +228,25 @@ flowchart LR
 - **Metrics & debug endpoints**: `/debug/peerscore` returns the latest distribution, while Prometheus gauges (`peer_score_bucket_total`, `peer_score_topic_contribution`, `peer_score_snapshot_seconds`) auto-refresh via registry subscriptions and publish alongside the existing `/metrics` surface.【F:test/apiServer.peerscore.test.js†L1-L35】【F:test/monitoring.test.js†L1-L125】【F:src/telemetry/peerScoreMetrics.js†L1-L73】【F:src/telemetry/monitoring.js†L23-L127】
 - **Acceptance hooks**: Peer score snapshots recorded before telemetry startup are replayed, ensuring operators always see bucketed scores and topic contributions without waiting for the next inspect tick.【F:test/monitoring.test.js†L1-L125】
 
+**Topic score grid (defaults, overridable via `PUBSUB_TOPIC_PARAMS`)**
+
+| Topic | Weight | Expected msg/s | Invalid penalty | Mesh window/threshold | Time-in-mesh cap/weight |
+| --- | --- | --- | --- | --- | --- |
+| `agi.jobs` | 0.9 | 0.4 | -0.75 | 10s / 4 msgs | 600s / 0.02 |
+| `agi.metrics` | 0.35 | 0.1 | -0.25 | 10s / 2 msgs | 300s / 0.015 |
+| `agi.control` | 1.25 | 0.25 | -1.5 | 10s / 6 msgs | 900s / 0.03 |
+| `agi.coordination` | 0.5 | 0.15 | -0.6 | 10s / 3 msgs | 480s / 0.02 |
+| `agi.settlement` | 0.8 | 0.2 | -0.9 | 10s / 4 msgs | 720s / 0.028 |
+| `agi.*` (wildcard fallback) | 0.4 | 0.15 | -0.65 | 10s / 3 msgs | 450s / 0.02 |
+
+### Peer score operations (B1–B3 acceptance drill)
+
+1. **Launch with scoring on**: ensure `PUBSUB_PEER_EXCHANGE` and scoring thresholds stay at defaults (or supply overrides); bootstrap logs will print the mesh/gossip thresholds plus the active inspector hook.【F:src/network/pubsubConfig.js†L36-L92】【F:src/orchestrator/bootstrap.js†L108-L133】
+2. **Watch scores change**: hit `GET /debug/peerscore?limit=5&direction=asc` to view the lowest scoring peers alongside bucket totals; scores update on each `WithPeerScoreInspect` snapshot.
+3. **Metrics view**: scrape `/metrics` and filter `peer_score_bucket_total` + `peer_score_topic_contribution` to chart bucket drift and per-topic contributions (positive vs. penalties).【F:src/network/apiServer.js†L1111-L134】【F:src/telemetry/peerScoreMetrics.js†L1-L73】
+4. **Abuse test**: publish malformed messages on `agi.jobs` in a synthetic harness—the offending peer should slide past graylist into disconnect once invalid penalties accrue; healthy peers retain neutral/positive buckets. Thresholds are owner-tunable via `PUBSUB_GRAYLIST_THRESHOLD`/`PUBSUB_DISCONNECT_THRESHOLD`.【F:src/services/peerScoring.js†L1-L152】
+5. **Opportunistic grafting**: rely on `PUBSUB_OPPORTUNISTIC_GRAFT_PEERS`/`PUBSUB_OPPORTUNISTIC_GRAFT_THRESHOLD` to refresh low-quality meshes automatically; logs will note inspector attachment so you can correlate graft events with score swings.【F:src/network/pubsubConfig.js†L23-L75】
+
 ```mermaid
 flowchart TD
   Config[ENV + .env + ENS\nPUBSUB_* overrides] --> Builder[buildPeerScoreConfig\n(topic + pattern aware)]
@@ -240,6 +259,25 @@ flowchart TD
   Metrics --> Dash[Grafana/alerts]
   classDef accent fill:#0b1120,stroke:#6366f1,stroke-width:1.5px,color:#e2e8f0;
   class Config,Builder,ScoreParams,GSub,Snapshots,Registry,Operator,Metrics,Dash accent;
+```
+
+```mermaid
+flowchart LR
+  classDef accent fill:#111827,stroke:#10b981,stroke-width:1.5px,color:#ecfeff;
+  subgraph ScoreLoop[Peer Score Loop]
+    Params[Score params\n(topic weights + thresholds)]
+    Inspect[WithPeerScoreInspect\n@ configurable interval]
+    Registry[Registry buckets\npositive / neutral / gossip-suppressed / graylist / disconnect]
+  end
+  subgraph Surfaces[Operator surfaces]
+    API[/GET /debug/peerscore/]
+    Metrics[[Prometheus gauges\npeer_score_*]]
+    Dashboard[Grafana/CLI]
+  end
+  Params --> Inspect --> Registry
+  Registry --> API
+  Registry --> Metrics --> Dashboard
+  API --> Dashboard
 ```
 
 ```mermaid
