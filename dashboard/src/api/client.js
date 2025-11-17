@@ -2,6 +2,7 @@ function buildHeaders(apiKey) {
   const headers = { Accept: 'application/json' };
   if (apiKey) {
     headers['x-api-key'] = apiKey;
+    headers.Authorization = `Bearer ${apiKey}`;
   }
   return headers;
 }

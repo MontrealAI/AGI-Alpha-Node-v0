@@ -12,7 +12,7 @@ function defaultWindow() {
   return { from: toIsoDate(from), to: toIsoDate(today) };
 }
 
-export function TelemetryView({ baseUrl, apiKey }) {
+export function TelemetryView({ baseUrl, apiKey, refreshNonce = 0 }) {
   const { from: defaultFrom, to: defaultTo } = useMemo(() => defaultWindow(), []);
   const [from, setFrom] = useState(defaultFrom);
   const [to, setTo] = useState(defaultTo);
@@ -52,12 +52,12 @@ export function TelemetryView({ baseUrl, apiKey }) {
   useEffect(() => {
     loadProviders();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [baseUrl, apiKey]);
+  }, [baseUrl, apiKey, refreshNonce]);
 
   useEffect(() => {
     loadRuns();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [from, to, providerId, baseUrl, apiKey]);
+  }, [from, to, providerId, baseUrl, apiKey, refreshNonce]);
 
   return (
     <section className="panel" aria-label="Telemetry debug">

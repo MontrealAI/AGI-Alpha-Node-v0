@@ -24,7 +24,7 @@ function defaultWindow() {
   return { from: toIsoDate(from), to: toIsoDate(today) };
 }
 
-export function ProvidersView({ baseUrl, apiKey, onApiKeyChange }) {
+export function ProvidersView({ baseUrl, apiKey, onApiKeyChange, refreshNonce = 0 }) {
   const { from: defaultFrom, to: defaultTo } = useMemo(() => defaultWindow(), []);
   const [providers, setProviders] = useState([]);
   const [selectedProvider, setSelectedProvider] = useState(null);
@@ -68,14 +68,14 @@ export function ProvidersView({ baseUrl, apiKey, onApiKeyChange }) {
   useEffect(() => {
     loadProviders();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [baseUrl, apiKey]);
+  }, [baseUrl, apiKey, refreshNonce]);
 
   useEffect(() => {
     if (selectedProvider) {
       loadScores(selectedProvider);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [from, to]);
+  }, [from, to, refreshNonce]);
 
   const chartData = useMemo(() => {
     const labels = (scores ?? []).map((entry) => entry.measurement_date ?? entry.as_of_date);

@@ -24,7 +24,7 @@ function defaultWindow() {
   return { from: toIsoDate(from), to: toIsoDate(today) };
 }
 
-export function IndexView({ baseUrl, apiKey }) {
+export function IndexView({ baseUrl, apiKey, refreshNonce = 0 }) {
   const { from: defaultFrom, to: defaultTo } = useMemo(() => defaultWindow(), []);
   const [from, setFrom] = useState(defaultFrom);
   const [to, setTo] = useState(defaultTo);
@@ -48,7 +48,7 @@ export function IndexView({ baseUrl, apiKey }) {
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [from, to, baseUrl, apiKey]);
+  }, [from, to, baseUrl, apiKey, refreshNonce]);
 
   const chartData = useMemo(() => {
     const labels = (series ?? []).map((entry) => entry.effective_date);
