@@ -40,14 +40,26 @@ const mockData = {
         name: 'helios-labs',
         region: 'na-east',
         sector_tags: ['llm'],
-        latest_score: { slu: 0.86, energy_adjustment: 0.98, quality_adjustment: 1.02, measurement_date: '2024-01-03' }
+        latest_score: {
+          slu: 0.86,
+          energy_adjustment: 0.98,
+          quality_adjustment: 1.02,
+          consensus_factor: 0.97,
+          measurement_date: '2024-01-03'
+        }
       },
       {
         id: 2,
         name: 'aurora',
         region: 'eu-west',
         sector_tags: ['cv'],
-        latest_score: { slu: 0.73, energy_adjustment: 1.1, quality_adjustment: 0.96, measurement_date: '2024-01-03' }
+        latest_score: {
+          slu: 0.73,
+          energy_adjustment: 1.1,
+          quality_adjustment: 0.96,
+          consensus_factor: 1.02,
+          measurement_date: '2024-01-03'
+        }
       }
     ],
     pagination: { total: 2, limit: 50, offset: 0 }
@@ -122,6 +134,7 @@ test('renders dashboard views and hydrates via mocked API', async () => {
   await waitFor(() => expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/providers'), expect.anything()));
   const providerRow = screen.getByRole('row', { name: /helios-labs/ });
   fireEvent.click(providerRow);
+  expect(screen.getByRole('cell', { name: /0\.97/ })).toBeInTheDocument();
   await waitFor(() =>
     expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/providers/1/scores'), expect.anything())
   );
