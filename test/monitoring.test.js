@@ -13,6 +13,7 @@ import {
   observeAlphaWuValidationLatencyMs,
   __resetMonitoringStateForTests
 } from '../src/telemetry/monitoring.js';
+import { createPeerScoreRegistry } from '../src/services/peerScoring.js';
 
 const noopLogger = { info: () => {}, warn: () => {}, error: () => {} };
 
@@ -230,5 +231,44 @@ describe('monitoring telemetry server', () => {
     expect(metrics).toContain('alpha_wu_total{node_label="node-pre",device_class="H100-80GB",sla_profile="SOVEREIGN"} 8');
     expect(metrics).toContain('alpha_wu_per_job{job_id="job-pre"} 8');
     expect(metrics).toContain('alpha_wu_epoch{epoch_id="epoch-pre"} 8');
+  });
+
+  it('exports peer score metrics when a registry is provided', async () => {
+    const peerRegistry = createPeerScoreRegistry({ retentionMinutes: 1 });
+    peerRegistry.record({
+      timestamp: new Date('2024-01-01T00:00:00Z'),
+      peers: [
+        { id: 'peer-good', score: 3.2, topics: { 'agi.jobs': { score: 1.25 } }, behaviourPenalty: -0.1 },
+        { id: 'peer-gray', score: -6.2, topics: { 'agi.jobs': { score: -1.1 }, 'agi.metrics': { score: 0.2 } } }
+      ]
+    });
+
+    telemetry = startMonitoringServer({
+      port: 0,
+      logger: noopLogger,
+      peerScoreRegistry: peerRegistry,
+      peerScoreThresholds: { gossip: -2, publish: -4, graylist: -6, disconnect: -8 }
+    });
+    await waitForServer(telemetry.server);
+
+    peerRegistry.record({
+      timestamp: new Date('2024-01-01T00:00:05Z'),
+      peers: [
+        { id: 'peer-good', score: 4.1, topics: { 'agi.jobs': { score: 1.5 } }, appSpecific: 0.25 },
+        { id: 'peer-gray', score: -6.5, topics: { 'agi.jobs': { score: -1.25 } } }
+      ]
+    });
+
+    await delay(10);
+    const { port } = telemetry.server.address();
+    const response = await fetch(`http://127.0.0.1:${port}/metrics`);
+    expect(response.status).toBe(200);
+    const metrics = await response.text();
+
+    expect(metrics).toContain('peer_score_bucket_total{bucket="positive"} 1');
+    expect(metrics).toContain('peer_score_bucket_total{bucket="graylist"} 1');
+    expect(metrics).toContain('peer_score_topic_contribution{topic="agi.jobs",component="total"}');
+    expect(metrics).toContain('peer_score_topic_contribution{topic="app_specific",component="total"} 0.25');
+    expect(metrics).toContain('peer_score_snapshot_seconds');
   });
 });

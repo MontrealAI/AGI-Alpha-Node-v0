@@ -1,5 +1,7 @@
 import http from 'node:http';
 import { collectDefaultMetrics, Counter, Gauge, Registry, Summary } from 'prom-client';
+import { DEFAULT_PEER_SCORE_THRESHOLDS } from '../services/peerScoring.js';
+import { applyPeerScoreSnapshot, createPeerScoreMetrics } from './peerScoreMetrics.js';
 
 const alphaWuMetricState = {
   totalCounters: [],
@@ -216,9 +218,35 @@ export function updateAlphaWorkUnitEpochMetrics(summaries = []) {
   });
 }
 
-export function startMonitoringServer({ port = 9464, logger, enableAlphaWuPerJob = false } = {}) {
+export function startMonitoringServer({
+  port = 9464,
+  logger,
+  enableAlphaWuPerJob = false,
+  peerScoreRegistry = null,
+  peerScoreThresholds = null
+} = {}) {
   const registry = new Registry();
   collectDefaultMetrics({ register: registry, prefix: 'agi_alpha_node_' });
+
+  const peerScoreMetrics = createPeerScoreMetrics({ registry });
+  const peerScoreThresholdConfig = {
+    ...DEFAULT_PEER_SCORE_THRESHOLDS,
+    ...(peerScoreThresholds ?? {})
+  };
+  let peerScoreUnsubscribe = null;
+  if (peerScoreRegistry?.subscribe) {
+    const applySnapshot = (snapshot) =>
+      applyPeerScoreSnapshot({
+        metrics: peerScoreMetrics,
+        snapshot,
+        thresholds: peerScoreThresholdConfig
+      });
+    peerScoreUnsubscribe = peerScoreRegistry.subscribe(applySnapshot);
+    const latestSnapshot = peerScoreRegistry.getLatest?.();
+    if (latestSnapshot) {
+      applySnapshot(latestSnapshot);
+    }
+  }
 
   const stakeGauge = new Gauge({
     name: 'agi_alpha_node_stake_balance',
@@ -449,6 +477,10 @@ export function startMonitoringServer({ port = 9464, logger, enableAlphaWuPerJob
     logger?.info?.({ port }, 'Telemetry server listening');
   });
 
+  server.on('close', () => {
+    peerScoreUnsubscribe?.();
+  });
+
   return {
     registry,
     server,
@@ -479,7 +511,9 @@ export function startMonitoringServer({ port = 9464, logger, enableAlphaWuPerJob
     jobLatencySummary,
     alphaWuValidatedCounter,
     alphaWuInvalidCounter,
-    alphaWuValidationLatencySummary
+    alphaWuValidationLatencySummary,
+    peerScoreMetrics,
+    peerScoreUnsubscribe
   };
 }
 

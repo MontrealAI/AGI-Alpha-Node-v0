@@ -30,6 +30,7 @@
   <img src="https://img.shields.io/badge/Internal%20Dashboard-React%20%7C%20Vite-38bdf8?logo=react&logoColor=white" alt="Dashboard" />
   <img src="https://img.shields.io/badge/Debug%20Surface-Telemetry%20%7C%20GSLI-0ea5e9?logo=prometheus&logoColor=white" alt="Debug surface" />
   <img src="https://img.shields.io/badge/Index%20Engine-GSLI%20Rebalancing-10b981?logo=apacheairflow&logoColor=white" alt="Index engine" />
+  <img src="https://img.shields.io/badge/PubSub-GossipSub%20v1.1%20%7C%20Peer%20Scoring-6366f1?logo=probot&logoColor=white" alt="GossipSub v1.1" />
   <a href="https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa">
     <img src="https://img.shields.io/badge/$AGIALPHA-0xa61a...a1fa-ff3366?logo=ethereum&logoColor=white" alt="$AGIALPHA" />
   </a>
@@ -78,6 +79,7 @@
 - **Debug deck (SPA)**: `dashboard/` ships a React/Vite cockpit with a connection bar (API base + API key), per-tab refresh, and mocked smoke coverage via `dashboard/src/App.test.jsx`.
 - **Deploy fast**: `Dockerfile` + `deploy/helm/agi-alpha-node` emit production images and Kubernetes charts; defaults remain non-destructive for non-technical operators.
 - **Health & observability**: `/health` + `/healthz` for probes, `/metrics` for Prometheus, structured pino logs for SLU scoring + GSLI rebalance, and `.env.example` wiring for API keys, DB path (`AGI_ALPHA_DB_PATH`), and dashboard CORS in one place.
+- **Peer scoring clarity**: `/debug/peerscore?limit=20&direction=asc|desc` surfaces the latest mesh peers by score (positive + negative), while Prometheus gauges (`peer_score_bucket_total`, `peer_score_topic_contribution`) export anonymized distributions backed by GossipSub v1.1 scoring defaults.
 
 ## Operator-ready launch checklist (green CI + sovereign control)
 
@@ -216,6 +218,28 @@ flowchart LR
   Log --> Reach
   classDef accent fill:#0b1120,stroke:#38bdf8,stroke-width:1.5px,color:#cbd5e1;
   class HostPlan,Pref,TCP,QUIC,DCUtR,AN,Relay,Addrs,Listen,Announce,Signals,Reach,Log accent;
+```
+
+### PubSub hardening & peer scoring (Sprint B)
+
+- **GossipSub v1.1 defaults**: `buildPeerScoreConfig` synthesizes decay intervals, opportunistic grafting, direct connect ticks, and per-topic scoring tuned to AGI traffic (jobs, metrics, control, coordination, settlement) with wildcard fallbacks for `agi.*`. Patterns resolve to the most specific match so tuning `agi.telemetry.*` does not override `agi.jobs`.【F:src/services/peerScoring.js†L1-L181】
+- **Topic-aware scoring export**: `buildGossipsubScoreParams` emits a drop-in scoring map (weights, decay, mesh delivery caps/thresholds, invalid message penalties) plus thresholds for gossip/publish/graylist/disconnect fences, ready to pass into a GossipSub v1.1 constructor.【F:src/services/peerScoring.js†L183-L249】
+- **Inspection surfaces**: `createPeerScoreRegistry` records snapshots, buckets peers by threshold, exposes top positive/negative entries, and now supports live subscribers (used by Prometheus + debug APIs).【F:src/services/peerScoring.js†L251-L318】
+- **Metrics & debug endpoints**: `/debug/peerscore` returns the latest distribution, while Prometheus gauges (`peer_score_bucket_total`, `peer_score_topic_contribution`, `peer_score_snapshot_seconds`) auto-refresh via registry subscriptions and publish alongside the existing `/metrics` surface.【F:test/apiServer.peerscore.test.js†L1-L35】【F:test/monitoring.test.js†L1-L125】【F:src/telemetry/peerScoreMetrics.js†L1-L73】【F:src/telemetry/monitoring.js†L23-L127】
+- **Acceptance hooks**: Peer score snapshots recorded before telemetry startup are replayed, ensuring operators always see bucketed scores and topic contributions without waiting for the next inspect tick.【F:test/monitoring.test.js†L1-L125】
+
+```mermaid
+flowchart TD
+  Config[ENV + .env + ENS\nPUBSUB_* overrides] --> Builder[buildPeerScoreConfig\n(topic + pattern aware)]
+  Builder --> ScoreParams[buildGossipsubScoreParams\nGossipSub v1.1 map]
+  ScoreParams --> GSub[GossipSub runtime\nmesh inclusion/pruning]
+  GSub --> Snapshots[PeerScore snapshots]
+  Snapshots --> Registry[createPeerScoreRegistry\nwith subscribers]
+  Registry -->|/debug/peerscore| Operator[Operator CLI/API]
+  Registry --> Metrics[Prometheus gauges\npeer_score_bucket_total\npeer_score_topic_contribution]
+  Metrics --> Dash[Grafana/alerts]
+  classDef accent fill:#0b1120,stroke:#6366f1,stroke-width:1.5px,color:#e2e8f0;
+  class Config,Builder,ScoreParams,GSub,Snapshots,Registry,Operator,Metrics,Dash accent;
 ```
 
 ```mermaid
