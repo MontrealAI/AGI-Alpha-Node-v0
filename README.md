@@ -26,6 +26,10 @@
     <img src="https://img.shields.io/badge/$AGIALPHA-0xa61a...a1fa-ff3366?logo=ethereum&logoColor=white" alt="$AGIALPHA" />
   </a>
   <img src="https://img.shields.io/badge/Token%20Decimals-18%20dp-f97316?logo=ethereum&logoColor=white" alt="Token decimals" />
+  <img src="https://img.shields.io/badge/Coverage-c8%20%26%20vitest-2563eb?logo=codecov&logoColor=white" alt="Coverage" />
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/License-MIT-111827?logo=open-source-initiative&logoColor=white" alt="License" />
+  </a>
   <img src="https://img.shields.io/badge/Runtime-Node.js%2020.18%2B-43853d?logo=node.js&logoColor=white" alt="Runtime" />
   <img src="https://img.shields.io/badge/Solidity-0.8.26-363636?logo=solidity&logoColor=white" alt="Solidity" />
   <a href="Dockerfile">
@@ -46,6 +50,7 @@
 - [System architecture](#system-architecture)
 - [Epic 4 – Global Synthetic Labor Index (GSLI)](#epic-4--global-synthetic-labor-index-gsli)
 - [Epic 5 – Public API (read-only)](#epic-5--public-api-read-only)
+- [Public API reference & shapes](#public-api-reference--shapes)
 - [Telemetry spine & ingestion](#telemetry-spine--ingestion)
 - [Owner controls & on-chain levers](#owner-controls--on-chain-levers)
 - [Data spine & migrations](#data-spine--migrations)
@@ -194,6 +199,42 @@ sequenceDiagram
 - **CORS**: Set `API_DASHBOARD_ORIGIN` to `*` or a specific dashboard origin; preflight (`OPTIONS`) responses are automatic.
 - **Pagination**: `limit` defaults to 30 (`/index/history` and provider scores) or 25 (`/providers`); `offset` drives stable pagination with `nextOffset` hints.
 
+## Public API reference & shapes
+
+The API is deterministic so dashboards can render without client-side guesswork. Fields are stable and tested in `test/apiServer.test.js`.
+
+| Endpoint | Success payload (top-level) | Notes |
+| -------- | -------------------------- | ----- |
+| `/index/latest` | `{ index, weight_set, constituents[] }` | `constituents[*].provider` is hydrated when known; dates are `YYYY-MM-DD`. |
+| `/index/history` | `{ window, pagination, items[] }` | `pagination.nextOffset` is `null` when the page ends. |
+| `/providers` | `{ providers[], pagination }` | Each provider includes `latest_score` (or `null`) and sector/energy metadata. |
+| `/providers/{id}/scores` | `{ provider, window, pagination, scores[] }` | `scores[*]` align with `synthetic_labor_scores` rows, ordered chronologically. |
+
+Examples (with optional public key):
+
+```bash
+curl -H "X-API-Key: $PUBLIC_KEY" "$API_HOST/index/latest"
+curl -H "X-API-Key: $PUBLIC_KEY" "$API_HOST/index/history?from=2024-01-01&to=2024-02-01&limit=30"
+curl -H "X-API-Key: $PUBLIC_KEY" "$API_HOST/providers?limit=20&offset=0"
+curl -H "X-API-Key: $PUBLIC_KEY" "$API_HOST/providers/1/scores?from=2024-01-01&to=2024-02-01&limit=10"
+```
+
+```mermaid
+flowchart LR
+  Client[[Dashboard / Partner]] -->|GET| Latest[/index/latest\n+ weights + constituents/]
+  Client -->|GET| History[/index/history?from&to&limit/]
+  Client -->|GET| Providers[/providers?limit&offset/]
+  Client -->|GET| Scores[/providers/{id}/scores?from&to/]
+  subgraph Security[Optional API key + scoped CORS]
+    Key[X-API-Key or Bearer token]
+    Origin[API_DASHBOARD_ORIGIN]
+  end
+  Security --> Latest
+  Security --> History
+  Security --> Providers
+  Security --> Scores
+```
+
 ### Example (with optional API key and CORS)
 
 ```bash
@@ -270,6 +311,19 @@ curl -H "X-API-Key: $PUBLIC_KEY" "https://localhost:8080/providers/1/scores?from
 - **Full visibility**: All workflows live in [`ci.yml`](.github/workflows/ci.yml) with badge publication, coverage summary, and artifact uploads for smoke-test logs and coverage reports.
 - **Policy gates**: `npm run ci:policy` enforces health gates; `ci:branch` blocks unapproved branches; `ci:security` runs npm audit at `--audit-level=high`.
 - **Coverage discipline**: `npm run coverage` produces LCOV/JSON summaries, surfaced via the badge publisher job.
+
+```mermaid
+flowchart TD
+  Lint[Markdown + Links] --> Matrix{Required Checks}
+  Tests[Vitest + AJV gate] --> Matrix
+  Sol[Solhint + solc sim] --> Matrix
+  TS[Subgraph TS Build] --> Matrix
+  Cov[c8 Coverage + artifact upload] --> Matrix
+  Docker[Docker build + CLI smoke] --> Matrix
+  Security[npm audit --audit-level=high] --> Matrix
+  Policy[Health + branch gates] --> Matrix
+  Matrix -->|enforced via required-checks.json| PRs[[PRs & main]]
+```
 
 ## Operations playbook
 
