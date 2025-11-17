@@ -173,6 +173,27 @@ The public API exposes the GSLI surface and provider SLU metrics for dashboards.
 | GET | `/providers` | `limit`, `offset` | Provider catalog with most recent SLU score per provider. |
 | GET | `/providers/{id}/scores` | `from`, `to`, `limit`, `offset` | Paginated SLU scores for a provider across a date window. |
 
+```mermaid
+sequenceDiagram
+  participant Client
+  participant API as AGI Alpha Node API
+  participant DB as SQLite Spine
+  participant Engine as GSLI Engine
+
+  Client->>API: GET /index/latest (X-API-Key?)
+  API-->>Client: 200 JSON (index + weights)
+  Client->>API: GET /providers/{id}/scores?from&to
+  API->>DB: query synthetic_labor_scores
+  DB-->>API: rows + pagination metadata
+  API-->>Client: 200 JSON (provider, window, scores)
+  Client->>API: OPTIONS /*
+  API-->>Client: 204 + CORS headers (if origin allowed)
+```
+
+- **Authentication**: If `API_PUBLIC_READ_KEY` is set, requests must provide `X-API-Key` or `Authorization: Bearer <key>`.
+- **CORS**: Set `API_DASHBOARD_ORIGIN` to `*` or a specific dashboard origin; preflight (`OPTIONS`) responses are automatic.
+- **Pagination**: `limit` defaults to 30 (`/index/history` and provider scores) or 25 (`/providers`); `offset` drives stable pagination with `nextOffset` hints.
+
 ### Example (with optional API key and CORS)
 
 ```bash
@@ -189,109 +210,98 @@ curl -H "X-API-Key: $PUBLIC_KEY" "https://localhost:8080/providers?limit=20&offs
 curl -H "X-API-Key: $PUBLIC_KEY" "https://localhost:8080/providers/1/scores?from=2024-01-01&to=2024-02-01&limit=10"
 ```
 
-- **Authentication**: If `API_PUBLIC_READ_KEY` is set, requests must provide `X-API-Key` or `Authorization: Bearer <key>`.
-- **CORS**: Set `API_DASHBOARD_ORIGIN` to `*` or a specific dashboard origin; preflight (`OPTIONS`) responses are automatic.
-- **Pagination**: `limit` defaults to 30 (`/index/history` and provider scores) or 25 (`/providers`); `offset` drives stable pagination with `nextOffset` hints.
-
 ## Telemetry spine & ingestion
 
 - **Schemas**: AJV-backed schemas in `spec/*.schema.json` validate task runs, energy reports, and quality evaluations.
 - **API keys**: Provider API keys are hashed (`sha256` by default) and stored in `provider_api_keys`; rate-limit hints surface via `X-RateLimit-*` headers.
 - **Ingestion endpoints**: `/ingest/task-runs`, `/ingest/energy`, `/ingest/quality` accept JSON payloads with `X-API-Key` or `Authorization: Bearer <key>`.
-- **Idempotency**: Payload hashes and idempotency keys prevent duplicate inserts; conflicts return HTTP 409.
+- **Idempotency**: `idempotency_key` on task runs prevents duplicate submissions; quality/energy telemetry is linked back to the originating task.
+- **Schemas-at-rest**: Normalized telemetry lands in `task_runs`, `energy_reports`, and `quality_evaluations` with optional metadata and schema versioning fields.
 
 ## Owner controls & on-chain levers
 
-All critical surfaces are callable by the contract owner—pausing, unpausing, validator threshold updates, registry upgrades, treasury splits, emission controls, node metadata, oracles, and work-meter tuning. Governance calldata builders live in `src/services/governance.js`, surfaced via the CLI (`src/index.js`) under commands such as:
-
-```bash
-node src/index.js governance:pause --system-pause-address 0x... --action pause
-node src/index.js governance:role-share --reward-engine-address 0x... --role validator --share-bps 3000
-node src/index.js governance:job-module --job-registry-address 0x... --module validation --new-address 0x...
-```
-
-Owner commands persist to a governance ledger (`governance_ledger` table) for auditability while keeping every lever resumable and reversible by the owner.
+- **Complete owner control**: Contract owner can pause/unpause, rotate validators, adjust minimum stakes, configure emission curves, redirect treasuries, rotate registries, and update metadata. Calldata builders live in `src/services/governance.js`; the Solidity surface is in `contracts/AlphaNodeManager.sol`.
+- **Runtime mutability**: Owner tokens unlock governance endpoints in `src/network/apiServer.js` so changes can be pushed without redeploys. Every control path is exposed via CLI verbs in `src/index.js` (e.g., `governance:pause`, `incentives:set-rate`, `identity:set-record`).
+- **Observability**: Governance actions write to an internal ledger for auditability; wallet-facing helpers in `src/services/token.js` expose approvals and allowances for `$AGIALPHA` orchestration.
 
 ## Data spine & migrations
 
-- **Database**: SQLite via `better-sqlite3`, migrations in `src/persistence/migrations`, seeded fixtures with `withSeed: true`.
-- **Repositories**: Located in `src/persistence/repositories.js` for providers, task types, task runs, energy, quality, SLU scores, index values, and weights.
-- **CLI**: `npm run db:migrate` and `npm run db:seed` apply migrations and load canonical fixtures.
+- **Database**: SQLite with WAL enabled and foreign keys enforced by `src/persistence/database.js`.
+- **Migrations**: Versioned SQL in `src/persistence/migrations/*.sql` seeds providers, task types, telemetry tables, synthetic labor snapshots, and index constituent weights/weight sets.
+- **Repositories**: CRUD wrappers in `src/persistence/repositories.js` normalize JSON metadata, enforce uniqueness, and expose pagination helpers for SLU history and index values.
+- **Seeds**: `npm run db:seed` or `initializeDatabase({ withSeed: true })` plants sample providers/tasks for dashboards and tests.
 
 ## Quickstart (non-technical friendly)
 
-1. **Install Node.js 20.18+** (or use Docker/Helm).
+1. **Install Node.js 20.18+ & npm 10+** (or use the provided `Dockerfile`).
 2. **Clone and install**:
 
    ```bash
+   git clone https://github.com/MontrealAI/AGI-Alpha-Node-v0.git
+   cd AGI-Alpha-Node-v0
    npm ci
-   npm run db:migrate
+   ```
+
+3. **Bootstrap local data** (in-memory by default):
+
+   ```bash
    npm run db:seed
    ```
 
-3. **Run the node** (orchestrator + validator mixed role):
+4. **Run the node** (read-only API on `PORT`/`API_PORT`, metrics on `/metrics`):
 
    ```bash
-   npm start
-   # or with overrides
-   NODE_LABEL=alpha-core API_PORT=8080 npm start
+   npm start -- --help          # discover CLI verbs
+   npm start                    # launches API + telemetry spine
    ```
 
-4. **API access**: Point dashboards to `http://localhost:8080` and, if configured, set `API_PUBLIC_READ_KEY` + `API_DASHBOARD_ORIGIN`.
-5. **Docker**:
-
-   ```bash
-   docker build -t agi-alpha-node .
-   docker run -p 8080:8080 agi-alpha-node
-   ```
-
-6. **Helm**: Charts live in `deploy/helm/agi-alpha-node` with values for API, telemetry, and governance tokens.
+5. **Secure the API** (optional): set `API_PUBLIC_READ_KEY` and `API_DASHBOARD_ORIGIN` to gate read access and scope CORS.
+6. **Deploy in Kubernetes**: use the Helm chart at `deploy/helm/agi-alpha-node` or build the container: `docker build -t agi-alpha-node:latest .`.
 
 ## Backfill & simulation harness
 
-- **Synthetic telemetry**: `node src/index.js index:simulate --days 90 --cap 15 --divisor 1` backfills SLU and GSLI history with reproducible seeds.
-- **Provider scoring**: `node src/index.js score:daily --date $(date -I)` outputs per-provider SLU for the given day.
-- **Index calculations**: `node src/index.js index:rebalance --date $(date -I) --cap 15 --min-slu 2 --divisor 1 --divisor-version v1` persists capped weights; `node src/index.js index:daily --date $(date -I)` emits the headline index value.
+- **Historical backfill**: `createGlobalIndexEngine` supports `backfillIndexHistory` to rebuild weight sets and headline values over arbitrary windows for dashboard seeding.
+- **Synthetic labor**: `src/services/syntheticLaborEngine.js` computes daily SLU with energy/quality/consensus adjustments; helpers expose recent and per-provider views for dashboards.
+- **Orchestration sandboxes**: `scripts/local_cluster.mjs` spins up a demo mesh; `scripts/subgraph-simulation.js` previews subgraph manifests; `scripts/attestation-verify.ts` checks ZK attestations.
 
 ## CI, gates, and release discipline
 
-- **Full pipeline**: `npm run ci:verify` executes markdown linting, link checks, vitest (unit/integration), coverage via `c8`, Solidity lint/compile, subgraph TypeScript build, npm audit, and policy/branch gates.
-- **Required checks**: `.github/required-checks.json` enumerates the enforced status checks surfaced on PRs.
-- **Coverage**: `npm run coverage` generates LCOV + JSON summaries; reports feed dashboards and badges.
+- **Required checks enforced on PRs**: `.github/required-checks.json` mirrors the CI matrix (lint, tests, coverage, Solidity checks, subgraph build, Docker smoke, security audit) and is enforced on `main`.
+- **Full visibility**: All workflows live in [`ci.yml`](.github/workflows/ci.yml) with badge publication, coverage summary, and artifact uploads for smoke-test logs and coverage reports.
+- **Policy gates**: `npm run ci:policy` enforces health gates; `ci:branch` blocks unapproved branches; `ci:security` runs npm audit at `--audit-level=high`.
+- **Coverage discipline**: `npm run coverage` produces LCOV/JSON summaries, surfaced via the badge publisher job.
 
 ## Operations playbook
 
-- **Health**: `GET /healthz` returns liveness; `GET /status` exposes α‑WU rollups; `GET /status/diagnostics` returns epoch-level SLU breakdowns by job/device/SLA.
-- **Telemetry**: `GET /jobs` and `GET /jobs/{id}` surface lifecycle state; `POST /jobs/*` enables job applications, submissions, and finalization.
-- **Oracle exports**: `GET /oracle/epochs?from=...&to=...` emits epoch payloads gated by `GOVERNANCE_API_TOKEN`.
-- **Pausing**: Owner pause/unpause transactions keep every subsystem under direct owner control for high-stakes operations.
+- **Health probes**: `/healthz` surfaces mode and recent telemetry counts; `/status` returns α‑WU posture and last epoch summary. `/metrics` exposes Prometheus metrics (scrape-friendly for dashboards).
+- **API safety**: Governance endpoints demand owner tokens; public endpoints can be gated with `API_PUBLIC_READ_KEY`. CORS is limited to `API_DASHBOARD_ORIGIN` and preflight is handled automatically.
+- **Secrets**: Environment variables are loaded via `dotenv`; never store private keys in the repo. Owner authorization can be passed via `Authorization: Bearer <token>` or `X-Owner-Token`.
+- **Data durability**: Configure `AGI_ALPHA_DB_PATH` to persist beyond process restarts; WAL is enabled by default.
 
 ## Repository atlas
 
-- `src/network/apiServer.js` — HTTP server (ingestion, governance, public API, health).
-- `src/services/globalIndexEngine.js` — GSLI eligibility, weights, and index value calculations.
-- `src/services/syntheticLaborEngine.js` — SLU computation from task runs + telemetry.
-- `src/persistence/repositories.js` — SQLite repositories (providers, telemetry, SLU, index weights/values).
-- `src/orchestrator/bootstrap.js` — container bootstrap, health gates, runtime wiring.
-- `contracts/AlphaNodeManager.sol` — owner control plane; calldata builders live in `src/services/governance.js`.
-- `deploy/helm/agi-alpha-node` — Kubernetes/Helm manifests.
+- `src/network/apiServer.js` – HTTP surface (telemetry ingest, governance, read-only public API, health/metrics).
+- `src/services/globalIndexEngine.js` – GSLI eligibility, weight sets, divisor-aware index math.
+- `src/services/syntheticLaborEngine.js` – SLU computation and provider scoring pipeline.
+- `src/services/governance.js` – Owner calldata builders (pausing, validators, emissions, treasury, registry upgrades, work meters, productivity controls).
+- `src/intelligence` – Planning, swarm orchestration, learning loop, antifragility harnesses.
+- `src/persistence` – SQLite migrations, seeds, repositories, and CLI helpers.
+- `contracts/AlphaNodeManager.sol` – Owner-governed contract surface; `$AGIALPHA` integrations in `contracts` + `src/services/token.js`.
+- `deploy/helm/agi-alpha-node` – Production Kubernetes packaging; `Dockerfile` for container builds.
 
 ## Appendix: CLI recipes
 
 ```bash
-# ENS setup guide
-node src/index.js ens:setup --ens-name 1.alpha.node.agi.eth
+# Governance: pause the system (owner token required via env OWNER_TOKEN)
+node src/index.js governance:pause --operator 0xYourOwner --signature 0xdeadbeef
 
-# Stake & activate
-node src/index.js stake:build --amount 1000 --operator 0x... | jq
-node src/index.js stake:activate --tx 0x...
+# Compute today’s GSLI headline value after rebalance
+node src/index.js index:rebalance --cap 15 --lookback-days 90
+node src/index.js index:daily --as-of $(date +%F)
 
-# Telemetry ingestion (local demo)
-node scripts/local_cluster.mjs
-curl -X POST http://localhost:8080/ingest/task-runs -H "Content-Type: application/json" -d @spec/examples/task-run.json
+# Backfill index history for dashboards
+node src/index.js index:backfill --from 2024-01-01 --to 2024-03-01 --cap 20 --rebalance-interval 30
 
-# Governance ledger replay
-node src/index.js governance:ledger --root ./governance-ledger
+# Inspect ENS alignment for your node
+node src/index.js ens:verify --label 1.alpha.node.agi.eth --operator 0xYourOperator
 ```
-
-AGI Alpha Node v0 is built to feel like commanding a kinetic, superhuman machine—every surface observable, every parameter steerable, every lever under owner control.
