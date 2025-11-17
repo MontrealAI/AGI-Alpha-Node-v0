@@ -16,7 +16,8 @@ describe('GossipSub routing config', () => {
     expect(mesh).toEqual({ D: 8, Dlo: 6, Dhi: 12, Dout: 32, Dlazy: 12 });
     expect(gossip.gossipFactor).toBeCloseTo(0.25);
     expect(gossip.gossipRetransmission).toBe(3);
-    expect(options.fanoutTTL).toBe(60);
+    expect(gossip.fanoutTTLSeconds).toBe(60);
+    expect(options.fanoutTTL).toBe(60_000);
     expect(options.gossipsubVersion).toBe('1.1');
     expect(options.peerScoreInspect).toBe(inspector.handler);
     expect(inspectorFn).toBe(inspector.handler);
@@ -56,7 +57,8 @@ describe('GossipSub routing config', () => {
     expect(gossip).toMatchObject({
       gossipFactor: 0.35,
       gossipRetransmission: 4,
-      fanoutTTL: 90,
+      fanoutTTLSeconds: 90,
+      fanoutTTL: 90_000,
       opportunisticGraftPeers: 5,
       opportunisticGraftThreshold: 7
     });

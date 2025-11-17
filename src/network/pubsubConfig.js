@@ -21,8 +21,11 @@ function resolveMeshConfig(config = {}) {
 }
 
 function resolveGossipConfig(config = {}) {
+  const fanoutTTLSeconds = toFinite(config.PUBSUB_FANOUT_TTL_SECONDS, 60);
+
   return {
-    fanoutTTL: toFinite(config.PUBSUB_FANOUT_TTL_SECONDS, 60),
+    fanoutTTLSeconds,
+    fanoutTTL: fanoutTTLSeconds * 1000,
     gossipFactor: toFinite(config.PUBSUB_GOSSIP_FACTOR, 0.25),
     gossipRetransmission: toFinite(config.PUBSUB_GOSSIP_RETRANSMISSION, 3),
     opportunisticGraftPeers: toFinite(config.PUBSUB_OPPORTUNISTIC_GRAFT_PEERS, toFinite(config.PUBSUB_D, 8)),
