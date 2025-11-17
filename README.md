@@ -155,6 +155,26 @@ flowchart LR
 - **Rebalancing**: Monthly by default (`rebalanceIntervalDays` = 30). New weight sets retain previous versions for reproducibility with metadata on eligibility windows and capped providers.
 - **CLI controls**: `index:eligibility` reports eligible/excluded providers, `index:rebalance` mints versioned weight sets with custom divisors, and `index:daily` computes headline values for any stored weight set.
 
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Providers
+  participant Labor as Synthetic Labor Engine
+  participant Indexer as Global Index Engine
+  participant Ledger as SQLite Spine
+  participant Owner
+
+  Providers->>Labor: Daily SLU telemetry (task_runs, energy, quality)
+  Labor->>Ledger: Persist synthetic_labor_scores (per provider, per day)
+  Owner->>Indexer: Trigger eligibility & rebalance (--date, --cap, --min-slu)
+  Indexer->>Ledger: Store weight_set_id + capped weights + exclusions
+  loop Daily headline
+    Indexer->>Labor: Fetch SLU_i,t for providers
+    Indexer->>Ledger: Write Index_t with divisor_version
+  end
+  Note over Owner,Indexer: Monthly (or custom interval) rebalances retain historical weights for reproducibility
+```
+
 ## Telemetry spine & ingestion
 
 - **Schemas**: Task runs (`spec/task_run_telemetry.schema.json`), energy reports (`spec/energy_report.schema.json`), quality evaluations (`spec/quality_eval.schema.json`), and validator consensus telemetry (`spec/validator_consensus.schema.json`) are enforced via AJV before persistence.
