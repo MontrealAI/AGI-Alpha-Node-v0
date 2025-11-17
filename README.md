@@ -482,6 +482,36 @@ flowchart LR
   class Discovery,Transports,Traversal,Surface,ENS,Loader,QUIC,TCP,DCUtR,AutoNAT,Relay,API,Dashboard accent;
 ```
 
+### GossipSub v1.1 + peer scoring (Epic B)
+
+- **Hardened pubsub defaults**: GossipSub v1.1 scoring templates ship with opportunistic grafting, per-topic weights, invalid-message penalties, and time-in-mesh bonuses tuned for core AGI channels (`agi.jobs`, `agi.metrics`, `agi.control`, `agi.coordination`, `agi.settlement`).【F:src/services/peerScoring.js†L1-L152】
+- **Operator-tunable thresholds**: Env knobs (`PUBSUB_GOSSIP_THRESHOLD`, `PUBSUB_PUBLISH_THRESHOLD`, `PUBSUB_GRAYLIST_THRESHOLD`, `PUBSUB_DISCONNECT_THRESHOLD`, `PUBSUB_OPPORTUNISTIC_GRAFT_TICKS`, `PUBSUB_DIRECT_CONNECT_TICKS`, `PUBSUB_RETAIN_SCORE_MS`, `PUBSUB_INSPECT_INTERVAL_MS`, `PUBSUB_SCORE_RETENTION_MINUTES`, `PUBSUB_TOPIC_PARAMS`) keep mesh inclusion/pruning, graylisting, and disconnect behavior under explicit owner control without code edits.【F:src/config/defaults.js†L25-L41】【F:src/config/schema.js†L524-L575】
+- **Score inspection + metrics**: `createPeerScoreInspector` and `createPeerScoreRegistry` snapshot peer scores on a configurable cadence, bucket outcomes (gossip-suppressed/graylisted/disconnect), and expose the history to dashboards and Prometheus exporters.【F:src/services/peerScoring.js†L84-L194】 Logs surface the synthesized scoring plan during bootstrap so operators can verify topic weights and thresholds before traffic flows.【F:src/orchestrator/bootstrap.js†L108-L133】
+- **Debug endpoint**: `/debug/peerscore` returns the latest buckets plus the top-N positive/negative peers (configurable via `?limit=`) to make score-based pruning and opportunistic grafting transparent during drills.【F:src/network/apiServer.js†L114-L134】
+- **Dashboard/CLI parity**: Peer-score telemetry is wired into the runtime bootstrap so the same inspector can be fed into libp2p’s `WithPeerScoreInspect` hook or replayed from synthetic tests; operators keep control even when scaling to graylist/disconnect thresholds.
+
+```mermaid
+flowchart LR
+  subgraph PubSub[GossipSub v1.1]
+    Topics[Topics: agi.jobs|metrics|control|coordination|settlement]
+    Scoring[Peer scoring + penalties]
+  end
+  subgraph Inspect[Visibility layer]
+    InspectFn[WithPeerScoreInspect handler]
+    Registry[PeerScoreRegistry\n(buckets + history)]
+  end
+  subgraph Surfaces[Operational surfaces]
+    Debug[/GET /debug/peerscore/]
+    Metrics[/Prometheus-ready buckets/]
+    Logs[pino snapshots]
+  end
+  Topics --> Scoring --> InspectFn --> Registry --> Debug
+  Registry --> Metrics
+  Registry --> Logs
+  classDef accent fill:#0b1120,stroke:#a855f7,stroke-width:1.5px,color:#e2e8f0;
+  class PubSub,Topics,Scoring,Inspect,InspectFn,Registry,Surfaces,Debug,Metrics,Logs accent;
+```
+
 ### Command and control surface
 
 ```mermaid

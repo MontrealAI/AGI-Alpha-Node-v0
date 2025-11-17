@@ -904,7 +904,8 @@ export function startAgentApi({
   healthGate = null,
   telemetry = null,
   publicApiKey = null,
-  corsOrigin = null
+  corsOrigin = null,
+  peerScoreStore = null
 } = {}) {
   const jobs = new Map();
   const lifecycleJobs = new Map();
@@ -1104,6 +1105,20 @@ export function startAgentApi({
 
       if (!req.url) {
         jsonResponse(res, 404, { error: 'Not found' });
+        return;
+      }
+
+      if (req.method === 'GET' && pathname === '/debug/peerscore') {
+        if (!peerScoreStore) {
+          jsonResponse(res, 503, { error: 'Peer score registry unavailable' });
+          return;
+        }
+        const requestedLimit = Number.parseInt(requestUrl.searchParams.get('limit') ?? '10', 10);
+        const limit = Number.isFinite(requestedLimit)
+          ? Math.min(Math.max(requestedLimit, 1), 100)
+          : 10;
+        const direction = requestUrl.searchParams.get('direction') === 'asc' ? 'asc' : 'desc';
+        jsonResponse(res, 200, peerScoreStore.summarize({ limit, direction }));
         return;
       }
 

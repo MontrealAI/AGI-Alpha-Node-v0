@@ -191,6 +191,48 @@ function coerceMultiaddrList(value) {
   return Array.from(new Set(splitEntries));
 }
 
+function coerceTopicParams(value) {
+  if (value === undefined || value === null) {
+    return {};
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return {};
+    }
+    try {
+      return coerceTopicParams(JSON.parse(trimmed));
+    } catch (error) {
+      throw new Error(`Unable to parse PUBSUB_TOPIC_PARAMS JSON: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  if (typeof value !== 'object') {
+    throw new Error('PUBSUB_TOPIC_PARAMS must be an object or JSON string');
+  }
+  const normalized = {};
+  for (const [topic, params] of Object.entries(value)) {
+    if (!topic || params === undefined || params === null) {
+      continue;
+    }
+    if (typeof params !== 'object') {
+      throw new Error(`PUBSUB_TOPIC_PARAMS for ${topic} must be an object`);
+    }
+    const sanitized = {};
+    for (const [key, paramValue] of Object.entries(params)) {
+      if (paramValue === undefined || paramValue === null) {
+        continue;
+      }
+      const numeric = Number(paramValue);
+      if (!Number.isFinite(numeric)) {
+        throw new Error(`PUBSUB_TOPIC_PARAMS for ${topic} must be numeric values`);
+      }
+      sanitized[key] = numeric;
+    }
+    normalized[topic.trim()] = sanitized;
+  }
+  return normalized;
+}
+
 function parseProfileSpec(value) {
   if (value === undefined || value === null) {
     return undefined;
@@ -560,6 +602,21 @@ export const configSchema = z
         }
         return numeric;
       }, z.number().int().positive().optional()),
+    PUBSUB_INSPECT_INTERVAL_MS: z.coerce.number().int().min(1_000).max(300_000).default(30_000),
+    PUBSUB_SCORE_RETENTION_MINUTES: z.coerce.number().int().min(1).max(1_440).default(180),
+    PUBSUB_GOSSIP_THRESHOLD: z.coerce.number().default(-2),
+    PUBSUB_PUBLISH_THRESHOLD: z.coerce.number().default(-4),
+    PUBSUB_GRAYLIST_THRESHOLD: z.coerce.number().default(-6),
+    PUBSUB_DISCONNECT_THRESHOLD: z.coerce.number().default(-9),
+    PUBSUB_OPPORTUNISTIC_GRAFT_TICKS: z.coerce.number().int().min(1).max(3_600).default(60),
+    PUBSUB_DIRECT_CONNECT_TICKS: z.coerce.number().int().min(1).max(3_600).default(360),
+    PUBSUB_RETAIN_SCORE_MS: z
+      .coerce.number()
+      .int()
+      .min(1_000)
+      .max(7 * 24 * 60 * 60 * 1_000)
+      .default(600_000),
+    PUBSUB_TOPIC_PARAMS: z.any().optional().transform((value) => coerceTopicParams(value)),
     DRY_RUN: booleanFlag.optional().default(true),
     NODE_PRIVATE_KEY: z
       .string()
