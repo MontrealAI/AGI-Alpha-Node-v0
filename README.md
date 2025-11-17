@@ -267,6 +267,39 @@ flowchart LR
   class Control,Chain,Spine,Surface accent;
 ```
 
+### Connectivity spine (QUIC-first, TCP-resilient, NAT-aware)
+
+- **Deterministic discovery**: ENS text records + `_dnsaddr` hydration keep peer multiaddrs normalized before transport selection, anchoring connectivity in the same registry that governs operator sovereignty.【F:src/identity/loader.ts†L20-L106】【F:docs/ens-identity-and-node-attestation-v0.0.1-alpha.md†L65-L101】
+- **Transport bias**: prefer QUIC for low-latency handshakes and congestion control while keeping TCP always-on for restrictive networks—operators can stage QUIC-only, TCP-only, or mixed fleets without altering higher-level APIs.
+- **NAT traversal playbook**: stage DCUtR hole-punching atop a reachable bootstrap/relay set, pair it with AutoNAT feedback to trim announced multiaddrs to dialable candidates, and cap Circuit Relay v2 (reservations + bandwidth ceilings) to prevent DoS amplification.
+- **Diagnostics-first**: structured logs should tag each connection attempt with the chosen transport (QUIC or TCP), AutoNAT reachability, and relay reservation counts so operators can audit behavior live.
+
+```mermaid
+flowchart LR
+  subgraph Discovery[Identity & Address Hygiene]
+    ENS[ENS records\npeerId + dnsaddr]
+    Loader[Node identity loader\n(normalizes multiaddrs)]
+  end
+  subgraph Transports[QUIC-first transport stack]
+    QUIC[QUIC dial\npreferred]
+    TCP[TCP dial\nfallback]
+  end
+  subgraph Traversal[NAT & Relay Safety]
+    DCUtR[DCUtR hole punch]
+    AutoNAT[AutoNAT reachability]
+    Relay[Relay v2 quotas]
+  end
+  subgraph Surface[Runtime Surfaces]
+    API[/REST + metrics/]
+    Dashboard[Dashboard]
+  end
+  ENS --> Loader --> QUIC & TCP
+  QUIC & TCP --> DCUtR --> AutoNAT --> Relay
+  Relay --> API --> Dashboard
+  classDef accent fill:#0b1120,stroke:#38bdf8,stroke-width:1.5px,color:#cbd5e1;
+  class Discovery,Transports,Traversal,Surface,ENS,Loader,QUIC,TCP,DCUtR,AutoNAT,Relay,API,Dashboard accent;
+```
+
 ### Command and control surface
 
 ```mermaid
