@@ -3,10 +3,18 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { inferMigrationVersion, seedAll } from './seeds.js';
+import { getConfig } from '../config/env.js';
 
 const BASE_PATH = dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS_PATH = join(BASE_PATH, 'migrations');
-const DEFAULT_DB = process.env.AGI_ALPHA_DB_PATH || ':memory:';
+const DEFAULT_DB = (() => {
+  try {
+    const config = getConfig();
+    return config.AGI_ALPHA_DB_PATH || ':memory:';
+  } catch (error) {
+    return process.env.AGI_ALPHA_DB_PATH || ':memory:';
+  }
+})();
 
 export function openDatabase({ filename = DEFAULT_DB } = {}) {
   const db = new Database(filename, { verbose: undefined });

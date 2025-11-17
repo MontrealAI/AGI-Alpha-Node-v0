@@ -151,10 +151,16 @@ function scoreTaskRuns(taskRuns, taskTypes) {
   return rawThroughput;
 }
 
+const defaultLogger = pino({
+  level: process.env.LOG_LEVEL ?? 'info',
+  name: 'synthetic-labor-engine',
+  base: { component: 'synthetic-labor-engine' }
+});
+
 export class SyntheticLaborEngine {
-  constructor({ db = null, logger = pino({ level: 'info', name: 'synthetic-labor-engine' }) } = {}) {
+  constructor({ db = null, logger = defaultLogger } = {}) {
     this.db = db ?? initializeDatabase({ withSeed: true });
-    this.logger = logger;
+    this.logger = logger?.child?.({ component: 'synthetic-labor-engine' }) ?? logger;
     this.providers = new ProviderRepository(this.db);
     this.taskTypes = new TaskTypeRepository(this.db);
     this.taskRuns = new TaskRunRepository(this.db);
@@ -168,6 +174,8 @@ export class SyntheticLaborEngine {
   }
 
   computeDailyScoreForProvider(providerId, measurementDate = new Date().toISOString().slice(0, 10)) {
+    const context = { providerId, measurementDate };
+    try {
     const taskTypes = new Map(this.taskTypes.list().map((type) => [type.id, type]));
     const runs = this.taskRuns.listByProvider(providerId).filter((run) => resolveRunDate(run) === measurementDate);
 
@@ -276,25 +284,40 @@ export class SyntheticLaborEngine {
     );
 
     return record;
+    } catch (error) {
+      this.logger?.error?.(
+        { event: 'syntheticLabor.dailyScore.error', ...context, error: error?.message, stack: error?.stack },
+        'Failed to compute synthetic labor score'
+      );
+      throw error;
+    }
   }
 
   computeDailyScores(measurementDate = new Date().toISOString().slice(0, 10)) {
     const providers = this.listProviders();
-    const scores = providers.map((provider) =>
-      this.computeDailyScoreForProvider(provider.id, measurementDate)
-    );
+    try {
+      const scores = providers.map((provider) =>
+        this.computeDailyScoreForProvider(provider.id, measurementDate)
+      );
 
-    this.logger?.info?.(
-      {
-        event: 'syntheticLabor.dailyScores.batch',
-        measurementDate,
-        providers: providers.map((provider) => provider.id),
-        totalProviders: providers.length
-      },
-      'Completed synthetic labor daily scoring batch'
-    );
+      this.logger?.info?.(
+        {
+          event: 'syntheticLabor.dailyScores.batch',
+          measurementDate,
+          providers: providers.map((provider) => provider.id),
+          totalProviders: providers.length
+        },
+        'Completed synthetic labor daily scoring batch'
+      );
 
-    return scores;
+      return scores;
+    } catch (error) {
+      this.logger?.error?.(
+        { event: 'syntheticLabor.dailyScores.batch.error', measurementDate, totalProviders: providers.length, error: error?.message },
+        'Synthetic labor batch scoring failed'
+      );
+      throw error;
+    }
   }
 }
 

@@ -4,8 +4,14 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   test: {
+    include: ['test/**/*.test.*', 'spec/**/*.test.*'],
     environment: 'node',
     globals: true,
+    exclude: [
+      '**/node_modules/**',
+      'subgraph/**/node_modules/**',
+      'dashboard/**/*.test.{js,jsx,ts,tsx}'
+    ],
     // Forked pool keeps native modules like better-sqlite3 stable during ESM transforms
     pool: 'forks',
     deps: {
