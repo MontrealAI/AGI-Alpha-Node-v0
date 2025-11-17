@@ -156,6 +156,7 @@ sequenceDiagram
 - **DCUtR + AutoNAT**: Hole punching, reachability probes, and throttle windows are env-driven; reachability is normalised to `public | private | unknown` and fed into address advertisement to avoid leaking unroutable endpoints.【F:src/network/transportConfig.js†L30-L43】【F:src/network/transportConfig.js†L148-L187】
 - **Relay v2 quotas**: Client/server toggles, reservation ceilings, per-peer circuit caps, and optional bandwidth ceilings keep relayed paths available without becoming a DoS sink.【F:src/network/transportConfig.js†L34-L54】
 - **Announce + dial clarity**: Multiaddrs are deduped, reachability-aware, and logged. Dial attempts surface their transport preference, enabling manual QUIC-only/TCP-only/mixed verification during rollouts.【F:src/network/transportConfig.js†L103-L113】【F:src/network/transportConfig.js†L115-L146】
+- **Connection traces**: `createTransportTracer` powers `dialer.trace` so every inbound/outbound connection logs the peer, multiaddr, chosen transport (QUIC/TCP/relay), direction, and success flag—perfect for QUIC-only vs TCP-only vs mixed acceptance drills.【F:src/network/libp2pHostConfig.js†L15-L71】【F:src/network/libp2pHostConfig.js†L50-L78】
 
 ```mermaid
 flowchart TD

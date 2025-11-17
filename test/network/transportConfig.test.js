@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildTransportConfig,
+  classifyTransport,
   describeDialPreference,
   rankDialableMultiaddrs,
   selectAnnounceableAddrs,
@@ -100,5 +101,13 @@ describe('transportConfig', () => {
     expect(summarizeReachabilityState('PUBLIC')).toBe('public');
     expect(summarizeReachabilityState('private')).toBe('private');
     expect(summarizeReachabilityState(undefined)).toBe('unknown');
+  });
+
+  it('classifies transports for trace logging clarity', () => {
+    expect(classifyTransport('/ip4/1.1.1.1/udp/4001/quic')).toBe('quic');
+    expect(classifyTransport('/ip4/1.1.1.1/tcp/4001')).toBe('tcp');
+    expect(classifyTransport('/dns4/relay.example.com/tcp/443/wss/p2p-circuit')).toBe('relay');
+    expect(classifyTransport('/ip4/1.1.1.1/ws/4001')).toBe('tcp');
+    expect(classifyTransport('/ip4/1.1.1.1/utp/4001')).toBe('unknown');
   });
 });

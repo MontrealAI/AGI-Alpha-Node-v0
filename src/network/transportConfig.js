@@ -160,3 +160,15 @@ export function summarizeReachabilityState(state) {
   if (normalized === 'private') return 'private';
   return 'unknown';
 }
+
+export function classifyTransport(address) {
+  if (!address) return 'unknown';
+  const normalized = String(address).toLowerCase();
+
+  if (normalized.includes('/p2p-circuit')) return 'relay';
+  if (normalized.includes('/quic') || normalized.includes('/udp/')) return 'quic';
+  if (normalized.includes('/tcp/')) return 'tcp';
+  if (normalized.includes('/ws') || normalized.includes('/wss')) return 'tcp';
+
+  return 'unknown';
+}
