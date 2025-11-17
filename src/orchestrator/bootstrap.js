@@ -25,6 +25,7 @@ import {
   loadNodeKeypairFromSource,
   validateKeypairAgainstEnsRecord
 } from '../identity/bootstrap.js';
+import { buildTransportConfig, logTransportPlan } from '../network/transportConfig.js';
 
 function assertConfigField(value, field) {
   if (!value) {
@@ -102,6 +103,9 @@ export async function bootstrapContainer({
       Object.entries(overrides).filter(([, value]) => value !== undefined)
     )
   );
+
+  const transportPlan = buildTransportConfig(config);
+  logTransportPlan(transportPlan);
 
   initTelemetry(loadTelemetryConfig(process.env, logger));
 
