@@ -129,6 +129,42 @@ describe('GlobalSyntheticLaborIndex', () => {
     expect(indexValue.weight_set_id).toBe(weightSet.id);
   });
 
+  it('emits structured logs for rebalance and headline computation', () => {
+    const logEntries = [];
+    const logger = {
+      info: (payload, message) => logEntries.push({ payload, message }),
+      error: (payload, message) => logEntries.push({ payload, message }),
+      child: () => logger
+    };
+
+    indexEngine = createGlobalIndexEngine({ db, logger });
+    const providerA = providers[0];
+    const providerB = providers[1];
+
+    addScore(indexEngine, providerA.id, '2024-06-30', 10);
+    addScore(indexEngine, providerB.id, '2024-06-30', 20);
+
+    const weightSet = indexEngine.rebalance({
+      asOfDate: '2024-06-30',
+      minimumSlu30d: 1,
+      capPercent: 50,
+      lookbackDays: 90,
+      baseDivisor: 1
+    });
+
+    indexEngine.computeIndexValue('2024-06-30', weightSet.id);
+
+    const events = logEntries.map((entry) => entry.payload?.event);
+    expect(events).toContain('gslIndex.rebalance');
+    expect(events).toContain('gslIndex.headline');
+
+    const headlineLog = logEntries.find((entry) => entry.payload?.event === 'gslIndex.headline');
+    expect(headlineLog?.payload).toMatchObject({
+      effectiveDate: '2024-06-30',
+      weightSetId: weightSet.id
+    });
+  });
+
   it('backfills an index history with periodic rebalances', () => {
     providers.forEach((provider) => {
       for (let i = 0; i < 10; i += 1) {

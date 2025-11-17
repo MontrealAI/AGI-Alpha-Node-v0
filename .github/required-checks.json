@@ -1,7 +1,7 @@
 {
   "required_status_checks": [
     "Lint Markdown & Links",
-    "Unit & Integration Tests",
+    "Unit, Integration & Frontend Tests",
     "Coverage Report",
     "Docker Build & Smoke Test",
     "Solidity Lint & Compile",

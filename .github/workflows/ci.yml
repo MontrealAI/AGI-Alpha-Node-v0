@@ -58,7 +58,7 @@ jobs:
         run: npm run ci:branch
 
   test:
-    name: Unit & Integration Tests
+    name: Unit, Integration & Frontend Tests
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -74,10 +74,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run test suite
+      - name: Run backend + frontend test suites
         env:
           CI: true
-        run: npm test
+        run: npm run ci:test
 
   solidity:
     name: Solidity Lint & Compile

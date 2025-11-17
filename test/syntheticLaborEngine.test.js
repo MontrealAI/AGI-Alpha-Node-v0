@@ -222,6 +222,43 @@ describe('SyntheticLaborEngine', () => {
     expect(metadata.taskTypesObserved).toBe(2);
   });
 
+  it('emits structured logs when scoring providers', () => {
+    const logEntries = [];
+    const logger = {
+      info: (payload, message) => logEntries.push({ payload, message }),
+      error: () => {},
+      child: () => logger
+    };
+
+    const engine = createSyntheticLaborEngine({ db: harness.db, logger });
+    const provider = engine.providers.findByName(DEFAULT_PROVIDERS[0].name);
+    const taskType = harness.taskTypes.findByName(DEFAULT_TASK_TYPES[0].name);
+    const logDate = '2024-05-06';
+
+    harness.taskRuns.create({
+      provider_id: provider.id,
+      task_type_id: taskType.id,
+      status: 'completed',
+      raw_throughput: 6,
+      tokens_processed: 5000,
+      tool_calls: 2,
+      quality_score: 0.91,
+      started_at: `${logDate}T00:00:00Z`,
+      completed_at: `${logDate}T00:05:00Z`
+    });
+
+    engine.computeDailyScoreForProvider(provider.id, logDate);
+
+    const events = logEntries.map((entry) => entry.payload?.event);
+    expect(events).toContain('syntheticLabor.dailyScore.created');
+
+    const scoreLog = logEntries.find((entry) => entry.payload?.event === 'syntheticLabor.dailyScore.created');
+    expect(scoreLog?.payload?.measurementDate).toBe(logDate);
+    expect(scoreLog?.payload?.adjustments).toEqual(
+      expect.objectContaining({ energy: expect.any(Number), quality: expect.any(Number), consensus: expect.any(Number) })
+    );
+  });
+
   it('derives energy cost per SLU baseline when no cost is present', () => {
     const { energyAdjustment, metadata } = computeEnergyAdjustment({ rawThroughput: 10, totalKwh: 0.5 });
     expect(energyAdjustment).toBeGreaterThan(0);
