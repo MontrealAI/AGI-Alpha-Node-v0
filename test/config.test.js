@@ -114,6 +114,26 @@ describe('config schema', () => {
     ).toThrow(/numeric value/);
   });
 
+  it('parses p2p multiaddr lists and deduplicates entries', () => {
+    const config = coerceConfig({
+      RPC_URL: 'https://rpc.ankr.com/eth',
+      P2P_LISTEN_MULTIADDRS: '/ip4/0.0.0.0/tcp/4001, /ip4/0.0.0.0/udp/4001/quic',
+      P2P_PUBLIC_MULTIADDRS: [' /dns4/example.com/tcp/443/wss/p2p/peer ', '/dns4/example.com/tcp/443/wss/p2p/peer'],
+      P2P_RELAY_MULTIADDRS: JSON.stringify(['/dns4/relay.example.com/tcp/443/wss/p2p-circuit']),
+      P2P_LAN_MULTIADDRS: '  \n/ip4/192.168.1.10/tcp/4001   ',
+      AUTONAT_REACHABILITY: 'PUBLIC'
+    });
+
+    expect(config.P2P_LISTEN_MULTIADDRS).toEqual([
+      '/ip4/0.0.0.0/tcp/4001',
+      '/ip4/0.0.0.0/udp/4001/quic'
+    ]);
+    expect(config.P2P_PUBLIC_MULTIADDRS).toEqual(['/dns4/example.com/tcp/443/wss/p2p/peer']);
+    expect(config.P2P_RELAY_MULTIADDRS).toEqual(['/dns4/relay.example.com/tcp/443/wss/p2p-circuit']);
+    expect(config.P2P_LAN_MULTIADDRS).toEqual(['/ip4/192.168.1.10/tcp/4001']);
+    expect(config.AUTONAT_REACHABILITY).toBe('public');
+  });
+
   it('validates stake activation fields', () => {
     const config = coerceConfig({
       RPC_URL: 'https://rpc.ankr.com/eth',

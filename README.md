@@ -82,6 +82,12 @@
 ### Transport + NAT traversal architecture (Sprint A)
 
 - **QUIC-first, TCP-ready**: `buildTransportConfig` keeps both stacks enabled by default and orders dial targets toward QUIC with TCP fallback so restrictive networks still connect.【F:src/network/transportConfig.js†L22-L101】【F:src/network/transportConfig.js†L115-L146】
+- **Libp2p host descriptor**: `buildLibp2pHostConfig` consumes env/CLI/ENS inputs (`P2P_LISTEN_MULTIADDRS`, `P2P_PUBLIC_MULTIADDRS`, `P2P_RELAY_MULTIADDRS`, `P2P_LAN_MULTIADDRS`, `TRANSPORT_*`, `ENABLE_HOLE_PUNCHING`, `AUTONAT_*`, `RELAY_*`) and emits the exact host wiring: registered transports, dial preference, announce set (reachability-aware), DCUtR, AutoNAT throttle, and Relay v2 quotas.【F:src/network/libp2pHostConfig.js†L1-L84】
+- **Operator toggles** (all hot-reloadable via `.env`/CLI):
+  - `TRANSPORT_ENABLE_QUIC` / `TRANSPORT_ENABLE_TCP` (default both true) with deterministic QUIC-first dialer.
+  - `ENABLE_HOLE_PUNCHING` (DCUtR), `AUTONAT_ENABLED` + `AUTONAT_THROTTLE_SECONDS` (reachability probes), and `RELAY_ENABLE_CLIENT` / `RELAY_ENABLE_SERVER` with `RELAY_MAX_RESERVATIONS`, `RELAY_MAX_CIRCUITS_PER_PEER`, `RELAY_MAX_BANDWIDTH_BPS`.
+  - Address feeds: `P2P_LISTEN_MULTIADDRS` (binds), `P2P_PUBLIC_MULTIADDRS` (manual overrides in addition to ENS), `P2P_RELAY_MULTIADDRS` (bootstrappable relays), `P2P_LAN_MULTIADDRS` (for private posture announce set).【F:src/config/defaults.js†L17-L39】【F:src/config/schema.js†L43-L79】
+  - `AUTONAT_REACHABILITY` hint can pin announce posture in constrained labs (otherwise AutoNAT derives it).
 - **DCUtR + AutoNAT**: Hole punching, reachability probes, and throttle windows are env-driven; reachability is normalised to `public | private | unknown` and fed into address advertisement to avoid leaking unroutable endpoints.【F:src/network/transportConfig.js†L30-L43】【F:src/network/transportConfig.js†L148-L187】
 - **Relay v2 quotas**: Client/server toggles, reservation ceilings, per-peer circuit caps, and optional bandwidth ceilings keep relayed paths available without becoming a DoS sink.【F:src/network/transportConfig.js†L34-L54】
 - **Announce + dial clarity**: Multiaddrs are deduped, reachability-aware, and logged. Dial attempts surface their transport preference, enabling manual QUIC-only/TCP-only/mixed verification during rollouts.【F:src/network/transportConfig.js†L103-L113】【F:src/network/transportConfig.js†L115-L146】
@@ -104,10 +110,46 @@ flowchart TD
   Reachability --> Announce[selectAnnounceableAddrs
   (public vs relay/LAN)]
   Announce --> Peers[Peers receive dialable set]
+  Plan --> HostConfig[buildLibp2pHostConfig
+  (listen/announce/nat/relay)]
+  HostConfig --> ObservabilityHost[per-connection transport logs]
   Dialer --> Connections[Connections logged with
   transport used]
   classDef accent fill:#0b1120,stroke:#38bdf8,stroke-width:1.5px,color:#cbd5e1;
-  class Env,Plan,Dialer,HolePunch,AutoNAT,Relay,Reachability,Announce,Peers,Connections accent;
+  class Env,Plan,Dialer,HolePunch,AutoNAT,Relay,Reachability,Announce,Peers,Connections,HostConfig,ObservabilityHost accent;
+```
+
+```mermaid
+flowchart LR
+  subgraph HostPlan[Host wiring]
+    Pref[QUIC-first dialer]
+    TCP[tcp transport]
+    QUIC[quic transport]
+    DCUtR[Hole punching]
+    AN[AutoNAT throttle]
+    Relay[Relay v2 quotas]
+  end
+  subgraph Addrs[Addresses]
+    Listen[P2P_LISTEN_MULTIADDRS]
+    Announce[Announce set by reachability]
+  end
+  subgraph Signals[Signals & Logs]
+    Reach[Reachability hint]
+    Log[libp2p host config log]
+  end
+  Pref --> QUIC
+  Pref --> TCP
+  QUIC --> DCUtR
+  TCP --> DCUtR
+  DCUtR --> AN
+  AN --> Relay
+  Relay --> Announce
+  Listen --> Pref
+  Announce --> Log
+  Reach --> Announce
+  Log --> Reach
+  classDef accent fill:#0b1120,stroke:#38bdf8,stroke-width:1.5px,color:#cbd5e1;
+  class HostPlan,Pref,TCP,QUIC,DCUtR,AN,Relay,Addrs,Listen,Announce,Signals,Reach,Log accent;
 ```
 
 ```mermaid
@@ -322,6 +364,11 @@ flowchart LR
 | `RELAY_MAX_RESERVATIONS` | `32` | Cap concurrent relay slots to avoid overload. |
 | `RELAY_MAX_CIRCUITS_PER_PEER` | `8` | Per-peer circuit quota to resist abuse. |
 | `RELAY_MAX_BANDWIDTH_BPS` | _(blank)_ | Optional bandwidth ceiling for relayed streams; leave blank to disable shaping. |
+| `P2P_LISTEN_MULTIADDRS` | _(blank)_ | Explicit listen addresses; empty uses libp2p defaults. |
+| `P2P_PUBLIC_MULTIADDRS` | _(blank)_ | Manual public announce overrides (in addition to ENS `_dnsaddr`). |
+| `P2P_RELAY_MULTIADDRS` | _(blank)_ | Known relay/bootstrap multiaddrs to seed DCUtR and relayed dialing. |
+| `P2P_LAN_MULTIADDRS` | _(blank)_ | Local/LAN addresses announced only when reachability is private. |
+| `AUTONAT_REACHABILITY` | _(blank)_ | Optional hint (`public` | `private` | `unknown`) to pin announce posture in lab testing. |
 
 #### Manual transport validation (mirrors Epic A acceptance tests)
 
@@ -333,6 +380,7 @@ flowchart LR
 6. **Relay quotas**: when opting into `RELAY_ENABLE_SERVER=true`, push past `RELAY_MAX_RESERVATIONS` to confirm new reservations are rejected while existing circuits remain intact; keep bandwidth ceilings dialed via `RELAY_MAX_BANDWIDTH_BPS` for DoS resistance.
 
 Runtime guardrails: `src/network/transportConfig.js` materializes these toggles into a normalized transport plan (QUIC-first with TCP fallback by default) and logs it at bootstrap. Misconfigurations such as disabling both transports fail fast so operators know the node will still dial peers before any jobs are scheduled.
+Host wiring: `src/network/libp2pHostConfig.js` stitches the transport plan with reachability-aware announce sets, relay quotas, and listen overrides so operators can export the exact libp2p options or compare observed transports against intent during rollout.
 
 ```mermaid
 flowchart LR
