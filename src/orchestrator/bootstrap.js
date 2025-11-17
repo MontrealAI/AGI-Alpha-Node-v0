@@ -195,10 +195,17 @@ export async function bootstrapContainer({
     await validateKeypairAgainstEnsRecord(nodeIdentity, nodeKeypair, { logger: identityLogger });
     identityLogger.info({ ensName: nodeIdentity.ensName }, 'Local keypair aligned with ENS pubkey');
 
+    const publicMultiaddrs = Array.from(
+      new Set([
+        ...(nodeIdentity.multiaddrs ?? []),
+        ...(config.P2P_PUBLIC_MULTIADDRS ?? [])
+      ].map((address) => (address ? String(address).trim() : '')).filter((address) => address.length > 0))
+    );
+
     hostConfig = buildLibp2pHostConfig({
       config,
       listenMultiaddrs: config.P2P_LISTEN_MULTIADDRS,
-      publicMultiaddrs: nodeIdentity.multiaddrs,
+      publicMultiaddrs,
       relayMultiaddrs: config.P2P_RELAY_MULTIADDRS,
       lanMultiaddrs: config.P2P_LAN_MULTIADDRS
     });
