@@ -136,6 +136,7 @@ export function ProvidersView({ baseUrl, apiKey, onApiKeyChange, refreshNonce = 
               <th>Latest SLU</th>
               <th>Energy adj.</th>
               <th>Quality adj.</th>
+              <th>VC</th>
             </tr>
           </thead>
           <tbody>
@@ -156,6 +157,7 @@ export function ProvidersView({ baseUrl, apiKey, onApiKeyChange, refreshNonce = 
                   <td>{score?.slu?.toFixed?.(3) ?? '—'}</td>
                   <td>{score?.energy_adjustment ? score.energy_adjustment.toFixed(2) : '—'}</td>
                   <td>{score?.quality_adjustment ? score.quality_adjustment.toFixed(2) : '—'}</td>
+                  <td>{score?.consensus_factor ? score.consensus_factor.toFixed(2) : '—'}</td>
                 </tr>
               );
             })}
