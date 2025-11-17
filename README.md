@@ -18,10 +18,10 @@
   <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions?query=branch%3Amain">
     <img src="https://img.shields.io/badge/Checks-Visible%20in%20GitHub-0ea5e9?logo=github" alt="Checks visibility" />
   </a>
-  <img src="https://img.shields.io/badge/Coverage-c8%20enforced-22c55e?logo=jest&logoColor=white" alt="Coverage" />
+  <img src="https://img.shields.io/badge/Coverage-c8%20enforced-22c55e?logo=testinglibrary&logoColor=white" alt="Coverage" />
   <img src="https://img.shields.io/badge/Security-npm%20audit%20%7C%20health%20gates-ef4444?logo=npm&logoColor=white" alt="Security gates" />
   <img src="https://img.shields.io/badge/Test%20Matrix-vitest%20%7C%20solc%20%7C%20markdownlint-22c55e?logo=vitest&logoColor=white" alt="Test matrix" />
-  <img src="https://img.shields.io/badge/Observability-c8%20coverage%20%7C%20OTel%20%7C%20prom--client-0ea5e9?logo=testinglibrary&logoColor=white" alt="Observability" />
+  <img src="https://img.shields.io/badge/Observability-c8%20coverage%20%7C%20OTel%20%7C%20prom--client-0ea5e9?logo=prometheus&logoColor=white" alt="Observability" />
   <img src="https://img.shields.io/badge/Public%20API-Read--only%20%7C%20CORS-22c55e?logo=fastapi&logoColor=white" alt="Public API" />
   <img src="https://img.shields.io/badge/Index%20Engine-GSLI%20Rebalancing-10b981?logo=apacheairflow&logoColor=white" alt="Index engine" />
   <a href="https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa">
@@ -45,15 +45,15 @@
 
 > **AGI Alpha Node v0** metabolizes heterogeneous agentic labor into verifiable α‑Work Units (α‑WU) and Synthetic Labor Units (SLU), rebalances the Global Synthetic Labor Index (GSLI), exposes audited read‑only REST telemetry, and routes the `$AGIALPHA` treasury (token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) under complete owner command. Every dial can be paused, rerouted, or retuned without redeploying, delivering a production-grade intelligence core built to bend markets.
 
-## Flash scan
+## Executive flash
 
-- **Owner-first sovereignty**: `contracts/AlphaNodeManager.sol` and CLI verbs in `src/index.js` keep pausing, validator rotation, emissions, treasury routing, productivity bindings, registry upgrades, and metadata under owner control with calldata builders in `src/services/governance.js`.
-- **Supernormal telemetry**: Schema-validated ingest with hashed API keys, idempotent task-run recording, and Prometheus/OTel exports preserve signal fidelity for dashboards and policy.
-- **Public API (read-only)**: `/index/latest`, `/index/history`, `/providers`, `/providers/{id}/scores` expose GSLI and provider metrics with optional API-key gating and CORS allowlisting for production dashboards.
-- **Deterministic data spine**: SQLite migrations seed providers, task types, SLU scores, and index values with indexes on provider/day for instant dashboards and subgraph alignment.
-- **Production-safe defaults**: Helm chart, Docker build, CI gates, health policies, and seeded CLIs keep it deployable by non-specialists while remaining fully operator-tunable.
+- **Owner-first sovereignty**: `contracts/AlphaNodeManager.sol` plus CLI verbs in `src/index.js` keep pausing, validator rotation, emissions, treasury routing, productivity bindings, registry upgrades, and metadata under owner control with calldata builders in `src/services/governance.js`.
+- **Read-only public API**: `/index/latest`, `/index/history`, `/providers`, and `/providers/{id}/scores` publish GSLI and provider metrics with optional API-key gating (`X-API-Key` or `Authorization: Bearer`), paginated windows, and CORS allowlisting for dashboards.
+- **Telemetry spine**: Schema-validated ingest with hashed API keys, idempotent task-run recording, and Prometheus/OTel export keeps dashboards, subgraphs, and policies aligned.
+- **Deterministic persistence**: SQLite migrations + seeds hydrate providers, SLU scores, and index values with indices tuned for provider/day lookups.
+- **Deployment-ready**: Dockerfile + Helm chart, CI gates, and seeded CLIs make it deployable by non-specialists while remaining fully operator-tunable.
 
-## System architecture (signal-to-yield)
+## System architecture
 
 ```mermaid
 flowchart LR
@@ -84,29 +84,25 @@ flowchart LR
   Feedback --> Control
 ```
 
-## Vision & token flywheel
+### Public API data flow
 
 ```mermaid
 flowchart TD
-  Jobs[Agentic jobs & prompts] --> AlphaWU[α‑WU execution]
-  AlphaWU --> TelemetrySpine[(Telemetry spine)]
-  TelemetrySpine --> SLU[SLU scoring]
-  SLU --> GSLI[Global Synthetic Labor Index]
-  GSLI --> Rewards[$AGIALPHA rewards\n0xa61a...a1fa (18 dp)]
-  Rewards --> Providers[Providers & operators]
-  Providers --> Reinvest[Restake / scale nodes]
-  Reinvest --> Jobs
-  Owner[[Owner control]] -->|Pause / Divisors / Caps| GSLI
-  Owner -->|Treasury routing| Rewards
+  Ingest[Task runs + energy + quality] --> Validate[AJV/Zod validation]
+  Validate --> Record[SQLite + idempotency]
+  Record --> Scores[SLU scoring engine]
+  Scores --> Indexing[GSLI rebalance + divisor]
+  Indexing --> Latest[/GET /index/latest/]
+  Indexing --> History[/GET /index/history/]
+  Scores --> Providers[/GET /providers/]
+  Scores --> ProviderScores[/GET /providers/{id}/scores/]
+  classDef api fill:#111827,stroke:#0ea5e9,stroke-width:1.5px,color:#f9fafb;
+  class Latest,History,Providers,ProviderScores api;
 ```
-
-- **Token surface**: `$AGIALPHA` lives at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` and is referenced across the CLI, governance builders, staking helpers, and treasury controls.
-- **Feedback flywheel**: More telemetry → higher SLU → increased GSLI weights → more rewards → additional nodes → more telemetry.
-- **Owner override**: Caps, divisors, exclusions, and pausing switches are editable mid-flight so the operator can redirect incentives instantly.
 
 ## Public API (read-only)
 
-**Base URL**: `http://<host>:<API_PORT>` (default `8080`). All endpoints are CORS-aware; set `API_DASHBOARD_ORIGIN` for production dashboards and `API_PUBLIC_READ_KEY` to require `X-API-Key` or `Authorization: Bearer <key>`.
+**Base URL**: `http://<host>:<API_PORT>` (default `8080`). All endpoints support CORS; set `API_DASHBOARD_ORIGIN` to a specific origin for production and `API_PUBLIC_READ_KEY` to require `X-API-Key` or `Authorization: Bearer <key>`.
 
 | Endpoint | Purpose | Query params |
 | --- | --- | --- |
@@ -156,9 +152,9 @@ GET /providers/1/scores?from=2024-01-01&to=2024-01-03&limit=2
 }
 ```
 
-## Owner controls & on-chain levers
+## Owner controls & $AGIALPHA
 
-- **Contract surface**: `contracts/AlphaNodeManager.sol` + helpers in `src/services/governance.js` build calldata for pausing, validator rotations, emissions, treasury routing, registry upgrades, productivity indices, and work-meter directives—every parameter remains updatable mid-flight.
+- **Contract surface**: `contracts/AlphaNodeManager.sol` plus calldata builders in `src/services/governance.js` keep pausing, validator rotations, emissions, treasury routing, registry upgrades, productivity directives, work-meter tuning, and metadata mutable at any time.
 - **CLI wrappers**: `src/index.js` verbs cover pausing, divisors, node metadata, ENS alignment, staking/activation, treasury updates, emission multipliers, productivity routing, and job registry adjustments without redeploying.
 - **API governance**: Authenticated endpoints (`/governance/*`) demand `GOVERNANCE_API_TOKEN` and log ledger entries for auditability; owner tokens may be supplied through `Authorization: Bearer` or `X-Owner-Token` headers.
 - **Pause & recover**: System pause, submission windows, emission caps, and treasury addresses can be rotated at runtime, giving the operator complete command for the AGI jobs platform.
@@ -166,7 +162,7 @@ GET /providers/1/scores?from=2024-01-01&to=2024-01-03&limit=2
 ## Data spine & migrations
 
 - **SQLite migrations**: `src/persistence/migrations` build durable tables for providers, task types, task runs, energy/quality reports, SLU scores, index weights/values, and governance ledger entries.
-- **Seeds**: `npm run db:seed` plants sample providers and task types for immediate dashboards; `initializeDatabase({ withSeed: true })` is used across tests and the API server for deterministic bootstraps.
+- **Seeds**: `npm run db:seed` plants sample providers and task types for immediate dashboards; `initializeDatabase({ withSeed: true })` drives tests and the API server for deterministic bootstraps.
 - **Repositories**: CRUD helpers live in `src/persistence/repositories.js` with pagination + JSON normalization to keep API responses consistent.
 
 ## Quickstart (non-technical friendly)
@@ -196,7 +192,7 @@ GET /providers/1/scores?from=2024-01-01&to=2024-01-03&limit=2
 5. **Secure the API** (optional): set `API_PUBLIC_READ_KEY` and `API_DASHBOARD_ORIGIN` to gate read access and scope CORS.
 6. **Deploy**: use the Helm chart at `deploy/helm/agi-alpha-node` or `docker build -t agi-alpha-node:latest .` for containerized rollouts.
 
-## Configuration matrix (owner-first)
+## Configuration matrix
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
