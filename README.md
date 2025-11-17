@@ -1,5 +1,4 @@
 # AGI Alpha Node v0 · Cognitive Yield Engine ⚡️
-
 <!-- markdownlint-disable MD012 MD013 MD033 -->
 <p align="center">
   <picture>
@@ -54,6 +53,15 @@
 
 > **AGI Alpha Node v0** metabolizes heterogeneous agentic labor into verifiable α‑Work Units (α‑WU) and Synthetic Labor Units (SLU), rebalances the Global Synthetic Labor Index (GSLI), exposes audited read‑only REST telemetry, and routes the `$AGIALPHA` treasury (token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) under complete owner command. Every dial can be paused, rerouted, or retuned without redeploying, delivering a production-grade intelligence core built to bend markets.
 > New for this sprint: a React/Vite single-page dashboard (Index | Providers | Telemetry Debug), live GSLI and SLU charts backed by `/index/history` and `/providers/*/scores`, and a telemetry stream reader at `/telemetry/task-runs` that keeps ingest visibility tight while remaining API-key gated for operators.
+>
+> 🛰️ **Launch pad (non-technical operator)**
+>
+> 1. **Install & verify**: `npm ci && npm run ci:verify` (mirrors branch protection locally and surfaces any dependency or Solidity drift).
+> 2. **Bring the node up**: `npm start` (reads `.env`, bootstraps SQLite, read-only REST, metrics, governance API, and ENS/owner alignment).
+> 3. **Open the cockpit**: `npm run dashboard:dev` (or `npm run dashboard:preview` after `npm run dashboard:build`) and point the connection bar to your API base + key. Data hydrates live—no rebuilds required.
+> 4. **Own every dial**: Use `node src/index.js governance:*` verbs or authenticated `/governance/*` calls to pause/unpause, rotate validators, reroute emissions/treasury, refresh metadata, and retune productivity without redeploying.
+> 5. **Confirm green**: Badges below reflect GitHub Actions visibility plus `.github/required-checks.json` enforcement; CI stays visible and required on PRs and `main`.
+>
 
 ## Orientation & quick links
 
@@ -62,6 +70,24 @@
 - **Owner sovereignty**: Governance verbs live in `src/index.js` and calldata builders in `src/services/governance.js`, pointed at the canonical `$AGIALPHA` token (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`).
 - **Debug deck (SPA)**: `dashboard/` ships a React/Vite cockpit with a connection bar (API base + API key), per-tab refresh, and mocked smoke coverage via `test/dashboard.app.test.jsx`.
 - **Deploy fast**: `Dockerfile` + `deploy/helm/agi-alpha-node` emit production images and Kubernetes charts; defaults remain non-destructive for non-technical operators.
+
+```mermaid
+flowchart LR
+  subgraph PR_Gate[Protected branch & PR gate]
+    Lint[Markdown + link lint]
+    Tests[Unit + integration + dashboard smoke]
+    Coverage[C8 coverage export]
+    Sol[Solhint + solc compile]
+    Subgraph[TypeScript codegen + build]
+    Security[npm audit (prod deps)]
+    Policy[Health gate]
+  end
+  Dev[Local \n`npm run ci:verify`] --> PR_Gate
+  PR_Gate --> Shields[Visible GitHub checks + badge]
+  Shields --> Main[Branch protection enforced on main]
+  classDef accent fill:#0b1120,stroke:#c084fc,stroke-width:1.5px,color:#e0e7ff;
+  class Dev,PR_Gate,Shields,Main,Lint,Tests,Coverage,Sol,Subgraph,Security,Policy accent;
+```
 
 ```mermaid
 flowchart TD
