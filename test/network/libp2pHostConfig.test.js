@@ -60,4 +60,19 @@ describe('libp2pHostConfig', () => {
     expect(hostConfig.relay.maxCircuitsPerPeer).toBe(2);
     expect(hostConfig.relay.maxBandwidthBps).toBe(1024);
   });
+
+  it('disables hole punching and AutoNAT when requested', () => {
+    const hostConfig = buildLibp2pHostConfig({
+      config: {
+        ENABLE_HOLE_PUNCHING: false,
+        AUTONAT_ENABLED: false,
+        AUTONAT_THROTTLE_SECONDS: 15
+      },
+      publicMultiaddrs: PUBLIC_ADDRS
+    });
+
+    expect(hostConfig.nat.holePunching).toBe(false);
+    expect(hostConfig.nat.autonat.enabled).toBe(false);
+    expect(hostConfig.nat.autonat.throttleSeconds).toBe(15);
+  });
 });

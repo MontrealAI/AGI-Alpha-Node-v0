@@ -79,6 +79,71 @@
 - **Deploy fast**: `Dockerfile` + `deploy/helm/agi-alpha-node` emit production images and Kubernetes charts; defaults remain non-destructive for non-technical operators.
 - **Health & observability**: `/health` + `/healthz` for probes, `/metrics` for Prometheus, structured pino logs for SLU scoring + GSLI rebalance, and `.env.example` wiring for API keys, DB path (`AGI_ALPHA_DB_PATH`), and dashboard CORS in one place.
 
+## Operator-ready launch checklist (green CI + sovereign control)
+
+| Stage | Command | Why it matters |
+| --- | --- | --- |
+| Verify toolchain & CI parity | `npm ci && npm run ci:verify` | Mirrors the full PR/branch gate locally so operators see the same signals GitHub enforces. |
+| Bring the node online | `npm start` | Boots read-only REST, governance surface, metrics, ENS alignment, SQLite spine, and telemetry collectors with owner overrides respected. |
+| Optional dashboard | `npm run dashboard:dev` or `npm run dashboard:preview` | React/Vite cockpit for Index, Providers, Telemetry debug; API key & base URL injected via the connection bar. |
+| Governance dials (owner) | `node src/index.js governance:*` verbs or authenticated `/governance/*` | Pause/unpause, rotate validators, redirect emissions/treasury, refresh metadata, or retune productivity—no redeploys required. |
+| Transport posture drills | Toggle `TRANSPORT_ENABLE_*`, `ENABLE_HOLE_PUNCHING`, `AUTONAT_*`, `RELAY_*` | Stage QUIC-only, TCP-only, or mixed neighborhoods; confirm logs show transport choice + reachability before jobs start. |
+
+```mermaid
+flowchart TD
+  subgraph CI[CI & Branch Protection]
+    Lint[Lint + links + policy]
+    Tests[Vitest suites\n(api + dashboard)]
+    Cov[Coverage export]
+    Sol[Solhint + solc]
+    Subgraph[Subgraph TS build]
+    Docker[Docker smoke]
+    Audit[npm audit]
+  end
+  subgraph Runtime[Runtime surfaces]
+    API[/REST + governance/]
+    Metrics[/Prometheus + OTel/]
+    Telemetry[Telemetry ingest]
+    ENS[ENS identity alignment]
+  end
+  subgraph Owner[Owner controls]
+    Pause[Pause / resume]
+    Params[Route emissions + divisors]
+    Validators[Validator rotation]
+    Metadata[Registry + metadata refresh]
+  end
+  Lint & Tests & Cov & Sol & Subgraph & Docker & Audit -->|`.github/required-checks.json` enforced| API
+  API --> Metrics
+  Telemetry --> Metrics
+  ENS --> API
+  Owner --> API
+  Owner --> Runtime
+  classDef accent fill:#0f172a,stroke:#9333ea,stroke-width:1.5px,color:#e2e8f0;
+  class CI,Runtime,Owner,Lint,Tests,Cov,Sol,Subgraph,Docker,Audit,API,Metrics,Telemetry,ENS,Pause,Params,Validators,Metadata accent;
+```
+
+### CI visibility (fully green expectations)
+
+- Required checks (enforced on PRs + `main`): Lint Markdown & Links, Unit/Integration/Frontend Tests, Coverage Report, Docker Build & Smoke Test, Solidity Lint & Compile, Subgraph TypeScript Build, Dependency Security Scan.【F:.github/required-checks.json†L1-L9】
+- Workflow: [.github/workflows/ci.yml](.github/workflows/ci.yml) publishes badges via `scripts/publish-badges.mjs` after all needs succeed.
+- Local mirrors: `npm run ci:verify` runs the same stack—including policy + branch gates—so non-technical operators can get to green before shipping.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Dev as Operator/Owner
+  participant CI as CI pipeline
+  participant Main as Protected main
+  participant Node as Running node
+  Dev->>CI: npm run ci:verify (local mirror)
+  Dev-->>CI: Push / PR
+  CI-->>CI: Lint · Tests · Coverage · solhint/solc · Subgraph · Docker · Audit
+  CI->>Main: Gate merge when all required checks green
+  Main-->>Node: Deploy image/chart
+  Dev->>Node: governance:* verbs / API tokens
+  Note over Node: Configurable transports (QUIC/TCP), DCUtR, AutoNAT, Relay quotas
+```
+
 ### Transport + NAT traversal architecture (Sprint A)
 
 - **QUIC-first, TCP-ready**: `buildTransportConfig` keeps both stacks enabled by default and orders dial targets toward QUIC with TCP fallback so restrictive networks still connect.【F:src/network/transportConfig.js†L22-L101】【F:src/network/transportConfig.js†L115-L146】

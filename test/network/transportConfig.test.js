@@ -27,6 +27,18 @@ describe('transportConfig', () => {
     ).toThrow();
   });
 
+  it('respects hole punching and AutoNAT toggles with sane throttling', () => {
+    const plan = buildTransportConfig({
+      ENABLE_HOLE_PUNCHING: false,
+      AUTONAT_ENABLED: false,
+      AUTONAT_THROTTLE_SECONDS: 'not-a-number'
+    });
+
+    expect(plan.holePunching).toBe(false);
+    expect(plan.autonat.enabled).toBe(false);
+    expect(plan.autonat.throttleSeconds).toBe(60);
+  });
+
   it('ranks multiaddrs according to preference', () => {
     const plan = buildTransportConfig({});
     const ranked = rankDialableMultiaddrs(
