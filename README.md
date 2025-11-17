@@ -382,6 +382,14 @@ flowchart LR
 Runtime guardrails: `src/network/transportConfig.js` materializes these toggles into a normalized transport plan (QUIC-first with TCP fallback by default) and logs it at bootstrap. Misconfigurations such as disabling both transports fail fast so operators know the node will still dial peers before any jobs are scheduled.
 Host wiring: `src/network/libp2pHostConfig.js` stitches the transport plan with reachability-aware announce sets, relay quotas, and listen overrides so operators can export the exact libp2p options or compare observed transports against intent during rollout.
 
+| Scenario | Env toggles | Expected address set | Observability hook |
+| --- | --- | --- | --- |
+| QUIC-first w/ TCP fallback | `TRANSPORT_ENABLE_QUIC=true`, `TRANSPORT_ENABLE_TCP=true` | Public + relay addresses ranked with QUIC first; TCP present for fallback | Transport plan log shows `preference: prefer-quic`; dial logs surface `transport=quic` when available. |
+| QUIC-only hardening | `TRANSPORT_ENABLE_QUIC=true`, `TRANSPORT_ENABLE_TCP=false` | Only QUIC multiaddrs announced; TCP omitted | Transport plan log shows `quic-only`; connection attempts omit `/tcp/` paths entirely. |
+| TCP-only resilience | `TRANSPORT_ENABLE_QUIC=false`, `TRANSPORT_ENABLE_TCP=true` | TCP-only announce set | Transport plan log shows `tcp-only`; QUIC addresses are ignored even if discovered. |
+| NAT hole punching drill | `ENABLE_HOLE_PUNCHING=true`, reachable relay/bootstraps configured | Relay + LAN addresses prioritized when reachability is private | Logs show `Attempting hole punch` → `Hole punch succeeded/failed`; AutoNAT telemetry stabilizes before announcements shift. |
+| Relay guardrails | `RELAY_ENABLE_SERVER=true`, quotas set via `RELAY_MAX_*` | Reservations capped at configured ceiling, per-peer circuits limited | Relay counters and bandwidth ceilings visible in logs/metrics; excess reservations rejected gracefully. |
+
 ```mermaid
 flowchart LR
   subgraph Discovery[Identity & Address Hygiene]
@@ -425,6 +433,18 @@ flowchart LR
   Ledger --> Reports[Status exports / diagnostics]
   Manager --> DashboardSignals[SPA surfaces state via API]
 ```
+
+| Owner lever | Smart contract / runtime binding | How to exercise it | Notes |
+| --- | --- | --- | --- |
+| Pause / resume everything | `AlphaNodeManager.pause` / `unpause` | `node src/index.js governance:pause` / `governance:unpause` or `/governance/pause` | Halts staking, minting, and validation pathways instantly. |
+| Rotate validators + thresholds | `setValidator`, validator quorum envs (`VALIDATION_*`) | `node src/index.js governance:set-validator --address <addr> --active true/false` | Keeps validator set fluid for rapid operator swaps. |
+| Registry + metadata | `registerIdentity`, `setIdentityStatus`, `revokeIdentity` | `/governance/identity/*` endpoints or CLI verbs | Ensures controller mappings and ENS alignment are owner-tunable. |
+| Staking flows | `stake` (enforced), `withdrawStake` (owner), `$AGIALPHA` at `0xa61a...a1fa` | `/governance/stake-withdraw` or CLI | Owner can redirect funds or unwind balances on demand. |
+| Emissions / productivity | Treasury + divisor setters in `src/services/governance.js` | `node src/index.js governance:treasury` / `governance:productivity` | Adjusts emission routes and productivity multipliers without redeploying. |
+| Relay, transport, NAT posture | `TRANSPORT_*`, `ENABLE_HOLE_PUNCHING`, `AUTONAT_*`, `RELAY_*` envs | Edit `.env` or pass CLI overrides; verify via transport plan logs | Owner can force QUIC/TCP posture, toggle hole punching, and re-announce addrs live. |
+| Health & exposure | Health gate + API key allowlists | `/governance/health-gate` + `API_PUBLIC_READ_KEY`, `API_DASHBOARD_ORIGIN` | Owner seals/unseals health endpoints and public surfaces instantly. |
+
+These levers keep the runtime fully owner-steerable: every critical threshold, registry entry, or exposure surface is mutable without redeploying, and the canonical `$AGIALPHA` token (18 decimals at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`) remains the authoritative asset for staking and treasury routes.
 
 ### CI / QA autopilot
 
