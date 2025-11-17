@@ -1307,6 +1307,52 @@ export function startAgentApi({
         return;
       }
 
+      if (req.method === 'GET' && pathname === '/telemetry/task-runs') {
+        if (!enforcePublicReadAuth(req, res, publicReadKey)) {
+          return;
+        }
+
+        const providerFilter = requestUrl.searchParams.get('provider') ?? requestUrl.searchParams.get('providerId');
+        const providerId = providerFilter
+          ? Number.isNaN(Number.parseInt(providerFilter, 10))
+            ? null
+            : Number.parseInt(providerFilter, 10)
+          : null;
+
+        if (providerFilter && providerId === null) {
+          jsonResponse(res, 400, { error: 'provider must be numeric' });
+          return;
+        }
+
+        try {
+          const window = resolveDateRange(requestUrl, { defaultDays: 7 });
+          const { limit, offset } = parsePaginationParams(requestUrl, { defaultLimit: 25, maxLimit: 200 });
+          const total = telemetryService.taskRuns.countBetween(window.from, window.to, { providerId });
+          const runs = telemetryService.taskRuns.listBetween(window.from, window.to, { providerId, limit, offset });
+          const providerMap = new Map(laborEngine.providers.list().map((provider) => [provider.id, provider]));
+          const taskTypeMap = new Map(laborEngine.taskTypes.list().map((type) => [type.id, type]));
+          const nextOffset = offset + runs.length < total ? offset + runs.length : null;
+
+          const taskRuns = runs.map((run) => ({
+            ...run,
+            provider: providerMap.get(run.provider_id) ?? { id: run.provider_id },
+            task_type: run.task_type_id ? taskTypeMap.get(run.task_type_id) ?? { id: run.task_type_id } : null,
+            energy_report: telemetryService.energyReports.findLatestForTaskRun(run.id) ?? null,
+            quality_evaluation: telemetryService.qualityEvaluations.findLatestForTaskRun(run.id) ?? null
+          }));
+
+          jsonResponse(res, 200, {
+            window,
+            pagination: { total, limit, offset, nextOffset },
+            task_runs: taskRuns
+          });
+        } catch (error) {
+          logger.warn(error, 'Failed to load telemetry task runs');
+          jsonResponse(res, 400, { error: error instanceof Error ? error.message : String(error) });
+        }
+        return;
+      }
+
       if (req.method === 'GET' && req.url === '/healthz') {
         jsonResponse(res, 200, {
           status: 'ok',

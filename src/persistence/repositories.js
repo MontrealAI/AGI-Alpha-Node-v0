@@ -244,6 +244,53 @@ export class TaskRunRepository {
       .map((row) => this.#map(row));
   }
 
+  countBetween(startDate, endDate, { providerId = null } = {}) {
+    const filters = [];
+    const params = {};
+    if (startDate) {
+      filters.push("date(created_at) >= date(@startDate)");
+      params.startDate = startDate;
+    }
+    if (endDate) {
+      filters.push("date(created_at) <= date(@endDate)");
+      params.endDate = endDate;
+    }
+    if (providerId) {
+      filters.push('provider_id = @providerId');
+      params.providerId = providerId;
+    }
+    const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
+    const row = this.db.prepare(`SELECT COUNT(*) as count FROM task_runs ${whereClause}`).get(params);
+    return row?.count ?? 0;
+  }
+
+  listBetween(startDate, endDate, { providerId = null, limit = 50, offset = 0 } = {}) {
+    const filters = [];
+    const params = { limit, offset };
+    if (startDate) {
+      filters.push("date(created_at) >= date(@startDate)");
+      params.startDate = startDate;
+    }
+    if (endDate) {
+      filters.push("date(created_at) <= date(@endDate)");
+      params.endDate = endDate;
+    }
+    if (providerId) {
+      filters.push('provider_id = @providerId');
+      params.providerId = providerId;
+    }
+    const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
+    const rows = this.db
+      .prepare(
+        `SELECT * FROM task_runs
+         ${whereClause}
+         ORDER BY datetime(created_at) DESC
+         LIMIT @limit OFFSET @offset`
+      )
+      .all(params);
+    return rows.map((row) => this.#map(row));
+  }
+
   findByExternalId(providerId, externalId) {
     const row = this.db
       .prepare('SELECT * FROM task_runs WHERE provider_id = ? AND external_id = ?')
@@ -320,6 +367,13 @@ export class QualityEvaluationRepository {
       .map((row) => this.#map(row));
   }
 
+  findLatestForTaskRun(taskRunId) {
+    const row = this.db
+      .prepare('SELECT * FROM quality_evaluations WHERE task_run_id = ? ORDER BY datetime(created_at) DESC LIMIT 1')
+      .get(taskRunId);
+    return row ? this.#map(row) : undefined;
+  }
+
   #map(row) {
     return {
       ...row,
@@ -384,6 +438,13 @@ export class EnergyReportRepository {
       .prepare('SELECT * FROM energy_reports WHERE task_run_id = ? ORDER BY created_at DESC')
       .all(taskRunId)
       .map((row) => this.#map(row));
+  }
+
+  findLatestForTaskRun(taskRunId) {
+    const row = this.db
+      .prepare('SELECT * FROM energy_reports WHERE task_run_id = ? ORDER BY datetime(created_at) DESC LIMIT 1')
+      .get(taskRunId);
+    return row ? this.#map(row) : undefined;
   }
 
   #map(row) {
