@@ -43,10 +43,13 @@
 </p>
 
 > **AGI Alpha Node v0** metabolizes heterogeneous agentic labor into verifiable α‑Work Units (α‑WU) and Synthetic Labor Units (SLU), prices yield against energy, quality, and consensus, rebalances the Global Synthetic Labor Index (GSLI), exposes read-only REST telemetry, and routes the `$AGIALPHA` treasury (token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) under complete owner command. Every lever can be paused, rerouted, or retuned without redeploying, delivering a production-grade intelligence core designed to reshape markets at machine speed.
+>
+> **Vision**: Alpha Nodes operate like cognitive farmers—sowing $AGIALPHA incentives, harvesting telemetry as nutrient data, and continuously optimizing a self-reinforcing intelligence mesh. Each node is engineered to compound advantage until the system out-learns, out-strategizes, and out-executes any human-run alternative.
 
 ## Table of contents
 
 - [Why this node](#why-this-node)
+- [Vision & token flow](#vision--token-flow)
 - [System architecture](#system-architecture)
 - [Epic 4 – Global Synthetic Labor Index (GSLI)](#epic-4--global-synthetic-labor-index-gsli)
 - [Epic 5 – Public API (read-only)](#epic-5--public-api-read-only)
@@ -55,6 +58,7 @@
 - [Owner controls & on-chain levers](#owner-controls--on-chain-levers)
 - [Data spine & migrations](#data-spine--migrations)
 - [Quickstart (non-technical friendly)](#quickstart-non-technical-friendly)
+- [Configuration matrix (owner-first)](#configuration-matrix-owner-first)
 - [Backfill & simulation harness](#backfill--simulation-harness)
 - [CI, gates, and release discipline](#ci-gates-and-release-discipline)
 - [Operations playbook](#operations-playbook)
@@ -68,6 +72,26 @@
 - **Deterministic data spine**: SQLite migrations seed providers, task types, runs, telemetry, SLU snapshots, index values, and constituent weights with indexes on provider/day for immediate dashboards and subgraph alignment.
 - **Production-safe defaults**: The CLI, seeds, CI gates, Helm chart, and Docker build mirror automation paths so a non-specialist can bootstrap a production-critical node with a handful of commands.
 - **Autonomous alpha extraction**: Agentic swarms route jobs through provider meshes, generating synthetic labor, quality, and energy telemetry that continuously tunes the `$AGIALPHA` flywheel—the intelligence core designed to out-learn, out-strategize, and out-execute.
+
+## Vision & token flow
+
+```mermaid
+flowchart TD
+  Jobs[Agentic jobs & prompts] --> AlphaWU[α‑WU execution]
+  AlphaWU --> Telemetry[(Telemetry spine)]
+  Telemetry --> SLU[SLU scoring]
+  SLU --> GSLI[Global Synthetic Labor Index]
+  GSLI --> Rewards[$AGIALPHA rewards\n0xa61a...a1fa (18 dp)]
+  Rewards --> Providers[Providers & operators]
+  Providers --> Reinvest[Restake / scale nodes]
+  Reinvest --> Jobs
+  Owner[[Owner Control]] -->|Pauses / Divisors / Caps| GSLI
+  Owner -->|Treasury routing| Rewards
+```
+
+- **Token surface**: `$AGIALPHA` lives at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals) and is referenced throughout the CLI, governance builders, and reward calculators.
+- **Feedback flywheel**: More telemetry → higher SLU → increased GSLI weights → more rewards → additional nodes → more telemetry.
+- **Owner override**: Caps, divisors, exclusions, and pausing switches remain editable mid-flight so the operator can redirect incentives instantly.
 
 ## System architecture
 
@@ -298,6 +322,21 @@ curl -H "X-API-Key: $PUBLIC_KEY" "https://localhost:8080/providers/1/scores?from
 
 5. **Secure the API** (optional): set `API_PUBLIC_READ_KEY` and `API_DASHBOARD_ORIGIN` to gate read access and scope CORS.
 6. **Deploy in Kubernetes**: use the Helm chart at `deploy/helm/agi-alpha-node` or build the container: `docker build -t agi-alpha-node:latest .`.
+
+## Configuration matrix (owner-first)
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `API_PUBLIC_READ_KEY` | _(unset)_ | Optional API key required for `/index/*` and `/providers/*` endpoints when set. Provide via `X-API-Key` or `Authorization: Bearer <key>`. |
+| `API_DASHBOARD_ORIGIN` | `*` | CORS allowlist for dashboards; set to an exact origin (e.g., `https://dash.example.com`) for production. |
+| `API_PORT` | `8080` | HTTP port for the public API and telemetry ingest surface. |
+| `METRICS_PORT` | `9464` | Prometheus `/metrics` port exposed by the monitoring server. |
+| `GOVERNANCE_API_TOKEN` | _(unset)_ | Bearer token required for owner-only governance endpoints; send via `Authorization` or `X-Owner-Token`. |
+| `AGI_ALPHA_DB_PATH` | `:memory:` | SQLite location; set to a filesystem path for persistence across restarts. |
+| `TELEMETRY_ENABLED` | `true` | Toggles ingestion servers and monitoring gauges. |
+| `TELEMETRY_HASH_ALGO` | `sha256` | Hashing algorithm for provider API keys stored in `provider_api_keys`. |
+| `VERIFIER_PORT` | `8787` | Port for the verifier server that validates α‑WU attestations. |
+| `AGIALPHA_TOKEN_ADDRESS` | `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` | Token contract used by staking, rewards, and governance helpers. |
 
 ## Backfill & simulation harness
 
