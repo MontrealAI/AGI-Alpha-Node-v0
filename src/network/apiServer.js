@@ -50,6 +50,8 @@ import {
   TelemetryNotFoundError,
   TelemetryValidationError
 } from '../services/telemetryIngestion.js';
+import { createGlobalIndexEngine } from '../services/globalIndexEngine.js';
+import { createSyntheticLaborEngine } from '../services/syntheticLaborEngine.js';
 
 function jsonResponse(res, statusCode, payload) {
   const body = JSON.stringify(payload, (_, value) => (typeof value === 'bigint' ? value.toString() : value));
@@ -70,6 +72,22 @@ function applyRateLimitHeaders(res, rateLimit) {
   }
   if (rateLimit.windowEndsAt instanceof Date) {
     res.setHeader('X-RateLimit-Reset', Math.floor(rateLimit.windowEndsAt.getTime() / 1000));
+  }
+}
+
+function applyCorsHeaders(req, res, corsOrigin) {
+  if (!corsOrigin) {
+    return;
+  }
+
+  const requestOrigin = req.headers?.origin;
+  const allowOrigin = corsOrigin === '*' || !requestOrigin || requestOrigin === corsOrigin ? corsOrigin : null;
+  if (allowOrigin) {
+    res.setHeader('Access-Control-Allow-Origin', allowOrigin);
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key');
+    res.setHeader('Access-Control-Max-Age', '600');
   }
 }
 
@@ -380,6 +398,56 @@ function ensureOwnerAuthorization(req, ownerToken) {
     error.statusCode = 401;
     throw error;
   }
+}
+
+function enforcePublicReadAuth(req, res, publicApiKey) {
+  if (!publicApiKey) {
+    return true;
+  }
+  const provided = extractApiKey(req);
+  if (provided && provided === publicApiKey) {
+    return true;
+  }
+  jsonResponse(res, 401, { error: 'API key required for this endpoint' });
+  return false;
+}
+
+function toDateOnly(value) {
+  if (!value) return null;
+  const parsed = Date.parse(value);
+  if (Number.isNaN(parsed)) return null;
+  return new Date(parsed).toISOString().slice(0, 10);
+}
+
+function addDays(date, offset) {
+  const parsed = toDateOnly(date);
+  if (!parsed) return null;
+  const d = new Date(parsed);
+  d.setUTCDate(d.getUTCDate() + offset);
+  return d.toISOString().slice(0, 10);
+}
+
+function parsePaginationParams(url, { defaultLimit = 50, maxLimit = 200 } = {}) {
+  const limitParam = url.searchParams.get('limit');
+  const offsetParam = url.searchParams.get('offset');
+  const parsedLimit = Number.parseInt(limitParam ?? defaultLimit, 10);
+  const parsedOffset = Number.parseInt(offsetParam ?? '0', 10);
+  const limit = Number.isFinite(parsedLimit) ? Math.max(1, Math.min(parsedLimit, maxLimit)) : defaultLimit;
+  const offset = Number.isFinite(parsedOffset) && parsedOffset > 0 ? parsedOffset : 0;
+  return { limit, offset };
+}
+
+function resolveDateRange(url, { defaultDays = 30 } = {}) {
+  const to = toDateOnly(url.searchParams.get('to')) ?? new Date().toISOString().slice(0, 10);
+  const fromParam = url.searchParams.get('from');
+  const from = toDateOnly(fromParam) ?? addDays(to, -1 * (defaultDays - 1));
+  if (!from || !to) {
+    throw new Error('Invalid date range supplied');
+  }
+  if (Date.parse(from) > Date.parse(to)) {
+    throw new Error('from must be on or before to');
+  }
+  return { from, to };
 }
 
 const systemPauseSchema = governanceCommonSchema
@@ -834,7 +902,9 @@ export function startAgentApi({
   ownerToken = null,
   ledgerRoot = process.cwd(),
   healthGate = null,
-  telemetry = null
+  telemetry = null,
+  publicApiKey = null,
+  corsOrigin = null
 } = {}) {
   const jobs = new Map();
   const lifecycleJobs = new Map();
@@ -863,6 +933,18 @@ export function startAgentApi({
       : new TelemetryIngestionService({
           logger: typeof logger.child === 'function' ? logger.child({ subsystem: 'telemetry' }) : logger
         });
+
+  const sharedDb = telemetryService.db;
+  const indexEngine = createGlobalIndexEngine({
+    db: sharedDb,
+    logger: typeof logger.child === 'function' ? logger.child({ subsystem: 'gsl-index' }) : logger
+  });
+  const laborEngine = createSyntheticLaborEngine({
+    db: sharedDb,
+    logger: typeof logger.child === 'function' ? logger.child({ subsystem: 'synthetic-labor' }) : logger
+  });
+  const publicReadKey = typeof publicApiKey === 'string' && publicApiKey.trim().length > 0 ? publicApiKey.trim() : null;
+  const allowedCorsOrigin = typeof corsOrigin === 'string' && corsOrigin.trim().length > 0 ? corsOrigin.trim() : null;
 
   const resolveHealthGateState = () => (healthGate ? healthGate.getState() : null);
 
@@ -1002,6 +1084,24 @@ export function startAgentApi({
 
   const server = http.createServer(async (req, res) => {
     try {
+      applyCorsHeaders(req, res, allowedCorsOrigin);
+
+      if (req.method === 'OPTIONS') {
+        res.writeHead(204);
+        res.end();
+        return;
+      }
+
+      let requestUrl;
+      try {
+        requestUrl = new URL(req.url, 'http://localhost');
+      } catch (error) {
+        jsonResponse(res, 400, { error: error instanceof Error ? error.message : String(error) });
+        return;
+      }
+
+      const { pathname } = requestUrl;
+
       if (!req.url) {
         jsonResponse(res, 404, { error: 'Not found' });
         return;
@@ -1077,6 +1177,132 @@ export function startAgentApi({
           }
           logger.error(error, 'Quality telemetry ingest failed');
           jsonResponse(res, 500, { error: 'Internal server error' });
+        }
+        return;
+      }
+
+      if (req.method === 'GET' && pathname === '/index/latest') {
+        if (!enforcePublicReadAuth(req, res, publicReadKey)) {
+          return;
+        }
+
+        try {
+          const latest = indexEngine.indexValues.listRecent(1)[0];
+          if (!latest) {
+            jsonResponse(res, 404, { error: 'No index values available' });
+            return;
+          }
+
+          const weightSet = latest.weight_set_id ? indexEngine.weightSets.getById(latest.weight_set_id) : null;
+          const constituents = weightSet ? indexEngine.constituentWeights.listForWeightSet(weightSet.id) : [];
+          const providerMap = new Map(indexEngine.providers.list().map((provider) => [provider.id, provider]));
+
+          jsonResponse(res, 200, {
+            index: latest,
+            weight_set: weightSet,
+            constituents: constituents.map((entry) => ({
+              ...entry,
+              provider:
+                providerMap.get(entry.provider_id)
+                  ? {
+                      id: providerMap.get(entry.provider_id).id,
+                      name: providerMap.get(entry.provider_id).name,
+                      region: providerMap.get(entry.provider_id).region,
+                      sector_tags: providerMap.get(entry.provider_id).sector_tags,
+                      energy_mix: providerMap.get(entry.provider_id).energy_mix
+                    }
+                  : { id: entry.provider_id }
+            }))
+          });
+        } catch (error) {
+          logger.error(error, 'Failed to serve latest index');
+          jsonResponse(res, 500, { error: 'Failed to load latest index value' });
+        }
+        return;
+      }
+
+      if (req.method === 'GET' && pathname === '/index/history') {
+        if (!enforcePublicReadAuth(req, res, publicReadKey)) {
+          return;
+        }
+
+        try {
+          const window = resolveDateRange(requestUrl, { defaultDays: 30 });
+          const { limit, offset } = parsePaginationParams(requestUrl, { defaultLimit: 30, maxLimit: 365 });
+          const total = indexEngine.indexValues.countBetween(window.from, window.to);
+          const items = indexEngine.indexValues.listBetween(window.from, window.to, { limit, offset });
+          const nextOffset = offset + items.length < total ? offset + items.length : null;
+
+          jsonResponse(res, 200, {
+            window,
+            pagination: { total, limit, offset, nextOffset },
+            items
+          });
+        } catch (error) {
+          logger.warn(error, 'Failed to load index history');
+          jsonResponse(res, 400, { error: error instanceof Error ? error.message : String(error) });
+        }
+        return;
+      }
+
+      if (req.method === 'GET' && pathname === '/providers') {
+        if (!enforcePublicReadAuth(req, res, publicReadKey)) {
+          return;
+        }
+
+        const { limit, offset } = parsePaginationParams(requestUrl, { defaultLimit: 25, maxLimit: 200 });
+        const providers = laborEngine.providers.list();
+        const slice = providers.slice(offset, offset + limit);
+        const enriched = slice.map((provider) => ({
+          ...provider,
+          latest_score: laborEngine.syntheticLaborScores.findLatestForProvider(provider.id) ?? null
+        }));
+        const nextOffset = offset + slice.length < providers.length ? offset + slice.length : null;
+
+        jsonResponse(res, 200, {
+          providers: enriched,
+          pagination: { total: providers.length, limit, offset, nextOffset }
+        });
+        return;
+      }
+
+      if (
+        req.method === 'GET' &&
+        pathname.startsWith('/providers/') &&
+        pathname.endsWith('/scores') &&
+        pathname.split('/').filter(Boolean).length === 3
+      ) {
+        if (!enforcePublicReadAuth(req, res, publicReadKey)) {
+          return;
+        }
+
+        const [, providerIdRaw] = pathname.split('/').filter(Boolean);
+        const providerId = Number.isNaN(Number(providerIdRaw)) ? providerIdRaw : Number(providerIdRaw);
+        const provider = laborEngine.providers.getById(providerId);
+        if (!provider) {
+          jsonResponse(res, 404, { error: 'Provider not found' });
+          return;
+        }
+
+        try {
+          const window = resolveDateRange(requestUrl, { defaultDays: 30 });
+          const { limit, offset } = parsePaginationParams(requestUrl, { defaultLimit: 30, maxLimit: 365 });
+          const total = laborEngine.syntheticLaborScores.countForProviderBetween(provider.id, window.from, window.to);
+          const scores = laborEngine.syntheticLaborScores.listForProviderBetween(provider.id, window.from, window.to, {
+            limit,
+            offset
+          });
+          const nextOffset = offset + scores.length < total ? offset + scores.length : null;
+
+          jsonResponse(res, 200, {
+            provider,
+            window,
+            pagination: { total, limit, offset, nextOffset },
+            scores
+          });
+        } catch (error) {
+          logger.warn(error, 'Failed to load provider scores');
+          jsonResponse(res, 400, { error: error instanceof Error ? error.message : String(error) });
         }
         return;
       }
