@@ -25,6 +25,7 @@ import {
   loadNodeKeypairFromSource,
   validateKeypairAgainstEnsRecord
 } from '../identity/bootstrap.js';
+import { buildLibp2pHostConfig, logLibp2pHostConfig } from '../network/libp2pHostConfig.js';
 import { buildTransportConfig, logTransportPlan } from '../network/transportConfig.js';
 
 function assertConfigField(value, field) {
@@ -136,7 +137,8 @@ export async function bootstrapContainer({
       validatorRuntime,
       nodeIdentity: null,
       nodeKeypair: null,
-      quorumEngine: null
+      quorumEngine: null,
+      hostConfig: null
     };
   }
 
@@ -147,6 +149,7 @@ export async function bootstrapContainer({
   let quorumEngine = null;
   let unsubscribeValidation = null;
   const cleanupTasks = [];
+  let hostConfig = null;
 
   const healthGateLogger = typeof logger.child === 'function' ? logger.child({ subsystem: 'health-gate' }) : logger;
   const healthGate = createHealthGate({
@@ -191,6 +194,15 @@ export async function bootstrapContainer({
     nodeKeypair = await loadNodeKeypairFromSource({ logger: identityLogger });
     await validateKeypairAgainstEnsRecord(nodeIdentity, nodeKeypair, { logger: identityLogger });
     identityLogger.info({ ensName: nodeIdentity.ensName }, 'Local keypair aligned with ENS pubkey');
+
+    hostConfig = buildLibp2pHostConfig({
+      config,
+      listenMultiaddrs: config.P2P_LISTEN_MULTIADDRS,
+      publicMultiaddrs: nodeIdentity.multiaddrs,
+      relayMultiaddrs: config.P2P_RELAY_MULTIADDRS,
+      lanMultiaddrs: config.P2P_LAN_MULTIADDRS
+    });
+    logLibp2pHostConfig(hostConfig, identityLogger);
   } catch (error) {
     identityLogger.error(error, 'Failed to validate node keypair against ENS identity');
     throw error;
@@ -534,7 +546,8 @@ export async function bootstrapContainer({
       validatorRuntime,
       quorumEngine,
       nodeIdentity,
-      nodeKeypair
+      nodeKeypair,
+      hostConfig
     };
   }
 
@@ -596,6 +609,7 @@ export async function bootstrapContainer({
     validatorRuntime,
     quorumEngine,
     nodeIdentity,
-    nodeKeypair
+    nodeKeypair,
+    hostConfig
   };
 }

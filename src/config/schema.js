@@ -162,6 +162,35 @@ function coerceEnsAllowlist(value) {
   return splitEntries.length ? splitEntries : undefined;
 }
 
+function coerceMultiaddrList(value) {
+  if (value === undefined || value === null) {
+    return [];
+  }
+  if (Array.isArray(value)) {
+    const entries = value
+      .map((entry) => (typeof entry === 'string' ? entry.trim() : String(entry)))
+      .filter((entry) => entry && entry.length > 0);
+    return Array.from(new Set(entries));
+  }
+  const stringValue = String(value).trim();
+  if (!stringValue) {
+    return [];
+  }
+  if (stringValue.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(stringValue);
+      return coerceMultiaddrList(parsed);
+    } catch (error) {
+      throw new Error(`Unable to parse multiaddr list: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  const splitEntries = stringValue
+    .split(/[\s,]+/)
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+  return Array.from(new Set(splitEntries));
+}
+
 function parseProfileSpec(value) {
   if (value === undefined || value === null) {
     return undefined;
@@ -492,6 +521,21 @@ export const configSchema = z
         return trimmed.length ? trimmed : ':memory:';
       })
       .default(':memory:'),
+    P2P_LISTEN_MULTIADDRS: z.any().optional().transform((value) => coerceMultiaddrList(value)),
+    P2P_PUBLIC_MULTIADDRS: z.any().optional().transform((value) => coerceMultiaddrList(value)),
+    P2P_RELAY_MULTIADDRS: z.any().optional().transform((value) => coerceMultiaddrList(value)),
+    P2P_LAN_MULTIADDRS: z.any().optional().transform((value) => coerceMultiaddrList(value)),
+    AUTONAT_REACHABILITY: z
+      .string()
+      .optional()
+      .transform((value) => {
+        if (!value) return undefined;
+        const normalized = value.trim().toLowerCase();
+        if (['public', 'private', 'unknown'].includes(normalized)) {
+          return normalized;
+        }
+        throw new Error('AUTONAT_REACHABILITY must be public, private, or unknown when provided');
+      }),
     TRANSPORT_ENABLE_QUIC: booleanFlag.optional().default(true),
     TRANSPORT_ENABLE_TCP: booleanFlag.optional().default(true),
     ENABLE_HOLE_PUNCHING: booleanFlag.optional().default(true),
