@@ -176,9 +176,29 @@ flowchart LR
 ### Configuration, secrets, and operator ergonomics
 
 - **Environment-first**: copy `.env.example` to `.env` (or inject env vars into Docker/Kubernetes) to control RPC URLs, ENS domains, DB path (`AGI_ALPHA_DB_PATH`), API read keys, CORS (`API_DASHBOARD_ORIGIN`), OpenTelemetry exporters, health gate allowlist, and canonical `$AGIALPHA` binding (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals).
+- **Dashboard pairing**: a minimal `dashboard/.env.example` ships alongside the SPA so operators can drop in an API base URL and read key without hunting through config. Copy it to `dashboard/.env.local` when you want the cockpit pointed at a staging or production node.
 - **Profiles**: `NODE_ROLE` toggles orchestrator/executor/validator/mixed, while `JOB_REGISTRY_PROFILE`, staking shares, and registry overrides allow per-environment behavior without code edits.
 - **Secrets hygiene**: never commit `.env`; the Helm chart and Docker image honor the same knobs, and CI redacts secrets. API keys live in `API_PUBLIC_READ_KEY` and `GOVERNANCE_API_TOKEN`, and the governance ledger root is configurable for air-gapped exports.
 - **Owner sovereignty preserved**: contract owner can pause/unpause, rotate validators, reroute emissions/treasury, retune divisors, and refresh metadata through `src/index.js` CLI verbs or the authenticated `/governance/*` surface—every parameter stays mutable by the owner without redeploying.
+
+```mermaid
+flowchart LR
+  subgraph Config[Env-driven config]
+    CoreEnv[.env \n RPC_URL, API_PORT, DB path, AGIALPHA binding]
+    DashEnv[dashboard/.env.local \n VITE_API_BASE_URL, VITE_PUBLIC_API_KEY]
+  end
+  subgraph Runtime[Node surfaces]
+    API[/REST + governance/]
+    Metrics[/Prometheus/]
+    Logs[/Structured pino events/]
+  end
+  CoreEnv --> Runtime
+  DashEnv --> UI[Dashboard cockpit]
+  UI --> API
+  Runtime --> Ops[Non-technical operator]
+  classDef accent fill:#0b1120,stroke:#c084fc,stroke-width:1.5px,color:#e0e7ff;
+  class Config,Runtime,API,Metrics,Logs,UI,Ops accent;
+```
 
 ### CI, branch protection, and delivery hygiene
 
@@ -193,6 +213,26 @@ flowchart LR
 - **Metrics**: `/metrics` exposes Prometheus counters/gauges for health gates, index pipeline, telemetry ingest, and governance events; OpenTelemetry exporters are wired via `ALPHA_NODE_OTEL_*` env vars.
 - **Structured logging**: pino emits JSON logs across scoring, index jobs, governance, and bootstrap so operators can ship logs to any collector.
 - **Diagnostics loop**: the health gate (`src/services/healthGate.js`) ingests ENS allowlists, staking diagnostics, and operator posture; telemetry gauges in `src/telemetry/monitoring.js` surface its state.
+
+#### Health & telemetry quickstart
+
+- Probe liveness/readiness: `curl -s http://localhost:8080/health | jq` (mirrors `/healthz`).
+- Inspect metrics: `curl -s http://localhost:8080/metrics | head -n 40` to confirm scrape targets and gate posture are emitted.
+- Tail structured logs: `npm start 2>&1 | jq '.'` to see `event`, `component`, and health-gate annotations suitable for SIEM ingestion.
+- Enforce gateway posture locally: `npm run ci:policy` keeps the allowlist and diagnostics contract intact before shipping.
+
+```mermaid
+sequenceDiagram
+  participant Probe as GET /health(z)
+  participant API as API Server
+  participant Gate as Health Gate
+  participant Metrics as Prometheus Surface
+  Probe->>API: HTTP 200 + uptime, counters
+  API->>Gate: read ENS allowlist + stake posture
+  API->>Metrics: expose gauges/counters
+  Gate-->>API: { healthy, sealed, diagnostics }
+  Metrics-->>Probe: scrape-ready exposition
+```
 
 ## System architecture
 
@@ -251,6 +291,13 @@ flowchart LR
 - **Local parity with branch protection**: `npm run ci:verify` wires linting, backend + frontend tests, coverage, Solidity lint/compile, subgraph codegen/build, npm audit, policy gates, and branch gate—identical to the GitHub Actions matrix.
 - **Health surfaces baked in**: `/health` and `/healthz` return status, counters, gate posture, and uptime; `/metrics` powers Prometheus scrapes. Structured Pino logs annotate SLU scoring, GSLI rebalances, and backfills with machine-readable `event` fields for SIEM pipelines.
 - **Structured telemetry assertions**: CI now inspects the SLU scoring engine and GSLI indexer for structured `event` payloads so logging contracts remain stable for downstream collectors.
+
+#### Branch-protection recipe (visible + enforced)
+
+1. Keep `.github/required-checks.json` in sync with `ci.yml` (names must match the job labels in GitHub Actions).
+2. Enable “Require status checks to pass before merging” for `main` and select the entries from `required-checks.json` so backend, frontend, coverage, Solidity, subgraph, Docker smoke, and security gates are mandatory.
+3. Verify locally with `npm run ci:verify` before opening a PR; the same gates run in CI, ensuring badges at the top of this README stay green.
+4. Use `scripts/publish-badges.mjs` (auto-triggered on `main`) to keep Shields current for CI, coverage, and security posture.
 
 ### CI, branch protection, and visibility
 
