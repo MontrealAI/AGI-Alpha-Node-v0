@@ -25,6 +25,7 @@ import {
   createPeerScoreInspector,
   createPeerScoreRegistry
 } from '../services/peerScoring.js';
+import { buildGossipsubRoutingConfig } from '../network/pubsubConfig.js';
 import {
   loadNodeIdentityRecord,
   loadNodeKeypairFromSource,
@@ -247,6 +248,21 @@ export async function bootstrapContainer({
   });
   const peerScoreInspector = createPeerScoreInspector({ registry: peerScoreRegistry, logger });
   logger.info({ peerScoreConfig }, 'Peer scoring configuration synthesized');
+
+  const gossipsubConfig = buildGossipsubRoutingConfig({
+    config,
+    peerScoreConfig,
+    peerScoreInspector,
+    logger
+  });
+  logger.info(
+    {
+      mesh: gossipsubConfig.mesh,
+      gossip: gossipsubConfig.gossip,
+      thresholds: gossipsubConfig.options.scoreThresholds
+    },
+    'GossipSub scoring enabled'
+  );
 
   let offlineSnapshot = null;
   const snapshotPath = offlineSnapshotPath ?? config.OFFLINE_SNAPSHOT_PATH ?? null;
@@ -583,7 +599,8 @@ export async function bootstrapContainer({
       hostConfig,
       peerScoreConfig,
       peerScoreInspector,
-      peerScoreRegistry
+      peerScoreRegistry,
+      gossipsubConfig
     };
   }
 
@@ -649,6 +666,7 @@ export async function bootstrapContainer({
     hostConfig,
     peerScoreConfig,
     peerScoreInspector,
-    peerScoreRegistry
+    peerScoreRegistry,
+    gossipsubConfig
   };
 }

@@ -134,6 +134,39 @@ describe('config schema', () => {
     expect(config.AUTONAT_REACHABILITY).toBe('public');
   });
 
+  it('parses pubsub mesh and gossip controls', () => {
+    const config = coerceConfig({
+      RPC_URL: 'https://rpc.ankr.com/eth',
+      PUBSUB_D: '10',
+      PUBSUB_D_LOW: '7',
+      PUBSUB_D_HIGH: '14',
+      PUBSUB_D_OUT: '40',
+      PUBSUB_D_LAZY: '20',
+      PUBSUB_GOSSIP_FACTOR: '0.3',
+      PUBSUB_GOSSIP_RETRANSMISSION: '5',
+      PUBSUB_FANOUT_TTL_SECONDS: '120',
+      PUBSUB_OPPORTUNISTIC_GRAFT_THRESHOLD: '6',
+      PUBSUB_OPPORTUNISTIC_GRAFT_PEERS: '9',
+      PUBSUB_PEER_EXCHANGE: 'false',
+      PUBSUB_FLOOD_PUBLISH: 'false',
+      PUBSUB_ALLOW_PUBLISH_TO_ZERO_PEERS: 'true'
+    });
+
+    expect(config.PUBSUB_D).toBe(10);
+    expect(config.PUBSUB_D_LOW).toBe(7);
+    expect(config.PUBSUB_D_HIGH).toBe(14);
+    expect(config.PUBSUB_D_OUT).toBe(40);
+    expect(config.PUBSUB_D_LAZY).toBe(20);
+    expect(config.PUBSUB_GOSSIP_FACTOR).toBeCloseTo(0.3);
+    expect(config.PUBSUB_GOSSIP_RETRANSMISSION).toBe(5);
+    expect(config.PUBSUB_FANOUT_TTL_SECONDS).toBe(120);
+    expect(config.PUBSUB_OPPORTUNISTIC_GRAFT_THRESHOLD).toBe(6);
+    expect(config.PUBSUB_OPPORTUNISTIC_GRAFT_PEERS).toBe(9);
+    expect(config.PUBSUB_PEER_EXCHANGE).toBe(false);
+    expect(config.PUBSUB_FLOOD_PUBLISH).toBe(false);
+    expect(config.PUBSUB_ALLOW_PUBLISH_TO_ZERO_PEERS).toBe(true);
+  });
+
   it('validates stake activation fields', () => {
     const config = coerceConfig({
       RPC_URL: 'https://rpc.ankr.com/eth',
