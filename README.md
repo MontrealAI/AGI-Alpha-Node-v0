@@ -201,6 +201,24 @@ flowchart TD
 - **API targeting**: set `VITE_API_BASE_URL` and, if needed, `VITE_PUBLIC_API_KEY` in a `.env` file inside `dashboard/` to point the UI at your live node; defaults to `http://localhost:8080` with no key. You can also override both live from the connection bar (no rebuild required).
 - **Deterministic builds**: the Vite config pins the dashboard root to `dashboard/` for both dev and production so the emitted bundle always lands in `dashboard/dist` without path ambiguity.
 - **Non-technical launch**: run `npm run dashboard:dev` for hot reloads or open the static `dashboard/dist/index.html` after `npm run dashboard:build`; no extra wiring is required for mock-mode thanks to the bundled smoke test.
+- **Env starter kits**: drop these into `dashboard/.env` or `dashboard/.env.local` for instant targeting:
+
+  ```ini
+  # dashboard/.env.local
+  VITE_API_BASE_URL=http://localhost:8080
+  VITE_PUBLIC_API_KEY=demo-public-key
+  ```
+
+  And the backing API can mirror that simplicity with:
+
+  ```ini
+  # .env
+  API_PORT=8080
+  API_PUBLIC_READ_KEY=demo-public-key
+  API_DASHBOARD_ORIGIN=http://localhost:4173
+  ```
+
+  With those in place, a non-technical operator can run `npm start` followed by `npm run dashboard:dev` and immediately see live data without additional wiring.
 
 ```mermaid
 flowchart LR
@@ -371,6 +389,16 @@ X-API-Key: public-key-123
 
 Owner sovereignty spans every critical dial; the control loop keeps pausing, rewards, registry metadata, and staking posture reprogrammable without code changes.
 
+### Owner command checklist (all hot-swappable without redeploying)
+
+- Pause / unpause the entire node to freeze emissions and ingress before maintenance windows.
+- Rotate validators or update thresholds when adding a new agent cohort.
+- Refresh registry metadata (ENS, controllers, activation flags) to reassign operational authority instantly.
+- Redirect treasury and emissions routes, caps, or divisors in response to market or policy shifts.
+- Approve / withdraw staking balances and adjust productivity bindings to rebalance incentives live.
+
+Every lever above is exposed through both the governance API (`/governance/*`) and the CLI verbs in `src/index.js`, always anchored to the canonical `$AGIALPHA` token at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals).
+
 ```mermaid
 flowchart LR
   subgraph OwnerControls[Owner / Multisig Commands]
@@ -478,6 +506,22 @@ flowchart TD
 | Solidity Lint & Compile | `npm run lint:sol && npm run test:sol` | Solhint + solc pipeline stays deterministic. |
 | Subgraph TypeScript Build | `npm run ci:ts` | Manifest rendering + TS build for the subgraph toolchain. |
 | Dependency Security Scan | `npm run ci:security` | `npm audit --audit-level=high` stays clean. |
+
+### Branch protection & visibility
+
+- Required checks are codified in [`.github/required-checks.json`](.github/required-checks.json) and mirrored by the workflow matrix, so GitHub enforces the same gates on PRs and `main`.
+- Status badges are produced from CI artifacts (`badges` job) and surfaced at the top of this README so the check surface is always visible.
+- To validate locally before pushing, run `npm run ci:verify`—it executes the entire matrix to match the protected-branch policy.
+
+```mermaid
+flowchart TD
+  Local[Local ci:verify] --> MatrixChecks[Lint \n Test \n Coverage \n Solidity \n Subgraph \n Docker \n Security]
+  MatrixChecks --> Required[required-checks.json]
+  Required --> Branches[PRs & main (protected)]
+  Branches --> Badges[Status badges \n README]
+  classDef accent fill:#0f172a,stroke:#f59e0b,stroke-width:1.5px,color:#f8fafc;
+  class Local,MatrixChecks,Required,Branches,Badges accent;
+```
 
 - **Security**: `npm audit --audit-level=high`, health gates, and branch policy checks run on every PR.
 - **One-shot local reproduction**: `npm run ci:verify` executes the full matrix (lint, tests, coverage, Solidity, subgraph build, audit, policy, branch gates) to guarantee you match the required PR checks before pushing.
