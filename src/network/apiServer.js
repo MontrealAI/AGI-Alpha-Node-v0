@@ -1353,15 +1353,19 @@ export function startAgentApi({
         return;
       }
 
-      if (req.method === 'GET' && req.url === '/healthz') {
-        jsonResponse(res, 200, {
+      if (req.method === 'GET' && (pathname === '/healthz' || pathname === '/health')) {
+        const payload = {
           status: 'ok',
           offlineMode,
           submitted: metrics.submitted,
           completed: metrics.completed,
           failed: metrics.failed,
-          lastJobProvider: metrics.lastJobProvider
-        });
+          lastJobProvider: metrics.lastJobProvider,
+          healthGate: resolveHealthGateState(),
+          uptimeSeconds: Math.round(process.uptime())
+        };
+
+        jsonResponse(res, 200, payload);
         return;
       }
 

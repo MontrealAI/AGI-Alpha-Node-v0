@@ -215,7 +215,7 @@ export class SyntheticLaborEngine {
 
     const existing = this.syntheticLaborScores.findByProviderAndDate(providerId, measurementDate);
     if (existing) {
-      return this.syntheticLaborScores.update(existing.id, {
+      const record = this.syntheticLaborScores.update(existing.id, {
         raw_throughput: rawThroughput,
         energy_adjustment: energyAdjustment,
         quality_adjustment: qualityAdjustment,
@@ -225,9 +225,28 @@ export class SyntheticLaborEngine {
         metadata,
         measurement_date: measurementDate
       });
+
+      this.logger?.info?.(
+        {
+          event: 'syntheticLabor.dailyScore.updated',
+          providerId,
+          measurementDate,
+          slu,
+          adjustments: {
+            energy: energyAdjustment,
+            quality: qualityAdjustment,
+            consensus: consensusFactor
+          },
+          totals: { rawThroughput, totalKwh, totalCostUsd },
+          qualitySignals: qualitySignals.length
+        },
+        'Updated synthetic labor score'
+      );
+
+      return record;
     }
 
-    return this.syntheticLaborScores.create({
+    const record = this.syntheticLaborScores.create({
       provider_id: providerId,
       measurement_date: measurementDate,
       raw_throughput: rawThroughput,
@@ -238,13 +257,44 @@ export class SyntheticLaborEngine {
       rationale,
       metadata
     });
+
+    this.logger?.info?.(
+      {
+        event: 'syntheticLabor.dailyScore.created',
+        providerId,
+        measurementDate,
+        slu,
+        adjustments: {
+          energy: energyAdjustment,
+          quality: qualityAdjustment,
+          consensus: consensusFactor
+        },
+        totals: { rawThroughput, totalKwh, totalCostUsd },
+        qualitySignals: qualitySignals.length
+      },
+      'Computed synthetic labor score'
+    );
+
+    return record;
   }
 
   computeDailyScores(measurementDate = new Date().toISOString().slice(0, 10)) {
     const providers = this.listProviders();
-    return providers.map((provider) =>
+    const scores = providers.map((provider) =>
       this.computeDailyScoreForProvider(provider.id, measurementDate)
     );
+
+    this.logger?.info?.(
+      {
+        event: 'syntheticLabor.dailyScores.batch',
+        measurementDate,
+        providers: providers.map((provider) => provider.id),
+        totalProviders: providers.length
+      },
+      'Completed synthetic labor daily scoring batch'
+    );
+
+    return scores;
   }
 }
 

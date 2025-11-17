@@ -197,6 +197,22 @@ export class GlobalSyntheticLaborIndex {
       });
     }
 
+    this.logger?.info?.(
+      {
+        event: 'gslIndex.rebalance',
+        asOfDate: weightSet.effective_date,
+        capPercent,
+        lookbackDays,
+        minimumSlu30d,
+        baseDivisor,
+        divisorVersion,
+        eligibleProviders: eligibility.eligible.length,
+        excludedProviders: eligibility.excluded.length,
+        weightSetId: weightSet.id
+      },
+      'Rebalanced global synthetic labor index weights'
+    );
+
     return weightSet;
   }
 
@@ -218,7 +234,7 @@ export class GlobalSyntheticLaborIndex {
     }
 
     const normalizedHeadline = roundTo(headline / (weightSet.base_divisor || 1), 6);
-    return this.indexValues.create({
+    const indexValue = this.indexValues.create({
       effective_date: dateOnly,
       headline_value: normalizedHeadline,
       energy_adjustment: 1,
@@ -228,6 +244,18 @@ export class GlobalSyntheticLaborIndex {
       base_divisor: weightSet.base_divisor ?? 1,
       divisor_version: weightSet.divisor_version ?? 'v1'
     });
+
+    this.logger?.info?.(
+      {
+        event: 'gslIndex.headline',
+        effectiveDate: dateOnly,
+        weightSetId: weightSet.id,
+        headline: normalizedHeadline
+      },
+      'Computed headline GSLI value'
+    );
+
+    return indexValue;
   }
 
   backfillIndexHistory({

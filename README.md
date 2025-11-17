@@ -72,6 +72,7 @@
 - **Owner sovereignty**: Governance verbs live in `src/index.js` and calldata builders in `src/services/governance.js`, pointed at the canonical `$AGIALPHA` token (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`).
 - **Debug deck (SPA)**: `dashboard/` ships a React/Vite cockpit with a connection bar (API base + API key), per-tab refresh, and mocked smoke coverage via `test/dashboard.app.test.jsx`.
 - **Deploy fast**: `Dockerfile` + `deploy/helm/agi-alpha-node` emit production images and Kubernetes charts; defaults remain non-destructive for non-technical operators.
+- **Health & observability**: `/health` + `/healthz` for probes, `/metrics` for Prometheus, structured pino logs for SLU scoring + GSLI rebalance, and `.env.example` wiring for API keys, DB path, and dashboard CORS in one place.
 
 ```mermaid
 flowchart LR
@@ -344,6 +345,7 @@ flowchart LR
 
 | Endpoint | Purpose | Query params |
 | --- | --- | --- |
+| `GET /health` | Lightweight liveness/readiness payload (uptime, recent telemetry counters, health gate state). | — |
 | `GET /index/latest` | Latest GSLI value with weight set + constituents. | — |
 | `GET /index/history` | Historical index values (paginated). | `from=YYYY-MM-DD`, `to=YYYY-MM-DD`, `limit`, `offset` |
 | `GET /providers` | Provider registry with most recent SLU score (paginated). | `limit`, `offset` |
@@ -488,20 +490,27 @@ flowchart LR
    npm ci
    ```
 
-3. **Bootstrap local data** (in-memory by default):
+3. **Copy the env template** to align API keys, DB location, and dashboard origins:
+
+   ```bash
+   cp .env.example .env
+   # adjust API_PUBLIC_READ_KEY, API_DASHBOARD_ORIGIN, AGI_ALPHA_DB_PATH, GOVERNANCE_API_TOKEN as needed
+   ```
+
+4. **Bootstrap local data** (in-memory by default):
 
    ```bash
    npm run db:seed
    ```
 
-4. **Run the node** (public API + telemetry on `API_PORT`, metrics on `/metrics`):
+5. **Run the node** (public API + telemetry on `API_PORT`, metrics on `/metrics`):
 
    ```bash
    npm start -- --help   # discover CLI verbs
    npm start             # launches API + telemetry spine
    ```
 
-5. **Launch the debug deck** (optional):
+6. **Launch the debug deck** (optional):
 
    ```bash
    npm run dashboard:dev      # hot-reloads dashboard at http://localhost:4173
@@ -509,8 +518,8 @@ flowchart LR
    npm run dashboard:preview  # serve the built bundle locally
    ```
 
-6. **Secure the API** (optional): set `API_PUBLIC_READ_KEY` and `API_DASHBOARD_ORIGIN` to gate read access and scope CORS.
-7. **Deploy**: use the Helm chart at `deploy/helm/agi-alpha-node` or `docker build -t agi-alpha-node:latest .` for containerized rollouts.
+7. **Secure the API** (optional): set `API_PUBLIC_READ_KEY` and `API_DASHBOARD_ORIGIN` to gate read access and scope CORS.
+8. **Deploy**: use the Helm chart at `deploy/helm/agi-alpha-node` or `docker build -t agi-alpha-node:latest .` for containerized rollouts.
 
 ## Configuration matrix
 
@@ -542,6 +551,7 @@ flowchart TD
   Matrix -->|enforced via required-checks.json| PRs[[PRs & main]]
 ```
 
+- **Structured logs**: Synthetic labor scoring and GSLI rebalances emit pino-formatted events (energy/quality/consensus and weight-set metadata) so operators can trace every calculation in production or CI.
 - **Full visibility**: CI definition lives in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) with artifacts for coverage and Docker smoke logs.
 - **Required checks**: `.github/required-checks.json` mirrors the matrix and is enforced on PRs and `main`.
 - **Coverage discipline**: `npm run coverage` produces LCOV/JSON summaries; the coverage job uploads artifacts for downstream badges.
@@ -587,7 +597,7 @@ flowchart TD
 
 ## Operations playbook
 
-- **Health probes**: `/healthz` shows mode + recent telemetry counts; `/status` returns α‑WU posture and last epoch summary; `/status/diagnostics` expands per-job/device-class/SLA aggregates.
+- **Health probes**: `/health` (and `/healthz`) surface uptime + telemetry counters + health gate state; `/status` returns α‑WU posture and last epoch summary; `/status/diagnostics` expands per-job/device-class/SLA aggregates.
 - **API safety**: Governance endpoints demand owner tokens; public endpoints can be gated with `API_PUBLIC_READ_KEY`. CORS is limited to `API_DASHBOARD_ORIGIN` and preflight is handled automatically.
 - **Secrets**: Environment variables are loaded via `dotenv`; never store private keys in the repo. Owner auth is accepted via `Authorization: Bearer` or `X-Owner-Token`.
 - **Data durability**: Configure `AGI_ALPHA_DB_PATH` to persist beyond restarts; WAL is enabled by default.
