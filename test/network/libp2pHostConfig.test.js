@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildLibp2pHostConfig } from '../../src/network/libp2pHostConfig.js';
+import { buildLibp2pHostConfig, createTransportTracer } from '../../src/network/libp2pHostConfig.js';
+import { buildTransportConfig } from '../../src/network/transportConfig.js';
 
 const PUBLIC_ADDRS = ['/ip4/1.1.1.1/udp/4001/quic', '/ip4/1.1.1.1/tcp/4001'];
 const RELAY_ADDRS = ['/dns4/relay.example.com/tcp/443/wss/p2p-circuit'];
@@ -74,5 +75,35 @@ describe('libp2pHostConfig', () => {
     expect(hostConfig.nat.holePunching).toBe(false);
     expect(hostConfig.nat.autonat.enabled).toBe(false);
     expect(hostConfig.nat.autonat.throttleSeconds).toBe(15);
+  });
+
+  it('surfaces transport traces for QUIC/TCP/relay selection', () => {
+    const plan = buildTransportConfig({});
+    const events = [];
+    const tracer = createTransportTracer({
+      plan,
+      logger: {
+        info: (payload, message) => events.push({ payload, message })
+      }
+    });
+
+    const transport = tracer({
+      peerId: '12D3KooXpeer',
+      address: '/ip4/1.1.1.1/udp/4001/quic',
+      direction: 'inbound',
+      success: true
+    });
+
+    expect(transport).toBe('quic');
+    expect(events).toHaveLength(1);
+    expect(events[0].payload).toMatchObject({
+      peerId: '12D3KooXpeer',
+      address: '/ip4/1.1.1.1/udp/4001/quic',
+      transport: 'quic',
+      direction: 'inbound',
+      preference: plan.transports.preference,
+      success: true
+    });
+    expect(events[0].message).toBe('libp2p transport selection observed');
   });
 });

@@ -1,6 +1,7 @@
 import pino from 'pino';
 import {
   buildTransportConfig,
+  classifyTransport,
   describeDialPreference,
   logTransportPlan,
   rankDialableMultiaddrs,
@@ -10,6 +11,10 @@ import {
 
 const logger = pino({ level: 'info', name: 'libp2p-host-config' });
 
+function resolveLogger(baseLogger = logger) {
+  return typeof baseLogger?.info === 'function' ? baseLogger : logger;
+}
+
 function sanitizeMultiaddrs(addresses = []) {
   return Array.from(
     new Set(
@@ -18,6 +23,29 @@ function sanitizeMultiaddrs(addresses = []) {
         .filter((address) => address.length > 0)
     )
   );
+}
+
+export function createTransportTracer({ plan, logger: baseLogger } = {}) {
+  const log = resolveLogger(baseLogger);
+  const preference = plan?.transports?.preference ?? 'prefer-quic';
+
+  return function traceTransport({ peerId = null, address, direction = 'dial', success = true } = {}) {
+    const transport = classifyTransport(address);
+
+    log.info(
+      {
+        peerId,
+        address,
+        transport,
+        direction,
+        preference,
+        success
+      },
+      'libp2p transport selection observed'
+    );
+
+    return transport;
+  };
 }
 
 export function buildLibp2pHostConfig({
@@ -58,7 +86,8 @@ export function buildLibp2pHostConfig({
     },
     dialer: {
       rank: (addresses) => rankDialableMultiaddrs(addresses, plan),
-      preference: describeDialPreference(plan)
+      preference: describeDialPreference(plan),
+      trace: createTransportTracer({ plan, logger })
     },
     nat: {
       holePunching: plan.holePunching,
@@ -76,7 +105,7 @@ export function buildLibp2pHostConfig({
 
 export function logLibp2pHostConfig(hostConfig, baseLogger = logger) {
   if (!hostConfig) return;
-  const log = typeof baseLogger?.info === 'function' ? baseLogger : logger;
+  const log = resolveLogger(baseLogger);
   logTransportPlan(hostConfig.plan);
   log.info(
     {
