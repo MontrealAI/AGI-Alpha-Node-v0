@@ -131,10 +131,14 @@ export class GlobalSyntheticLaborIndex {
     for (const provider of providers) {
       const aggregate = observed.get(provider.id);
       const total = aggregate?.total_slu ?? 0;
+      const daysObserved = aggregate?.days_observed ?? 0;
+
       if (total >= minimumSlu30d) {
-        eligible.push({ provider, total_slu: total, days_observed: aggregate?.days_observed ?? 0 });
+        eligible.push({ provider, total_slu: total, days_observed: daysObserved });
+      } else if (daysObserved === 0) {
+        excluded.push({ provider, reason: 'no_observed_history', observed_slu: total, days_observed: daysObserved });
       } else {
-        excluded.push({ provider, reason: 'below_minimum_slu_30d', observed_slu: total });
+        excluded.push({ provider, reason: 'below_minimum_slu_30d', observed_slu: total, days_observed: daysObserved });
       }
     }
 
@@ -164,7 +168,10 @@ export class GlobalSyntheticLaborIndex {
       metadata: {
         eligibility_window: eligibility.window,
         minimumSlu30d,
-        lookback_window: lookbackWindow
+        lookback_window: lookbackWindow,
+        eligible_provider_ids: eligibility.eligible.map((entry) => entry.provider.id),
+        excluded_provider_ids: eligibility.excluded.map((entry) => entry.provider.id),
+        cap_fraction: capFraction
       }
     });
 
@@ -173,7 +180,11 @@ export class GlobalSyntheticLaborIndex {
         weight_set_id: weightSet.id,
         provider_id: exclusion.provider.id,
         reason: exclusion.reason,
-        metadata: { observed_slu: exclusion.observed_slu }
+        metadata: {
+          observed_slu: exclusion.observed_slu,
+          days_observed: exclusion.days_observed,
+          eligibility_window: eligibility.window
+        }
       });
     }
 

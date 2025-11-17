@@ -32,11 +32,20 @@ describe('GlobalSyntheticLaborIndex', () => {
   it('excludes providers below the 30d SLU threshold', () => {
     const strongProvider = providers[0];
     const weakProvider = providers[1];
+    const idleProvider = new ProviderRepository(db).create({
+      name: 'idle-provider',
+      operator_address: '0x0000000000000000000000000000000000000009',
+      region: 'na',
+      sector_tags: ['latent'],
+      energy_mix: 'hydro',
+      metadata: {}
+    });
 
-    for (let i = 0; i < 35; i += 1) {
-      addScore(indexEngine, strongProvider.id, `2024-06-${String(1 + i).padStart(2, '0')}`, 12);
-    }
-    addScore(indexEngine, weakProvider.id, '2024-06-01', 0.5);
+    const juneWindowDates = Array.from({ length: 30 }, (_, i) => `2024-06-${String(2 + i).padStart(2, '0')}`);
+    juneWindowDates.forEach((date) => {
+      addScore(indexEngine, strongProvider.id, date, 12);
+    });
+    addScore(indexEngine, weakProvider.id, '2024-06-03', 0.5);
 
     const weightSet = indexEngine.rebalance({
       asOfDate: '2024-07-01',
@@ -52,9 +61,12 @@ describe('GlobalSyntheticLaborIndex', () => {
     expect(weights.some((entry) => entry.provider_id === weakProvider.id)).toBe(false);
     expect(exclusions).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ provider_id: weakProvider.id, reason: 'below_minimum_slu_30d' })
+        expect.objectContaining({ provider_id: weakProvider.id, reason: 'below_minimum_slu_30d' }),
+        expect.objectContaining({ provider_id: idleProvider.id, reason: 'no_observed_history' })
       ])
     );
+    const idleExclusion = exclusions.find((entry) => entry.provider_id === idleProvider.id);
+    expect(idleExclusion?.metadata?.days_observed).toBe(0);
   });
 
   it('caps provider weights and renormalizes the residual share', () => {

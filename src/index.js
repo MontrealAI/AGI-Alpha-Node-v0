@@ -3238,20 +3238,82 @@ program
   });
 
 program
+  .command('index:eligibility')
+  .description('List eligible providers and exclusions for the Global Synthetic Labor Index')
+  .option('--date <date>', 'ISO date (YYYY-MM-DD) to evaluate', new Date().toISOString().slice(0, 10))
+  .option('--lookback <days>', 'Lookback window in days for eligibility', '30')
+  .option('--min-slu <value>', 'Minimum SLU required over the window', '1')
+  .action((options) => {
+    try {
+      const asOfDate = toDateOnly(options.date) ?? new Date().toISOString().slice(0, 10);
+      const lookbackDays = Number.parseInt(options.lookback ?? '30', 10);
+      const minimumSlu30d = Number.parseFloat(options.minSlu ?? '1');
+
+      if (!Number.isFinite(lookbackDays) || lookbackDays <= 0) {
+        throw new Error('lookback must be a positive integer');
+      }
+      if (!Number.isFinite(minimumSlu30d) || minimumSlu30d < 0) {
+        throw new Error('min-slu must be non-negative');
+      }
+
+      const indexEngine = createGlobalIndexEngine();
+      const eligibility = indexEngine.selectEligibleProviders({
+        asOfDate,
+        lookbackDays,
+        minimumSlu30d
+      });
+
+      console.log(chalk.bold(`Eligibility window ${eligibility.window.start} → ${eligibility.window.end}`));
+      console.log(chalk.green(`Eligible providers (${eligibility.eligible.length})`));
+      console.table(
+        eligibility.eligible.map((entry) => ({
+          provider_id: entry.provider.id,
+          name: entry.provider.name,
+          total_slu: entry.total_slu,
+          days_observed: entry.days_observed
+        }))
+      );
+
+      if (eligibility.excluded.length > 0) {
+        console.log(chalk.gray(`Excluded providers (${eligibility.excluded.length})`));
+        console.table(
+          eligibility.excluded.map((entry) => ({
+            provider_id: entry.provider.id,
+            name: entry.provider.name,
+            reason: entry.reason,
+            observed_slu: entry.observed_slu,
+            days_observed: entry.days_observed
+          }))
+        );
+      }
+    } catch (error) {
+      console.error(chalk.red(error.message));
+      process.exitCode = 1;
+    }
+  });
+
+program
   .command('index:rebalance')
   .description('Rebalance Global Synthetic Labor Index constituents with capped weights')
   .option('--date <date>', 'ISO date (YYYY-MM-DD) for the rebalance', new Date().toISOString().slice(0, 10))
   .option('--cap <percent>', 'Maximum provider weight percentage', '15')
   .option('--min-slu <value>', 'Minimum 30d SLU required for eligibility', '1')
   .option('--lookback <days>', 'Lookback window in days for base weights', '90')
+  .option('--divisor <value>', 'Base divisor to normalize headline index values', '1')
+  .option('--divisor-version <id>', 'Version tag for the divisor logic', 'v1')
   .action((options) => {
     try {
       const asOfDate = toDateOnly(options.date) ?? new Date().toISOString().slice(0, 10);
       const capPercent = Number.parseFloat(options.cap ?? '15');
       const minimumSlu30d = Number.parseFloat(options.minSlu ?? '1');
       const lookbackDays = Number.parseInt(options.lookback ?? '90', 10);
+      const baseDivisor = Number.parseFloat(options.divisor ?? '1');
+      const divisorVersion = options.divisorVersion ?? 'v1';
       if (!Number.isFinite(capPercent) || !Number.isFinite(minimumSlu30d) || !Number.isFinite(lookbackDays)) {
         throw new Error('cap, min-slu, and lookback must be numeric');
+      }
+      if (!Number.isFinite(baseDivisor) || baseDivisor <= 0) {
+        throw new Error('divisor must be a positive number');
       }
 
       const indexEngine = createGlobalIndexEngine();
@@ -3259,7 +3321,9 @@ program
         asOfDate,
         capPercent,
         minimumSlu30d,
-        lookbackDays
+        lookbackDays,
+        baseDivisor,
+        divisorVersion
       });
 
       const weights = indexEngine.constituentWeights.listForWeightSet(weightSet.id);
@@ -3280,7 +3344,8 @@ program
           exclusions.map((entry) => ({
             provider_id: entry.provider_id,
             reason: entry.reason,
-            observed_slu: entry.metadata?.observed_slu ?? 0
+            observed_slu: entry.metadata?.observed_slu ?? 0,
+            days_observed: entry.metadata?.days_observed ?? 0
           }))
         );
       }
@@ -3366,6 +3431,10 @@ program
   .option('--end <date>', 'End date (YYYY-MM-DD) for the backfill window', new Date().toISOString().slice(0, 10))
   .option('--cap <percent>', 'Maximum provider weight percentage', '15')
   .option('--min-slu <value>', 'Minimum 30d SLU required for eligibility', '1')
+  .option('--lookback <days>', 'Lookback window for weight construction', '90')
+  .option('--rebalance-interval <days>', 'Days between rebalances during the backfill', '30')
+  .option('--divisor <value>', 'Base divisor for the synthetic headline index', '1')
+  .option('--divisor-version <id>', 'Version tag for the divisor logic', 'v1')
   .action((options) => {
     try {
       const days = Number.parseInt(options.days ?? '90', 10);
@@ -3373,12 +3442,25 @@ program
       const startDate = addDays(endDate, -1 * (days - 1));
       const capPercent = Number.parseFloat(options.cap ?? '15');
       const minimumSlu30d = Number.parseFloat(options.minSlu ?? '1');
+      const lookbackDays = Number.parseInt(options.lookback ?? '90', 10);
+      const rebalanceIntervalDays = Number.parseInt(options.rebalanceInterval ?? '30', 10);
+      const baseDivisor = Number.parseFloat(options.divisor ?? '1');
+      const divisorVersion = options.divisorVersion ?? 'v1';
 
       if (!Number.isFinite(days) || days <= 0) {
         throw new Error('days must be a positive integer');
       }
       if (!startDate) {
         throw new Error('Invalid end date supplied');
+      }
+      if (!Number.isFinite(capPercent) || !Number.isFinite(minimumSlu30d) || !Number.isFinite(lookbackDays)) {
+        throw new Error('cap, min-slu, and lookback must be numeric');
+      }
+      if (!Number.isFinite(rebalanceIntervalDays) || rebalanceIntervalDays <= 0) {
+        throw new Error('rebalance-interval must be a positive integer');
+      }
+      if (!Number.isFinite(baseDivisor) || baseDivisor <= 0) {
+        throw new Error('divisor must be a positive number');
       }
 
       const db = initializeDatabase({ withSeed: true });
@@ -3392,7 +3474,11 @@ program
         startDate,
         endDate,
         capPercent,
-        minimumSlu30d
+        minimumSlu30d,
+        lookbackDays,
+        rebalanceIntervalDays,
+        baseDivisor,
+        divisorVersion
       });
 
       const latest = backfill.indexValues[backfill.indexValues.length - 1];

@@ -41,13 +41,13 @@
   <img src="https://img.shields.io/badge/Owner%20Controls-Total%20Command-9333ea?logo=gnometerminal&logoColor=white" alt="Owner controls" />
 </p>
 
-> **AGI Alpha Node v0** metabolizes heterogeneous agentic labor into verifiable α‑Work Units (α‑WU) and Synthetic Labor Units (SLU), prices the yield against energy, quality, and consensus, rebalances the Global Synthetic Labor Index (GSLI), and routes the `$AGIALPHA` treasury (token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) under complete owner command. Every lever can be paused, rerouted, or retuned without redeploying.
+> **AGI Alpha Node v0** metabolizes heterogeneous agentic labor into verifiable α‑Work Units (α‑WU) and Synthetic Labor Units (SLU), prices yield against energy, quality, and consensus, rebalances the Global Synthetic Labor Index (GSLI), and routes the `$AGIALPHA` treasury (token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) under complete owner command. Every lever can be paused, rerouted, or retuned without redeploying, delivering the production-grade intelligence core envisioned for a world-moving machine.
 
 ## Table of contents
 
 - [Why this node](#why-this-node)
 - [System architecture](#system-architecture)
-- [Global Synthetic Labor Index (GSLI)](#global-synthetic-labor-index-gsli)
+- [Epic 4 – Global Synthetic Labor Index (GSLI)](#epic-4--global-synthetic-labor-index-gsli)
 - [Telemetry spine & ingestion](#telemetry-spine--ingestion)
 - [Owner controls & on-chain levers](#owner-controls--on-chain-levers)
 - [Data spine & migrations](#data-spine--migrations)
@@ -60,11 +60,11 @@
 
 ## Why this node
 
-- **Owner-first sovereignty**: The owner steers every critical parameter—pauses, validator rotation, identity lifecycle, staking thresholds, emission multipliers, treasury routing, and productivity index binding—without touching deployed bytecode. Controls live in `contracts/AlphaNodeManager.sol` with calldata builders in `src/services/governance.js` and CLI wrappers in `src/index.js`.
+- **Owner-first sovereignty**: The owner steers every critical parameter—pauses, validator rotation, identity lifecycle, staking thresholds, emission multipliers, treasury routing, productivity index binding, and on/off-chain weight calculations—without touching deployed bytecode. Controls live in `contracts/AlphaNodeManager.sol` with calldata builders in `src/services/governance.js` and CLI wrappers in `src/index.js`.
 - **Index-grade telemetry**: JSON Schema–verified payloads, hashed API keys, and idempotent task-run recording preserve signal integrity while eliminating duplicates or malformed submissions.
 - **Deterministic data spine**: SQLite migrations seed providers, task types, runs, telemetry, SLU snapshots, α‑index values, and constituent weights with indexes on provider/day for immediate dashboards and subgraph alignment.
 - **Production-safe defaults**: The CLI, seeds, CI gates, Helm chart, and Docker build mirror automation paths so a non-specialist can bootstrap a production-critical node with a handful of commands.
-- **Autonomous alpha extraction**: Agentic swarms route jobs through provider meshes, generating synthetic labor, quality, and energy telemetry that continuously tunes the `$AGIALPHA` flywheel.
+- **Autonomous alpha extraction**: Agentic swarms route jobs through provider meshes, generating synthetic labor, quality, and energy telemetry that continuously tunes the `$AGIALPHA` flywheel. The node is engineered as the intelligence core capable of compounding value at superhuman pace.
 
 ## System architecture
 
@@ -117,14 +117,14 @@ graph TD
   Control -->|Treasury Signals| Token[$AGIALPHA 0xa61a...a1fa]
 ```
 
-## Global Synthetic Labor Index (GSLI)
+## Epic 4 – Global Synthetic Labor Index (GSLI)
 
-The index engine in `src/services/globalIndexEngine.js` maintains a reproducible Global Synthetic Labor Index with constituent caps, base divisor versioning, and versioned weight sets.
+The index engine in `src/services/globalIndexEngine.js` fulfills the Epic 4 brief with reproducible eligibility, weight construction, and divisor-aware headline values.
 
 ```mermaid
 flowchart LR
   subgraph Eligibility[Daily Eligibility]
-    window30[30d SLU Window] --> filter{SLU ≥ min threshold}
+    window30[30d SLU Window] --> filter{SLU ≥ minimum}
     providers[(providers)] --> window30
     filter --> eligible[Eligible Providers]
     filter -.-> excluded[Excluded w/ reason]
@@ -149,11 +149,11 @@ flowchart LR
   end
 ```
 
-- **Constituent selection (MVP)**: `selectEligibleProviders` filters providers by 30d SLU and emits exclusions with reasons into `index_constituent_exclusions`.
-- **Weighting logic**: Work-share weights use \( w_i = \frac{SLU_i}{\sum_j SLU_j} \) across a 90d lookback (configurable), then apply a cap (default 15%) with proportional redistribution and `capped` flags stored in `index_constituent_weights`.
-- **Index value**: \( \text{Index}_t = \frac{\sum_i w_i^{base} \cdot SLU_{i,t}}{\text{BaseDivisor}} \) with `divisor_version` and `weight_set_id` persisted in `index_values`.
-- **Rebalancing**: Monthly by default (`rebalanceIntervalDays` = 30). New weight sets keep previous versions addressable for audits.
-- **Storage**: Repositories in `src/persistence/repositories.js` gate writes for weights, exclusions, and index values; migrations in `src/persistence/migrations/0005_index_rebalancing.sql` provision the tables.
+- **Constituent selection (MVP)**: `selectEligibleProviders` filters providers by SLU over a configurable 30d window and marks exclusions with reasons (`no_observed_history` vs `below_minimum_slu_30d`) plus metadata for audit trails.
+- **Weighting logic**: Work-share weights follow \( w_i = \frac{SLU_i}{\sum_j SLU_j} \), optionally capped (default 15%) with proportional redistribution and `capped` flags stored in `index_constituent_weights`.
+- **Index value**: \( \text{Index}_t = \frac{\sum_i w_i^{base} \cdot SLU_{i,t}}{\text{BaseDivisor}} \) with `divisor_version` and `weight_set_id` persisted in `index_values` for replayable dashboards.
+- **Rebalancing**: Monthly by default (`rebalanceIntervalDays` = 30). New weight sets retain previous versions for reproducibility with metadata on eligibility windows and capped providers.
+- **CLI controls**: `index:eligibility` reports eligible/excluded providers, `index:rebalance` mints versioned weight sets with custom divisors, and `index:daily` computes headline values for any stored weight set.
 
 ## Telemetry spine & ingestion
 
@@ -177,23 +177,36 @@ flowchart LR
 ## Quickstart (non-technical friendly)
 
 1. **Install runtime**: Node.js 20.18+ and npm 10+. Run `npm ci` in the repo root for deterministic dependencies.
-2. **Bootstrap the data spine**: `npm run db:migrate && npm run db:seed` hydrates providers, task archetypes, validators, telemetry exemplars, and initial index scaffolding.
-3. **Boot the node locally**: `npm start` launches the API + orchestration server with seeded providers and task types.
-4. **Dry-run telemetry**: `npm run demo:local` fires the local cluster simulator; observe persisted records in the SQLite spine.
-5. **Score a day of labor**: `node src/index.js score:daily --date 2024-05-01` prints per-provider SLU with difficulty, energy, quality, and validator consensus adjustments.
-6. **Rebalance the GSLI**: `node src/index.js index:rebalance --date 2024-05-02 --cap 15 --min-slu 2` applies capped work-share weights, records exclusions, and persists a `weight_set_id` for reproducibility.
-7. **Inspect the headline index**: `node src/index.js index:daily --date 2024-05-02` reports `Index_t` with the active `weight_set_id`, `divisor_version`, and divisor applied.
-8. **Simulate + backfill**: `node src/index.js index:simulate --days 90` generates synthetic telemetry, backfills 90d of index history with monthly rebalances, and prints the latest headline value.
+2. **Bootstrap the data spine**: `npm run db:migrate && npm run db:seed` hydrates providers, task archetypes, validators, telemetry exemplars, SLU snapshots, and initial index scaffolding.
+3. **Inspect eligibility**: `node src/index.js index:eligibility --date $(date -I)` surfaces eligible and excluded providers with reasons before a rebalance.
+4. **Rebalance the GSLI**: `node src/index.js index:rebalance --date $(date -I) --cap 15 --min-slu 2 --divisor 1 --divisor-version v1` applies capped work-share weights, records exclusions, and persists a `weight_set_id` for reproducibility.
+5. **Compute a headline value**: `node src/index.js index:daily --date $(date -I)` reports `Index_t` with the active `weight_set_id`, `divisor_version`, and divisor applied.
+6. **Boot the node locally**: `npm start` launches the API + orchestration server with seeded providers and task types.
+7. **Dry-run telemetry**: `npm run demo:local` fires the local cluster simulator; observe persisted records in the SQLite spine.
+8. **Score a day of labor**: `node src/index.js score:daily --date 2024-05-01` prints per-provider SLU with difficulty, energy, quality, and validator consensus adjustments.
 9. **Operate via CLI**: `node src/index.js --help` lists governance, staking, lifecycle, telemetry, scoring, and antifragility commands; each subcommand validates inputs and prints tabular outputs for easy auditing.
 10. **Container + Helm**: `docker build -t agi-alpha-node:local .` for a portable image, or use `deploy/helm/agi-alpha-node` to land in Kubernetes with the same health and telemetry probes.
 
 ## Backfill & simulation harness
 
-`index:simulate` generates synthetic provider telemetry, backfills 90 days of SLU, performs monthly rebalances, and stores an auditable headline index per day. It is safe for demos, dashboards, and regression testing because it leverages the same repositories used in production. The routine matches the **Epic 4 – Index Construction & Rebalancing** requirements:
+`index:simulate` generates synthetic provider telemetry, backfills 90 days of SLU, performs monthly rebalances, and stores an auditable headline index per day. It mirrors production paths and now accepts custom lookbacks, rebalance cadence, and divisors for experimentation:
+
+```bash
+node src/index.js index:simulate \
+  --days 120 \
+  --cap 18 \
+  --min-slu 3 \
+  --lookback 120 \
+  --rebalance-interval 30 \
+  --divisor 1 \
+  --divisor-version v1
+```
+
+The routine satisfies the **Epic 4 – Index Construction & Rebalancing** requirements:
 
 - Generate synthetic telemetry for a few providers with energy + quality variance.
-- Backfill 90d of SLU and persist the time series via `index_values`.
-- Recompute constituent weights monthly with cap + exclusions preserved for audit trails.
+- Backfill SLU histories and persist the time series via `index_values` using versioned divisors.
+- Recompute constituent weights monthly with caps and exclusions preserved for audit trails.
 - Emit the latest `Index_t`, divisor, and active `weight_set_id` for external dashboards.
 
 ## CI, gates, and release discipline
@@ -221,7 +234,7 @@ flowchart TD
 - **Rotate validators**: `governance:set-validator --address 0x... --active true` promotes or disables validators with on-chain events for monitoring.
 - **Treasury routing**: `governance:redirect-treasury --index <address> --treasury <address>` updates sinks without redeploying.
 - **Identity lifecycle**: `identity:register --ens 1.alpha.node.agi.eth --controller 0x...` and `identity:set-status` keep ENS + local keys synchronized.
-- **Index stewardship**: `index:rebalance`, `index:daily`, and `index:simulate` provide deterministic rebalances, headline reporting, and demo-ready histories.
+- **Index stewardship**: `index:eligibility`, `index:rebalance`, `index:daily`, and `index:simulate` provide deterministic eligibility checks, rebalances, headline reporting, and demo-ready histories.
 
 ## Repository atlas
 
@@ -236,8 +249,9 @@ flowchart TD
 
 ## Appendix: CLI recipes
 
-- **Rebalance with a tighter cap**: `node src/index.js index:rebalance --date 2024-07-15 --cap 12 --min-slu 5 --lookback 120`
-- **Backfill custom window**: `node src/index.js index:simulate --days 120 --cap 18 --min-slu 3`
+- **Eligibility drill**: `node src/index.js index:eligibility --date 2024-07-01 --lookback 30 --min-slu 2`
+- **Rebalance with a tighter cap**: `node src/index.js index:rebalance --date 2024-07-15 --cap 12 --min-slu 5 --lookback 120 --divisor 1 --divisor-version v1`
+- **Backfill custom window**: `node src/index.js index:simulate --days 120 --cap 18 --min-slu 3 --lookback 120 --rebalance-interval 20`
 - **Inspect exclusions**: `sqlite3 .cache/alpha-node.db "select provider_id, reason, metadata from index_constituent_exclusions order by created_at desc limit 5;"`
 - **Audit weights**: `sqlite3 .cache/alpha-node.db "select weight_set_id, provider_id, weight, metadata from index_constituent_weights order by weight desc;"`
 - **Compute daily SLU**: `node src/index.js score:daily --date $(date -I)`
