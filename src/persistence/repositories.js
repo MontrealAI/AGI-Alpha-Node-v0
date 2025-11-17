@@ -492,6 +492,18 @@ export class SyntheticLaborScoreRepository {
       .map((row) => this.#map(row));
   }
 
+  findLatestForProvider(providerId) {
+    const row = this.db
+      .prepare(
+        `SELECT * FROM synthetic_labor_scores
+         WHERE provider_id = @providerId
+         ORDER BY measurement_date DESC, created_at DESC
+         LIMIT 1`
+      )
+      .get({ providerId });
+    return row ? this.#map(row) : undefined;
+  }
+
   findByProviderAndDate(providerId, measurementDate) {
     const row = this.db
       .prepare(
@@ -533,6 +545,31 @@ export class SyntheticLaborScoreRepository {
       .prepare('SELECT * FROM synthetic_labor_scores WHERE measurement_date = ? ORDER BY provider_id ASC')
       .all(measurementDate)
       .map((row) => this.#map(row));
+  }
+
+  listForProviderBetween(providerId, startDate, endDate, { limit = 30, offset = 0 } = {}) {
+    return this.db
+      .prepare(
+        `SELECT * FROM synthetic_labor_scores
+         WHERE provider_id = @providerId
+           AND measurement_date BETWEEN @start AND @end
+         ORDER BY measurement_date DESC, created_at DESC
+         LIMIT @limit OFFSET @offset`
+      )
+      .all({ providerId, start: startDate, end: endDate, limit, offset })
+      .map((row) => this.#map(row));
+  }
+
+  countForProviderBetween(providerId, startDate, endDate) {
+    const row = this.db
+      .prepare(
+        `SELECT COUNT(*) as count
+         FROM synthetic_labor_scores
+         WHERE provider_id = @providerId
+           AND measurement_date BETWEEN @start AND @end`
+      )
+      .get({ providerId, start: startDate, end: endDate });
+    return Number(row?.count ?? 0);
   }
 
   #map(row) {
@@ -610,6 +647,13 @@ export class IndexValueRepository {
     return this.getById(id);
   }
 
+  countBetween(startDate, endDate) {
+    const row = this.db
+      .prepare('SELECT COUNT(*) as count FROM index_values WHERE effective_date BETWEEN @start AND @end')
+      .get({ start: startDate, end: endDate });
+    return Number(row?.count ?? 0);
+  }
+
   getById(id) {
     return this.db.prepare('SELECT * FROM index_values WHERE id = ?').get(id);
   }
@@ -622,6 +666,18 @@ export class IndexValueRepository {
     return this.db
       .prepare('SELECT * FROM index_values ORDER BY effective_date DESC, created_at DESC LIMIT ?')
       .all(limit);
+  }
+
+  listBetween(startDate, endDate, { limit = 30, offset = 0 } = {}) {
+    return this.db
+      .prepare(
+        `SELECT *
+         FROM index_values
+         WHERE effective_date BETWEEN @start AND @end
+         ORDER BY effective_date DESC, created_at DESC
+         LIMIT @limit OFFSET @offset`
+      )
+      .all({ start: startDate, end: endDate, limit, offset });
   }
 }
 

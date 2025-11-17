@@ -460,6 +460,27 @@ export const configSchema = z
       .min(1)
       .default('sha256'),
     API_PORT: z.coerce.number().int().min(1024).max(65535).default(8080),
+    API_PUBLIC_READ_KEY: optionalSecret('API_PUBLIC_READ_KEY', 8),
+    API_DASHBOARD_ORIGIN: z
+      .string()
+      .optional()
+      .transform((value) => {
+        if (value === undefined || value === null) {
+          return undefined;
+        }
+        const trimmed = value.trim();
+        if (!trimmed) {
+          return undefined;
+        }
+        if (trimmed === '*') {
+          return '*';
+        }
+        try {
+          return new URL(trimmed).origin;
+        } catch (error) {
+          throw new Error(`API_DASHBOARD_ORIGIN must be a valid URL or *: ${error.message}`);
+        }
+      }),
     DRY_RUN: booleanFlag.optional().default(true),
     NODE_PRIVATE_KEY: z
       .string()

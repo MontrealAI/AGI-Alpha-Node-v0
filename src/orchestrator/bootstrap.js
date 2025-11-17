@@ -384,7 +384,9 @@ export async function bootstrapContainer({
       logger,
       ownerToken: config.GOVERNANCE_API_TOKEN,
       ledgerRoot: config.GOVERNANCE_LEDGER_ROOT ?? process.cwd(),
-      healthGate
+      healthGate,
+      publicApiKey: config.API_PUBLIC_READ_KEY,
+      corsOrigin: config.API_DASHBOARD_ORIGIN
     });
     verifierServer = startVerifierServer({
       config,
