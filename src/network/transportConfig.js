@@ -74,7 +74,8 @@ export function logTransportPlan(plan) {
       transports: plan.transports,
       holePunching: plan.holePunching,
       autonat: plan.autonat,
-      relay: plan.relay
+      relay: plan.relay,
+      dialPreference: describeDialPreference(plan)
     },
     'Transport and NAT traversal plan loaded'
   );
@@ -91,5 +92,71 @@ export function describeDialPreference(plan) {
   if (plan.transports.preference === 'tcp-only') {
     return 'TCP-only';
   }
+  return 'unknown';
+}
+
+function sanitizeMultiaddrs(addresses) {
+  if (!addresses) return [];
+  return Array.from(
+    new Set(
+      addresses
+        .map((address) => (address ? String(address).trim() : ''))
+        .filter((address) => address.length > 0)
+    )
+  );
+}
+
+function scoreTransportPreference(address, preference) {
+  const lower = address.toLowerCase();
+  const isQuic = lower.includes('/quic') || lower.includes('/udp/');
+  const isTcp = lower.includes('/tcp/');
+
+  if (preference === 'quic-only') return isQuic ? 0 : 1;
+  if (preference === 'tcp-only') return isTcp ? 0 : 1;
+
+  // prefer-quic
+  if (isQuic && !isTcp) return 0;
+  if (isTcp && !isQuic) return 1;
+  if (isQuic && isTcp) return 0.5; // dual stack: keep deterministic ordering
+  return 2; // unclassified transports sink to the bottom
+}
+
+export function rankDialableMultiaddrs(addresses, plan) {
+  const sanitized = sanitizeMultiaddrs(addresses);
+  if (!sanitized.length) return [];
+
+  const preference = plan?.transports?.preference ?? 'prefer-quic';
+  return sanitized
+    .map((address) => ({ address, score: scoreTransportPreference(address, preference) }))
+    .sort((a, b) => a.score - b.score || a.address.localeCompare(b.address))
+    .map((entry) => entry.address);
+}
+
+export function selectAnnounceableAddrs({
+  reachability = 'unknown',
+  publicMultiaddrs = [],
+  relayMultiaddrs = [],
+  lanMultiaddrs = []
+} = {}) {
+  const sanitizedPublic = sanitizeMultiaddrs(publicMultiaddrs);
+  const sanitizedRelay = sanitizeMultiaddrs(relayMultiaddrs);
+  const sanitizedLan = sanitizeMultiaddrs(lanMultiaddrs);
+
+  if (reachability === 'public') {
+    return sanitizeMultiaddrs([...sanitizedPublic, ...sanitizedRelay]);
+  }
+
+  if (reachability === 'private') {
+    return sanitizeMultiaddrs([...sanitizedRelay, ...sanitizedLan]);
+  }
+
+  return sanitizeMultiaddrs([...sanitizedLan, ...sanitizedRelay, ...sanitizedPublic]);
+}
+
+export function summarizeReachabilityState(state) {
+  if (!state) return 'unknown';
+  const normalized = String(state).toLowerCase();
+  if (normalized === 'public') return 'public';
+  if (normalized === 'private') return 'private';
   return 'unknown';
 }

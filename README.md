@@ -59,6 +59,8 @@
 > The runtime is tuned to operate like an ever-watchful macro trader—autonomous by default, yet instantly steerable by the contract owner to seize new parameters, pause subsystems, or redirect emissions without friction.
 > **Operational promise**: CI is fully green by default and enforced on PRs/main via `.github/required-checks.json`, with badges wired to the canonical workflow. The same gates run locally with `npm run ci:verify`, giving non-technical operators parity with branch protection before they ship.
 >
+> **Transport & NAT sprint**: QUIC-first transport with TCP fallback, DCUtR hole punching, AutoNAT reachability-driven address advertisement, and Relay v2 quotas are now wired through `TRANSPORT_*`, `ENABLE_HOLE_PUNCHING`, `AUTONAT_*`, and `RELAY_*` environment toggles. Dial attempts are ordered toward QUIC where available, address announcements respect public/private posture, and relay slots/bandwidth remain capped for resilience. Logs surface reachability and transport choice so operators can verify QUIC-only, TCP-only, or mixed neighborhoods before rollout.
+>
 > 🛰️ **Launch pad (non-technical operator)**
 >
 > 1. **Install & verify**: `npm ci && npm run ci:verify` (mirrors branch protection locally and surfaces any dependency or Solidity drift).
@@ -76,6 +78,37 @@
 - **Debug deck (SPA)**: `dashboard/` ships a React/Vite cockpit with a connection bar (API base + API key), per-tab refresh, and mocked smoke coverage via `dashboard/src/App.test.jsx`.
 - **Deploy fast**: `Dockerfile` + `deploy/helm/agi-alpha-node` emit production images and Kubernetes charts; defaults remain non-destructive for non-technical operators.
 - **Health & observability**: `/health` + `/healthz` for probes, `/metrics` for Prometheus, structured pino logs for SLU scoring + GSLI rebalance, and `.env.example` wiring for API keys, DB path (`AGI_ALPHA_DB_PATH`), and dashboard CORS in one place.
+
+### Transport + NAT traversal architecture (Sprint A)
+
+- **QUIC-first, TCP-ready**: `buildTransportConfig` keeps both stacks enabled by default and orders dial targets toward QUIC with TCP fallback so restrictive networks still connect.【F:src/network/transportConfig.js†L22-L101】【F:src/network/transportConfig.js†L115-L146】
+- **DCUtR + AutoNAT**: Hole punching, reachability probes, and throttle windows are env-driven; reachability is normalised to `public | private | unknown` and fed into address advertisement to avoid leaking unroutable endpoints.【F:src/network/transportConfig.js†L30-L43】【F:src/network/transportConfig.js†L148-L187】
+- **Relay v2 quotas**: Client/server toggles, reservation ceilings, per-peer circuit caps, and optional bandwidth ceilings keep relayed paths available without becoming a DoS sink.【F:src/network/transportConfig.js†L34-L54】
+- **Announce + dial clarity**: Multiaddrs are deduped, reachability-aware, and logged. Dial attempts surface their transport preference, enabling manual QUIC-only/TCP-only/mixed verification during rollouts.【F:src/network/transportConfig.js†L103-L113】【F:src/network/transportConfig.js†L115-L146】
+
+```mermaid
+flowchart TD
+  Env[.env / CLI
+  TRANSPORT_*, ENABLE_HOLE_PUNCHING,
+  AUTONAT_*, RELAY_*] --> Plan[buildTransportConfig
+  QUIC-first plan]
+  Plan --> Dialer[rankDialableMultiaddrs
+  QUIC-first dial ordering]
+  Plan --> HolePunch[DCUtR enabled
+  when configured]
+  Plan --> AutoNAT[AutoNAT probes
+  throttle aware]
+  Plan --> Relay[Relay v2 client/server
+  quotas + bandwidth caps]
+  AutoNAT --> Reachability[Reachability: public/private/unknown]
+  Reachability --> Announce[selectAnnounceableAddrs
+  (public vs relay/LAN)]
+  Announce --> Peers[Peers receive dialable set]
+  Dialer --> Connections[Connections logged with
+  transport used]
+  classDef accent fill:#0b1120,stroke:#38bdf8,stroke-width:1.5px,color:#cbd5e1;
+  class Env,Plan,Dialer,HolePunch,AutoNAT,Relay,Reachability,Announce,Peers,Connections accent;
+```
 
 ```mermaid
 flowchart LR
