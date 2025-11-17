@@ -49,6 +49,9 @@
   <img src="https://img.shields.io/badge/Owner%20Controls-Total%20Command-9333ea?logo=gnometerminal&logoColor=white" alt="Owner controls" />
   <img src="https://img.shields.io/badge/Public%20Surface-REST%20%7C%20Metrics%20%7C%20ENS-14b8a6?logo=protocols.io&logoColor=white" alt="Surface area" />
   <img src="https://img.shields.io/badge/Dashboard-Mockable%20%7C%20API--key%20aware-14b8a6?logo=react&logoColor=white" alt="Dashboard status" />
+  <img src="https://img.shields.io/badge/Health-%2Fhealth%20%2B%20%2Fhealthz-22c55e?logo=sthealth" alt="Health endpoints" />
+  <img src="https://img.shields.io/badge/Logs-Structured%20pino%20events-0ea5e9?logo=buffer" alt="Structured logs" />
+  <img src="https://img.shields.io/badge/Metrics-Prometheus%20%7C%20OTel-10b981?logo=prometheus&logoColor=white" alt="Metrics surfaces" />
 </p>
 
 > **AGI Alpha Node v0** metabolizes heterogeneous agentic labor into verifiable α‑Work Units (α‑WU) and Synthetic Labor Units (SLU), rebalances the Global Synthetic Labor Index (GSLI), exposes audited read‑only REST telemetry, and routes the `$AGIALPHA` treasury (token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) under complete owner command. Every dial can be paused, rerouted, or retuned without redeploying, delivering a production-grade intelligence core built to bend markets.
@@ -73,6 +76,27 @@
 - **Debug deck (SPA)**: `dashboard/` ships a React/Vite cockpit with a connection bar (API base + API key), per-tab refresh, and mocked smoke coverage via `dashboard/src/App.test.jsx`.
 - **Deploy fast**: `Dockerfile` + `deploy/helm/agi-alpha-node` emit production images and Kubernetes charts; defaults remain non-destructive for non-technical operators.
 - **Health & observability**: `/health` + `/healthz` for probes, `/metrics` for Prometheus, structured pino logs for SLU scoring + GSLI rebalance, and `.env.example` wiring for API keys, DB path (`AGI_ALPHA_DB_PATH`), and dashboard CORS in one place.
+
+```mermaid
+flowchart LR
+  subgraph Observability[Observability & Safety Mesh]
+    Health[/GET /health | /healthz/]
+    Metrics[/GET /metrics/]
+    Logs[pino JSON logs]
+    Gate[Health Gate]
+  end
+  subgraph Runtime[Runtime]
+    Jobs[Telemetry ingest & SLU scoring]
+    Index[GSLI rebalance]
+  end
+  Jobs -- structured events --> Logs
+  Index -- gauges/counters --> Metrics
+  Runtime --> Health
+  Gate --> Metrics
+  Gate --> Logs
+  classDef accent fill:#0b1120,stroke:#22c55e,stroke-width:1.5px,color:#e2e8f0;
+  class Observability,Runtime,Health,Metrics,Logs,Gate,Jobs,Index accent;
+```
 
 ```mermaid
 flowchart LR
@@ -124,6 +148,7 @@ Every control surface above is architected so the owner can reshape incentives, 
 - `deploy/helm/agi-alpha-node`: Kubernetes chart for production rollouts; `Dockerfile` for containerized ops.
 - `docs/`: Economics, identity, and manifesto references; README is the canonical operational map.
 - `subgraph/`: TypeScript tooling for the indexing graph; compiled during CI via `npm run ci:ts`.
+- `scripts/`: CI gates (health + branch), Docker smoke harness, ENS helpers, badge publishers, and safety rails invoked by `ci.yml`.
 
 ```mermaid
 flowchart LR
@@ -147,6 +172,27 @@ flowchart LR
   classDef accent fill:#0f172a,stroke:#9333ea,stroke-width:1.5px,color:#e2e8f0;
   class Runtime,Frontend,Infra,Contracts,API,Gov,Ledger,SPA,Smoke,Dockerfile,Helm accent;
 ```
+
+### Configuration, secrets, and operator ergonomics
+
+- **Environment-first**: copy `.env.example` to `.env` (or inject env vars into Docker/Kubernetes) to control RPC URLs, ENS domains, DB path (`AGI_ALPHA_DB_PATH`), API read keys, CORS (`API_DASHBOARD_ORIGIN`), OpenTelemetry exporters, health gate allowlist, and canonical `$AGIALPHA` binding (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals).
+- **Profiles**: `NODE_ROLE` toggles orchestrator/executor/validator/mixed, while `JOB_REGISTRY_PROFILE`, staking shares, and registry overrides allow per-environment behavior without code edits.
+- **Secrets hygiene**: never commit `.env`; the Helm chart and Docker image honor the same knobs, and CI redacts secrets. API keys live in `API_PUBLIC_READ_KEY` and `GOVERNANCE_API_TOKEN`, and the governance ledger root is configurable for air-gapped exports.
+- **Owner sovereignty preserved**: contract owner can pause/unpause, rotate validators, reroute emissions/treasury, retune divisors, and refresh metadata through `src/index.js` CLI verbs or the authenticated `/governance/*` surface—every parameter stays mutable by the owner without redeploying.
+
+### CI, branch protection, and delivery hygiene
+
+- **Every push gated**: GitHub Actions runs lint (`markdownlint` + link-check + policy gate), backend + dashboard tests, coverage export, Solidity lint/compile, subgraph TS build, Docker build smoke, and npm audit on pushes and PRs. Required checks are enumerated in [`.github/required-checks.json`](.github/required-checks.json) and enforced on `main` via branch protection.
+- **Local parity**: `npm run ci:verify` mirrors the PR gate, including health and branch policies, so non-technical operators can see the same signals as GitHub before opening a PR.
+- **Badges & visibility**: CI badges at the top of this README and the workflow dashboard ([actions/workflows/ci.yml](https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml)) expose real-time status; badge publishing is driven by `scripts/publish-badges.mjs` after all checks pass on `main`.
+- **Coverage discipline**: `npm run coverage` emits c8 reports and uploads artifacts; thresholds are visible in badges and align with branch protection.
+
+### Observability & health contract
+
+- **Health probes**: `/health` and `/healthz` return readiness/liveness plus health gate posture for load balancers and orchestrators.
+- **Metrics**: `/metrics` exposes Prometheus counters/gauges for health gates, index pipeline, telemetry ingest, and governance events; OpenTelemetry exporters are wired via `ALPHA_NODE_OTEL_*` env vars.
+- **Structured logging**: pino emits JSON logs across scoring, index jobs, governance, and bootstrap so operators can ship logs to any collector.
+- **Diagnostics loop**: the health gate (`src/services/healthGate.js`) ingests ENS allowlists, staking diagnostics, and operator posture; telemetry gauges in `src/telemetry/monitoring.js` surface its state.
 
 ## System architecture
 
