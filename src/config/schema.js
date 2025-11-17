@@ -492,6 +492,30 @@ export const configSchema = z
         return trimmed.length ? trimmed : ':memory:';
       })
       .default(':memory:'),
+    TRANSPORT_ENABLE_QUIC: booleanFlag.optional().default(true),
+    TRANSPORT_ENABLE_TCP: booleanFlag.optional().default(true),
+    ENABLE_HOLE_PUNCHING: booleanFlag.optional().default(true),
+    AUTONAT_ENABLED: booleanFlag.optional().default(true),
+    AUTONAT_THROTTLE_SECONDS: z.coerce.number().int().min(1).max(3_600).default(60),
+    RELAY_ENABLE_CLIENT: booleanFlag.optional().default(true),
+    RELAY_ENABLE_SERVER: booleanFlag.optional().default(false),
+    RELAY_MAX_RESERVATIONS: z.coerce.number().int().min(1).max(10_000).default(32),
+    RELAY_MAX_CIRCUITS_PER_PEER: z.coerce.number().int().min(1).max(1_000).default(8),
+    RELAY_MAX_BANDWIDTH_BPS: z
+      .preprocess((value) => {
+        if (value === undefined || value === null) {
+          return undefined;
+        }
+        const trimmed = String(value).trim();
+        if (!trimmed) {
+          return undefined;
+        }
+        const numeric = Number(trimmed);
+        if (!Number.isFinite(numeric)) {
+          return Number.NaN;
+        }
+        return numeric;
+      }, z.number().int().positive().optional()),
     DRY_RUN: booleanFlag.optional().default(true),
     NODE_PRIVATE_KEY: z
       .string()
