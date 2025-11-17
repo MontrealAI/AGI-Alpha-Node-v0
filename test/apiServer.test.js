@@ -12,7 +12,8 @@ import {
   ProviderRepository,
   EnergyReportRepository,
   QualityEvaluationRepository,
-  TaskRunRepository
+  TaskRunRepository,
+  SyntheticLaborScoreRepository
 } from '../src/persistence/repositories.js';
 import { seedProviders, seedTaskTypes } from '../src/persistence/seeds.js';
 import { TelemetryIngestionService } from '../src/services/telemetryIngestion.js';
@@ -263,6 +264,106 @@ describe('agent API server', () => {
     expect(ingestedRun).toBeDefined();
     expect(energyRepo.listForTaskRun(ingestedRun.id)).toHaveLength(1);
     expect(qualityRepo.listForTaskRun(ingestedRun.id)).toHaveLength(1);
+  });
+
+  it('exposes paginated read-only index + provider metrics with auth and CORS', async () => {
+    const db = initializeDatabase({ filename: ':memory:', withSeed: true });
+    const telemetryService = new TelemetryIngestionService({ db, logger: noopLogger });
+    const providers = new ProviderRepository(db).list();
+    const scores = new SyntheticLaborScoreRepository(db);
+
+    scores.create({
+      provider_id: providers[0].id,
+      measurement_date: '2024-01-01',
+      raw_throughput: 10,
+      slu: 10,
+      rationale: 'baseline-p1'
+    });
+    scores.create({
+      provider_id: providers[0].id,
+      measurement_date: '2024-01-02',
+      raw_throughput: 20,
+      slu: 20,
+      rationale: 'growth-p1'
+    });
+    scores.create({
+      provider_id: providers[1].id,
+      measurement_date: '2024-01-02',
+      raw_throughput: 8,
+      slu: 8,
+      rationale: 'baseline-p2'
+    });
+    scores.create({
+      provider_id: providers[1].id,
+      measurement_date: '2024-01-03',
+      raw_throughput: 12,
+      slu: 12,
+      rationale: 'growth-p2'
+    });
+
+    const indexEngine = createGlobalIndexEngine({ db, logger: noopLogger });
+    const weightSet = indexEngine.rebalance({ asOfDate: '2024-01-02', capPercent: 60, minimumSlu30d: 0 });
+    indexEngine.computeIndexValue('2024-01-02', weightSet.id);
+    const nextWeightSet = indexEngine.rebalance({ asOfDate: '2024-01-03', capPercent: 60, minimumSlu30d: 0 });
+    indexEngine.computeIndexValue('2024-01-03', nextWeightSet.id);
+
+    const PUBLIC_KEY = 'public-key-123';
+    const DASHBOARD_ORIGIN = 'https://dash.example.com';
+    api = startAgentApi({
+      port: 0,
+      logger: noopLogger,
+      ownerToken: OWNER_TOKEN,
+      ledgerRoot: ledgerDir,
+      telemetry: telemetryService,
+      publicApiKey: PUBLIC_KEY,
+      corsOrigin: DASHBOARD_ORIGIN
+    });
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    const baseUrl = buildBaseUrl(api.server);
+
+    const unauthLatest = await fetch(`${baseUrl}/index/latest`);
+    expect(unauthLatest.status).toBe(401);
+
+    const latestResponse = await fetch(`${baseUrl}/index/latest`, {
+      headers: { 'x-api-key': PUBLIC_KEY, Origin: DASHBOARD_ORIGIN }
+    });
+    expect(latestResponse.status).toBe(200);
+    expect(latestResponse.headers.get('access-control-allow-origin')).toBe(DASHBOARD_ORIGIN);
+    const latestPayload = await latestResponse.json();
+    expect(latestPayload.index.weight_set_id).toBe(nextWeightSet.id);
+    expect(Array.isArray(latestPayload.constituents)).toBe(true);
+    expect(latestPayload.constituents.length).toBeGreaterThan(0);
+    expect(latestPayload.constituents[0].provider.name).toBeDefined();
+
+    const historyResponse = await fetch(
+      `${baseUrl}/index/history?from=2024-01-01&to=2024-01-03&limit=1&offset=0`,
+      {
+        headers: { 'x-api-key': PUBLIC_KEY }
+      }
+    );
+    expect(historyResponse.status).toBe(200);
+    const historyPayload = await historyResponse.json();
+    expect(historyPayload.pagination.total).toBeGreaterThan(1);
+    expect(historyPayload.pagination.nextOffset).toBe(1);
+    expect(historyPayload.items[0].effective_date).toBe('2024-01-03');
+
+    const providersResponse = await fetch(`${baseUrl}/providers?limit=1`, {
+      headers: { 'x-api-key': PUBLIC_KEY }
+    });
+    expect(providersResponse.status).toBe(200);
+    const providersPayload = await providersResponse.json();
+    expect(providersPayload.pagination.total).toBeGreaterThan(1);
+    expect(providersPayload.providers[0].latest_score.slu).toBeGreaterThan(0);
+
+    const scoresResponse = await fetch(
+      `${baseUrl}/providers/${providers[0].id}/scores?from=2024-01-01&to=2024-01-03&limit=2`,
+      { headers: { 'x-api-key': PUBLIC_KEY } }
+    );
+    expect(scoresResponse.status).toBe(200);
+    const scoresPayload = await scoresResponse.json();
+    expect(scoresPayload.provider.id).toBe(providers[0].id);
+    expect(scoresPayload.scores.length).toBeGreaterThan(0);
+    expect(scoresPayload.pagination.nextOffset).toBeNull();
   });
 
   it('exposes governance directives and crafts owner payloads', async () => {

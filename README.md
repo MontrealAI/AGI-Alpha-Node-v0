@@ -20,13 +20,12 @@
   </a>
   <img src="https://img.shields.io/badge/Test%20Matrix-vitest%20%7C%20solc%20%7C%20markdownlint-22c55e?logo=vitest&logoColor=white" alt="Test matrix" />
   <img src="https://img.shields.io/badge/Observability-c8%20coverage%20%7C%20OTel%20%7C%20prom--client-0ea5e9?logo=testinglibrary&logoColor=white" alt="Observability" />
-  <img src="https://img.shields.io/badge/Index%20Engine-GSLI%20Rebalancing-10b981?logo=apacheairflow&logoColor=white" alt="Index engine" />
   <img src="https://img.shields.io/badge/Public%20API-Read--only%20%7C%20CORS-22c55e?logo=fastapi&logoColor=white" alt="Public API" />
+  <img src="https://img.shields.io/badge/Index%20Engine-GSLI%20Rebalancing-10b981?logo=apacheairflow&logoColor=white" alt="Index engine" />
   <a href="https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa">
     <img src="https://img.shields.io/badge/$AGIALPHA-0xa61a...a1fa-ff3366?logo=ethereum&logoColor=white" alt="$AGIALPHA" />
   </a>
   <img src="https://img.shields.io/badge/Token%20Decimals-18%20dp-f97316?logo=ethereum&logoColor=white" alt="Token decimals" />
-  <img src="https://img.shields.io/badge/Coverage-c8%20%26%20vitest-2563eb?logo=codecov&logoColor=white" alt="Coverage" />
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-111827?logo=open-source-initiative&logoColor=white" alt="License" />
   </a>
@@ -42,36 +41,37 @@
   <img src="https://img.shields.io/badge/Owner%20Controls-Total%20Command-9333ea?logo=gnometerminal&logoColor=white" alt="Owner controls" />
 </p>
 
-> **AGI Alpha Node v0** metabolizes heterogeneous agentic labor into verifiable α‑Work Units (α‑WU) and Synthetic Labor Units (SLU), prices yield against energy, quality, and consensus, rebalances the Global Synthetic Labor Index (GSLI), exposes read-only REST telemetry, and routes the `$AGIALPHA` treasury (token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) under complete owner command. Every lever can be paused, rerouted, or retuned without redeploying, delivering a production-grade intelligence core designed to reshape markets at machine speed.
->
-> **Vision**: Alpha Nodes operate like cognitive farmers—sowing $AGIALPHA incentives, harvesting telemetry as nutrient data, and continuously optimizing a self-reinforcing intelligence mesh. Each node is engineered to compound advantage until the system out-learns, out-strategizes, and out-executes any human-run alternative.
+> **AGI Alpha Node v0** metabolizes heterogeneous agentic labor into verifiable α‑Work Units (α‑WU) and Synthetic Labor Units (SLU), rebalances the Global Synthetic Labor Index (GSLI), exposes audited read‑only REST telemetry, and routes the `$AGIALPHA` treasury (token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) under complete owner command. Every dial can be paused, rerouted, or retuned without redeploying, delivering a production-grade intelligence core built to bend markets.
 
-## Table of contents
+## At a glance
 
-- [Why this node](#why-this-node)
-- [Vision & token flow](#vision--token-flow)
-- [System architecture](#system-architecture)
-- [Epic 4 – Global Synthetic Labor Index (GSLI)](#epic-4--global-synthetic-labor-index-gsli)
-- [Epic 5 – Public API (read-only)](#epic-5--public-api-read-only)
-- [Public API reference & shapes](#public-api-reference--shapes)
-- [Telemetry spine & ingestion](#telemetry-spine--ingestion)
-- [Owner controls & on-chain levers](#owner-controls--on-chain-levers)
-- [Data spine & migrations](#data-spine--migrations)
-- [Quickstart (non-technical friendly)](#quickstart-non-technical-friendly)
-- [Configuration matrix (owner-first)](#configuration-matrix-owner-first)
-- [Backfill & simulation harness](#backfill--simulation-harness)
-- [CI, gates, and release discipline](#ci-gates-and-release-discipline)
-- [Operations playbook](#operations-playbook)
-- [Repository atlas](#repository-atlas)
-- [Appendix: CLI recipes](#appendix-cli-recipes)
+- **Owner-first sovereignty**: Contract owner retains absolute control—pausing, validator rotation, emissions, treasury routing, productivity bindings, registry upgrades, and metadata are callable through `contracts/AlphaNodeManager.sol` with calldata builders in `src/services/governance.js` and CLI verbs in `src/index.js`.
+- **Supernormal telemetry**: JSON Schema–validated ingest with hashed API keys, idempotent task-run recording, and Prometheus/OTel exports preserve signal fidelity for dashboards and policy.
+- **Public API (read-only)**: `/index/latest`, `/index/history`, `/providers`, and `/providers/{id}/scores` surface the GSLI and provider metrics with optional API-key gating and CORS allowlisting.
+- **Deterministic data spine**: SQLite migrations seed providers, task types, synthetic labor scores, and index values with indexes on provider/day for instant dashboards and subgraph alignment.
+- **Production-safe defaults**: Helm chart, Docker build, CI gates, and seeded CLIs make it deployable by non-specialists while remaining fully operator-tunable.
 
-## Why this node
+## System architecture
 
-- **Owner-first sovereignty**: The contract owner holds absolute command—pausing, validator rotation, emissions, treasury routing, productivity bindings, registry upgrades, and metadata are all callable through `contracts/AlphaNodeManager.sol` with calldata builders in `src/services/governance.js` and CLI wrappers in `src/index.js`. No redeploys, no loss of control.
-- **Index-grade telemetry**: JSON Schema–verified payloads, hashed API keys, and idempotent task-run recording preserve signal integrity while eliminating duplicates or malformed submissions.
-- **Deterministic data spine**: SQLite migrations seed providers, task types, runs, telemetry, SLU snapshots, index values, and constituent weights with indexes on provider/day for immediate dashboards and subgraph alignment.
-- **Production-safe defaults**: The CLI, seeds, CI gates, Helm chart, and Docker build mirror automation paths so a non-specialist can bootstrap a production-critical node with a handful of commands.
-- **Autonomous alpha extraction**: Agentic swarms route jobs through provider meshes, generating synthetic labor, quality, and energy telemetry that continuously tunes the `$AGIALPHA` flywheel—the intelligence core designed to out-learn, out-strategize, and out-execute.
+```mermaid
+flowchart LR
+  subgraph Owner[Owner / Multisig]
+    Dir1[Pauses & divisors]
+    Dir2[Treasury routes]
+    Dir3[Registry + metadata]
+  end
+  Owner --> Governance[Governance kernel]
+  Governance -->|Calldata| Contracts[AlphaNodeManager.sol]
+  Contracts --> Treasury[$AGIALPHA flows\n0xa61a...a1fa]
+  Agents[Autonomous agents & nodes] --> Telemetry[(Telemetry spine)]
+  Telemetry --> SLU[SLU scoring]
+  SLU --> GSLI[Global Synthetic Labor Index]
+  GSLI --> API[Read-only REST API]
+  API --> Dashboards[Dashboards / Consumers]
+  API -.-> PublicKey[(Optional API key gate)]
+  Dashboards --> Feedback[Restake / scale / iterate]
+  Feedback --> Agents
+```
 
 ## Vision & token flow
 
@@ -89,239 +89,118 @@ flowchart TD
   Owner -->|Treasury routing| Rewards
 ```
 
-- **Token surface**: `$AGIALPHA` lives at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals) and is referenced throughout the CLI, governance builders, and reward calculators.
+- **Token surface**: `$AGIALPHA` lives at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` and is referenced throughout the CLI, governance builders, staking helpers, and treasury controls.
 - **Feedback flywheel**: More telemetry → higher SLU → increased GSLI weights → more rewards → additional nodes → more telemetry.
-- **Owner override**: Caps, divisors, exclusions, and pausing switches remain editable mid-flight so the operator can redirect incentives instantly.
+- **Owner override**: Caps, divisors, exclusions, and pausing switches are editable mid-flight so the operator can redirect incentives instantly.
 
-## System architecture
+## Public API (read-only)
 
-```mermaid
-flowchart LR
-  Owner((Owner / Multisig)) -->|Directives| Governance[Governance Kernel]
-  Governance -->|Pauses / Validators / Treasury / Weights| ControlPlane[Control Plane]
-  ControlPlane -->|Schedules| OrchestratorMesh[Orchestrator Mesh]
-  OrchestratorMesh -->|Dispatch α‑work| IntelligenceSwarm[Intelligence Swarm]
-  IntelligenceSwarm -->|Attested Proofs| LedgerTelemetry[Ledger + Telemetry Spine]
-  LedgerTelemetry -->|αWU + SLU Metering| AlphaWB[Global α‑WU Benchmark]
-  LedgerTelemetry -->|Rewards $AGIALPHA| Treasury[(0xa61a3b3a130a9c20768eebf97e21515a6046a1fa)]
-  AlphaWB -->|αWB_t & Sector Slices| Dashboards[[Operator Dashboards]]
+**Base URL**: `http://<host>:<API_PORT>` (default `8080`). All endpoints are CORS-aware; set `API_DASHBOARD_ORIGIN` for production dashboards and `API_PUBLIC_READ_KEY` to require `X-API-Key` or `Authorization: Bearer <key>`.
+
+| Endpoint | Purpose | Query params |
+| --- | --- | --- |
+| `GET /index/latest` | Latest GSLI value with weight set + constituents. | — |
+| `GET /index/history` | Historical index values. | `from=YYYY-MM-DD`, `to=YYYY-MM-DD`, `limit`, `offset` |
+| `GET /providers` | Provider registry with most recent SLU score. | `limit`, `offset` |
+| `GET /providers/{id}/scores` | Provider SLU history. | `from`, `to`, `limit`, `offset` |
+
+Example responses (truncated):
+
+```http
+GET /index/latest
+200 OK
+Content-Type: application/json
+X-RateLimit-Remaining: 99
 ```
 
-```mermaid
-graph TD
-  subgraph Ingestion[Telemetry Ingestion v0]
-    APIKeys[X-API-Key (hashed)] --> Gate[Provider Resolver]
-    Gate --> Validator[JSON Schema v0]
-    Validator -->|TaskRunTelemetry| TaskRuns[(task_runs)]
-    Validator -->|EnergyReportPayload| Energy[(energy_reports)]
-    Validator -->|QualityEvalPayload| Quality[(quality_evaluations)]
-    Validator -->|ValidatorConsensus| VC[(synthetic_labor_scores.metadata)]
-    TaskRuns --> Dedup[Idempotency Guard]
-  end
-
-  subgraph PublicAPI[Public API]
-    GSLI[/GET /index/*\nread-only/] --> Dash[Dashboards]
-    Providers[/GET /providers/*\nCORS scoped/] --> Dash
-    APIKey[(Optional Public Read Key)] --> PublicAPI
-  end
-
-  subgraph Control[Owner Control Plane]
-    pause[Pause / Unpause]
-    rotate[Rotate Validators]
-    stakeOps[Stake Withdrawals]
-    identityOps[ENS Identity Lifecycle]
-    weights[Index Weights]
-  end
-
-  subgraph Data[Telemetry & Data Spine]
-    providers[(providers)]
-    tasks[(task_types)]
-    runs[(task_runs)]
-    quality[(quality_evaluations)]
-    energy[(energy_reports)]
-    synth[(synthetic_labor_scores)]
-    idx[(index_values)]
-  end
-
-  Owner[[Owner Multisig]] --> Control
-  Control -->|Commands| Ingestion
-  PublicAPI --> Dash
-  Ingestion -->|Verified signals| Data
-  Data -->|αWB snapshots| Control
-  Control -->|Treasury Signals| Token[$AGIALPHA 0xa61a...a1fa]
+```json
+{
+  "index": {
+    "id": 12,
+    "effective_date": "2024-01-03",
+    "headline_value": 24.3,
+    "weight_set_id": 7,
+    "divisor_version": "v1"
+  },
+  "weight_set": {
+    "id": 7,
+    "effective_date": "2024-01-03",
+    "cap": 0.15,
+    "lookback_window_days": 90
+  },
+  "constituents": [
+    {
+      "provider_id": 1,
+      "weight": 0.42,
+      "metadata": { "capped": false },
+      "provider": { "id": 1, "name": "helios-labs", "region": "na-east" }
+    }
+  ]
+}
 ```
 
-## Epic 4 – Global Synthetic Labor Index (GSLI)
-
-The index engine in `src/services/globalIndexEngine.js` fulfills the Epic 4 brief with reproducible eligibility, weight construction, and divisor-aware headline values.
-
-```mermaid
-flowchart LR
-  subgraph Eligibility[Daily Eligibility]
-    window30[30d SLU Window] --> filter{SLU ≥ minimum}
-    providers[(providers)] --> window30
-    filter --> eligible[Eligible Providers]
-    filter -.-> excluded[Excluded w/ reason]
-  end
-
-  subgraph Weights[Work-share Weights]
-    eligible --> aggregate[90d SLU Aggregates]
-    aggregate --> normalize[Normalize w_i]
-    normalize --> cap[Cap at configurable %]
-    cap --> weightSet[weight_set_id + metadata]
-  end
-
-  subgraph Index[Index_t Computation]
-    weightSet --> multiply[Σ(w_i_base · SLU_i_t)]
-    multiply --> divisor[/Base Divisor/]
-    divisor --> headline[Index_t stored]
-  end
-
-  subgraph History[Backfill & Simulation]
-    headline --> timeline[Index history]
-    timeline --> dashboards[[Dashboards & Subgraph]]
-  end
+```http
+GET /providers/1/scores?from=2024-01-01&to=2024-01-03&limit=2
+200 OK
 ```
 
-- **Constituent selection**: `selectEligibleProviders` filters providers by SLU over a configurable window and marks exclusions with reasons (`no_observed_history` vs `below_minimum_slu_30d`) plus metadata for audit trails.
-- **Weighting logic**: Work-share weights follow \( w_i = \frac{SLU_i}{\sum_j SLU_j} \), capped (default 15%) with proportional redistribution and `capped` flags stored in `index_constituent_weights`.
-- **Index value**: \( \text{Index}_t = \frac{\sum_i w_i^{base} \cdot SLU_{i,t}}{\text{BaseDivisor}} \) with `divisor_version` and `weight_set_id` persisted in `index_values` for replayable dashboards.
-- **Rebalancing**: Monthly by default (`rebalanceIntervalDays` = 30). New weight sets retain previous versions for reproducibility with metadata on eligibility windows and capped providers.
-- **CLI controls**: `index:eligibility` reports eligible/excluded providers, `index:rebalance` mints versioned weight sets with custom divisors, and `index:daily` computes headline values for any stored weight set.
-
-## Epic 5 – Public API (read-only)
-
-The public API exposes the GSLI surface and provider SLU metrics for dashboards. Requests are open by default and can be gated with `API_PUBLIC_READ_KEY`; CORS is scoped with `API_DASHBOARD_ORIGIN`.
-
-### Endpoints
-
-| Method | Path | Query | Description |
-| ------ | ---- | ----- | ----------- |
-| GET | `/index/latest` | — | Latest headline value, weight set, and constituent weights. |
-| GET | `/index/history` | `from`, `to`, `limit`, `offset` | Paginated history of index values within a date window. |
-| GET | `/providers` | `limit`, `offset` | Provider catalog with most recent SLU score per provider. |
-| GET | `/providers/{id}/scores` | `from`, `to`, `limit`, `offset` | Paginated SLU scores for a provider across a date window. |
-
-```mermaid
-sequenceDiagram
-  participant Client
-  participant API as AGI Alpha Node API
-  participant DB as SQLite Spine
-  participant Engine as GSLI Engine
-
-  Client->>API: GET /index/latest (X-API-Key?)
-  API-->>Client: 200 JSON (index + weights)
-  Client->>API: GET /providers/{id}/scores?from&to
-  API->>DB: query synthetic_labor_scores
-  DB-->>API: rows + pagination metadata
-  API-->>Client: 200 JSON (provider, window, scores)
-  Client->>API: OPTIONS /*
-  API-->>Client: 204 + CORS headers (if origin allowed)
-```
-
-- **Authentication**: If `API_PUBLIC_READ_KEY` is set, requests must provide `X-API-Key` or `Authorization: Bearer <key>`.
-- **CORS**: Set `API_DASHBOARD_ORIGIN` to `*` or a specific dashboard origin; preflight (`OPTIONS`) responses are automatic.
-- **Pagination**: `limit` defaults to 30 (`/index/history` and provider scores) or 25 (`/providers`); `offset` drives stable pagination with `nextOffset` hints.
-
-## Public API reference & shapes
-
-The API is deterministic so dashboards can render without client-side guesswork. Fields are stable and tested in `test/apiServer.test.js`.
-
-| Endpoint | Success payload (top-level) | Notes |
-| -------- | -------------------------- | ----- |
-| `/index/latest` | `{ index, weight_set, constituents[] }` | `constituents[*].provider` is hydrated when known; dates are `YYYY-MM-DD`. |
-| `/index/history` | `{ window, pagination, items[] }` | `pagination.nextOffset` is `null` when the page ends. |
-| `/providers` | `{ providers[], pagination }` | Each provider includes `latest_score` (or `null`) and sector/energy metadata. |
-| `/providers/{id}/scores` | `{ provider, window, pagination, scores[] }` | `scores[*]` align with `synthetic_labor_scores` rows, ordered chronologically. |
-
-Examples (with optional public key):
-
-```bash
-curl -H "X-API-Key: $PUBLIC_KEY" "$API_HOST/index/latest"
-curl -H "X-API-Key: $PUBLIC_KEY" "$API_HOST/index/history?from=2024-01-01&to=2024-02-01&limit=30"
-curl -H "X-API-Key: $PUBLIC_KEY" "$API_HOST/providers?limit=20&offset=0"
-curl -H "X-API-Key: $PUBLIC_KEY" "$API_HOST/providers/1/scores?from=2024-01-01&to=2024-02-01&limit=10"
-```
-
-```mermaid
-flowchart LR
-  Client[[Dashboard / Partner]] -->|GET| Latest[/index/latest\n+ weights + constituents/]
-  Client -->|GET| History[/index/history?from&to&limit/]
-  Client -->|GET| Providers[/providers?limit&offset/]
-  Client -->|GET| Scores[/providers/{id}/scores?from&to/]
-  subgraph Security[Optional API key + scoped CORS]
-    Key[X-API-Key or Bearer token]
-    Origin[API_DASHBOARD_ORIGIN]
-  end
-  Security --> Latest
-  Security --> History
-  Security --> Providers
-  Security --> Scores
-```
-
-### Example (with optional API key and CORS)
-
-```bash
-# Latest index snapshot
-curl -H "X-API-Key: $PUBLIC_KEY" https://localhost:8080/index/latest
-
-# Index history with pagination
-curl -H "X-API-Key: $PUBLIC_KEY" "https://localhost:8080/index/history?from=2024-01-01&to=2024-02-01&limit=30"
-
-# Provider catalog
-curl -H "X-API-Key: $PUBLIC_KEY" "https://localhost:8080/providers?limit=20&offset=0"
-
-# Provider scores (id 1) over a window
-curl -H "X-API-Key: $PUBLIC_KEY" "https://localhost:8080/providers/1/scores?from=2024-01-01&to=2024-02-01&limit=10"
+```json
+{
+  "provider": { "id": 1, "name": "helios-labs", "region": "na-east" },
+  "window": { "from": "2024-01-01", "to": "2024-01-03" },
+  "pagination": { "total": 3, "limit": 2, "offset": 0, "nextOffset": 2 },
+  "scores": [
+    { "measurement_date": "2024-01-03", "slu": 12, "raw_throughput": 12 },
+    { "measurement_date": "2024-01-02", "slu": 20, "raw_throughput": 20 }
+  ]
+}
 ```
 
 ## Telemetry spine & ingestion
 
-- **Schemas**: AJV-backed schemas in `spec/*.schema.json` validate task runs, energy reports, and quality evaluations.
-- **API keys**: Provider API keys are hashed (`sha256` by default) and stored in `provider_api_keys`; rate-limit hints surface via `X-RateLimit-*` headers.
-- **Ingestion endpoints**: `/ingest/task-runs`, `/ingest/energy`, `/ingest/quality` accept JSON payloads with `X-API-Key` or `Authorization: Bearer <key>`.
-- **Idempotency**: `idempotency_key` on task runs prevents duplicate submissions; quality/energy telemetry is linked back to the originating task.
-- **Schemas-at-rest**: Normalized telemetry lands in `task_runs`, `energy_reports`, and `quality_evaluations` with optional metadata and schema versioning fields.
+- **Ingestion surface**: `/ingest/task-runs`, `/ingest/energy`, `/ingest/quality` enforce schema validation (AJV), hashed API keys, and idempotency via `idempotency_key` + provider linkage.
+- **Scoring**: `src/services/syntheticLaborEngine.js` aggregates throughput, energy, quality, and consensus factors into daily SLU per provider; stored in `synthetic_labor_scores` with reproducible metadata.
+- **Index math**: `src/services/globalIndexEngine.js` rebalances weights with caps and divisors, recording `index_constituent_weights`, exclusions, and `index_values` for the API layer.
+- **Metrics**: `/metrics` exposes Prometheus gauges and `/healthz` + `/status` report α‑WU posture; OTel traces can be exported via OTLP HTTP.
 
 ## Owner controls & on-chain levers
 
-- **Complete owner control**: Contract owner can pause/unpause, rotate validators, adjust minimum stakes, configure emission curves, redirect treasuries, rotate registries, and update metadata. Calldata builders live in `src/services/governance.js`; the Solidity surface is in `contracts/AlphaNodeManager.sol`.
-- **Runtime mutability**: Owner tokens unlock governance endpoints in `src/network/apiServer.js` so changes can be pushed without redeploys. Every control path is exposed via CLI verbs in `src/index.js` (e.g., `governance:pause`, `incentives:set-rate`, `identity:set-record`).
-- **Observability**: Governance actions write to an internal ledger for auditability; wallet-facing helpers in `src/services/token.js` expose approvals and allowances for `$AGIALPHA` orchestration.
+- **Contract surface**: `contracts/AlphaNodeManager.sol` + helpers in `src/services/governance.js` build calldata for pausing, validator rotations, emissions, treasury routing, registry upgrades, productivity indices, and work-meter directives.
+- **CLI wrappers**: `src/index.js` exposes verbs for pausing, divisors, node metadata, ENS alignment, staking/activation, treasury updates, and productivity levers without redeploying.
+- **Full command**: owner tokens (`GOVERNANCE_API_TOKEN`) gate governance endpoints; every parameter remains updatable (including pausing and rate modifiers) so the operator retains complete control for the AGI jobs platform.
 
 ## Data spine & migrations
 
-- **Database**: SQLite with WAL enabled and foreign keys enforced by `src/persistence/database.js`.
-- **Migrations**: Versioned SQL in `src/persistence/migrations/*.sql` seeds providers, task types, telemetry tables, synthetic labor snapshots, and index constituent weights/weight sets.
-- **Repositories**: CRUD wrappers in `src/persistence/repositories.js` normalize JSON metadata, enforce uniqueness, and expose pagination helpers for SLU history and index values.
-- **Seeds**: `npm run db:seed` or `initializeDatabase({ withSeed: true })` plants sample providers/tasks for dashboards and tests.
+- **SQLite migrations**: `src/persistence/migrations` create durable tables for providers, task types, task runs, energy/quality reports, SLU scores, index weights/values, and governance ledger entries.
+- **Seeds**: `npm run db:seed` plants sample providers and task types for immediate dashboards; `initializeDatabase({ withSeed: true })` is used across tests and the API server for deterministic bootstraps.
+- **Repositories**: CRUD helpers live in `src/persistence/repositories.js` with pagination + JSON normalization to keep API responses consistent.
 
 ## Quickstart (non-technical friendly)
 
-1. **Install Node.js 20.18+ & npm 10+** (or use the provided `Dockerfile`).
+1. **Install Node.js 20.18+ & npm 10+** (or build the container with the provided `Dockerfile`).
 2. **Clone and install**:
 
    ```bash
-   git clone https://github.com/MontrealAI/AGI-Alpha-Node-v0.git
-   cd AGI-Alpha-Node-v0
-   npm ci
-   ```
+    git clone https://github.com/MontrealAI/AGI-Alpha-Node-v0.git
+    cd AGI-Alpha-Node-v0
+    npm ci
+    ```
 
 3. **Bootstrap local data** (in-memory by default):
 
-   ```bash
-   npm run db:seed
-   ```
+    ```bash
+    npm run db:seed
+    ```
 
-4. **Run the node** (read-only API on `PORT`/`API_PORT`, metrics on `/metrics`):
+4. **Run the node** (public API + telemetry on `API_PORT`, metrics on `/metrics`):
 
-   ```bash
-   npm start -- --help          # discover CLI verbs
-   npm start                    # launches API + telemetry spine
-   ```
+    ```bash
+    npm start -- --help   # discover CLI verbs
+    npm start             # launches API + telemetry spine
+    ```
 
 5. **Secure the API** (optional): set `API_PUBLIC_READ_KEY` and `API_DASHBOARD_ORIGIN` to gate read access and scope CORS.
-6. **Deploy in Kubernetes**: use the Helm chart at `deploy/helm/agi-alpha-node` or build the container: `docker build -t agi-alpha-node:latest .`.
+6. **Deploy**: use the Helm chart at `deploy/helm/agi-alpha-node` or `docker build -t agi-alpha-node:latest .` for containerized rollouts.
 
 ## Configuration matrix (owner-first)
 
@@ -338,18 +217,7 @@ curl -H "X-API-Key: $PUBLIC_KEY" "https://localhost:8080/providers/1/scores?from
 | `VERIFIER_PORT` | `8787` | Port for the verifier server that validates α‑WU attestations. |
 | `AGIALPHA_TOKEN_ADDRESS` | `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` | Token contract used by staking, rewards, and governance helpers. |
 
-## Backfill & simulation harness
-
-- **Historical backfill**: `createGlobalIndexEngine` supports `backfillIndexHistory` to rebuild weight sets and headline values over arbitrary windows for dashboard seeding.
-- **Synthetic labor**: `src/services/syntheticLaborEngine.js` computes daily SLU with energy/quality/consensus adjustments; helpers expose recent and per-provider views for dashboards.
-- **Orchestration sandboxes**: `scripts/local_cluster.mjs` spins up a demo mesh; `scripts/subgraph-simulation.js` previews subgraph manifests; `scripts/attestation-verify.ts` checks ZK attestations.
-
-## CI, gates, and release discipline
-
-- **Required checks enforced on PRs**: `.github/required-checks.json` mirrors the CI matrix (lint, tests, coverage, Solidity checks, subgraph build, Docker smoke, security audit) and is enforced on `main`.
-- **Full visibility**: All workflows live in [`ci.yml`](.github/workflows/ci.yml) with badge publication, coverage summary, and artifact uploads for smoke-test logs and coverage reports.
-- **Policy gates**: `npm run ci:policy` enforces health gates; `ci:branch` blocks unapproved branches; `ci:security` runs npm audit at `--audit-level=high`.
-- **Coverage discipline**: `npm run coverage` produces LCOV/JSON summaries, surfaced via the badge publisher job.
+## CI, quality gates, and observability
 
 ```mermaid
 flowchart TD
@@ -364,25 +232,29 @@ flowchart TD
   Matrix -->|enforced via required-checks.json| PRs[[PRs & main]]
 ```
 
+- **Full visibility**: CI definition lives in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) with artifacts for coverage and Docker smoke logs.
+- **Required checks**: `.github/required-checks.json` mirrors the matrix and is enforced on PRs and `main`.
+- **Coverage discipline**: `npm run coverage` produces LCOV/JSON summaries; the badge surfaces totals via the coverage job.
+- **Security**: `npm audit --audit-level=high` and branch/health gates run on every PR.
+
 ## Operations playbook
 
-- **Health probes**: `/healthz` surfaces mode and recent telemetry counts; `/status` returns α‑WU posture and last epoch summary. `/metrics` exposes Prometheus metrics (scrape-friendly for dashboards).
+- **Health probes**: `/healthz` shows mode + recent telemetry counts; `/status` returns α‑WU posture and last epoch summary; `/status/diagnostics` expands per-job/device-class/SLA aggregates.
 - **API safety**: Governance endpoints demand owner tokens; public endpoints can be gated with `API_PUBLIC_READ_KEY`. CORS is limited to `API_DASHBOARD_ORIGIN` and preflight is handled automatically.
-- **Secrets**: Environment variables are loaded via `dotenv`; never store private keys in the repo. Owner authorization can be passed via `Authorization: Bearer <token>` or `X-Owner-Token`.
-- **Data durability**: Configure `AGI_ALPHA_DB_PATH` to persist beyond process restarts; WAL is enabled by default.
+- **Secrets**: Environment variables are loaded via `dotenv`; never store private keys in the repo. Owner auth is accepted via `Authorization: Bearer` or `X-Owner-Token`.
+- **Data durability**: Configure `AGI_ALPHA_DB_PATH` to persist beyond restarts; WAL is enabled by default.
 
 ## Repository atlas
 
 - `src/network/apiServer.js` – HTTP surface (telemetry ingest, governance, read-only public API, health/metrics).
-- `src/services/globalIndexEngine.js` – GSLI eligibility, weight sets, divisor-aware index math.
+- `src/services/globalIndexEngine.js` – GSLI eligibility, cap-aware weight sets, divisor-aware index math.
 - `src/services/syntheticLaborEngine.js` – SLU computation and provider scoring pipeline.
 - `src/services/governance.js` – Owner calldata builders (pausing, validators, emissions, treasury, registry upgrades, work meters, productivity controls).
-- `src/intelligence` – Planning, swarm orchestration, learning loop, antifragility harnesses.
 - `src/persistence` – SQLite migrations, seeds, repositories, and CLI helpers.
 - `contracts/AlphaNodeManager.sol` – Owner-governed contract surface; `$AGIALPHA` integrations in `contracts` + `src/services/token.js`.
 - `deploy/helm/agi-alpha-node` – Production Kubernetes packaging; `Dockerfile` for container builds.
 
-## Appendix: CLI recipes
+## Appendix: CLI & API recipes
 
 ```bash
 # Governance: pause the system (owner token required via env OWNER_TOKEN)
