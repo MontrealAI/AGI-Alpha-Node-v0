@@ -21,6 +21,11 @@ import { getNodeEnsName } from '../ens/ens_config.js';
 import { initTelemetry } from '../telemetry/otel.js';
 import { loadTelemetryConfig } from '../telemetry/config.js';
 import {
+  buildPeerScoreConfig,
+  createPeerScoreInspector,
+  createPeerScoreRegistry
+} from '../services/peerScoring.js';
+import {
   loadNodeIdentityRecord,
   loadNodeKeypairFromSource,
   validateKeypairAgainstEnsRecord
@@ -223,6 +228,26 @@ export async function bootstrapContainer({
     });
   }
 
+  const peerScoreConfig = buildPeerScoreConfig({
+    retainScoreMs: config.PUBSUB_RETAIN_SCORE_MS,
+    opportunisticGraftTicks: config.PUBSUB_OPPORTUNISTIC_GRAFT_TICKS,
+    directConnectTicks: config.PUBSUB_DIRECT_CONNECT_TICKS,
+    thresholds: {
+      gossip: config.PUBSUB_GOSSIP_THRESHOLD,
+      publish: config.PUBSUB_PUBLISH_THRESHOLD,
+      graylist: config.PUBSUB_GRAYLIST_THRESHOLD,
+      disconnect: config.PUBSUB_DISCONNECT_THRESHOLD
+    },
+    topicParams: config.PUBSUB_TOPIC_PARAMS
+  });
+  const peerScoreRegistry = createPeerScoreRegistry({
+    inspectIntervalMs: config.PUBSUB_INSPECT_INTERVAL_MS,
+    retentionMinutes: config.PUBSUB_SCORE_RETENTION_MINUTES,
+    logger
+  });
+  const peerScoreInspector = createPeerScoreInspector({ registry: peerScoreRegistry, logger });
+  logger.info({ peerScoreConfig }, 'Peer scoring configuration synthesized');
+
   let offlineSnapshot = null;
   const snapshotPath = offlineSnapshotPath ?? config.OFFLINE_SNAPSHOT_PATH ?? null;
 
@@ -408,6 +433,7 @@ export async function bootstrapContainer({
       ownerToken: config.GOVERNANCE_API_TOKEN,
       ledgerRoot: config.GOVERNANCE_LEDGER_ROOT ?? process.cwd(),
       healthGate,
+      peerScoreStore: peerScoreRegistry,
       publicApiKey: config.API_PUBLIC_READ_KEY,
       corsOrigin: config.API_DASHBOARD_ORIGIN
     });
@@ -554,7 +580,10 @@ export async function bootstrapContainer({
       quorumEngine,
       nodeIdentity,
       nodeKeypair,
-      hostConfig
+      hostConfig,
+      peerScoreConfig,
+      peerScoreInspector,
+      peerScoreRegistry
     };
   }
 
@@ -617,6 +646,9 @@ export async function bootstrapContainer({
     quorumEngine,
     nodeIdentity,
     nodeKeypair,
-    hostConfig
+    hostConfig,
+    peerScoreConfig,
+    peerScoreInspector,
+    peerScoreRegistry
   };
 }
