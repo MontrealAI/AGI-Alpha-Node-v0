@@ -1005,4 +1005,61 @@ describe('agent API server', () => {
     expect(scoresPayload.pagination.total).toBeGreaterThanOrEqual(2);
     expect(scoresPayload.scores[0].provider_id).toBe(provider.id);
   });
+
+  it('exposes telemetry task runs for dashboard debugging with optional provider filters', async () => {
+    const db = initializeDatabase({ withSeed: true });
+    const telemetry = new TelemetryIngestionService({ db, logger: noopLogger });
+    const provider = telemetry.providers.list()[0];
+    const apiKey = 'telemetry-secret';
+    telemetry.registerApiKey({ providerId: provider.id, apiKey });
+
+    const taskPayload = {
+      schema_version: 'v0',
+      idempotency_key: 'dash-run-1',
+      task_type: 'dashboard-smoke',
+      status: 'completed',
+      external_id: 'dash-1',
+      timing: { started_at: '2024-01-02T00:00:00Z', completed_at: '2024-01-02T00:04:00Z' },
+      metrics: { tokens_processed: 420, tool_calls: 2, quality_score: 0.91 }
+    };
+    telemetry.ingestTaskRun({ payload: taskPayload, apiKey });
+    telemetry.ingestEnergy({
+      payload: { schema_version: 'v0', task: { idempotency_key: taskPayload.idempotency_key }, energy: { kwh: 1.3, region: 'na-east' } },
+      apiKey
+    });
+    telemetry.ingestQuality({
+      payload: { schema_version: 'v0', task: { idempotency_key: taskPayload.idempotency_key }, quality: { score: 0.95, evaluator: 'qa' } },
+      apiKey
+    });
+
+    api = startAgentApi({
+      port: 0,
+      logger: noopLogger,
+      ownerToken: OWNER_TOKEN,
+      ledgerRoot: ledgerDir,
+      telemetry,
+      publicApiKey: 'public-read'
+    });
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    const baseUrl = buildBaseUrl(api.server);
+
+    const today = new Date().toISOString().slice(0, 10);
+
+    const response = await fetch(`${baseUrl}/telemetry/task-runs?from=${today}&to=${today}&limit=5`, {
+      headers: { 'x-api-key': 'public-read' }
+    });
+    expect(response.status).toBe(200);
+    const payload = await response.json();
+    expect(payload.pagination.total).toBeGreaterThanOrEqual(1);
+    expect(payload.task_runs[0].provider.id).toBe(provider.id);
+    expect(payload.task_runs[0].energy_report.kwh).toBeCloseTo(1.3);
+    expect(payload.task_runs[0].quality_evaluation.score).toBeCloseTo(0.95);
+
+    const filtered = await fetch(`${baseUrl}/telemetry/task-runs?from=${today}&to=${today}&provider=${provider.id}`, {
+      headers: { 'x-api-key': 'public-read' }
+    });
+    expect(filtered.status).toBe(200);
+    const filteredPayload = await filtered.json();
+    expect(filteredPayload.task_runs.every((run) => run.provider_id === provider.id)).toBe(true);
+  });
 });

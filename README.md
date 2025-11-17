@@ -22,6 +22,8 @@
   <img src="https://img.shields.io/badge/Test%20Matrix-vitest%20%7C%20solc%20%7C%20markdownlint-22c55e?logo=vitest&logoColor=white" alt="Test matrix" />
   <img src="https://img.shields.io/badge/Security-npm%20audit%20%7C%20health%20gates-ef4444?logo=npm&logoColor=white" alt="Security gates" />
   <img src="https://img.shields.io/badge/Public%20API-Read--only%20%7C%20CORS-22c55e?logo=fastapi&logoColor=white" alt="Public API" />
+  <img src="https://img.shields.io/badge/Internal%20Dashboard-React%20%7C%20Vite-38bdf8?logo=react&logoColor=white" alt="Dashboard" />
+  <img src="https://img.shields.io/badge/Debug%20Surface-Telemetry%20%7C%20GSLI-0ea5e9?logo=prometheus&logoColor=white" alt="Debug surface" />
   <img src="https://img.shields.io/badge/Index%20Engine-GSLI%20Rebalancing-10b981?logo=apacheairflow&logoColor=white" alt="Index engine" />
   <a href="https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa">
     <img src="https://img.shields.io/badge/$AGIALPHA-0xa61a...a1fa-ff3366?logo=ethereum&logoColor=white" alt="$AGIALPHA" />
@@ -44,6 +46,7 @@
 </p>
 
 > **AGI Alpha Node v0** metabolizes heterogeneous agentic labor into verifiable α‑Work Units (α‑WU) and Synthetic Labor Units (SLU), rebalances the Global Synthetic Labor Index (GSLI), exposes audited read‑only REST telemetry, and routes the `$AGIALPHA` treasury (token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) under complete owner command. Every dial can be paused, rerouted, or retuned without redeploying, delivering a production-grade intelligence core built to bend markets.
+> New for this sprint: a React/Vite single-page dashboard (Index | Providers | Telemetry Debug), live GSLI and SLU charts backed by `/index/history` and `/providers/*/scores`, and a telemetry stream reader at `/telemetry/task-runs` that keeps ingest visibility tight while remaining API-key gated for operators.
 
 ## Executive flash
 
@@ -53,6 +56,8 @@
 - **Deterministic persistence**: SQLite migrations + seeds hydrate providers, SLU scores, and index values with indices tuned for provider/day lookups.
 - **Deployment-ready**: Dockerfile + Helm chart, CI gates, and seeded CLIs make it deployable by non-specialists while remaining fully operator-tunable.
 - **Surface clarity**: Public REST, metrics, and ENS/identity surfaces are split but coherent; dashboards can be locked behind CORS and API-key gates while owner-only governance remains private.
+
+Every control surface above is architected so the owner can reshape incentives, pause workloads, and retune telemetry without redeploying—the machine stays adaptable while preserving sovereignty over emissions, registry entries, and runtime posture.
 
 ## System architecture
 
@@ -118,6 +123,42 @@ flowchart TD
   class Latest,History,Providers,ProviderScores api;
 ```
 
+## Minimal internal dashboard (Epic 6)
+
+- **Single-page React/Vite app** (`dashboard/`) with three tabs: **Index** (GSLI line chart + window controls), **Providers** (registry table + SLU trendline per provider), and **Telemetry Debug** (recent TaskRuns with energy/quality overlays and provider/date filters).
+- **Mock-friendly**: front-end smoke test (`test/dashboard.app.test.jsx`) mounts all views in jsdom and asserts API hydration using mocked fetch responses.
+- **Run it locally**: `npm run dashboard:dev` (hot reload on `http://localhost:4173`), `npm run dashboard:build` (production bundle in `dashboard/dist`), `npm run dashboard:preview` (serve the built bundle).
+
+```mermaid
+flowchart LR
+  subgraph SPA[Debug Deck]
+    Nav[Index | Providers | Telemetry]
+    Charts[Chart.js visual layers]
+  end
+  subgraph API[Read-only API]
+    IndexAPI[/GET /index/history/]
+    ProvidersAPI[/GET /providers + /providers/{id}/scores/]
+    TelemetryAPI[/GET /telemetry/task-runs/]
+  end
+  subgraph Spine[Telemetry Spine]
+    Runs[(task_runs)]
+    Energy[(energy_reports)]
+    Quality[(quality_evaluations)]
+  end
+  Nav --> IndexAPI
+  Nav --> ProvidersAPI
+  Nav --> TelemetryAPI
+  TelemetryAPI --> Runs
+  Runs --> Energy
+  Runs --> Quality
+  IndexAPI --> GSLI[GSLI series]
+  ProvidersAPI --> SLU[SLU series]
+  classDef accent fill:#0b1120,stroke:#38bdf8,stroke-width:1.5px,color:#cbd5e1;
+  classDef db fill:#111827,stroke:#22c55e,stroke-width:1.5px,color:#cbd5e1;
+  class SPA,API accent;
+  class Runs,Energy,Quality db;
+```
+
 ## Public API (read-only)
 
 **Base URL**: `http://<host>:<API_PORT>` (default `8080`). All endpoints support CORS; set `API_DASHBOARD_ORIGIN` to a specific origin for production and `API_PUBLIC_READ_KEY` to require `X-API-Key` or `Authorization: Bearer <key>`.
@@ -128,6 +169,7 @@ flowchart TD
 | `GET /index/history` | Historical index values (paginated). | `from=YYYY-MM-DD`, `to=YYYY-MM-DD`, `limit`, `offset` |
 | `GET /providers` | Provider registry with most recent SLU score (paginated). | `limit`, `offset` |
 | `GET /providers/{id}/scores` | Provider SLU history (paginated). | `from`, `to`, `limit`, `offset` |
+| `GET /telemetry/task-runs` | Recent ingested TaskRuns with provider + energy/quality overlays (paginated). | `from`, `to`, `provider`, `limit`, `offset` |
 
 Example: latest index with keyed CORS gate.
 
@@ -166,6 +208,33 @@ GET /providers/1/scores?from=2024-01-01&to=2024-01-03&limit=2
   "scores": [
     {"id": 11, "provider_id": 1, "as_of_date": "2024-01-03", "slu": 0.86, "rationale": "growth-p2"},
     {"id": 10, "provider_id": 1, "as_of_date": "2024-01-02", "slu": 0.82, "rationale": "growth-p1"}
+  ]
+}
+```
+
+Example: telemetry task-runs by provider (dashboard uses this for the Telemetry tab).
+
+```http
+GET /telemetry/task-runs?from=2024-01-01&to=2024-01-03&provider=1&limit=5
+X-API-Key: public-key-123
+```
+
+```json
+{
+  "window": {"from": "2024-01-01", "to": "2024-01-03"},
+  "pagination": {"total": 1, "limit": 5, "offset": 0, "nextOffset": null},
+  "task_runs": [
+    {
+      "id": 41,
+      "provider_id": 1,
+      "provider": {"id": 1, "name": "helios-labs"},
+      "status": "completed",
+      "raw_throughput": 120,
+      "tokens_processed": 1200,
+      "energy_report": {"kwh": 3.5, "region": "na-east"},
+      "quality_evaluation": {"score": 0.91},
+      "created_at": "2024-01-03T12:00:00Z"
+    }
   ]
 }
 ```
@@ -210,8 +279,16 @@ GET /providers/1/scores?from=2024-01-01&to=2024-01-03&limit=2
    npm start             # launches API + telemetry spine
    ```
 
-5. **Secure the API** (optional): set `API_PUBLIC_READ_KEY` and `API_DASHBOARD_ORIGIN` to gate read access and scope CORS.
-6. **Deploy**: use the Helm chart at `deploy/helm/agi-alpha-node` or `docker build -t agi-alpha-node:latest .` for containerized rollouts.
+5. **Launch the debug deck** (optional):
+
+   ```bash
+   npm run dashboard:dev      # hot-reloads dashboard at http://localhost:4173
+   npm run dashboard:build    # emit production bundle to dashboard/dist
+   npm run dashboard:preview  # serve the built bundle locally
+   ```
+
+6. **Secure the API** (optional): set `API_PUBLIC_READ_KEY` and `API_DASHBOARD_ORIGIN` to gate read access and scope CORS.
+7. **Deploy**: use the Helm chart at `deploy/helm/agi-alpha-node` or `docker build -t agi-alpha-node:latest .` for containerized rollouts.
 
 ## Configuration matrix
 
@@ -246,6 +323,7 @@ flowchart TD
 - **Full visibility**: CI definition lives in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) with artifacts for coverage and Docker smoke logs.
 - **Required checks**: `.github/required-checks.json` mirrors the matrix and is enforced on PRs and `main`.
 - **Coverage discipline**: `npm run coverage` produces LCOV/JSON summaries; the coverage job uploads artifacts for downstream badges.
+- **Dashboard proofing**: front-end smoke tests (jsdom) run in `npm test` to validate SPA mounting + API mocks; the Vite bundle is pinned via `npm run dashboard:build`.
 - **Security**: `npm audit --audit-level=high`, health gates, and branch policy checks run on every PR.
 
 ## Operations playbook
@@ -254,6 +332,7 @@ flowchart TD
 - **API safety**: Governance endpoints demand owner tokens; public endpoints can be gated with `API_PUBLIC_READ_KEY`. CORS is limited to `API_DASHBOARD_ORIGIN` and preflight is handled automatically.
 - **Secrets**: Environment variables are loaded via `dotenv`; never store private keys in the repo. Owner auth is accepted via `Authorization: Bearer` or `X-Owner-Token`.
 - **Data durability**: Configure `AGI_ALPHA_DB_PATH` to persist beyond restarts; WAL is enabled by default.
+- **Telemetry drill-downs**: `/telemetry/task-runs` exposes paginated task runs with optional provider filters; pair with the dashboard Telemetry tab for quick ingestion sanity checks.
 
 ## Repository atlas
 
