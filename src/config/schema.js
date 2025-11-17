@@ -481,6 +481,17 @@ export const configSchema = z
           throw new Error(`API_DASHBOARD_ORIGIN must be a valid URL or *: ${error.message}`);
         }
       }),
+    AGI_ALPHA_DB_PATH: z
+      .string()
+      .optional()
+      .transform((value) => {
+        if (value === undefined || value === null) {
+          return ':memory:';
+        }
+        const trimmed = String(value).trim();
+        return trimmed.length ? trimmed : ':memory:';
+      })
+      .default(':memory:'),
     DRY_RUN: booleanFlag.optional().default(true),
     NODE_PRIVATE_KEY: z
       .string()

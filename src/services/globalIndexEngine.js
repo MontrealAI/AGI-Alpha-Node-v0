@@ -101,10 +101,16 @@ function applyCap(rawWeights, capFraction) {
   }));
 }
 
+const defaultLogger = pino({
+  level: process.env.LOG_LEVEL ?? 'info',
+  name: 'gsl-index',
+  base: { component: 'gsl-index' }
+});
+
 export class GlobalSyntheticLaborIndex {
-  constructor({ db = null, logger = pino({ level: 'info', name: 'gsl-index' }) } = {}) {
+  constructor({ db = null, logger = defaultLogger } = {}) {
     this.db = db ?? initializeDatabase({ withSeed: true });
-    this.logger = logger;
+    this.logger = logger?.child?.({ component: 'gsl-index' }) ?? logger;
     this.providers = new ProviderRepository(this.db);
     this.syntheticLaborScores = new SyntheticLaborScoreRepository(this.db);
     this.weightSets = new IndexWeightSetRepository(this.db);
@@ -146,6 +152,8 @@ export class GlobalSyntheticLaborIndex {
   }
 
   rebalance({ asOfDate, capPercent = 15, lookbackDays = 90, minimumSlu30d = 1, baseDivisor = 1, divisorVersion = 'v1' }) {
+    const context = { asOfDate, capPercent, lookbackDays, minimumSlu30d, baseDivisor, divisorVersion };
+    try {
     const capFraction = capPercent / 100;
     const eligibility = this.selectEligibleProviders({ asOfDate, minimumSlu30d });
     const lookbackWindow = this.#resolveWindow(asOfDate, lookbackDays);
@@ -214,48 +222,64 @@ export class GlobalSyntheticLaborIndex {
     );
 
     return weightSet;
+    } catch (error) {
+      this.logger?.error?.(
+        { event: 'gslIndex.rebalance.error', ...context, error: error?.message, stack: error?.stack },
+        'Failed to rebalance GSLI weights'
+      );
+      throw error;
+    }
   }
 
   computeIndexValue(measurementDate, weightSetId = null) {
-    const dateOnly = toDateOnly(measurementDate) ?? new Date().toISOString().slice(0, 10);
-    const weightSet = weightSetId ? this.weightSets.getById(weightSetId) : this.weightSets.findLatest();
-    if (!weightSet) {
-      throw new Error('No weight set available; rebalance before computing index values');
+    const context = { measurementDate, weightSetId };
+    try {
+      const dateOnly = toDateOnly(measurementDate) ?? new Date().toISOString().slice(0, 10);
+      const weightSet = weightSetId ? this.weightSets.getById(weightSetId) : this.weightSets.findLatest();
+      if (!weightSet) {
+        throw new Error('No weight set available; rebalance before computing index values');
+      }
+
+      const weights = this.constituentWeights.listForWeightSet(weightSet.id);
+      const scores = this.syntheticLaborScores.listForDate(dateOnly);
+      const scoreMap = new Map(scores.map((entry) => [entry.provider_id, entry.slu]));
+
+      let headline = 0;
+      for (const weight of weights) {
+        const slu = scoreMap.get(weight.provider_id) ?? 0;
+        headline += weight.weight * slu;
+      }
+
+      const normalizedHeadline = roundTo(headline / (weightSet.base_divisor || 1), 6);
+      const indexValue = this.indexValues.create({
+        effective_date: dateOnly,
+        headline_value: normalizedHeadline,
+        energy_adjustment: 1,
+        quality_adjustment: 1,
+        consensus_factor: 1,
+        weight_set_id: weightSet.id,
+        base_divisor: weightSet.base_divisor ?? 1,
+        divisor_version: weightSet.divisor_version ?? 'v1'
+      });
+
+      this.logger?.info?.(
+        {
+          event: 'gslIndex.headline',
+          effectiveDate: dateOnly,
+          weightSetId: weightSet.id,
+          headline: normalizedHeadline
+        },
+        'Computed headline GSLI value'
+      );
+
+      return indexValue;
+    } catch (error) {
+      this.logger?.error?.(
+        { event: 'gslIndex.headline.error', ...context, error: error?.message, stack: error?.stack },
+        'Failed to compute GSLI headline value'
+      );
+      throw error;
     }
-
-    const weights = this.constituentWeights.listForWeightSet(weightSet.id);
-    const scores = this.syntheticLaborScores.listForDate(dateOnly);
-    const scoreMap = new Map(scores.map((entry) => [entry.provider_id, entry.slu]));
-
-    let headline = 0;
-    for (const weight of weights) {
-      const slu = scoreMap.get(weight.provider_id) ?? 0;
-      headline += weight.weight * slu;
-    }
-
-    const normalizedHeadline = roundTo(headline / (weightSet.base_divisor || 1), 6);
-    const indexValue = this.indexValues.create({
-      effective_date: dateOnly,
-      headline_value: normalizedHeadline,
-      energy_adjustment: 1,
-      quality_adjustment: 1,
-      consensus_factor: 1,
-      weight_set_id: weightSet.id,
-      base_divisor: weightSet.base_divisor ?? 1,
-      divisor_version: weightSet.divisor_version ?? 'v1'
-    });
-
-    this.logger?.info?.(
-      {
-        event: 'gslIndex.headline',
-        effectiveDate: dateOnly,
-        weightSetId: weightSet.id,
-        headline: normalizedHeadline
-      },
-      'Computed headline GSLI value'
-    );
-
-    return indexValue;
   }
 
   backfillIndexHistory({
@@ -268,35 +292,53 @@ export class GlobalSyntheticLaborIndex {
     baseDivisor = 1,
     divisorVersion = 'v1'
   }) {
-    const dates = enumerateDates(startDate, endDate);
-    if (dates.length === 0) {
-      return { weightSets: [], indexValues: [] };
-    }
-
-    let activeWeightSet = null;
-    const history = [];
-
-    for (const date of dates) {
-      if (
-        !activeWeightSet ||
-        differenceInDays(date, activeWeightSet.effective_date) >= rebalanceIntervalDays
-      ) {
-        activeWeightSet = this.rebalance({
-          asOfDate: date,
-          capPercent,
-          lookbackDays,
-          minimumSlu30d,
-          baseDivisor,
-          divisorVersion
-        });
+    const context = { startDate, endDate, capPercent, minimumSlu30d, lookbackDays, rebalanceIntervalDays, baseDivisor, divisorVersion };
+    try {
+      const dates = enumerateDates(startDate, endDate);
+      if (dates.length === 0) {
+        return { weightSets: [], indexValues: [] };
       }
 
-      history.push(
-        this.computeIndexValue(date, activeWeightSet.id)
-      );
-    }
+      let activeWeightSet = null;
+      const history = [];
 
-    return { weightSets: this.weightSets.listRecent(dates.length), indexValues: history };
+      for (const date of dates) {
+        if (
+          !activeWeightSet ||
+          differenceInDays(date, activeWeightSet.effective_date) >= rebalanceIntervalDays
+        ) {
+          activeWeightSet = this.rebalance({
+            asOfDate: date,
+            capPercent,
+            lookbackDays,
+            minimumSlu30d,
+            baseDivisor,
+            divisorVersion
+          });
+        }
+
+        history.push(
+          this.computeIndexValue(date, activeWeightSet.id)
+        );
+      }
+
+      this.logger?.info?.({
+        event: 'gslIndex.backfill.complete',
+        startDate,
+        endDate,
+        rebalanceIntervalDays,
+        totalDays: dates.length,
+        weightSets: this.weightSets.listRecent(dates.length).length
+      }, 'Completed GSLI backfill');
+
+      return { weightSets: this.weightSets.listRecent(dates.length), indexValues: history };
+    } catch (error) {
+      this.logger?.error?.(
+        { event: 'gslIndex.backfill.error', ...context, error: error?.message, stack: error?.stack },
+        'Failed to backfill GSLI history'
+      );
+      throw error;
+    }
   }
 }
 
