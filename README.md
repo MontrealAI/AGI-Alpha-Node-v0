@@ -13,6 +13,9 @@
     <img src="https://img.shields.io/github/actions/workflow/status/MontrealAI/AGI-Alpha-Node-v0/ci.yml?branch=main&label=CI%20%2B%20Gates&logo=githubactions&logoColor=white" alt="CI status" />
   </a>
   <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml?query=branch%3Amain">
+    <img src="https://img.shields.io/github/actions/workflow/status/MontrealAI/AGI-Alpha-Node-v0/ci.yml?branch=main&logo=github&logoColor=white&label=PR%20Protection" alt="PR protection" />
+  </a>
+  <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml?query=branch%3Amain">
     <img src="https://img.shields.io/github/checks-status/MontrealAI/AGI-Alpha-Node-v0/main?logo=github&label=Checks%20on%20main" alt="Branch checks" />
   </a>
   <a href=".github/required-checks.json">
@@ -46,10 +49,32 @@
   <img src="https://img.shields.io/badge/Data%20Spine-SQLite%20%2B%20Migrations-0f766e?logo=sqlite&logoColor=white" alt="Persistence" />
   <img src="https://img.shields.io/badge/Owner%20Controls-Total%20Command-9333ea?logo=gnometerminal&logoColor=white" alt="Owner controls" />
   <img src="https://img.shields.io/badge/Public%20Surface-REST%20%7C%20Metrics%20%7C%20ENS-14b8a6?logo=protocols.io&logoColor=white" alt="Surface area" />
+  <img src="https://img.shields.io/badge/Dashboard-Mockable%20%7C%20API--key%20aware-14b8a6?logo=react&logoColor=white" alt="Dashboard status" />
 </p>
 
 > **AGI Alpha Node v0** metabolizes heterogeneous agentic labor into verifiable α‑Work Units (α‑WU) and Synthetic Labor Units (SLU), rebalances the Global Synthetic Labor Index (GSLI), exposes audited read‑only REST telemetry, and routes the `$AGIALPHA` treasury (token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) under complete owner command. Every dial can be paused, rerouted, or retuned without redeploying, delivering a production-grade intelligence core built to bend markets.
 > New for this sprint: a React/Vite single-page dashboard (Index | Providers | Telemetry Debug), live GSLI and SLU charts backed by `/index/history` and `/providers/*/scores`, and a telemetry stream reader at `/telemetry/task-runs` that keeps ingest visibility tight while remaining API-key gated for operators.
+
+## Orientation & quick links
+
+- **One-command proof**: `npm run ci:verify` mirrors the full PR gate locally (lint, tests, coverage, solidity, subgraph TS, security, policy, branch gate).
+- **CI visibility**: [Workflow dashboard](https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml) + [required checks manifest](.github/required-checks.json) keep enforcement transparent.
+- **Owner sovereignty**: Governance verbs live in `src/index.js` and calldata builders in `src/services/governance.js`, pointed at the canonical `$AGIALPHA` token (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`).
+- **Debug deck (SPA)**: `dashboard/` ships a React/Vite cockpit with a connection bar (API base + API key), per-tab refresh, and mocked smoke coverage via `test/dashboard.app.test.jsx`.
+- **Deploy fast**: `Dockerfile` + `deploy/helm/agi-alpha-node` emit production images and Kubernetes charts; defaults remain non-destructive for non-technical operators.
+
+```mermaid
+flowchart TD
+  Repo[(Repo surfaces)] --> Code[src/\ncontracts/\ndeploy/helm]
+  Repo --> SPA[dashboard/]
+  Repo --> Docs[docs/ + README]
+  Code --> Pipelines[CI gates]
+  SPA --> Pipelines
+  Pipelines --> PRs[PR enforcement\n(branch protected)]
+  PRs --> Release[Main / Deployable images]
+  classDef accent fill:#0b1120,stroke:#38bdf8,stroke-width:1.5px,color:#cbd5e1;
+  class Repo,Code,SPA,Docs,Pipelines,PRs,Release accent;
+```
 
 ## Executive flash
 
@@ -61,6 +86,38 @@
 - **Surface clarity**: Public REST, metrics, and ENS/identity surfaces are split but coherent; dashboards can be locked behind CORS and API-key gates while owner-only governance remains private.
 
 Every control surface above is architected so the owner can reshape incentives, pause workloads, and retune telemetry without redeploying—the machine stays adaptable while preserving sovereignty over emissions, registry entries, and runtime posture.
+
+## Repository atlas (systems map)
+
+- `src/`: API server, governance ledger, telemetry ingest, staking/governance builders, and operator CLIs.
+- `contracts/`: Solidity sources including `AlphaNodeManager.sol` with owner-controlled pausing, validator rotation, registry management, staking, slashing, and `$AGIALPHA` routing.
+- `dashboard/`: React/Vite single-page cockpit with connection-aware tabs for Index, Providers, and Telemetry debug plus jsdom smoke tests.
+- `deploy/helm/agi-alpha-node`: Kubernetes chart for production rollouts; `Dockerfile` for containerized ops.
+- `docs/`: Economics, identity, and manifesto references; README is the canonical operational map.
+- `subgraph/`: TypeScript tooling for the indexing graph; compiled during CI via `npm run ci:ts`.
+
+```mermaid
+flowchart LR
+  subgraph Runtime[Runtime & Governance]
+    API[src/network/apiServer.js]
+    Gov[src/services/governance.js]
+    Ledger[src/persistence]
+  end
+  subgraph Frontend[Debug Deck]
+    SPA[dashboard/src]
+    Smoke[test/dashboard.app.test.jsx]
+  end
+  subgraph Infra[Deployment]
+    Dockerfile
+    Helm[deploy/helm/agi-alpha-node]
+  end
+  Gov --> Contracts[contracts/AlphaNodeManager.sol]
+  API --> SPA
+  SPA --> Smoke
+  API --> Infra
+  classDef accent fill:#0f172a,stroke:#9333ea,stroke-width:1.5px,color:#e2e8f0;
+  class Runtime,Frontend,Infra,Contracts,API,Gov,Ledger,SPA,Smoke,Dockerfile,Helm accent;
+```
 
 ## System architecture
 
@@ -129,6 +186,7 @@ flowchart TD
 ## Minimal internal dashboard (Epic 6)
 
 - **Single-page React/Vite app** (`dashboard/`) with three tabs: **Index** (GSLI line chart + window controls), **Providers** (registry table + SLU trendline per provider), and **Telemetry Debug** (recent TaskRuns with energy/quality overlays and provider/date filters).
+- **Connection-aware cockpit**: a top-level connection bar lets operators change API base URLs and API keys live, then resync all tabs without rebuilding. API headers now include both `X-API-Key` and `Authorization: Bearer` for compatibility with any gateway rule.
 - **Mock-friendly**: front-end smoke test (`test/dashboard.app.test.jsx`) mounts all views in jsdom and asserts API hydration using mocked fetch responses.
 - **Run it locally**: `npm run dashboard:dev` (hot reload on `http://localhost:4173`), `npm run dashboard:build` (production bundle in `dashboard/dist`), `npm run dashboard:preview` (serve the built bundle).
 
@@ -140,9 +198,21 @@ flowchart TD
 
 ### Dashboard operator guide
 
-- **API targeting**: set `VITE_API_BASE_URL` and, if needed, `VITE_PUBLIC_API_KEY` in a `.env` file inside `dashboard/` to point the UI at your live node; defaults to `http://localhost:8080` with no key.
+- **API targeting**: set `VITE_API_BASE_URL` and, if needed, `VITE_PUBLIC_API_KEY` in a `.env` file inside `dashboard/` to point the UI at your live node; defaults to `http://localhost:8080` with no key. You can also override both live from the connection bar (no rebuild required).
 - **Deterministic builds**: the Vite config pins the dashboard root to `dashboard/` for both dev and production so the emitted bundle always lands in `dashboard/dist` without path ambiguity.
 - **Non-technical launch**: run `npm run dashboard:dev` for hot reloads or open the static `dashboard/dist/index.html` after `npm run dashboard:build`; no extra wiring is required for mock-mode thanks to the bundled smoke test.
+
+```mermaid
+flowchart LR
+  Base[Connection bar\n(API base + key)] --> IndexTab[Index tab]
+  Base --> ProvidersTab[Providers tab]
+  Base --> TelemetryTab[Telemetry tab]
+  IndexTab -->|/index/history| IndexAPI
+  ProvidersTab -->|/providers + /providers/{id}/scores| ProvidersAPI
+  TelemetryTab -->|/telemetry/task-runs| TelemetryAPI
+  classDef accent fill:#0b1120,stroke:#38bdf8,stroke-width:1.5px,color:#cbd5e1;
+  class Base,IndexTab,ProvidersTab,TelemetryTab,IndexAPI,ProvidersAPI,TelemetryAPI accent;
+```
 
 ```mermaid
 flowchart TD
@@ -398,6 +468,17 @@ flowchart TD
 - **Required checks**: `.github/required-checks.json` mirrors the matrix and is enforced on PRs and `main`.
 - **Coverage discipline**: `npm run coverage` produces LCOV/JSON summaries; the coverage job uploads artifacts for downstream badges.
 - **Dashboard proofing**: front-end smoke tests (jsdom) run in `npm test` to validate SPA mounting + API mocks; the Vite bundle is pinned via `npm run dashboard:build`.
+
+| Gate | Command (local) | What it enforces |
+| --- | --- | --- |
+| Lint Markdown & Links | `npm run lint:md && npm run lint:links` | Style + external/internal link integrity. |
+| Unit & Integration Tests | `npm test` | API, telemetry, governance, dashboard smoke coverage. |
+| Coverage Report | `npm run coverage` | LCOV + JSON summaries uploaded as CI artifact. |
+| Docker Build & Smoke Test | `docker build ...` + container `--help` | Ensures the container boots and CLI verbs are present. |
+| Solidity Lint & Compile | `npm run lint:sol && npm run test:sol` | Solhint + solc pipeline stays deterministic. |
+| Subgraph TypeScript Build | `npm run ci:ts` | Manifest rendering + TS build for the subgraph toolchain. |
+| Dependency Security Scan | `npm run ci:security` | `npm audit --audit-level=high` stays clean. |
+
 - **Security**: `npm audit --audit-level=high`, health gates, and branch policy checks run on every PR.
 - **One-shot local reproduction**: `npm run ci:verify` executes the full matrix (lint, tests, coverage, Solidity, subgraph build, audit, policy, branch gates) to guarantee you match the required PR checks before pushing.
 
