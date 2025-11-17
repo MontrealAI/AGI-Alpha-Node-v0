@@ -185,6 +185,31 @@ describe('agent API server', () => {
     );
   });
 
+  it('exposes consistent health responses on /health and /healthz', async () => {
+    api = startAgentApi({ port: 0, logger: noopLogger, ownerToken: OWNER_TOKEN, ledgerRoot: ledgerDir });
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    const baseUrl = buildBaseUrl(api.server);
+
+    const [health, healthz] = await Promise.all([
+      fetch(`${baseUrl}/health`).then(async (res) => ({ status: res.status, body: await res.json() })),
+      fetch(`${baseUrl}/healthz`).then(async (res) => ({ status: res.status, body: await res.json() }))
+    ]);
+
+    expect(health.status).toBe(200);
+    expect(healthz.status).toBe(200);
+    expect(health.body.status).toBe('ok');
+    expect(health.body.offlineMode).toBe(false);
+    expect(health.body.healthGate).toBe(null);
+    expect(health.body).toMatchObject({
+      submitted: 0,
+      completed: 0,
+      failed: 0,
+      lastJobProvider: 'local'
+    });
+    expect(health.body.status).toBe(healthz.body.status);
+    expect(typeof health.body.uptimeSeconds).toBe('number');
+  });
+
   it('ingests provider telemetry with schema validation and idempotency', async () => {
     const db = initializeDatabase({ filename: ':memory:' });
     seedTaskTypes(db);
