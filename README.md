@@ -54,6 +54,7 @@
 > **AGI Alpha Node v0** metabolizes heterogeneous agentic labor into verifiable α‑Work Units (α‑WU) and Synthetic Labor Units (SLU), rebalances the Global Synthetic Labor Index (GSLI), exposes audited read‑only REST telemetry, and routes the `$AGIALPHA` treasury (token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) under complete owner command. Every dial can be paused, rerouted, or retuned without redeploying, delivering a production-grade intelligence core built to bend markets.
 > New for this sprint: a React/Vite single-page dashboard (Index | Providers | Telemetry Debug), live GSLI and SLU charts backed by `/index/history` and `/providers/*/scores`, and a telemetry stream reader at `/telemetry/task-runs` that keeps ingest visibility tight while remaining API-key gated for operators.
 > The runtime is tuned to operate like an ever-watchful macro trader—autonomous by default, yet instantly steerable by the contract owner to seize new parameters, pause subsystems, or redirect emissions without friction.
+> **Operational promise**: CI is fully green by default and enforced on PRs/main via `.github/required-checks.json`, with badges wired to the canonical workflow. The same gates run locally with `npm run ci:verify`, giving non-technical operators parity with branch protection before they ship.
 >
 > 🛰️ **Launch pad (non-technical operator)**
 >
@@ -190,8 +191,29 @@ flowchart LR
   Manager --> Pauser[Pause / resume]
   Manager --> Validators[Validator set / thresholds]
   Manager --> Metadata[Node metadata + registry upgrades]
+  GovAPI --> OwnerTools[CLI verbs in src/index.js]
+  OwnerTools --> GovAPI
   GovAPI --> Ledger[Governance ledger + audit trail]
   Ledger --> Reports[Status exports / diagnostics]
+  Manager --> DashboardSignals[SPA surfaces state via API]
+```
+
+### CI, branch protection, and visibility
+
+- **One command, all gates**: `npm run ci:verify` runs lint (Markdown + links), vitest (including dashboard smoke), coverage export, Solidity lint/compile, subgraph TS build, `npm audit --omit=dev`, policy gates, and branch gating to mirror the GitHub workflow locally.
+- **Workflow**: `.github/workflows/ci.yml` fans out into lint, tests, coverage, Solidity, subgraph build, Docker smoke, security scan, and badge publication for `main`.
+- **Enforcement**: `.github/required-checks.json` lists every required status for PRs and `main`, ensuring visible, consistent checks.
+- **Badges**: Shields at the top reflect GitHub Actions status, required checks, and coverage enforcement so green is obvious to reviewers and operators.
+
+```mermaid
+flowchart LR
+  Dev[Local operator\n`npm run ci:verify`] --> Gates[Full gate bundle\n(lint/test/solidity/subgraph/audit/policy)]
+  Gates --> GH[GitHub Actions\nci.yml]
+  GH --> Checks[Required checks\n.json]
+  Checks --> Branch[Branch protection\nmain + PRs]
+  Branch --> Badge[Status badges\nREADME]
+  classDef accent fill:#0f172a,stroke:#c084fc,stroke-width:1.5px,color:#e2e8f0;
+  class Dev,Gates,GH,Checks,Branch,Badge accent;
 ```
 
 ### Public API data flow
