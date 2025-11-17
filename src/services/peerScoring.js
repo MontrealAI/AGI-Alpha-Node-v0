@@ -8,8 +8,16 @@ const DEFAULT_TOPIC_PARAMS = Object.freeze({
     timeInMeshQuantum: 1,
     timeInMeshCap: 600,
     timeInMeshWeight: 0.02,
+    timeInMeshDecay: 0.5,
     firstMessageDeliveriesWeight: 1.2,
-    meshMessageDeliveriesWeight: 1.5
+    firstMessageDeliveriesDecay: 0.5,
+    meshMessageDeliveriesWeight: 1.5,
+    meshMessageDeliveriesDecay: 0.5,
+    meshMessageDeliveriesCap: 32,
+    meshMessageDeliveriesThreshold: 4,
+    meshMessageDeliveriesWindow: 10,
+    meshFailurePenaltyWeight: -0.6,
+    meshFailurePenaltyDecay: 0.5
   },
   'agi.metrics': {
     topicWeight: 0.35,
@@ -18,8 +26,16 @@ const DEFAULT_TOPIC_PARAMS = Object.freeze({
     timeInMeshQuantum: 1,
     timeInMeshCap: 300,
     timeInMeshWeight: 0.015,
+    timeInMeshDecay: 0.5,
     firstMessageDeliveriesWeight: 0.6,
-    meshMessageDeliveriesWeight: 0.7
+    firstMessageDeliveriesDecay: 0.5,
+    meshMessageDeliveriesWeight: 0.7,
+    meshMessageDeliveriesDecay: 0.5,
+    meshMessageDeliveriesCap: 24,
+    meshMessageDeliveriesThreshold: 2,
+    meshMessageDeliveriesWindow: 10,
+    meshFailurePenaltyWeight: -0.35,
+    meshFailurePenaltyDecay: 0.5
   },
   'agi.control': {
     topicWeight: 1.25,
@@ -28,8 +44,16 @@ const DEFAULT_TOPIC_PARAMS = Object.freeze({
     timeInMeshQuantum: 1,
     timeInMeshCap: 900,
     timeInMeshWeight: 0.03,
+    timeInMeshDecay: 0.5,
     firstMessageDeliveriesWeight: 1.6,
-    meshMessageDeliveriesWeight: 1.8
+    firstMessageDeliveriesDecay: 0.5,
+    meshMessageDeliveriesWeight: 1.8,
+    meshMessageDeliveriesDecay: 0.5,
+    meshMessageDeliveriesCap: 48,
+    meshMessageDeliveriesThreshold: 6,
+    meshMessageDeliveriesWindow: 10,
+    meshFailurePenaltyWeight: -1.2,
+    meshFailurePenaltyDecay: 0.5
   },
   'agi.coordination': {
     topicWeight: 0.5,
@@ -38,8 +62,16 @@ const DEFAULT_TOPIC_PARAMS = Object.freeze({
     timeInMeshQuantum: 1,
     timeInMeshCap: 480,
     timeInMeshWeight: 0.02,
+    timeInMeshDecay: 0.5,
     firstMessageDeliveriesWeight: 0.8,
-    meshMessageDeliveriesWeight: 1.0
+    firstMessageDeliveriesDecay: 0.5,
+    meshMessageDeliveriesWeight: 1.0,
+    meshMessageDeliveriesDecay: 0.5,
+    meshMessageDeliveriesCap: 28,
+    meshMessageDeliveriesThreshold: 3,
+    meshMessageDeliveriesWindow: 10,
+    meshFailurePenaltyWeight: -0.5,
+    meshFailurePenaltyDecay: 0.5
   },
   'agi.settlement': {
     topicWeight: 0.8,
@@ -48,8 +80,34 @@ const DEFAULT_TOPIC_PARAMS = Object.freeze({
     timeInMeshQuantum: 1,
     timeInMeshCap: 720,
     timeInMeshWeight: 0.028,
+    timeInMeshDecay: 0.5,
     firstMessageDeliveriesWeight: 1.1,
-    meshMessageDeliveriesWeight: 1.3
+    firstMessageDeliveriesDecay: 0.5,
+    meshMessageDeliveriesWeight: 1.3,
+    meshMessageDeliveriesDecay: 0.5,
+    meshMessageDeliveriesCap: 36,
+    meshMessageDeliveriesThreshold: 4,
+    meshMessageDeliveriesWindow: 10,
+    meshFailurePenaltyWeight: -0.8,
+    meshFailurePenaltyDecay: 0.5
+  },
+  'agi.*': {
+    topicWeight: 0.4,
+    expectedMessagePerSecond: 0.15,
+    invalidMessagePenalty: -0.65,
+    timeInMeshQuantum: 1,
+    timeInMeshCap: 450,
+    timeInMeshWeight: 0.02,
+    timeInMeshDecay: 0.5,
+    firstMessageDeliveriesWeight: 0.9,
+    firstMessageDeliveriesDecay: 0.5,
+    meshMessageDeliveriesWeight: 1.1,
+    meshMessageDeliveriesDecay: 0.5,
+    meshMessageDeliveriesCap: 30,
+    meshMessageDeliveriesThreshold: 3,
+    meshMessageDeliveriesWindow: 10,
+    meshFailurePenaltyWeight: -0.55,
+    meshFailurePenaltyDecay: 0.5
   }
 });
 
@@ -65,8 +123,13 @@ function toFinite(value, fallback = 0) {
   return Number.isFinite(numeric) ? numeric : fallback;
 }
 
+function isPatternTopic(topic) {
+  return typeof topic === 'string' && /[*?]/.test(topic);
+}
+
 function normalizeTopicScoreParams(topicParams = {}) {
   const normalized = {};
+  const patterns = {};
   for (const [topic, params] of Object.entries(topicParams)) {
     if (!topic || typeof params !== 'object' || params === null) {
       continue;
@@ -78,9 +141,13 @@ function normalizeTopicScoreParams(topicParams = {}) {
       }
       sanitized[key] = toFinite(value, sanitized[key] ?? 0);
     }
-    normalized[topic] = sanitized;
+    if (isPatternTopic(topic)) {
+      patterns[topic] = sanitized;
+    } else {
+      normalized[topic] = sanitized;
+    }
   }
-  return normalized;
+  return { normalized, patterns };
 }
 
 export function buildPeerScoreConfig({
@@ -93,7 +160,17 @@ export function buildPeerScoreConfig({
   thresholds = {},
   version = '1.1'
 } = {}) {
-  const mergedTopics = { ...DEFAULT_TOPIC_PARAMS, ...normalizeTopicScoreParams(topicParams) };
+  const { normalized, patterns } = normalizeTopicScoreParams(topicParams);
+  const mergedTopics = {};
+  const mergedPatterns = { ...patterns };
+  for (const [topic, params] of Object.entries(DEFAULT_TOPIC_PARAMS)) {
+    if (isPatternTopic(topic)) {
+      mergedPatterns[topic] = params;
+    } else {
+      mergedTopics[topic] = params;
+    }
+  }
+  Object.assign(mergedTopics, normalized);
   const mergedThresholds = { ...DEFAULT_THRESHOLDS };
   for (const [key, value] of Object.entries(thresholds ?? {})) {
     mergedThresholds[key] = toFinite(value, DEFAULT_THRESHOLDS[key]);
@@ -107,11 +184,12 @@ export function buildPeerScoreConfig({
     opportunisticGraftTicks: toFinite(opportunisticGraftTicks, 60),
     directConnectTicks: toFinite(directConnectTicks, 360),
     thresholds: mergedThresholds,
-    topics: mergedTopics
+    topics: mergedTopics,
+    topicPatterns: mergedPatterns
   };
 }
 
-function bucketPeer(score, thresholds) {
+export function bucketPeer(score, thresholds) {
   if (score <= thresholds.disconnect) return 'disconnect';
   if (score <= thresholds.graylist) return 'graylist';
   if (score <= thresholds.publish) return 'publish_block';
@@ -168,6 +246,84 @@ function normalizePeerScoreSnapshot(snapshot) {
   return { timestamp, peers };
 }
 
+function wildcardToRegExp(pattern) {
+  if (!pattern || typeof pattern !== 'string') return null;
+  const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+  const regex = `^${escaped.replace(/\*/g, '.*').replace(/\?/g, '.')}$`;
+  return new RegExp(regex);
+}
+
+export function resolveTopicScoreParams(topicName, { topics = {}, topicPatterns = {} } = {}) {
+  const baseFallback = topicPatterns['agi.*'] ?? DEFAULT_TOPIC_PARAMS['agi.*'] ?? {};
+  const matches = [];
+  for (const [pattern, params] of Object.entries(topicPatterns ?? {})) {
+    const regex = wildcardToRegExp(pattern);
+    if (regex?.test(topicName)) {
+      matches.push({ pattern, params });
+    }
+  }
+  const winner = matches.length ? matches.sort((a, b) => b.pattern.length - a.pattern.length)[0] : null;
+  const explicit = topics[topicName] ?? null;
+  const merged = { ...baseFallback };
+  if (winner?.params) {
+    Object.assign(merged, winner.params);
+  }
+  if (explicit) {
+    Object.assign(merged, explicit);
+  }
+  return Object.keys(merged).length ? merged : null;
+}
+
+export function buildGossipsubScoreParams(config) {
+  if (!config) return null;
+  const params = { ...config };
+  const topics = {};
+  for (const [topic, topicConfig] of Object.entries(config.topics ?? {})) {
+    topics[topic] = {
+      topicWeight: topicConfig.topicWeight,
+      timeInMeshWeight: topicConfig.timeInMeshWeight,
+      timeInMeshQuantum: topicConfig.timeInMeshQuantum,
+      timeInMeshCap: topicConfig.timeInMeshCap,
+      timeInMeshDecay: topicConfig.timeInMeshDecay,
+      firstMessageDeliveriesWeight: topicConfig.firstMessageDeliveriesWeight,
+      firstMessageDeliveriesDecay: topicConfig.firstMessageDeliveriesDecay,
+      meshMessageDeliveriesWeight: topicConfig.meshMessageDeliveriesWeight,
+      meshMessageDeliveriesDecay: topicConfig.meshMessageDeliveriesDecay,
+      meshMessageDeliveriesCap: topicConfig.meshMessageDeliveriesCap,
+      meshMessageDeliveriesThreshold: topicConfig.meshMessageDeliveriesThreshold,
+      meshMessageDeliveriesWindow: topicConfig.meshMessageDeliveriesWindow,
+      meshFailurePenaltyWeight: topicConfig.meshFailurePenaltyWeight,
+      meshFailurePenaltyDecay: topicConfig.meshFailurePenaltyDecay,
+      invalidMessageDeliveriesWeight: topicConfig.invalidMessagePenalty,
+      invalidMessageDeliveriesDecay: 0.5,
+      expectedMessagePerSecond: topicConfig.expectedMessagePerSecond
+    };
+  }
+
+  return {
+    version: params.version ?? '1.1',
+    decayInterval: params.decayIntervalMs,
+    decayToZero: params.decayToZero,
+    retainScore: params.retainScoreMs,
+    opportunisticGraftTicks: params.opportunisticGraftTicks,
+    directConnectTicks: params.directConnectTicks,
+    scoreParams: {
+      topics,
+      appSpecificScore: () => 0,
+      appSpecificWeight: 0,
+      topicScoreCap: 32,
+      behaviourPenaltyWeight: -1,
+      behaviourPenaltyDecay: 0.9,
+      ipColocationFactorWeight: -0.5,
+      ipColocationFactorThreshold: 2,
+      decayInterval: params.decayIntervalMs,
+      decayToZero: params.decayToZero,
+      retainScore: params.retainScoreMs
+    },
+    scoreThresholds: params.thresholds
+  };
+}
+
 export function createPeerScoreRegistry({
   inspectIntervalMs = 30_000,
   retentionMinutes = 120,
@@ -177,6 +333,7 @@ export function createPeerScoreRegistry({
   const history = [];
   const retentionMs = Math.max(1, toFinite(retentionMinutes, 120)) * 60 * 1000;
   const log = typeof logger?.child === 'function' ? logger.child({ subsystem: 'peer-score' }) : logger;
+  const subscribers = new Set();
 
   function record(snapshot) {
     const normalized = normalizePeerScoreSnapshot(snapshot);
@@ -187,6 +344,13 @@ export function createPeerScoreRegistry({
       history.shift();
     }
     log?.debug?.({ peers: normalized.peers.length }, 'peer score snapshot recorded');
+    subscribers.forEach((listener) => {
+      try {
+        listener?.(normalized);
+      } catch (error) {
+        log?.warn?.(error, 'peer score subscriber threw during record');
+      }
+    });
     return normalized;
   }
 
@@ -227,12 +391,19 @@ export function createPeerScoreRegistry({
     };
   }
 
+  function subscribe(listener) {
+    if (typeof listener !== 'function') return () => {};
+    subscribers.add(listener);
+    return () => subscribers.delete(listener);
+  }
+
   return {
     inspectIntervalMs: toFinite(inspectIntervalMs, 30_000),
     record,
     getLatest,
     getBuckets,
-    summarize
+    summarize,
+    subscribe
   };
 }
 
@@ -263,4 +434,7 @@ export function createPeerScoreInspector({ registry, logger, thresholds } = {}) 
   };
 }
 
-export { DEFAULT_TOPIC_PARAMS as DEFAULT_PEER_TOPIC_PARAMS, DEFAULT_THRESHOLDS as DEFAULT_PEER_SCORE_THRESHOLDS };
+export {
+  DEFAULT_TOPIC_PARAMS as DEFAULT_PEER_TOPIC_PARAMS,
+  DEFAULT_THRESHOLDS as DEFAULT_PEER_SCORE_THRESHOLDS
+};
