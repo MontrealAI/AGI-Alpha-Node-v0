@@ -129,6 +129,38 @@ flowchart TD
 - **Mock-friendly**: front-end smoke test (`test/dashboard.app.test.jsx`) mounts all views in jsdom and asserts API hydration using mocked fetch responses.
 - **Run it locally**: `npm run dashboard:dev` (hot reload on `http://localhost:4173`), `npm run dashboard:build` (production bundle in `dashboard/dist`), `npm run dashboard:preview` (serve the built bundle).
 
+### Dashboard operator guide
+
+- **API targeting**: set `VITE_API_BASE_URL` and, if needed, `VITE_PUBLIC_API_KEY` in a `.env` file inside `dashboard/` to point the UI at your live node; defaults to `http://localhost:8080` with no key.
+- **Deterministic builds**: the Vite config pins the dashboard root to `dashboard/` for both dev and production so the emitted bundle always lands in `dashboard/dist` without path ambiguity.
+- **Non-technical launch**: run `npm run dashboard:dev` for hot reloads or open the static `dashboard/dist/index.html` after `npm run dashboard:build`; no extra wiring is required for mock-mode thanks to the bundled smoke test.
+
+```mermaid
+flowchart TD
+  subgraph UI[Debug Deck SPA]
+    A[Index tab]
+    B[Providers tab]
+    C[Telemetry Debug tab]
+  end
+  subgraph API[Read-only API]
+    H[/index/history\n/index/latest/]
+    P[/providers\n/providers/{id}/scores/]
+    T[/telemetry/task-runs/]
+  end
+  subgraph Controls[Operator toggles]
+    K[VITE_API_BASE_URL]
+    G[VITE_PUBLIC_API_KEY]
+  end
+  A --> H
+  B --> P
+  C --> T
+  Controls --> UI
+  classDef accent fill:#0b1120,stroke:#38bdf8,stroke-width:1.5px,color:#cbd5e1;
+  classDef ctrl fill:#111827,stroke:#c084fc,stroke-width:1.5px,color:#e0e7ff;
+  class UI,API accent;
+  class Controls ctrl;
+```
+
 ```mermaid
 flowchart LR
   subgraph SPA[Debug Deck]
@@ -249,6 +281,30 @@ X-API-Key: public-key-123
 - **Pause & recover**: System pause, submission windows, emission caps, and treasury addresses can be rotated at runtime, giving the operator complete command for the AGI jobs platform.
 - **Treasury & emissions routing**: `$AGIALPHA` (token `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) helpers cover approvals, treasury rotation, emission caps, heartbeat/epoch tuning, and productivity-weighted flows so owners can respond instantly to market signals.
 
+Owner sovereignty spans every critical dial; the control loop keeps pausing, rewards, registry metadata, and staking posture reprogrammable without code changes.
+
+```mermaid
+flowchart LR
+  subgraph OwnerControls[Owner / Multisig Commands]
+    Pause[Pause / Unpause]
+    Validators[Validator set + thresholds]
+    Treasury[Treasury + emission routes]
+    Registry[Provider registry + metadata]
+    Staking[Stake caps + withdrawals]
+  end
+  subgraph Runtime[Node Runtime]
+    API[/Governance API/]
+    Ledger[(Governance ledger)]
+    Engine[Labor + Index engines]
+  end
+  OwnerControls -->|calldata builders| API
+  API --> Ledger
+  Ledger --> Engine
+  Engine -->|status + diagnostics| OwnerControls
+  classDef accent fill:#0f172a,stroke:#22c55e,stroke-width:1.5px,color:#e2e8f0;
+  class OwnerControls,Runtime accent;
+```
+
 ## Data spine & migrations
 
 - **SQLite migrations**: `src/persistence/migrations` build durable tables for providers, task types, task runs, energy/quality reports, SLU scores, index weights/values, and governance ledger entries.
@@ -325,6 +381,7 @@ flowchart TD
 - **Coverage discipline**: `npm run coverage` produces LCOV/JSON summaries; the coverage job uploads artifacts for downstream badges.
 - **Dashboard proofing**: front-end smoke tests (jsdom) run in `npm test` to validate SPA mounting + API mocks; the Vite bundle is pinned via `npm run dashboard:build`.
 - **Security**: `npm audit --audit-level=high`, health gates, and branch policy checks run on every PR.
+- **One-shot local reproduction**: `npm run ci:verify` executes the full matrix (lint, tests, coverage, Solidity, subgraph build, audit, policy, branch gates) to guarantee you match the required PR checks before pushing.
 
 ## Operations playbook
 
