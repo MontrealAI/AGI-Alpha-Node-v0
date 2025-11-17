@@ -340,8 +340,32 @@ flowchart TD
 - **Deterministic persistence**: SQLite migrations + seeds hydrate providers, SLU scores, and index values with indices tuned for provider/day lookups.
 - **Deployment-ready**: Dockerfile + Helm chart, CI gates, and seeded CLIs make it deployable by non-specialists while remaining fully operator-tunable.
 - **Surface clarity**: Public REST, metrics, and ENS/identity surfaces are split but coherent; dashboards can be locked behind CORS and API-key gates while owner-only governance remains private.
+- **Token binding & treasury clarity**: `$AGIALPHA` is anchored to `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals); runtime services, governance payloads, and staking math all default to this constant so emissions and treasury routing stay deterministic across CLI, REST, and contract flows.
 
 Every control surface above is architected so the owner can reshape incentives, pause workloads, and retune telemetry without redeploying—the machine stays adaptable while preserving sovereignty over emissions, registry entries, and runtime posture.
+
+### Owner command map (complete control without redeploys)
+
+| Control | How to operate | Backed by |
+| --- | --- | --- |
+| Pause / unpause pipelines | `node src/index.js governance:pause` / `governance:resume` or authenticated `/governance/pause` calls | `contracts/AlphaNodeManager.sol`, `src/services/governance.js`, `src/index.js` |
+| Rotate validators & staking weights | `governance:set-validators`, `governance:set-staking-shares` | `contracts/AlphaNodeManager.sol`, `src/services/governance.js` |
+| Tune emissions & treasury routing | `governance:set-rewards`, `governance:set-treasury` | `contracts/AlphaNodeManager.sol`, `src/services/governance.js` |
+| Refresh registry / metadata | `governance:set-registry`, `governance:update-metadata` | `contracts/AlphaNodeManager.sol`, `src/services/governance.js` |
+| Enforce scoring posture | `PUBSUB_*` env toggles + `/debug/peerscore` drilldowns | `src/network/pubsubConfig.js`, `src/services/peerScoring.js`, `src/network/apiServer.js` |
+
+```mermaid
+flowchart LR
+  Owner[Owner wallet + API key] --> CLI[governance:* CLI verbs]
+  Owner --> API[/governance/* (auth)]
+  CLI --> Builders[Calldata builders\n(governance.js)]
+  API --> Builders
+  Builders --> Contract[AlphaNodeManager.sol\n$AGIALPHA: 0xa61a...a1fa]
+  Contract --> Runtime[Runtime knobs\n(pause, emissions, validators, registry)]
+  Runtime --> Telemetry[/health · /metrics · /debug/peerscore/]
+  classDef accent fill:#0f172a,stroke:#f97316,stroke-width:1.5px,color:#fff;
+  class Owner,CLI,API,Builders,Contract,Runtime,Telemetry accent;
+```
 
 ## Repository atlas (systems map)
 
