@@ -146,7 +146,9 @@ export async function startMonitorLoop({
   jobMetricsProvider = null,
   onDiagnostics = null,
   healthGate = null,
-  reachabilityState = null
+  reachabilityState = null,
+  networkMetrics = null,
+  registry = null
 }) {
   if (!config) {
     throw new Error('config is required');
@@ -162,14 +164,15 @@ export async function startMonitorLoop({
   let timer = null;
   let pendingResolve = null;
 
-  const networkMetrics = (() => {
+  const networkMetricConfig = (() => {
     try {
       const gossipsubRouting = buildGossipsubRoutingConfig({ config, logger });
       const dialerPolicy = buildDialerPolicyConfig({ config, baseLogger: logger });
       return {
         meshConfig: gossipsubRouting.mesh,
         gossipConfig: gossipsubRouting.gossip,
-        dialerPolicy
+        dialerPolicy,
+        collectors: networkMetrics
       };
     } catch (error) {
       logger?.warn?.(error, 'Failed to derive network metrics configuration; gauges will remain unset');
@@ -280,13 +283,14 @@ export async function startMonitorLoop({
             stakeStatus: diagnostics.stakeStatus,
             performance: diagnostics.performance,
             runtimeMode: diagnostics.runtimeMode,
-          logger,
-          healthGate,
-          enableAlphaWuPerJob: Boolean(config.METRICS_ALPHA_WU_PER_JOB),
-          networkMetrics,
-          reachabilityState
-        });
-      } else {
+            logger,
+            healthGate,
+            enableAlphaWuPerJob: Boolean(config.METRICS_ALPHA_WU_PER_JOB),
+            networkMetrics: networkMetricConfig,
+            reachabilityState,
+            registry
+          });
+        } else {
         updateTelemetryGauges(telemetryServer, diagnostics, healthGate);
         }
 

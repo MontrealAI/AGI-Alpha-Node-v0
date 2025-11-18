@@ -228,12 +228,15 @@ export function startMonitoringServer({
   meshConfig = null,
   gossipConfig = null,
   dialerPolicy = null,
-  reachabilityState = null
+  reachabilityState = null,
+  networkMetrics = null,
+  registry: providedRegistry = null
 } = {}) {
-  const registry = new Registry();
+  const registry = providedRegistry ?? new Registry();
   collectDefaultMetrics({ register: registry, prefix: 'agi_alpha_node_' });
 
-  const networkMetrics = createNetworkMetrics({ registry, reachabilityState, logger });
+  const networkCollectors =
+    networkMetrics ?? createNetworkMetrics({ registry, reachabilityState, logger });
 
   const peerScoreMetrics = createPeerScoreMetrics({ registry });
   const peerScoreThresholdConfig = {
@@ -535,7 +538,7 @@ export function startMonitoringServer({
 
   server.on('close', () => {
     peerScoreUnsubscribe?.();
-    networkMetrics.stop?.();
+    networkCollectors.stop?.();
   });
 
   return {
@@ -574,7 +577,8 @@ export function startMonitoringServer({
     alphaWuValidationLatencySummary,
     peerScoreMetrics,
     peerScoreUnsubscribe,
-    networkMetrics
+    networkMetrics: networkCollectors,
+    registry
   };
 }
 

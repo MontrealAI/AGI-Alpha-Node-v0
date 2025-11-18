@@ -1,5 +1,6 @@
 import chalk from 'chalk';
 import pino from 'pino';
+import { Registry } from 'prom-client';
 import { loadConfig } from '../config/env.js';
 import { runNodeDiagnostics, bindExecutionLoopMetering } from './nodeRuntime.js';
 import { startMonitorLoop } from './monitorLoop.js';
@@ -39,6 +40,7 @@ import {
 } from '../network/transportConfig.js';
 import { ConnectionManager, ResourceManager, buildResourceManagerConfig } from '../network/resourceManagerConfig.js';
 import { buildDialerPolicyConfig } from '../network/dialerPolicy.js';
+import { createNetworkMetrics } from '../telemetry/networkMetrics.js';
 
 function assertConfigField(value, field) {
   if (!value) {
@@ -119,9 +121,15 @@ export async function bootstrapContainer({
 
   const transportPlan = buildTransportConfig(config);
   logTransportPlan(transportPlan);
+  const telemetryRegistry = new Registry();
   const reachabilityState = createReachabilityState({
     initial: config.AUTONAT_REACHABILITY,
     override: config.AUTONAT_REACHABILITY
+  });
+  const networkMetrics = createNetworkMetrics({
+    registry: telemetryRegistry,
+    reachabilityState,
+    logger
   });
   const dialerPolicy = buildDialerPolicyConfig({ config, baseLogger: logger });
 
@@ -156,7 +164,9 @@ export async function bootstrapContainer({
       nodeKeypair: null,
       quorumEngine: null,
       hostConfig: null,
-      resourceManagerConfig: null
+      resourceManagerConfig: null,
+      networkMetrics,
+      telemetryRegistry
     };
   }
 
@@ -230,7 +240,8 @@ export async function bootstrapContainer({
       publicMultiaddrs,
       relayMultiaddrs: config.P2P_RELAY_MULTIADDRS,
       lanMultiaddrs: config.P2P_LAN_MULTIADDRS,
-      reachabilityState
+      reachabilityState,
+      networkMetrics
     });
     logLibp2pHostConfig(hostConfig, identityLogger);
     resourceManagerConfig = buildResourceManagerConfig({ config, logger: identityLogger });
@@ -656,7 +667,9 @@ export async function bootstrapContainer({
       jobMetricsProvider: metricsProvider,
       onDiagnostics,
       healthGate,
-      reachabilityState
+      reachabilityState,
+      networkMetrics,
+      registry: telemetryRegistry
     });
   } catch (error) {
     if (apiServer) {
@@ -696,6 +709,8 @@ export async function bootstrapContainer({
     peerScoreConfig,
     peerScoreInspector,
     peerScoreRegistry,
-    gossipsubConfig
+    gossipsubConfig,
+    networkMetrics,
+    telemetryRegistry
   };
 }

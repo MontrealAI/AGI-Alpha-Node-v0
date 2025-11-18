@@ -185,6 +185,27 @@ flowchart LR
 - **Normalized reachability spine**: a single in-memory `ReachabilityState` now feeds announce-set selection, dial ranking, and telemetry, with AutoNAT probes updating the gauge unless an operator override wins.【F:src/network/transportConfig.js†L23-L86】【F:src/telemetry/networkMetrics.js†L1-L83】
 - **AutoNAT/connection churn telemetry**: Prometheus counters/gauges emit `net_reachability_state`, `net_autonat_probes_total`, `net_autonat_failures_total`, `net_connections_open_total`, `net_connections_close_total{reason}`, and `net_connections_live{direction}` with reason normalization for timeouts, bans, NRM limits, and protocol errors.【F:src/telemetry/networkMetrics.js†L27-L128】【F:src/network/libp2pHostConfig.js†L176-L203】
 - **Cleaner monitoring bindings**: the monitoring server auto-wires reachability state into the Prometheus registry and tears bindings down on shutdown so `/metrics` always reflects current AutoNAT posture without dangling listeners.【F:src/telemetry/monitoring.js†L1-L105】
+- **Registry-synchronized telemetry**: bootstrap now builds a single Prometheus registry, injects shared network metrics into libp2p host synthesis, and hands the same collectors to the monitoring server, ensuring churn/reachability counters are live as soon as the host dials and remain visible on `/metrics` without duplicate registrations.【F:src/orchestrator/bootstrap.js†L120-L242】【F:src/orchestrator/nodeRuntime.js†L263-L311】【F:src/telemetry/monitoring.js†L225-L305】
+
+```mermaid
+flowchart TB
+  classDef pulse fill:#0b1120,stroke:#22d3ee,stroke-width:2px,color:#e2e8f0;
+  classDef flux fill:#0f172a,stroke:#f472b6,stroke-width:2px,color:#ffe4e6;
+  classDef gauge fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#dcfce7;
+  AutoNAT[AutoNAT events<br/>probe | status | reachability]:::pulse
+  Override[AUTONAT_REACHABILITY<br/>owner override]:::flux
+  Reachability[ReachabilityState<br/>public | private | unknown]:::gauge
+  HostConfig[libp2p host config<br/>announce set | dial rank | tracer]:::pulse
+  Metrics[NetworkMetrics collectors<br/>reachability + churn + latency]:::gauge
+  Registry[Shared Prometheus registry<br/>/metrics surface]:::flux
+  Dashboards[Dashboards & alerts<br/>CI + production]:::gauge
+  AutoNAT --> Reachability
+  Override --> Reachability
+  Reachability --> HostConfig
+  HostConfig --> Metrics
+  Metrics --> Registry
+  Registry --> Dashboards
+```
 
 > **Operational stance**: the contract owner retains full authority to pause, retune emissions, rotate validators, and update registry pointers without redeploying; transport posture is observable and owner-steerable via the same control plane.
 >
