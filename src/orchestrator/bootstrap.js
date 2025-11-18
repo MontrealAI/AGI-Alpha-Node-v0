@@ -33,6 +33,7 @@ import {
 } from '../identity/bootstrap.js';
 import { buildLibp2pHostConfig, logLibp2pHostConfig } from '../network/libp2pHostConfig.js';
 import { buildTransportConfig, logTransportPlan } from '../network/transportConfig.js';
+import { buildResourceManagerConfig } from '../network/resourceManagerConfig.js';
 
 function assertConfigField(value, field) {
   if (!value) {
@@ -144,7 +145,8 @@ export async function bootstrapContainer({
       nodeIdentity: null,
       nodeKeypair: null,
       quorumEngine: null,
-      hostConfig: null
+      hostConfig: null,
+      resourceManagerConfig: null
     };
   }
 
@@ -156,6 +158,7 @@ export async function bootstrapContainer({
   let unsubscribeValidation = null;
   const cleanupTasks = [];
   let hostConfig = null;
+  let resourceManagerConfig = null;
 
   const healthGateLogger = typeof logger.child === 'function' ? logger.child({ subsystem: 'health-gate' }) : logger;
   const healthGate = createHealthGate({
@@ -216,6 +219,7 @@ export async function bootstrapContainer({
       lanMultiaddrs: config.P2P_LAN_MULTIADDRS
     });
     logLibp2pHostConfig(hostConfig, identityLogger);
+    resourceManagerConfig = buildResourceManagerConfig({ config, logger: identityLogger });
   } catch (error) {
     identityLogger.error(error, 'Failed to validate node keypair against ENS identity');
     throw error;
@@ -664,6 +668,7 @@ export async function bootstrapContainer({
     nodeIdentity,
     nodeKeypair,
     hostConfig,
+    resourceManagerConfig,
     peerScoreConfig,
     peerScoreInspector,
     peerScoreRegistry,
