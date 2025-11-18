@@ -452,7 +452,7 @@ export class ResourceManager {
         peerId,
         used: protocolCount,
         limit: perProtocol,
-        limitType: 'streams'
+        limitType: 'per_protocol'
       });
     }
 

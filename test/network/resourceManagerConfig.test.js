@@ -190,9 +190,33 @@ describe('ResourceManager guards', () => {
     const perProtocolDenial = metricsJson
       .find((metric) => metric.name === 'nrm_denials_total')
       ?.values?.find(
+      (entry) => entry.labels.limit_type === 'per_protocol' && entry.labels.protocol === '/meshsub/1.1.0'
+    );
+    expect(perProtocolDenial?.value ?? 0).toBeGreaterThan(0);
+  });
+
+  it('tags per-protocol stream denials with protocol + limit type labels', async () => {
+    const registry = new Registry();
+    const networkMetrics = createNetworkMetrics({ registry });
+    const config = buildResourceManagerConfig({
+      config: { NRM_LIMITS_JSON: JSON.stringify({ perProtocol: { '/meshsub/1.1.0': { maxStreams: 1 } } }) }
+    });
+    const manager = new ResourceManager({ limits: config, metrics: networkMetrics });
+
+    const first = manager.requestStream({ peerId: 'peer-a', protocol: '/meshsub/1.1.0' });
+    const second = manager.requestStream({ peerId: 'peer-a', protocol: '/meshsub/1.1.0' });
+
+    expect(first.accepted).toBe(true);
+    expect(second.accepted).toBe(false);
+    expect(second.limitType).toBe('per_protocol');
+
+    const metricsJson = await registry.getMetricsAsJSON();
+    const perProtocolStreamDenial = metricsJson
+      .find((metric) => metric.name === 'nrm_denials_total')
+      ?.values?.find(
         (entry) => entry.labels.limit_type === 'per_protocol' && entry.labels.protocol === '/meshsub/1.1.0'
       );
-    expect(perProtocolDenial?.value ?? 0).toBeGreaterThan(0);
+    expect(perProtocolStreamDenial?.value ?? 0).toBeGreaterThan(0);
   });
 });
 
