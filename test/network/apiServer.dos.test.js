@@ -23,10 +23,13 @@ describe('agent API DoS surfaces', () => {
     const debugPayload = await debugResponse.json();
     expect(debugPayload.metrics.connections).toBe(0);
     expect(debugPayload.metrics.pressure.connections.limit).toBeDefined();
+    expect(debugPayload.limits.connectionManager.highWater).toBeGreaterThan(0);
     expect(debugPayload.limits.global.connections).toBeGreaterThan(0);
     expect(debugPayload.usage.global.connections.used).toBe(0);
     expect(debugPayload.limits.perProtocol['/meshsub/1.1.0']).toBeDefined();
     expect(debugPayload.usage.perProtocol['/meshsub/1.1.0']).toBeDefined();
+    expect(debugPayload.protocolCaps['/ipfs/id/1.0.0']).toBeDefined();
+    expect(debugPayload.globalLimits.streams).toBeGreaterThan(0);
 
     const addBan = await fetch(`${base}/governance/bans`, {
       method: 'POST',
