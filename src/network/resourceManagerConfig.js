@@ -203,46 +203,60 @@ export class ResourceManager {
   banIp(ip) {
     this.limits?.ipLimiter?.bannedIps?.add?.(ip);
     this.metricSinks?.banlistChangesTotal?.inc?.({ type: 'ip', action: 'add' });
-    this.updateBanMetrics();
+    this.updateBanMetrics({ type: 'ip', action: 'add', value: ip });
   }
 
   banPeer(peerId) {
     this.limits?.ipLimiter?.bannedPeers?.add?.(peerId);
     this.metricSinks?.banlistChangesTotal?.inc?.({ type: 'peer', action: 'add' });
-    this.updateBanMetrics();
+    this.updateBanMetrics({ type: 'peer', action: 'add', value: peerId });
   }
 
   banAsn(asn) {
     this.limits?.ipLimiter?.bannedAsns?.add?.(asn);
     this.metricSinks?.banlistChangesTotal?.inc?.({ type: 'asn', action: 'add' });
-    this.updateBanMetrics();
+    this.updateBanMetrics({ type: 'asn', action: 'add', value: asn });
   }
 
   unbanIp(ip) {
     this.limits?.ipLimiter?.bannedIps?.delete?.(ip);
     this.metricSinks?.banlistChangesTotal?.inc?.({ type: 'ip', action: 'remove' });
-    this.updateBanMetrics();
+    this.updateBanMetrics({ type: 'ip', action: 'remove', value: ip });
   }
 
   unbanPeer(peerId) {
     this.limits?.ipLimiter?.bannedPeers?.delete?.(peerId);
     this.metricSinks?.banlistChangesTotal?.inc?.({ type: 'peer', action: 'remove' });
-    this.updateBanMetrics();
+    this.updateBanMetrics({ type: 'peer', action: 'remove', value: peerId });
   }
 
   unbanAsn(asn) {
     this.limits?.ipLimiter?.bannedAsns?.delete?.(asn);
     this.metricSinks?.banlistChangesTotal?.inc?.({ type: 'asn', action: 'remove' });
-    this.updateBanMetrics();
+    this.updateBanMetrics({ type: 'asn', action: 'remove', value: asn });
   }
 
-  updateBanMetrics() {
+  updateBanMetrics(change = null) {
     const bannedIps = this.limits?.ipLimiter?.bannedIps?.size ?? 0;
     const bannedPeers = this.limits?.ipLimiter?.bannedPeers?.size ?? 0;
     const bannedAsns = this.limits?.ipLimiter?.bannedAsns?.size ?? 0;
     this.metricSinks?.banlistEntries?.set?.({ type: 'ip' }, bannedIps);
     this.metricSinks?.banlistEntries?.set?.({ type: 'peer' }, bannedPeers);
     this.metricSinks?.banlistEntries?.set?.({ type: 'asn' }, bannedAsns);
+
+    if (change) {
+      this.log.info(
+        {
+          change,
+          snapshot: {
+            bannedIps,
+            bannedPeers,
+            bannedAsns
+          }
+        },
+        'Ban list updated'
+      );
+    }
   }
 
   currentConnections() {
@@ -588,6 +602,7 @@ export class ResourceManager {
           .sort(([a], [b]) => a.localeCompare(b))
       ),
       perPeer: this.limits?.perPeer ?? {},
+      connectionManager: this.limits?.connectionManager ?? null,
       ipLimiter: {
         maxConnsPerIp: this.limits?.ipLimiter?.maxConnsPerIp ?? null,
         maxConnsPerAsn: this.limits?.ipLimiter?.maxConnsPerAsn ?? null,
