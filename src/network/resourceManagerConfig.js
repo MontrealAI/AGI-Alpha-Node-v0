@@ -5,6 +5,14 @@ import { DialerPolicy } from './dialerPolicy.js';
 
 const logger = pino({ level: 'info', name: 'resource-manager-config' });
 
+const KEY_PROTOCOL_CAPS = [
+  '/meshsub/1.1.0',
+  '/ipfs/id/1.0.0',
+  '/ipfs/bitswap/1.2.0',
+  'agi/control/1.0.0',
+  'agi/index/1.0.0'
+];
+
 function coerceFiniteNumber(value, fallback) {
   const numeric = Number(value);
   return Number.isFinite(numeric) ? numeric : fallback;
@@ -148,6 +156,7 @@ function normalizeProtocol(protocol) {
 }
 
 function inferLimitType(reason, type = 'connections') {
+  if (reason?.includes?.('peer')) return 'per_peer';
   if (reason?.includes?.('asn')) return 'per_asn';
   if (reason?.includes?.('ip')) return 'per_ip';
   if (reason?.includes?.('ban')) return 'banlist';
@@ -295,13 +304,13 @@ export class ResourceManager {
   requestConnection({ peerId, ip, protocol, asn, direction = 'inbound' } = {}) {
     const protocolLabel = normalizeProtocol(protocol);
     if (this.isBannedIp(ip)) {
-      return this.deny('banned-ip', 'connections', { protocol: protocolLabel, ip, peerId, asn });
+      return this.deny('banned-ip', 'connections', { protocol: protocolLabel, ip, peerId, asn, limitType: 'banlist' });
     }
     if (this.isBannedPeer(peerId)) {
-      return this.deny('banned-peer', 'connections', { protocol: protocolLabel, ip, peerId, asn });
+      return this.deny('banned-peer', 'connections', { protocol: protocolLabel, ip, peerId, asn, limitType: 'banlist' });
     }
     if (this.isBannedAsn(asn)) {
-      return this.deny('banned-asn', 'connections', { protocol: protocolLabel, ip, peerId, asn });
+      return this.deny('banned-asn', 'connections', { protocol: protocolLabel, ip, peerId, asn, limitType: 'banlist' });
     }
     const maxGlobal = this.limits?.global?.maxConnections;
     if (maxGlobal && this.currentConnections() >= maxGlobal) {
@@ -312,7 +321,8 @@ export class ResourceManager {
         asn,
         peerId,
         used: this.currentConnections(),
-        limit: maxGlobal
+        limit: maxGlobal,
+        limitType: 'conns'
       });
     }
 
@@ -327,7 +337,8 @@ export class ResourceManager {
           asn,
           peerId,
           used: ipCount,
-          limit: maxPerIp
+          limit: maxPerIp,
+          limitType: 'per_ip'
         });
       }
     }
@@ -346,7 +357,8 @@ export class ResourceManager {
           asn,
           peerId,
           used: asnCount,
-          limit: maxPerAsn
+          limit: maxPerAsn,
+          limitType: 'per_asn'
         });
       }
     }
@@ -367,7 +379,8 @@ export class ResourceManager {
         asn,
         peerId,
         used: protocolCount,
-        limit: perProtocol
+        limit: perProtocol,
+        limitType: 'conns'
       });
     }
 
@@ -395,13 +408,13 @@ export class ResourceManager {
   requestStream({ peerId, protocol, ip, asn } = {}) {
     const protocolLabel = normalizeProtocol(protocol);
     if (this.isBannedIp(ip)) {
-      return this.deny('banned-ip', 'streams', { protocol: protocolLabel, ip, asn, peerId });
+      return this.deny('banned-ip', 'streams', { protocol: protocolLabel, ip, asn, peerId, limitType: 'banlist' });
     }
     if (this.isBannedPeer(peerId)) {
-      return this.deny('banned', 'streams', { protocol: protocolLabel, ip, asn, peerId });
+      return this.deny('banned', 'streams', { protocol: protocolLabel, ip, asn, peerId, limitType: 'banlist' });
     }
     if (this.isBannedAsn(asn)) {
-      return this.deny('banned-asn', 'streams', { protocol: protocolLabel, ip, asn, peerId });
+      return this.deny('banned-asn', 'streams', { protocol: protocolLabel, ip, asn, peerId, limitType: 'banlist' });
     }
     const maxGlobal = this.limits?.global?.maxStreams;
     if (maxGlobal && this.currentStreams() >= maxGlobal) {
@@ -412,7 +425,8 @@ export class ResourceManager {
         asn,
         peerId,
         used: this.currentStreams(),
-        limit: maxGlobal
+        limit: maxGlobal,
+        limitType: 'streams'
       });
     }
 
@@ -426,7 +440,8 @@ export class ResourceManager {
         asn,
         peerId,
         used: protocolCount,
-        limit: perProtocol
+        limit: perProtocol,
+        limitType: 'streams'
       });
     }
 
@@ -440,7 +455,8 @@ export class ResourceManager {
           asn,
           peerId,
           used: peerStreams,
-          limit: perPeer
+          limit: perPeer,
+          limitType: 'per_peer'
         });
       }
       this.peerStreams.set(peerId, peerStreams + 1);
@@ -482,7 +498,8 @@ export class ResourceManager {
     const protocolKeys = new Set([
       ...this.connections.keys(),
       ...this.streamProtocols.keys(),
-      ...Object.keys(this.limits?.perProtocol ?? {})
+      ...Object.keys(this.limits?.perProtocol ?? {}),
+      ...KEY_PROTOCOL_CAPS
     ]);
 
     const perProtocolUsage = Object.fromEntries(
@@ -560,12 +577,12 @@ export class ResourceManager {
     const limitsGrid = {
       global: globalLimits,
       perProtocol: Object.fromEntries(
-        Object.entries(this.limits?.perProtocol ?? {})
-          .map(([protocol, limits]) => [
+        Array.from(new Set([...Object.keys(this.limits?.perProtocol ?? {}), ...KEY_PROTOCOL_CAPS]))
+          .map((protocol) => [
             protocol,
             {
-              connections: limits?.maxConnections ?? null,
-              streams: limits?.maxStreams ?? null
+              connections: this.limits?.perProtocol?.[protocol]?.maxConnections ?? null,
+              streams: this.limits?.perProtocol?.[protocol]?.maxStreams ?? null
             }
           ])
           .sort(([a], [b]) => a.localeCompare(b))

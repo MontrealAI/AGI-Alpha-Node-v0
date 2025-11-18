@@ -25,6 +25,8 @@ describe('agent API DoS surfaces', () => {
     expect(debugPayload.metrics.pressure.connections.limit).toBeDefined();
     expect(debugPayload.limits.global.connections).toBeGreaterThan(0);
     expect(debugPayload.usage.global.connections.used).toBe(0);
+    expect(debugPayload.limits.perProtocol['/meshsub/1.1.0']).toBeDefined();
+    expect(debugPayload.usage.perProtocol['/meshsub/1.1.0']).toBeDefined();
 
     const addBan = await fetch(`${base}/governance/bans`, {
       method: 'POST',

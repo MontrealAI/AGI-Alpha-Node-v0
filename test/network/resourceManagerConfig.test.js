@@ -126,6 +126,22 @@ describe('ResourceManager guards', () => {
     expect(metrics.direction.plan.deficit).toBeGreaterThanOrEqual(1);
   });
 
+  it('always exposes per-protocol caps and usage for key protocols', () => {
+    const config = buildResourceManagerConfig({ config: { NRM_SCALE_FACTOR: 1 } });
+    const manager = new ResourceManager({ limits: config });
+
+    const snapshot = manager.metrics();
+
+    ['/meshsub/1.1.0', '/ipfs/id/1.0.0', '/ipfs/bitswap/1.2.0', 'agi/control/1.0.0', 'agi/index/1.0.0'].forEach(
+      (protocol) => {
+        expect(snapshot.limitsGrid.perProtocol[protocol]).toBeDefined();
+        expect(snapshot.usage.perProtocol[protocol]).toBeDefined();
+        expect(snapshot.usage.perProtocol[protocol].connections.used).toBe(0);
+        expect(snapshot.usage.perProtocol[protocol].streams.used).toBe(0);
+      }
+    );
+  });
+
   it('emits denial metrics with protocol + limit type and usage grids', async () => {
     const registry = new Registry();
     const networkMetrics = createNetworkMetrics({ registry });
