@@ -116,7 +116,14 @@ export function recordConnectionLatency(metrics, { transport, direction = 'out',
 }
 
 function normalizeDirection(direction) {
-  return direction === 'in' ? 'in' : DEFAULT_DIRECTION;
+  if (direction?.stat?.direction) {
+    return normalizeDirection(direction.stat.direction);
+  }
+
+  const normalized = String(direction ?? DEFAULT_DIRECTION).toLowerCase();
+  if (normalized === 'in' || normalized === 'inbound') return 'in';
+  if (normalized === 'out' || normalized === 'outbound') return 'out';
+  return DEFAULT_DIRECTION;
 }
 
 function normalizeCloseReason(reason) {

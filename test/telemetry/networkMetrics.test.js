@@ -46,4 +46,26 @@ describe('networkMetrics', () => {
     expect(liveMetrics?.values?.find((entry) => entry.labels.direction === 'in')?.value).toBe(1);
     expect(liveMetrics?.values?.find((entry) => entry.labels.direction === 'out')?.value).toBe(0);
   });
+
+  it('normalizes inbound/outbound directions for churn metrics', async () => {
+    const registry = new Registry();
+    const metrics = createNetworkMetrics({ registry });
+
+    recordConnectionOpen(metrics, { direction: 'inbound' });
+    recordConnectionClose(metrics, { direction: 'inbound', reason: 'reset' });
+    recordConnectionOpen(metrics, { direction: 'outbound' });
+    recordConnectionClose(metrics, { direction: { stat: { direction: 'outbound' } }, reason: 'protocol' });
+
+    const snapshot = await registry.getMetricsAsJSON();
+    const openMetrics = snapshot.find((metric) => metric.name === 'net_connections_open_total');
+    const closeMetrics = snapshot.find((metric) => metric.name === 'net_connections_close_total');
+    const liveMetrics = snapshot.find((metric) => metric.name === 'net_connections_live');
+
+    expect(openMetrics?.values?.find((entry) => entry.labels.direction === 'in')?.value).toBe(1);
+    expect(openMetrics?.values?.find((entry) => entry.labels.direction === 'out')?.value).toBe(1);
+    expect(closeMetrics?.values?.find((entry) => entry.labels.direction === 'in')?.value).toBe(1);
+    expect(closeMetrics?.values?.find((entry) => entry.labels.direction === 'out')?.value).toBe(1);
+    expect(liveMetrics?.values?.find((entry) => entry.labels.direction === 'in')?.value).toBe(0);
+    expect(liveMetrics?.values?.find((entry) => entry.labels.direction === 'out')?.value).toBe(0);
+  });
 });
