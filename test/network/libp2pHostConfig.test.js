@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { buildLibp2pHostConfig, createTransportTracer } from '../../src/network/libp2pHostConfig.js';
-import { buildTransportConfig } from '../../src/network/transportConfig.js';
+import { buildTransportConfig, rankDialableMultiaddrs } from '../../src/network/transportConfig.js';
 
 const PUBLIC_ADDRS = ['/ip4/1.1.1.1/udp/4001/quic', '/ip4/1.1.1.1/tcp/4001'];
 const RELAY_ADDRS = ['/dns4/relay.example.com/tcp/443/wss/p2p-circuit'];
@@ -90,7 +90,7 @@ describe('libp2pHostConfig', () => {
     const transport = tracer({
       peerId: '12D3KooXpeer',
       address: '/ip4/1.1.1.1/udp/4001/quic',
-      direction: 'inbound',
+      direction: 'in',
       success: true
     });
 
@@ -100,10 +100,107 @@ describe('libp2pHostConfig', () => {
       peerId: '12D3KooXpeer',
       address: '/ip4/1.1.1.1/udp/4001/quic',
       transport: 'quic',
-      direction: 'inbound',
+      direction: 'in',
       preference: plan.transports.preference,
       success: true
     });
-    expect(events[0].message).toBe('libp2p transport selection observed');
+    expect(events[0].message).toBe('conn_success');
+  });
+
+  it('ranks dialable multiaddrs with QUIC first, then TCP, relay, and other transports', () => {
+    const plan = buildTransportConfig({});
+    const ranked = rankDialableMultiaddrs(
+      [
+        '/ip4/10.0.0.5/tcp/4001',
+        '/ip4/1.1.1.1/udp/4001/quic',
+        '/dns4/relay.example.com/tcp/443/wss/p2p-circuit',
+        '/ip4/10.0.0.5/tcp/4001',
+        '/unix/tmp/socket'
+      ],
+      plan
+    );
+
+    expect(ranked).toEqual([
+      '/ip4/1.1.1.1/udp/4001/quic',
+      '/ip4/10.0.0.5/tcp/4001',
+      '/dns4/relay.example.com/tcp/443/wss/p2p-circuit',
+      '/unix/tmp/socket'
+    ]);
+  });
+
+  it('binds transport tracer to libp2p-style dial and connection events', () => {
+    const plan = buildTransportConfig({});
+    const metrics = {
+      dialAttempts: { inc: vi.fn() },
+      dialSuccesses: { inc: vi.fn() },
+      dialFailures: { inc: vi.fn() },
+      inboundConnections: { inc: vi.fn() },
+      connectionLatency: { observe: vi.fn() }
+    };
+    const events = [];
+    const tracer = createTransportTracer({
+      plan,
+      metrics,
+      logger: {
+        info: (payload, message) => events.push({ payload, message })
+      }
+    });
+
+    const fakeLibp2p = createMockLibp2p();
+    const unbind = tracer.bindTo(fakeLibp2p);
+
+    fakeLibp2p.dispatchEvent('dial:start', {
+      peerId: 'peer1',
+      multiaddr: '/ip4/1.1.1.1/udp/4001/quic'
+    });
+    fakeLibp2p.dispatchEvent('dial:success', {
+      peerId: 'peer1',
+      multiaddr: '/ip4/1.1.1.1/udp/4001/quic'
+    });
+    fakeLibp2p.dispatchEvent('dial:failure', {
+      peerId: 'peer2',
+      multiaddr: '/ip4/1.1.1.2/tcp/4001'
+    });
+    fakeLibp2p.dispatchEvent('connection:open', {
+      peerId: 'peer3',
+      multiaddr: '/dns4/relay.example.com/tcp/443/wss/p2p-circuit'
+    });
+
+    unbind();
+
+    expect(metrics.dialAttempts.inc).toHaveBeenCalledTimes(2);
+    expect(metrics.dialSuccesses.inc).toHaveBeenCalledWith({ transport: 'quic' });
+    expect(metrics.dialFailures.inc).toHaveBeenCalledWith({ transport: 'tcp' });
+    expect(metrics.inboundConnections.inc).toHaveBeenCalledWith({ transport: 'relay' });
+    expect(events.map((event) => event.message)).toEqual([
+      'conn_open',
+      'conn_success',
+      'conn_failure',
+      'conn_success'
+    ]);
   });
 });
+
+function createMockLibp2p() {
+  const listeners = new Map();
+
+  return {
+    addEventListener(event, handler) {
+      if (!listeners.has(event)) {
+        listeners.set(event, []);
+      }
+      listeners.get(event).push(handler);
+    },
+    removeEventListener(event, handler) {
+      const handlers = listeners.get(event) ?? [];
+      listeners.set(
+        event,
+        handlers.filter((candidate) => candidate !== handler)
+      );
+    },
+    dispatchEvent(event, detail = {}) {
+      const handlers = listeners.get(event) ?? [];
+      handlers.forEach((handler) => handler({ detail }));
+    }
+  };
+}
