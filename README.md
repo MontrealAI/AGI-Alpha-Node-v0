@@ -1600,6 +1600,12 @@ flowchart TD
 
 ## Appendix: CLI & API recipes
 
+### CI guardianship (always-green runway)
+
+- **Single command mirrors branch protection**: `npm run ci:verify` executes lint → unit/integration → coverage (c8) → Solidity lint/compile → subgraph codegen/build → audit → health + branch gates, identical to the checks required on `main`/PRs.
+- **Badges stay honest**: CI badges at the top of this README point to `.github/workflows/ci.yml` and the enforced gates in `.github/required-checks.json`, keeping check visibility and enforcement synchronized across forks.
+- **Local parity before push**: run `npm ci` followed by `npm run ci:verify`; failures surface with the same messaging as GitHub Actions so non-technical operators can self-serve remediation before opening a PR.
+
 ```bash
 # Governance: pause the system (owner token required via env OWNER_TOKEN)
 node src/index.js governance:pause --operator 0xYourOwner --signature 0xdeadbeef
