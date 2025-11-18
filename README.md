@@ -199,6 +199,54 @@ Switch presets with either `NETWORK_SIZE_PRESET=small|medium|large` or `--networ
    - Bake the winning preset into `.env.production` for the fleet and memorialize metrics snapshots (p50/p95/p99 latency, loss rate, CPU/RSS/FD) in the report.
 
 ```mermaid
+flowchart LR
+  subgraph Mesh[GossipSub mesh]
+    D(D / Dlo / Dhi)
+    Dout(Dout fan-out)
+    Lazy(Dlazy backfill)
+  end
+  subgraph Gossip[Gossip policy]
+    GF[gossipFactor]
+    GR[gossipRetransmission]
+  end
+  subgraph Dialer[Dialer policy]
+    TO[timeoutMs]
+    RET[maxRetries]
+    BO[exp backoff]
+    OUT[target outbound ratio]
+  end
+  subgraph Reconciler[Outbound reconciler]
+    Plan[plan dial count]
+    Heal[heal partitions]
+  end
+  subgraph Metrics[Metrics]
+    Lat[p50/p95/p99 latency]
+    Loss[Loss rate]
+    CPU[CPU/RSS/FD]
+  end
+
+  D & Dout & Lazy --> Mesh
+  Mesh --> Gossip
+  Gossip --> Metrics
+  Dialer --> Reconciler
+  Reconciler --> Mesh
+  Reconciler --> Metrics
+  Gossip --> Reconciler
+  Dialer --> Metrics
+  classDef accent fill:#0f172a,stroke:#22c55e,stroke-width:1.5px,color:#e2e8f0;
+  class Mesh,Gossip,Dialer,Reconciler,Metrics,D,Dout,Lazy,GF,GR,TO,RET,BO,OUT,Plan,Heal,Lat,Loss,CPU accent;
+```
+
+#### Preset + CLI/env crib sheet
+
+- `NETWORK_SIZE_PRESET=small|medium|large` or `--network-size-preset=<mode>` controls mesh + gossip defaults (still overridable with `PUBSUB_*`).
+- `DIAL_TIMEOUT_MS` / `DIAL_MAX_RETRIES` / `DIAL_BACKOFF_INITIAL_MS` / `DIAL_BACKOFF_MAX_MS` shape retry curves; `DIAL_OUTBOUND_TARGET_RATIO` + `DIAL_OUTBOUND_RATIO_TOLERANCE` keep the outbound/inbound mix near the intended 60/40 floor.
+- `DIAL_OUTBOUND_MIN_CONNECTIONS` guarantees a minimum outbound fan-out even on tiny fleets; `DIAL_RECONCILE_INTERVAL_MS` sets the cadence for the healing loop.
+- `npm run p2p:simulate -- --nodes 1000 --duration 10 --rate 0.02 --latency 60 --loss 0.005` remains the canonical harness to capture latency/loss envelopes; the JSON snapshot lands in `docs/load-test-report.json` for replayable evidence.
+
+> Operator assurance: every knob above is owner-override aware (REST + CLI + env), so the contract owner can pause, retune, or redirect emissions without redeploying while keeping CI gates green and visible on PRs/main.
+
+```mermaid
 stateDiagram-v2
   [*] --> SimStart
   SimStart: Launch p2p:simulate
