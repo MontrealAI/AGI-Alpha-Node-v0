@@ -215,6 +215,9 @@ export class ResourceManager {
     const protocolKey = protocol ?? 'unknown-protocol';
     const protocolCount = this.connections.get(protocolKey) ?? 0;
     if (perProtocol && protocolCount >= perProtocol) {
+      if (maxPerIp && ip) {
+        this.decrementMap(this.ipConns, ip);
+      }
       return this.deny('per-protocol-cap', 'connections');
     }
 
