@@ -63,6 +63,26 @@ describe('transportConfig', () => {
     );
   });
 
+  it('drops disabled transports to the back of the dial queue deterministically', () => {
+    const plan = buildTransportConfig({ TRANSPORT_ENABLE_QUIC: false });
+    const ranked = rankDialableMultiaddrs(
+      [
+        '/ip4/1.1.1.1/udp/4001/quic',
+        '/ip4/10.0.0.5/tcp/4001',
+        '/dns/relay.example.com/tcp/443/wss/p2p-circuit',
+        '/unix/tmp/socket'
+      ],
+      plan
+    );
+
+    expect(ranked).toEqual([
+      '/ip4/10.0.0.5/tcp/4001',
+      '/dns/relay.example.com/tcp/443/wss/p2p-circuit',
+      '/unix/tmp/socket',
+      '/ip4/1.1.1.1/udp/4001/quic'
+    ]);
+  });
+
   it('selects announceable addresses based on reachability', () => {
     const publicAddrs = ['/ip4/1.1.1.1/udp/4001/quic'];
     const relayAddrs = ['/dns4/relay.example.com/tcp/443/wss/p2p-circuit'];

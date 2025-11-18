@@ -70,6 +70,7 @@
 > New for this sprint: a React/Vite single-page dashboard (Index | Providers | Telemetry Debug), live GSLI and SLU charts backed by `/index/history` and `/providers/*/scores`, and a telemetry stream reader at `/telemetry/task-runs` that keeps ingest visibility tight while remaining API-key gated for operators.
 > The runtime is tuned to operate like an ever-watchful macro trader—autonomous by default, yet instantly steerable by the contract owner to seize new parameters, pause subsystems, or redirect emissions without friction.
 > **Operational promise**: CI is fully green by default and enforced on PRs/main via `.github/required-checks.json`, with badges wired to the canonical workflow. The same gates run locally with `npm run ci:verify`, giving non-technical operators parity with branch protection before they ship.
+> **Sprint assurance (QUIC-first E1)**: QUIC/TCP/Relay/AutoNAT/DCUtR flags are unified behind the env/CLI surface, rankers prefer QUIC deterministically, and every dial/accept is traced with transport + latency so network posture is inspectable without guesswork. CI pins these expectations with dedicated unit tests and schema validation so drift is caught before deployment.【F:src/network/transportConfig.js†L63-L111】【F:test/network/transportConfig.test.js†L36-L79】
 > **Production safety bar (tl;dr)**
 >
 > - ✅ **Owner supremacy preserved**: `AlphaNodeManager.sol` keeps pause/unpause, validator rotation, metadata refresh, treasury withdrawals, and emission tuning in one place—no redeploys required.【F:contracts/AlphaNodeManager.sol†L1-L120】
@@ -238,6 +239,38 @@ flowchart TB
 | Bring the node online | `npm start` | Boots read-only REST, governance surface, metrics, ENS alignment, SQLite spine, and telemetry collectors with owner overrides respected. |
 | Optional dashboard | `npm run dashboard:dev` or `npm run dashboard:preview` | React/Vite cockpit for Index, Providers, Telemetry debug; API key & base URL injected via the connection bar. |
 | Governance dials (owner) | `node src/index.js governance:*` verbs or authenticated `/governance/*` | Pause/unpause, rotate validators, redirect emissions/treasury, refresh metadata, or retune productivity—no redeploys required. |
+
+### CI visibility & enforcement (always-green contract)
+
+- **Badges wired to gates**: The CI status shields at the top of this README point to the canonical workflow and required check manifest, so operators and auditors can see that branch protection matches the local `npm run ci:verify` run. No shadow jobs, no secret gates.
+- **Gate composition**: Lint (markdown + links) → JS/TS unit tests (core + dashboard) → coverage via `c8` → Solidity lint + compile/run → subgraph TS compile/build → `npm audit` high+ severity → policy & branch guards. Each stage fails fast with actionable logs.
+- **Enforced on PRs and main**: `.github/required-checks.json` mirrors the workflow names so GitHub blocks merges when any stage regresses; local parity is guaranteed via the same scripts.
+
+```mermaid
+flowchart LR
+  subgraph Local[Operator / Developer]
+    verify[npm run ci:verify]
+  end
+  subgraph Actions[GitHub Actions]
+    lint[lint]
+    tests[ci:test + ci:coverage]
+    sol[ci:solidity]
+    ts[ci:ts]
+    sec[ci:security]
+    policy[ci:policy + ci:branch]
+  end
+  verify --> lint & tests & sol & ts & sec & policy
+  lint --> badge[README badges]\n(Green/Red)
+  tests --> badge
+  sol --> badge
+  ts --> badge
+  sec --> badge
+  policy --> badge
+  style badge fill:#0f172a,stroke:#22c55e,stroke-width:2px,color:#e2e8f0
+  classDef accent fill:#0f172a,stroke:#8b5cf6,stroke-width:1.5px,color:#e2e8f0;
+  class Local,verify,Actions,lint,tests,sol,ts,sec,policy,badge accent;
+```
+
 | Transport posture drills | Toggle `TRANSPORT_ENABLE_*`, `ENABLE_HOLE_PUNCHING`, `AUTONAT_*`, `RELAY_*` | Stage QUIC-only, TCP-only, or mixed neighborhoods; confirm logs show transport choice + reachability before jobs start. |
 | Mesh size presets | `NETWORK_SIZE_PRESET=small|medium|large npm start` or `--network-size-preset` on CLI | Tunes `D/Dlo/Dhi/Dout/Dlazy` + `gossipFactor`/`retransmission` for 1k–10k peers; pairs with dialer backoff + outbound ratio controls. |
 
