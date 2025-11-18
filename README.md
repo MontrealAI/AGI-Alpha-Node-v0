@@ -55,6 +55,12 @@
   <img src="https://img.shields.io/badge/Metrics-Prometheus%20%7C%20OTel-10b981?logo=prometheus&logoColor=white" alt="Metrics surfaces" />
   <img src="https://img.shields.io/badge/DoS%20Defense-NRM%20%7C%20ConnMgr%20%7C%20Per--IP%20caps-0ea5e9?logo=linux&logoColor=white" alt="DoS defenses" />
   <img src="https://img.shields.io/badge/Load%20Harness-p2p:load--tests-14b8a6?logo=testinglibrary&logoColor=white" alt="Load harness" />
+  <a href="docs/dos-test-plan.md">
+    <img src="https://img.shields.io/badge/DoS%20Test%20Plan-Documented-22c55e?logo=readthedocs&logoColor=white" alt="DoS test plan" />
+  </a>
+  <a href="test/network/apiServer.dos.test.js">
+    <img src="https://img.shields.io/badge/Abuse%20Harness-Integration%20Tests-0ea5e9?logo=checkmarx&logoColor=white" alt="Abuse harness coverage" />
+  </a>
 </p>
 
 > **AGI Alpha Node v0** metabolizes heterogeneous agentic labor into verifiable α‑Work Units (α‑WU) and Synthetic Labor Units (SLU), rebalances the Global Synthetic Labor Index (GSLI), exposes audited read‑only REST telemetry, and routes the `$AGIALPHA` treasury (token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) under complete owner command. Every dial can be paused, rerouted, or retuned without redeploying, delivering a production-grade intelligence core built to bend markets.
@@ -70,6 +76,7 @@
 > - **Steer as owner**: `node src/index.js governance:pause` / `governance:resume` / `governance:set-validators` / `governance:set-rewards`—all routed through the `$AGIALPHA` binding so the owner can retune parameters, pause, or reroute flows instantly.
 > - **Deploy safely**: Docker + Helm charts ship the same guardrails; branch protection and `.github/required-checks.json` enforce visibility so every promotion to `main` stays green.
 > - **Prove contracts obey**: the canonical `$AGIALPHA` token is wired into `AlphaNodeManager.sol`, giving the owner unilateral control to pause/unpause, rotate validators, update ENS controllers, and move stake via `withdrawStake`—all without redeploying the network substrate.【F:contracts/AlphaNodeManager.sol†L1-L120】
+> - **Stress without fear**: `npm run p2p:load-tests` executes the full abuse harness (connection floods, stream floods, malformed GossipSub) and expects the node to shed load via NRM caps, per-IP/ASN clamps, and peer scoring instead of crashing. Pair it with `curl -s localhost:3000/debug/resources` to watch pressure/utilization and denial reasons in real time.【F:package.json†L29-L38】【F:src/network/resourceManagerConfig.js†L34-L244】
 >
 > **Transport & NAT sprint**: QUIC-first transport with TCP fallback, DCUtR hole punching, AutoNAT reachability-driven address advertisement, and Relay v2 quotas are now wired through `TRANSPORT_*`, `ENABLE_HOLE_PUNCHING`, `AUTONAT_*`, and `RELAY_*` environment toggles. Dial attempts are ordered toward QUIC where available, address announcements respect public/private posture, and relay slots/bandwidth remain capped for resilience. Logs surface reachability and transport choice so operators can verify QUIC-only, TCP-only, or mixed neighborhoods before rollout.
 >
@@ -205,6 +212,7 @@ flowchart TD
 - **Per-IP/ASN clamps + ban hooks**: configurable caps (`MAX_CONNS_PER_IP`, `MAX_CONNS_PER_ASN`) plus `/governance/bans` (GET/POST/DELETE) so owners can quarantine abusive IPs/peers/ASNs in real time without restart.【F:src/network/resourceManagerConfig.js†L121-L244】【F:src/network/apiServer.js†L1667-L1744】
 - **Owner cockpit**: the governance API and CLI verbs remain owner-token guarded; every limit can be tightened live (including total pause) so the node never cedes control when pressure spikes.【F:src/network/apiServer.js†L1162-L1173】【F:src/index.js†L2113-L2214】
 - **Abuse harness + p2p load drills**: `npm run p2p:load-tests` runs connection floods, stream floods, and malformed GossipSub scenarios against the ResourceManager/ConnectionManager stack. Results surface denials, pressure, and score thresholds without crashing the node.【F:package.json†L29-L38】【F:test/network/resourceManagerConfig.test.js†L70-L157】
+- **Runbook in one place**: [DoS Test Plan](docs/dos-test-plan.md) outlines objectives, knobs (`NRM_SCALE_FACTOR`, `CONN_HIGH_WATER`, `MAX_CONNS_PER_IP`), and expected outcomes so operators can rehearse floods before production heat.【F:docs/dos-test-plan.md†L1-L37】
 
 | Control plane knob | Env/CLI | Default | Effect |
 | --- | --- | --- | --- |
@@ -247,6 +255,39 @@ flowchart LR
   Metrics -->|Owner token| CM
   classDef accent fill:#0f172a,stroke:#22c55e,stroke-width:1.5px,color:#e2e8f0;
   class Shield,Ingress,Observability,Limits,PerIp,CM,Bans,Flood,Malform,Logs,Metrics,Harness accent;
+```
+
+```mermaid
+flowchart TD
+  subgraph LoadHarness[p2p:load-tests]
+    ConnFlood[Connection flood]
+    StreamFlood[Stream flood]
+    Malformed[Malformed GossipSub]
+  end
+  subgraph RuntimeGates[Runtime gates]
+    NRM[NRM ceilings\n(conns/streams/memory/fd/bw)]
+    IPGuard[Per-IP/ASN caps]
+    ScoreTrim[ConnManager trims by peer score]
+    BansGrid[Ban grid: IP / Peer / ASN]
+  end
+  subgraph ObservabilityDeck[Observability]
+    Debug[/GET /debug/resources/]
+    Metrics[/Prometheus gauges/]
+    LogsSink[Structured denials]
+  end
+  ConnFlood --> NRM
+  ConnFlood --> IPGuard
+  StreamFlood --> NRM
+  Malformed --> ScoreTrim
+  NRM --> Debug
+  IPGuard --> Debug
+  ScoreTrim --> Debug
+  BansGrid --> Debug
+  Debug --> Metrics
+  Metrics --> LogsSink
+  BansGrid -. owner token .-> RuntimeGates
+  classDef accent fill:#0b1120,stroke:#8b5cf6,stroke-width:1.5px,color:#e2e8f0;
+  class LoadHarness,RuntimeGates,ObservabilityDeck,ConnFlood,StreamFlood,Malformed,NRM,IPGuard,ScoreTrim,BansGrid,Debug,Metrics,LogsSink accent;
 ```
 
 ```mermaid
