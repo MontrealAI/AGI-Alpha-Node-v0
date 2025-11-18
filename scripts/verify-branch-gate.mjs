@@ -1,7 +1,7 @@
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 import { resolve as pathResolve } from 'node:path';
-import { configSchema, coerceConfig } from '../src/config/schema.js';
+import { configSchema, configSchemaBase, coerceConfig } from '../src/config/schema.js';
 import { createHealthGate } from '../src/services/healthGate.js';
 
 export const CRITICAL_PREFIXES = ['deploy/', 'release/', 'hotfix/'];
@@ -64,7 +64,7 @@ export function verifyBranchGate({ env = process.env, logger = console } = {}) {
     return { authorized: true, branchName, reason: 'non-critical' };
   }
 
-  const allowedKeys = new Set(Object.keys(configSchema.shape));
+  const allowedKeys = new Set(Object.keys(configSchemaBase.shape));
   const envSubset = Object.fromEntries(
     Object.entries(env).filter(([key]) => allowedKeys.has(key))
   );

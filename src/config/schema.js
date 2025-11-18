@@ -438,7 +438,7 @@ const alphaWbSchema = z.union([z.undefined(), z.any()]).transform((value, ctx) =
   }
 });
 
-export const configSchema = z
+export const configSchemaBase = z
   .object({
     RPC_URL: z.string().url().default('https://rpc.ankr.com/eth'),
     NODE_ROLE: nodeRoleSchema,
@@ -602,6 +602,28 @@ export const configSchema = z
         }
         return numeric;
       }, z.number().int().positive().optional()),
+    NRM_SCALE_FACTOR: z.coerce.number().min(0.1).max(5).default(1),
+    NRM_LIMITS_JSON: z
+      .any()
+      .optional()
+      .transform((value) => {
+        if (value === undefined || value === null) return undefined;
+        if (typeof value !== 'string') return value;
+        const trimmed = value.trim();
+        return trimmed.length ? trimmed : undefined;
+      }),
+    NRM_LIMITS_PATH: z
+      .string()
+      .optional()
+      .transform((value) => {
+        if (!value) return undefined;
+        const trimmed = value.trim();
+        return trimmed.length ? trimmed : undefined;
+      }),
+    MAX_CONNS_PER_IP: z.coerce.number().int().min(1).max(10_000).default(64),
+    CONN_LOW_WATER: z.coerce.number().int().min(1).max(100_000).default(512),
+    CONN_HIGH_WATER: z.coerce.number().int().min(1).max(120_000).default(1_024),
+    CONN_GRACE_PERIOD_SEC: z.coerce.number().int().min(1).max(86_400).default(120),
     PUBSUB_D: z.coerce.number().int().min(2).max(128).default(8),
     PUBSUB_D_LOW: z.coerce.number().int().min(1).max(127).default(6),
     PUBSUB_D_HIGH: z.coerce.number().int().min(1).max(256).default(12),
@@ -762,6 +784,15 @@ export const configSchema = z
       })
   })
   .strip();
+
+export const configSchema = configSchemaBase.superRefine((value, ctx) => {
+  if (value.CONN_HIGH_WATER <= value.CONN_LOW_WATER) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'CONN_HIGH_WATER must be greater than CONN_LOW_WATER'
+    });
+  }
+});
 
 export function coerceConfig(input = {}) {
   return configSchema.parse(input);

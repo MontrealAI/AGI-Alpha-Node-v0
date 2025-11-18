@@ -53,6 +53,8 @@
   <img src="https://img.shields.io/badge/Health-%2Fhealth%20%2B%20%2Fhealthz-22c55e?logo=sthealth" alt="Health endpoints" />
   <img src="https://img.shields.io/badge/Logs-Structured%20pino%20events-0ea5e9?logo=buffer" alt="Structured logs" />
   <img src="https://img.shields.io/badge/Metrics-Prometheus%20%7C%20OTel-10b981?logo=prometheus&logoColor=white" alt="Metrics surfaces" />
+  <img src="https://img.shields.io/badge/DoS%20Defense-NRM%20%7C%20ConnMgr%20%7C%20Per--IP%20caps-0ea5e9?logo=linux&logoColor=white" alt="DoS defenses" />
+  <img src="https://img.shields.io/badge/Load%20Harness-p2p:load--tests-14b8a6?logo=testinglibrary&logoColor=white" alt="Load harness" />
 </p>
 
 > **AGI Alpha Node v0** metabolizes heterogeneous agentic labor into verifiable α‑Work Units (α‑WU) and Synthetic Labor Units (SLU), rebalances the Global Synthetic Labor Index (GSLI), exposes audited read‑only REST telemetry, and routes the `$AGIALPHA` treasury (token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) under complete owner command. Every dial can be paused, rerouted, or retuned without redeploying, delivering a production-grade intelligence core built to bend markets.
@@ -1115,6 +1117,13 @@ flowchart TD
 - `npm run ci:solidity` – solhint + solc compile simulation for contracts.
 - `npm run ci:ts` – subgraph manifest render + `npm --prefix subgraph run build:ci`.
 - `npm run ci:security` – high-level `npm audit` scan mirroring CI behavior.
+
+### DoS defenses & trimming (Sprint C)
+
+- **Network Resource Manager (NRM)**: `buildResourceManagerConfig` scales hard ceilings (connections, streams, memory, FDs, bandwidth) via `NRM_SCALE_FACTOR`, merges optional JSON/YAML overrides, and logs limit posture for operators.【F:src/network/resourceManagerConfig.js†L1-L119】
+- **Connection manager + per-IP caps**: Watermarks (`CONN_LOW_WATER`, `CONN_HIGH_WATER`, `CONN_GRACE_PERIOD_SEC`) and per-IP limits (`MAX_CONNS_PER_IP`) prune lowest-score peers first while preserving pinned/whitelisted nodes and protecting against Sybil floods.【F:src/network/resourceManagerConfig.js†L121-L259】【F:src/config/defaults.js†L23-L39】【F:src/config/schema.js†L18-L96】
+- **Abuse harness + plan**: `npm run p2p:load-tests` executes connection/stream flood drills and malformed gossip simulations; expected behaviors and observability notes live in `docs/dos-test-plan.md`.【F:test/network/resourceManagerConfig.test.js†L1-L98】【F:docs/dos-test-plan.md†L1-L33】
+- **Owner control**: Ban/unban hooks allow immediate quarantines without redeploying; all dials remain steerable so the contract owner retains full control over parameters, pausing, and governance pipelines.
 
 ## Operations playbook
 
