@@ -21,10 +21,15 @@ function buildRegisters(registry) {
   return registry ? [registry] : undefined;
 }
 
-export function createNetworkMetrics({ registry } = {}) {
+export function createNetworkMetrics({
+  registry,
+  reachabilityState = null,
+  autonat = null,
+  logger = null
+} = {}) {
   const registers = buildRegisters(registry);
 
-  const reachabilityState = new Gauge({
+  const reachabilityStateGauge = new Gauge({
     name: 'net_reachability_state',
     help: 'Current reachability posture (0=unknown, 1=private, 2=public)',
     registers
@@ -99,8 +104,40 @@ export function createNetworkMetrics({ registry } = {}) {
     registers
   });
 
+  updateReachabilityMetric({ reachabilityState: reachabilityStateGauge }, 'unknown');
+
+  const bindings = [];
+  if (reachabilityState) {
+    const unsubscribe =
+      typeof reachabilityState.subscribe === 'function'
+        ? bindReachabilityGauge({
+            reachabilityState,
+            metrics: { reachabilityState: reachabilityStateGauge }
+          })
+        : () => {};
+    bindings.push(unsubscribe);
+    updateReachabilityMetric(
+      { reachabilityState: reachabilityStateGauge },
+      reachabilityState?.getState?.() ?? reachabilityState
+    );
+  }
+
+  if (autonat && reachabilityState) {
+    const unsubscribe = bindAutonatReachability({
+      autonat,
+      reachabilityState,
+      metrics: {
+        reachabilityState: reachabilityStateGauge,
+        autonatProbesTotal,
+        autonatFailuresTotal
+      },
+      logger
+    });
+    bindings.push(unsubscribe);
+  }
+
   return {
-    reachabilityState,
+    reachabilityState: reachabilityStateGauge,
     autonatProbesTotal,
     autonatFailuresTotal,
     dialAttempts,
@@ -111,7 +148,8 @@ export function createNetworkMetrics({ registry } = {}) {
     connectionsClose,
     connectionsLive,
     connectionLatency,
-    liveConnections: { in: 0, out: 0 }
+    liveConnections: { in: 0, out: 0 },
+    stop: () => bindings.forEach((unbind) => unbind?.())
   };
 }
 
@@ -162,11 +200,11 @@ export function recordConnectionOpen(metrics, { direction = DEFAULT_DIRECTION } 
 
 export function recordConnectionClose(
   metrics,
-  { direction = DEFAULT_DIRECTION, reason = DEFAULT_REASON } = {}
+  { direction = DEFAULT_DIRECTION, reason = DEFAULT_REASON, detail = null } = {}
 ) {
   if (!metrics?.connectionsClose || !metrics?.connectionsLive) return;
-  const normalizedDirection = normalizeDirection(direction);
-  const normalizedReason = normalizeCloseReason(reason);
+  const normalizedDirection = normalizeDirection(resolveDirection(detail, direction));
+  const normalizedReason = normalizeCloseReason(resolveCloseReason(detail, reason));
   metrics.connectionsClose.inc({ direction: normalizedDirection, reason: normalizedReason });
   metrics.liveConnections[normalizedDirection] = Math.max(
     0,
@@ -214,6 +252,26 @@ function deriveReachability(detail) {
   const stateCandidate =
     payload?.reachability ?? payload?.status ?? payload?.nat ?? payload?.state ?? payload;
   return summarizeReachabilityState(stateCandidate);
+}
+
+function resolveDirection(detail, fallback = DEFAULT_DIRECTION) {
+  if (!detail) return fallback;
+  const candidate =
+    detail?.direction ??
+    detail?.dir ??
+    detail?.stat?.direction ??
+    detail?.connection?.stat?.direction ??
+    detail?.connection?.direction;
+  return candidate ?? fallback;
+}
+
+function resolveCloseReason(detail, fallback = DEFAULT_REASON) {
+  if (!detail) return fallback;
+  const reason = detail?.reason ?? detail?.error ?? detail?.code ?? detail?.status;
+  if (!reason && detail?.error?.message) {
+    return detail.error.message;
+  }
+  return reason ?? fallback;
 }
 
 export function bindReachabilityGauge({ reachabilityState, metrics } = {}) {
