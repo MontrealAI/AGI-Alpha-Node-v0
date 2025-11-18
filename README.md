@@ -60,6 +60,13 @@
 > The runtime is tuned to operate like an ever-watchful macro trader—autonomous by default, yet instantly steerable by the contract owner to seize new parameters, pause subsystems, or redirect emissions without friction.
 > **Operational promise**: CI is fully green by default and enforced on PRs/main via `.github/required-checks.json`, with badges wired to the canonical workflow. The same gates run locally with `npm run ci:verify`, giving non-technical operators parity with branch protection before they ship.
 >
+> **Launchpad (10-second orientation)**
+>
+> - **Start everything**: `npm ci && npm run ci:verify && npm start` (mirrors PR protection, boots REST + metrics + governance surfaces, and keeps SQLite migrations aligned).
+> - **Observe the mesh**: `curl -s localhost:3000/debug/peerscore` to watch GossipSub v1.1 scores shift; `curl -s localhost:3000/metrics | grep peer_score` to view buckets and topic contributions live.
+> - **Steer as owner**: `node src/index.js governance:pause` / `governance:resume` / `governance:set-validators` / `governance:set-rewards`—all routed through the `$AGIALPHA` binding so the owner can retune parameters, pause, or reroute flows instantly.
+> - **Deploy safely**: Docker + Helm charts ship the same guardrails; branch protection and `.github/required-checks.json` enforce visibility so every promotion to `main` stays green.
+>
 > **Transport & NAT sprint**: QUIC-first transport with TCP fallback, DCUtR hole punching, AutoNAT reachability-driven address advertisement, and Relay v2 quotas are now wired through `TRANSPORT_*`, `ENABLE_HOLE_PUNCHING`, `AUTONAT_*`, and `RELAY_*` environment toggles. Dial attempts are ordered toward QUIC where available, address announcements respect public/private posture, and relay slots/bandwidth remain capped for resilience. Logs surface reachability and transport choice so operators can verify QUIC-only, TCP-only, or mixed neighborhoods before rollout.
 >
 > 🛰️ **Launch pad (non-technical operator)**
@@ -227,6 +234,7 @@ flowchart LR
 - **Inspection surfaces**: `createPeerScoreRegistry` records snapshots, buckets peers by threshold, exposes top positive/negative entries, and now supports live subscribers (used by Prometheus + debug APIs).【F:src/services/peerScoring.js†L251-L318】
 - **Metrics & debug endpoints**: `/debug/peerscore` returns the latest distribution, while Prometheus gauges (`peer_score_bucket_total`, `peer_score_topic_contribution`, `peer_score_snapshot_seconds`) auto-refresh via registry subscriptions and publish alongside the existing `/metrics` surface.【F:test/apiServer.peerscore.test.js†L1-L35】【F:test/monitoring.test.js†L1-L125】【F:src/telemetry/peerScoreMetrics.js†L1-L73】【F:src/telemetry/monitoring.js†L23-L127】
 - **Acceptance hooks**: Peer score snapshots recorded before telemetry startup are replayed, ensuring operators always see bucketed scores and topic contributions without waiting for the next inspect tick.【F:test/monitoring.test.js†L1-L125】
+- **Owner-tunable guardrails**: Thresholds (`PUBSUB_GOSSIP_THRESHOLD`, `PUBSUB_PUBLISH_THRESHOLD`, `PUBSUB_GRAYLIST_THRESHOLD`, `PUBSUB_DISCONNECT_THRESHOLD`) and per-topic overrides (`PUBSUB_TOPIC_PARAMS`) keep the owner in full control of pruning/graylisting behavior without redeploying the node.【F:src/network/pubsubConfig.js†L36-L92】【F:src/services/peerScoring.js†L1-L181】
 
 **Topic score grid (defaults, overridable via `PUBSUB_TOPIC_PARAMS`)**
 
@@ -312,8 +320,34 @@ flowchart LR
   end
   Params --> Inspect --> Registry
   Registry --> API
-  Registry --> Metrics --> Dashboard
+ Registry --> Metrics --> Dashboard
   API --> Dashboard
+```
+
+```mermaid
+flowchart LR
+  classDef accent fill:#0f172a,stroke:#22c55e,stroke-width:1.5px,color:#e0f2fe;
+  subgraph Treasury[$AGIALPHA Treasury\n0xa61a...a1fa]
+    Owner[Owner wallet\n(full control)]
+  end
+  subgraph Control[Owner Controls]
+    Pause[pause/unpause]
+    Params[retune PUBSUB_*\n(governance verbs)]
+    Validators[rotate validators]
+    Rewards[reroute rewards/treasury]
+  end
+  subgraph Mesh[GossipSub v1.1 Mesh]
+    Topics[agi.* topics\npeer scoring]
+    Metrics[/peer_score_* metrics/]
+    Debug[/debug/peerscore/]
+  end
+  Owner --> Control
+  Control -->|CLI + REST governance| Treasury
+  Control --> Mesh
+  Mesh --> Metrics
+  Mesh --> Debug
+  Metrics --> Dash[Dashboards/Grafana]
+  Debug --> Ops[Operators]
 ```
 
 ```mermaid
