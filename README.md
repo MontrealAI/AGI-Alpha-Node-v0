@@ -44,9 +44,9 @@
 ## Why operators deploy this node
 
 - **Owner-first controls**: Pause/unpause, rotate validators, retune emissions, and update metadata through `AlphaNodeManager.sol` without redeploying the network substrate.【F:contracts/AlphaNodeManager.sol†L1-L120】
-- **Hard DoS guardrails**: The Network Resource Manager (NRM) rejects every overage with structured logs plus `nrm_denials_total{limit_type,protocol}` increments; ban grid counters and gauges make denials auditable in real time.【F:src/network/resourceManagerConfig.js†L247-L361】【F:src/telemetry/networkMetrics.js†L24-L76】
-- **Debuggable capacity**: `GET /debug/resources` exposes global caps, per-protocol ceilings (GossipSub/identify/bitswap/agi/*), per-IP/ASN ceilings, bans, and live utilization so operators never spelunk code to understand pressure.【F:src/network/resourceManagerConfig.js†L472-L566】【F:src/network/apiServer.js†L1138-L1173】
-- **Watermarks + bans as metrics**: Connection Manager trims emit `connmanager_trims_total{reason}`; ban mutations raise gauges/counters for IP/peer/ASN entries to keep governance controls transparent.【F:src/network/resourceManagerConfig.js†L600-L669】【F:src/network/apiServer.js†L1662-L1740】
+- **Hard DoS guardrails**: The Network Resource Manager (NRM) rejects every overage with structured logs plus `nrm_denials_total{limit_type,protocol}` increments; ban grid counters and gauges make denials auditable in real time.【F:src/network/resourceManagerConfig.js†L246-L350】【F:src/telemetry/networkMetrics.js†L24-L76】
+- **Debuggable capacity**: `GET /debug/resources` exposes global caps, per-protocol ceilings (GossipSub/identify/bitswap/agi/*), per-IP/ASN ceilings, bans, and live utilization so operators never spelunk code to understand pressure.【F:src/network/resourceManagerConfig.js†L485-L620】【F:src/network/apiServer.js†L1162-L1177】
+- **Watermarks + bans as metrics**: Connection Manager trims emit `connmanager_trims_total{reason}`; ban mutations raise gauges/counters for IP/peer/ASN entries to keep governance controls transparent.【F:src/network/resourceManagerConfig.js†L637-L688】【F:src/network/apiServer.js†L1691-L1763】
 - **Green by default**: `.github/workflows/ci.yml` mirrors `npm run ci:verify` and is enforced via `.github/required-checks.json`, keeping PRs and `main` permanently green with visible badges.【F:.github/workflows/ci.yml†L1-L210】【F:.github/required-checks.json†L1-L9】
 
 ## System map
@@ -94,10 +94,10 @@ flowchart TD
 
 ## Resource manager & DoS telemetry (Sprint E3)
 
-- **Tag every denial**: All NRM reject paths produce structured logs with limit type, protocol, peer, IP/ASN context, and bump `nrm_denials_total{limit_type,protocol}` so dashboards can slice by cause instantly.【F:src/network/resourceManagerConfig.js†L247-L361】【F:src/telemetry/networkMetrics.js†L44-L61】
-- **Per-protocol clarity**: The NRM snapshot always includes GossipSub/identify/bitswap/agi protocol caps and usage, even when zero, making `/debug/resources` copy/paste friendly for runbooks and dashboards.【F:src/network/resourceManagerConfig.js†L472-L566】【F:test/network/resourceManagerConfig.test.js†L76-L128】
-- **Usage + pressure grid**: `metrics()` surfaces global/ per-protocol/ per-IP/ per-ASN usage with utilization and dialer plans so operators see pressure before drops occur.【F:src/network/resourceManagerConfig.js†L472-L566】
-- **Connection trims + bans as metrics**: Peer trims increment `connmanager_trims_total{reason}`; ban additions/removals update `banlist_entries` gauges and `banlist_changes_total{type,action}` counters for IP/peer/ASN governance surfaces.【F:src/network/resourceManagerConfig.js†L600-L669】【F:src/network/apiServer.js†L1662-L1740】
+- **Tag every denial**: All NRM reject paths produce structured logs with limit type, protocol, peer, IP/ASN context, and bump `nrm_denials_total{limit_type,protocol}` so dashboards can slice by cause instantly.【F:src/network/resourceManagerConfig.js†L246-L350】【F:src/telemetry/networkMetrics.js†L44-L61】
+- **Per-protocol clarity**: The NRM snapshot always includes GossipSub/identify/bitswap/agi protocol caps and usage, even when zero, making `/debug/resources` copy/paste friendly for runbooks and dashboards.【F:src/network/resourceManagerConfig.js†L485-L620】【F:test/network/resourceManagerConfig.test.js†L76-L128】
+- **Usage + pressure grid**: `metrics()` surfaces global/ per-protocol/ per-IP/ per-ASN usage with utilization and dialer plans so operators see pressure before drops occur.【F:src/network/resourceManagerConfig.js†L485-L620】
+- **Connection trims + bans as metrics**: Peer trims increment `connmanager_trims_total{reason}`; ban additions/removals update `banlist_entries` gauges and `banlist_changes_total{type,action}` counters for IP/peer/ASN governance surfaces.【F:src/network/resourceManagerConfig.js†L637-L688】【F:src/network/apiServer.js†L1691-L1763】
 
 ```bash
 curl -s localhost:3000/debug/resources | jq '{limits, usage, bans}'
@@ -132,8 +132,8 @@ flowchart LR
 | Endpoint | Purpose |
 | --- | --- |
 | `GET /health` / `GET /healthz` | Liveness/readiness probes. |
-| `GET /debug/resources` | Limits + usage grid, bans, and NRM snapshot (per-protocol/IP/ASN).【F:src/network/apiServer.js†L1138-L1173】 |
-| `POST/DELETE /governance/bans` | Add or remove IP/peer/ASN bans (owner token required); updates gauges/counters automatically.【F:src/network/apiServer.js†L1662-L1740】 |
+| `GET /debug/resources` | Limits + usage grid, bans, and NRM snapshot (per-protocol/IP/ASN).【F:src/network/apiServer.js†L1162-L1177】 |
+| `POST/DELETE /governance/bans` | Add or remove IP/peer/ASN bans (owner token required); updates gauges/counters automatically.【F:src/network/apiServer.js†L1691-L1763】 |
 | `GET /debug/peerscore` | GossipSub v1.1 peer score summaries for mesh tuning. |
 | `GET /metrics` | Prometheus/OTel surface for network, peer scoring, SLU, and index gauges. |
 
