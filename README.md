@@ -70,6 +70,13 @@
 > New for this sprint: a React/Vite single-page dashboard (Index | Providers | Telemetry Debug), live GSLI and SLU charts backed by `/index/history` and `/providers/*/scores`, and a telemetry stream reader at `/telemetry/task-runs` that keeps ingest visibility tight while remaining API-key gated for operators.
 > The runtime is tuned to operate like an ever-watchful macro trader—autonomous by default, yet instantly steerable by the contract owner to seize new parameters, pause subsystems, or redirect emissions without friction.
 > **Operational promise**: CI is fully green by default and enforced on PRs/main via `.github/required-checks.json`, with badges wired to the canonical workflow. The same gates run locally with `npm run ci:verify`, giving non-technical operators parity with branch protection before they ship.
+> **Production safety bar (tl;dr)**
+>
+> - ✅ **Owner supremacy preserved**: `AlphaNodeManager.sol` keeps pause/unpause, validator rotation, metadata refresh, treasury withdrawals, and emission tuning in one place—no redeploys required.【F:contracts/AlphaNodeManager.sol†L1-L120】
+> - ✅ **CI + branch gates visible**: `.github/workflows/ci.yml` mirrors `npm run ci:verify` and publishes badges; `.github/required-checks.json` keeps the same checks enforced on PRs and `main`. No hidden jobs, no surprise failures.【F:.github/workflows/ci.yml†L1-L210】【F:.github/required-checks.json†L1-L9】
+> - ✅ **Mesh/dialer presets wired**: `NETWORK_SIZE_PRESET=small|medium|large` plus dialer backoff + outbound ratio reconciliation are live defaults; explicit `PUBSUB_*` and `DIAL_*` overrides still win for bespoke experiments.【F:src/network/pubsubConfig.js†L4-L79】【F:src/network/dialerPolicy.js†L1-L62】
+> - ✅ **Load harness documented**: `npm run p2p:simulate` (1k+ virtual nodes) and `docs/load-test-report.*` give reproducible latency/loss envelopes for scaling runs.【F:scripts/p2p-simulator.mjs†L1-L118】【F:docs/load-test-report.md†L1-L26】
+> - ✅ **Non-technical launch path**: `npm ci && npm run ci:verify && npm start` remains the single-source-of-truth boot path with SQLite migrations, REST/metrics/governance surfaces, and dashboard preview parity out of the box.
 
 ```mermaid
 flowchart TD
