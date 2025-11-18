@@ -111,8 +111,10 @@ export function buildResourceManagerConfig({ config = {}, logger: baseLogger } =
 
   const ipLimiter = {
     maxConnsPerIp: coerceFiniteNumber(config.MAX_CONNS_PER_IP, 64),
-    bannedPeers: new Set(),
-    bannedIps: new Set()
+    maxConnsPerAsn: coerceFiniteNumber(config.MAX_CONNS_PER_ASN, 256),
+    bannedPeers: new Set(config.NRM_BANNED_PEERS ?? []),
+    bannedIps: new Set(config.NRM_BANNED_IPS ?? []),
+    bannedAsns: new Set(config.NRM_BANNED_ASNS ?? [])
   };
 
   const summary = {
@@ -124,7 +126,18 @@ export function buildResourceManagerConfig({ config = {}, logger: baseLogger } =
     ipLimiter
   };
 
-  log.info(summary, 'Resource manager configuration synthesized');
+  log.info(
+    {
+      ...summary,
+      ipLimiter: {
+        ...ipLimiter,
+        bannedIps: Array.from(ipLimiter.bannedIps),
+        bannedPeers: Array.from(ipLimiter.bannedPeers),
+        bannedAsns: Array.from(ipLimiter.bannedAsns)
+      }
+    },
+    'Resource manager configuration synthesized'
+  );
 
   return summary;
 }
@@ -134,9 +147,12 @@ export class ResourceManager {
     this.log = typeof baseLogger?.info === 'function' ? baseLogger : logger;
     this.limits = limits ?? {};
     this.connections = new Map();
-    this.streams = new Map();
+    this.streamProtocols = new Map();
+    this.peerStreams = new Map();
     this.denials = { connections: 0, streams: 0, reasons: {} };
     this.ipConns = new Map();
+    this.asnConns = new Map();
+    this.lastPressureLog = { connections: 0, streams: 0, ip: 0, asn: 0 };
   }
 
   isBannedIp(ip) {
@@ -147,12 +163,20 @@ export class ResourceManager {
     return Boolean(this.limits?.ipLimiter?.bannedPeers?.has?.(peerId));
   }
 
+  isBannedAsn(asn) {
+    return Boolean(this.limits?.ipLimiter?.bannedAsns?.has?.(asn));
+  }
+
   banIp(ip) {
     this.limits?.ipLimiter?.bannedIps?.add?.(ip);
   }
 
   banPeer(peerId) {
     this.limits?.ipLimiter?.bannedPeers?.add?.(peerId);
+  }
+
+  banAsn(asn) {
+    this.limits?.ipLimiter?.bannedAsns?.add?.(asn);
   }
 
   unbanIp(ip) {
@@ -163,12 +187,16 @@ export class ResourceManager {
     this.limits?.ipLimiter?.bannedPeers?.delete?.(peerId);
   }
 
+  unbanAsn(asn) {
+    this.limits?.ipLimiter?.bannedAsns?.delete?.(asn);
+  }
+
   currentConnections() {
     return Array.from(this.connections.values()).reduce((total, value) => total + value, 0);
   }
 
   currentStreams() {
-    return Array.from(this.streams.values()).reduce((total, value) => total + value, 0);
+    return Array.from(this.streamProtocols.values()).reduce((total, value) => total + value, 0);
   }
 
   incrementMap(map, key) {
@@ -193,12 +221,29 @@ export class ResourceManager {
     return { accepted: false, reason };
   }
 
-  requestConnection({ peerId, ip, protocol } = {}) {
-    if (this.isBannedIp(ip) || this.isBannedPeer(peerId)) {
-      return this.deny('banned', 'connections');
+  logPressure({ metric, used, limit }) {
+    if (!limit || limit <= 0) return;
+    const utilization = used / limit;
+    const now = Date.now();
+    if (utilization >= 0.8 && now - (this.lastPressureLog[metric] ?? 0) > 15_000) {
+      this.lastPressureLog[metric] = now;
+      this.log.warn({ metric, used, limit, utilization }, 'Resource pressure approaching limit');
+    }
+  }
+
+  requestConnection({ peerId, ip, protocol, asn } = {}) {
+    if (this.isBannedIp(ip)) {
+      return this.deny('banned-ip', 'connections');
+    }
+    if (this.isBannedPeer(peerId)) {
+      return this.deny('banned-peer', 'connections');
+    }
+    if (this.isBannedAsn(asn)) {
+      return this.deny('banned-asn', 'connections');
     }
     const maxGlobal = this.limits?.global?.maxConnections;
     if (maxGlobal && this.currentConnections() >= maxGlobal) {
+      this.logPressure({ metric: 'connections', used: this.currentConnections(), limit: maxGlobal });
       return this.deny('global-connection-cap', 'connections');
     }
 
@@ -211,12 +256,27 @@ export class ResourceManager {
       }
     }
 
+    const maxPerAsn = this.limits?.ipLimiter?.maxConnsPerAsn;
+    if (maxPerAsn && asn) {
+      const asnCount = this.incrementMap(this.asnConns, asn);
+      if (asnCount > maxPerAsn) {
+        this.decrementMap(this.asnConns, asn);
+        if (maxPerIp && ip) {
+          this.decrementMap(this.ipConns, ip);
+        }
+        return this.deny('per-asn-cap', 'connections');
+      }
+    }
+
     const perProtocol = protocol ? this.limits?.perProtocol?.[protocol]?.maxConnections : null;
     const protocolKey = protocol ?? 'unknown-protocol';
     const protocolCount = this.connections.get(protocolKey) ?? 0;
     if (perProtocol && protocolCount >= perProtocol) {
       if (maxPerIp && ip) {
         this.decrementMap(this.ipConns, ip);
+      }
+      if (maxPerAsn && asn) {
+        this.decrementMap(this.asnConns, asn);
       }
       return this.deny('per-protocol-cap', 'connections');
     }
@@ -225,60 +285,108 @@ export class ResourceManager {
     return { accepted: true };
   }
 
-  closeConnection({ protocol, ip }) {
+  closeConnection({ protocol, ip, asn }) {
     if (protocol) {
       this.decrementMap(this.connections, protocol);
     }
     if (ip) {
       this.decrementMap(this.ipConns, ip);
     }
+    if (asn) {
+      this.decrementMap(this.asnConns, asn);
+    }
   }
 
-  requestStream({ peerId, protocol } = {}) {
+  requestStream({ peerId, protocol, ip, asn } = {}) {
+    if (this.isBannedIp(ip)) {
+      return this.deny('banned-ip', 'streams');
+    }
     if (this.isBannedPeer(peerId)) {
       return this.deny('banned', 'streams');
     }
+    if (this.isBannedAsn(asn)) {
+      return this.deny('banned-asn', 'streams');
+    }
     const maxGlobal = this.limits?.global?.maxStreams;
     if (maxGlobal && this.currentStreams() >= maxGlobal) {
+      this.logPressure({ metric: 'streams', used: this.currentStreams(), limit: maxGlobal });
       return this.deny('global-stream-cap', 'streams');
     }
 
     const perProtocol = protocol ? this.limits?.perProtocol?.[protocol]?.maxStreams : null;
     const protocolKey = protocol ?? 'unknown-protocol';
-    const protocolCount = this.streams.get(protocolKey) ?? 0;
+    const protocolCount = this.streamProtocols.get(protocolKey) ?? 0;
     if (perProtocol && protocolCount >= perProtocol) {
       return this.deny('per-protocol-cap', 'streams');
     }
 
     const perPeer = peerId ? this.limits?.perPeer?.[peerId]?.maxStreams : null;
     if (perPeer) {
-      const peerStreams = this.streams.get(peerId) ?? 0;
+      const peerStreams = this.peerStreams.get(peerId) ?? 0;
       if (peerStreams >= perPeer) {
         return this.deny('per-peer-cap', 'streams');
       }
-      this.streams.set(peerId, peerStreams + 1);
+      this.peerStreams.set(peerId, peerStreams + 1);
     }
 
-    this.streams.set(protocolKey, protocolCount + 1);
+    this.streamProtocols.set(protocolKey, protocolCount + 1);
     return { accepted: true };
   }
 
   closeStream({ peerId, protocol }) {
     if (peerId) {
-      this.decrementMap(this.streams, peerId);
+      this.decrementMap(this.peerStreams, peerId);
     }
     if (protocol) {
-      this.decrementMap(this.streams, protocol);
+      this.decrementMap(this.streamProtocols, protocol);
     }
   }
 
   metrics() {
+    const globalConnections = this.limits?.global?.maxConnections ?? null;
+    const globalStreams = this.limits?.global?.maxStreams ?? null;
+    this.logPressure({ metric: 'connections', used: this.currentConnections(), limit: globalConnections });
+    this.logPressure({ metric: 'streams', used: this.currentStreams(), limit: globalStreams });
+
+    const pressure = {
+      connections: {
+        used: this.currentConnections(),
+        limit: globalConnections,
+        utilization: globalConnections ? this.currentConnections() / globalConnections : null
+      },
+      streams: {
+        used: this.currentStreams(),
+        limit: globalStreams,
+        utilization: globalStreams ? this.currentStreams() / globalStreams : null
+      },
+      ip: {
+        used: Math.max(...[0, ...this.ipConns.values()]),
+        limit: this.limits?.ipLimiter?.maxConnsPerIp ?? null,
+        utilization:
+          this.limits?.ipLimiter?.maxConnsPerIp
+            ? Math.max(...[0, ...this.ipConns.values()]) / this.limits.ipLimiter.maxConnsPerIp
+            : null
+      },
+      asn: {
+        used: Math.max(...[0, ...this.asnConns.values()]),
+        limit: this.limits?.ipLimiter?.maxConnsPerAsn ?? null,
+        utilization:
+          this.limits?.ipLimiter?.maxConnsPerAsn
+            ? Math.max(...[0, ...this.asnConns.values()]) / this.limits.ipLimiter.maxConnsPerAsn
+            : null
+      }
+    };
+
     return {
       connections: this.currentConnections(),
       streams: this.currentStreams(),
       ipConns: Object.fromEntries(this.ipConns),
+      asnConns: Object.fromEntries(this.asnConns),
+      streamProtocols: Object.fromEntries(this.streamProtocols),
+      peerStreams: Object.fromEntries(this.peerStreams),
       denials: this.denials,
-      limits: this.limits
+      limits: this.limits,
+      pressure
     };
   }
 }
@@ -292,30 +400,42 @@ export class ConnectionManager {
     this.log = typeof baseLogger?.info === 'function' ? baseLogger : logger;
   }
 
-  trim(peers = []) {
+  trim(peers = [], nowMs = Date.now()) {
     if (!Array.isArray(peers) || peers.length <= this.highWater) {
       return { kept: peers ?? [], trimmed: [] };
     }
+
+    const graceCutoff = nowMs - this.gracePeriodSeconds * 1000;
 
     const sortable = [...peers].map((peer) => ({
       ...peer,
       score: Number.isFinite(peer.score) ? peer.score : -Infinity,
       connectedAt: peer.connectedAt ?? 0,
-      pinned: peer.pinned ?? false
+      pinned: peer.pinned ?? false,
+      whitelisted: peer.whitelisted ?? false
     }));
 
-    const pinned = sortable.filter((peer) => peer.pinned);
-    const candidates = sortable.filter((peer) => !peer.pinned);
+    const pinned = sortable.filter((peer) => peer.pinned || peer.whitelisted);
+    const graceProtected = sortable.filter((peer) => !peer.pinned && !peer.whitelisted && peer.connectedAt >= graceCutoff);
+    const candidates = sortable.filter((peer) => !peer.pinned && !peer.whitelisted && peer.connectedAt < graceCutoff);
 
     candidates.sort((a, b) => a.score - b.score || a.connectedAt - b.connectedAt);
 
-    const target = Math.max(this.lowWater - pinned.length, 0);
+    const target = Math.max(this.lowWater - pinned.length - graceProtected.length, 0);
     const trimmed = candidates.slice(0, Math.max(candidates.length - target, 0));
-    const kept = [...pinned, ...candidates.slice(Math.max(candidates.length - target, 0))];
+    const kept = [
+      ...pinned,
+      ...graceProtected,
+      ...candidates.slice(Math.max(candidates.length - target, 0))
+    ];
 
     if (trimmed.length) {
       this.log.warn(
-        { trimmed: trimmed.map((peer) => peer.peerId), kept: kept.map((peer) => peer.peerId) },
+        {
+          trimmed: trimmed.map((peer) => peer.peerId),
+          kept: kept.map((peer) => peer.peerId),
+          graceProtected: graceProtected.map((peer) => peer.peerId)
+        },
         'Connection manager trimming applied'
       );
     }
@@ -327,15 +447,20 @@ export class ConnectionManager {
 export function createBanList(initial = {}) {
   const bannedIps = new Set(initial.ips ?? []);
   const bannedPeers = new Set(initial.peers ?? []);
+  const bannedAsns = new Set(initial.asns ?? []);
   return {
     bannedIps,
     bannedPeers,
+    bannedAsns,
     addIp: (ip) => bannedIps.add(ip),
     addPeer: (peer) => bannedPeers.add(peer),
+    addAsn: (asn) => bannedAsns.add(asn),
     removeIp: (ip) => bannedIps.delete(ip),
     removePeer: (peer) => bannedPeers.delete(peer),
+    removeAsn: (asn) => bannedAsns.delete(asn),
     hasIp: (ip) => bannedIps.has(ip),
-    hasPeer: (peer) => bannedPeers.has(peer)
+    hasPeer: (peer) => bannedPeers.has(peer),
+    hasAsn: (asn) => bannedAsns.has(asn)
   };
 }
 
@@ -345,10 +470,10 @@ export function buildAbuseHarness({ resourceManager }) {
   }
 
   return {
-    connectionFlood({ total = 0, protocol = 'gossipsub', ip = '127.0.0.1' } = {}) {
+    connectionFlood({ total = 0, protocol = 'gossipsub', ip = '127.0.0.1', asn = 'asn-local' } = {}) {
       const results = { accepted: 0, denied: 0, reasons: {} };
       for (let i = 0; i < total; i += 1) {
-        const outcome = resourceManager.requestConnection({ peerId: `peer-${i}`, ip, protocol });
+        const outcome = resourceManager.requestConnection({ peerId: `peer-${i}`, ip, protocol, asn });
         if (outcome.accepted) {
           results.accepted += 1;
         } else {
@@ -377,6 +502,9 @@ export function buildAbuseHarness({ resourceManager }) {
         penalties.push({ peer: `peer-${i}`, score: penaltyThreshold - 1 });
       }
       return { penalties, threshold: penaltyThreshold, flagged: penalties.length };
+    },
+    snapshot() {
+      return resourceManager.metrics();
     }
   };
 }

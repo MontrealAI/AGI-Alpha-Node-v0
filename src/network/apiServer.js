@@ -412,6 +412,26 @@ function enforcePublicReadAuth(req, res, publicApiKey) {
   return false;
 }
 
+function normalizeListInput(value) {
+  if (value === undefined || value === null) {
+    return [];
+  }
+  if (Array.isArray(value)) {
+    return Array.from(new Set(value.map((entry) => String(entry).trim()).filter(Boolean)));
+  }
+  const trimmed = String(value).trim();
+  if (!trimmed) return [];
+  if (trimmed.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      return normalizeListInput(parsed);
+    } catch (error) {
+      throw new Error(`Unable to parse list: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  return Array.from(new Set(trimmed.split(/[\s,]+/).map((entry) => entry.trim()).filter(Boolean)));
+}
+
 function toDateOnly(value) {
   if (!value) return null;
   const parsed = Date.parse(value);
@@ -905,7 +925,9 @@ export function startAgentApi({
   telemetry = null,
   publicApiKey = null,
   corsOrigin = null,
-  peerScoreStore = null
+  peerScoreStore = null,
+  resourceManager = null,
+  connectionManager = null
 } = {}) {
   const jobs = new Map();
   const lifecycleJobs = new Map();
@@ -948,6 +970,21 @@ export function startAgentApi({
   const allowedCorsOrigin = typeof corsOrigin === 'string' && corsOrigin.trim().length > 0 ? corsOrigin.trim() : null;
 
   const resolveHealthGateState = () => (healthGate ? healthGate.getState() : null);
+
+  const exportBanState = () => ({
+    ips: Array.from(resourceManager?.limits?.ipLimiter?.bannedIps ?? []),
+    peers: Array.from(resourceManager?.limits?.ipLimiter?.bannedPeers ?? []),
+    asns: Array.from(resourceManager?.limits?.ipLimiter?.bannedAsns ?? [])
+  });
+
+  const describeConnectionManager = () =>
+    connectionManager
+      ? {
+          lowWater: connectionManager.lowWater,
+          highWater: connectionManager.highWater,
+          gracePeriodSeconds: connectionManager.gracePeriodSeconds
+        }
+      : null;
 
   let lifecycleSubscription = null;
   let lifecycleActionSubscription = null;
@@ -1119,6 +1156,20 @@ export function startAgentApi({
           : 10;
         const direction = requestUrl.searchParams.get('direction') === 'asc' ? 'asc' : 'desc';
         jsonResponse(res, 200, peerScoreStore.summarize({ limit, direction }));
+        return;
+      }
+
+      if (req.method === 'GET' && pathname === '/debug/resources') {
+        if (!resourceManager) {
+          jsonResponse(res, 503, { error: 'Resource manager unavailable' });
+          return;
+        }
+        const snapshot = resourceManager.metrics();
+        jsonResponse(res, 200, {
+          metrics: snapshot,
+          bans: exportBanState(),
+          connectionManager: describeConnectionManager()
+        });
         return;
       }
 
@@ -1609,6 +1660,88 @@ export function startAgentApi({
         } catch (error) {
           logger.error(error, 'Failed to update owner directives via API');
           jsonResponse(res, 400, { error: error.message });
+        }
+        return;
+      }
+
+      if (req.method === 'GET' && req.url === '/governance/bans') {
+        try {
+          ensureOwnerAuthorization(req, ownerToken);
+        } catch (authError) {
+          logger.warn(authError, 'Unauthorized ban list fetch attempt');
+          jsonResponse(res, authError.statusCode ?? 401, { error: authError.message });
+          return;
+        }
+
+        if (!resourceManager) {
+          jsonResponse(res, 503, { error: 'Resource manager unavailable' });
+          return;
+        }
+
+        jsonResponse(res, 200, { bans: exportBanState() });
+        return;
+      }
+
+      if (req.method === 'POST' && req.url === '/governance/bans') {
+        try {
+          ensureOwnerAuthorization(req, ownerToken);
+        } catch (authError) {
+          logger.warn(authError, 'Unauthorized ban mutation attempt');
+          jsonResponse(res, authError.statusCode ?? 401, { error: authError.message });
+          return;
+        }
+
+        if (!resourceManager) {
+          jsonResponse(res, 503, { error: 'Resource manager unavailable' });
+          return;
+        }
+
+        try {
+          const body = await parseRequestBody(req);
+          const ips = normalizeListInput(body?.ip ?? body?.ips);
+          const peers = normalizeListInput(body?.peerId ?? body?.peer ?? body?.peers);
+          const asns = normalizeListInput(body?.asn ?? body?.asns);
+
+          ips.forEach((ip) => resourceManager.banIp(ip));
+          peers.forEach((peer) => resourceManager.banPeer(peer));
+          asns.forEach((asn) => resourceManager.banAsn(asn));
+
+          jsonResponse(res, 200, { bans: exportBanState() });
+        } catch (error) {
+          logger.warn(error, 'Failed to apply ban request');
+          jsonResponse(res, 400, { error: error instanceof Error ? error.message : String(error) });
+        }
+        return;
+      }
+
+      if (req.method === 'DELETE' && req.url === '/governance/bans') {
+        try {
+          ensureOwnerAuthorization(req, ownerToken);
+        } catch (authError) {
+          logger.warn(authError, 'Unauthorized ban removal attempt');
+          jsonResponse(res, authError.statusCode ?? 401, { error: authError.message });
+          return;
+        }
+
+        if (!resourceManager) {
+          jsonResponse(res, 503, { error: 'Resource manager unavailable' });
+          return;
+        }
+
+        try {
+          const body = await parseRequestBody(req);
+          const ips = normalizeListInput(body?.ip ?? body?.ips);
+          const peers = normalizeListInput(body?.peerId ?? body?.peer ?? body?.peers);
+          const asns = normalizeListInput(body?.asn ?? body?.asns);
+
+          ips.forEach((ip) => resourceManager.unbanIp(ip));
+          peers.forEach((peer) => resourceManager.unbanPeer(peer));
+          asns.forEach((asn) => resourceManager.unbanAsn(asn));
+
+          jsonResponse(res, 200, { bans: exportBanState() });
+        } catch (error) {
+          logger.warn(error, 'Failed to remove ban request');
+          jsonResponse(res, 400, { error: error instanceof Error ? error.message : String(error) });
         }
         return;
       }
