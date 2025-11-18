@@ -159,6 +159,7 @@ flowchart TD
 > - **Unified network surface (env/CLI)**: `TRANSPORT_ENABLE_QUIC`, `TRANSPORT_ENABLE_TCP`, `ENABLE_HOLE_PUNCHING`, `AUTONAT_ENABLED`, `AUTONAT_THROTTLE_SECONDS`, optional `AUTONAT_REACHABILITY`, `RELAY_ENABLE_CLIENT`, `RELAY_ENABLE_SERVER`, `RELAY_MAX_RESERVATIONS`, `RELAY_MAX_CIRCUITS_PER_PEER`, `RELAY_MAX_BANDWIDTH_BPS`, plus `P2P_LISTEN_MULTIADDRS`, `P2P_PUBLIC_MULTIADDRS`, `P2P_RELAY_MULTIADDRS`, `P2P_LAN_MULTIADDRS` are validated at startup so `npm run ci:verify` and PR gates catch bad inputs immediately.【F:src/config/schema.js†L592-L653】【F:src/config/defaults.js†L17-L52】
 > - **QUIC-first dial ranking**: `rankDialableMultiaddrs` deterministically sorts multiaddrs as QUIC → TCP → relay → other while de-duping inputs, ensuring the dialer hits encrypted QUIC first and only falls back to TCP/relay when necessary.【F:src/network/transportConfig.js†L63-L111】
 > - **Connection tracing hook**: `createTransportTracer` attaches to dial start/success/failure plus inbound accepts, emits structured logs (`conn_open`/`conn_success`/`conn_failure`) with peer ID, multiaddr, transport, direction, and latency, and wires Prometheus counters/histograms for dial attempts, successes, failures, inbound accepts, and per-transport latency.【F:src/network/libp2pHostConfig.js†L1-L124】【F:src/telemetry/networkMetrics.js†L1-L48】
+> - **Metrics registered for export**: `startMonitoringServer` now instantiates the network counters/histograms on its Prometheus registry so the transport tracer feeds `/metrics` without extra wiring—dial attempt/success/failure totals and latency buckets surface alongside the existing job, alpha-WU, and peer-score gauges.【F:src/telemetry/monitoring.js†L1-L122】【F:src/telemetry/monitoring.js†L480-L603】
 > - **QUIC-first libp2p host descriptor**: the synthesized host config returns ranked announce sets (reachability-aware), registered transports, dial preference description, NAT toggles, relay quotas, and the bound tracer so every connection path is observable.【F:src/network/libp2pHostConfig.js†L125-L180】
 >
 > ```mermaid
@@ -188,6 +189,36 @@ flowchart TD
 > 4. **Own every dial**: Use `node src/index.js governance:*` verbs or authenticated `/governance/*` calls to pause/unpause, rotate validators, reroute emissions/treasury, refresh metadata, and retune productivity without redeploying.
 > 5. **Confirm green**: Badges below reflect GitHub Actions visibility plus `.github/required-checks.json` enforcement; CI stays visible and required on PRs and `main`.
 >
+
+### Network & telemetry spine at a glance
+
+```mermaid
+flowchart TB
+  classDef neon fill:#020617,stroke:#6366f1,stroke-width:2px,color:#e0e7ff;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#dcfce7;
+
+  subgraph Config[Config & Controls]
+    EnvCfg[Env / CLI \nTRANSPORT_* · AUTONAT_* · RELAY_* · P2P_*]:::neon
+    Owner[Owner controls \n(governance:* verbs)]:::lava
+  end
+
+  subgraph Plan[Plan & Dialer]
+    Schema[Schema validation \n(ci:verify enforced)]:::frost
+    TransportPlan[Transport plan \nQUIC-first, TCP fallback]:::frost
+    Ranker[rankDialableMultiaddrs \nQUIC → TCP → relay → other]:::frost
+  end
+
+  subgraph Telemetry[Observable Surface]
+    Tracer[Transport tracer \nconn_open/success/failure]:::neon
+    NetMetrics[Prometheus counters/histograms \n(dial attempts/success/failures, latency)]:::neon
+    MetricsHTTP[/metrics endpoint \n(startMonitoringServer)/]:::lava
+  end
+
+  EnvCfg --> Schema --> TransportPlan --> Ranker --> Tracer
+  Owner -. toggles .-> EnvCfg
+  Tracer --> NetMetrics --> MetricsHTTP
+```
 
 ## Orientation & quick links
 

@@ -1,5 +1,6 @@
 import http from 'node:http';
 import { collectDefaultMetrics, Counter, Gauge, Registry, Summary } from 'prom-client';
+import { createNetworkMetrics } from './networkMetrics.js';
 import { DEFAULT_PEER_SCORE_THRESHOLDS } from '../services/peerScoring.js';
 import { applyPeerScoreSnapshot, createPeerScoreMetrics } from './peerScoreMetrics.js';
 
@@ -230,6 +231,8 @@ export function startMonitoringServer({
 } = {}) {
   const registry = new Registry();
   collectDefaultMetrics({ register: registry, prefix: 'agi_alpha_node_' });
+
+  const networkMetrics = createNetworkMetrics({ registry });
 
   const peerScoreMetrics = createPeerScoreMetrics({ registry });
   const peerScoreThresholdConfig = {
@@ -568,7 +571,8 @@ export function startMonitoringServer({
     alphaWuInvalidCounter,
     alphaWuValidationLatencySummary,
     peerScoreMetrics,
-    peerScoreUnsubscribe
+    peerScoreUnsubscribe,
+    networkMetrics
   };
 }
 
