@@ -33,7 +33,7 @@ import {
 } from '../identity/bootstrap.js';
 import { buildLibp2pHostConfig, logLibp2pHostConfig } from '../network/libp2pHostConfig.js';
 import { buildTransportConfig, logTransportPlan } from '../network/transportConfig.js';
-import { buildResourceManagerConfig } from '../network/resourceManagerConfig.js';
+import { ConnectionManager, ResourceManager, buildResourceManagerConfig } from '../network/resourceManagerConfig.js';
 
 function assertConfigField(value, field) {
   if (!value) {
@@ -159,6 +159,8 @@ export async function bootstrapContainer({
   const cleanupTasks = [];
   let hostConfig = null;
   let resourceManagerConfig = null;
+  let resourceManager = null;
+  let connectionManager = null;
 
   const healthGateLogger = typeof logger.child === 'function' ? logger.child({ subsystem: 'health-gate' }) : logger;
   const healthGate = createHealthGate({
@@ -220,6 +222,11 @@ export async function bootstrapContainer({
     });
     logLibp2pHostConfig(hostConfig, identityLogger);
     resourceManagerConfig = buildResourceManagerConfig({ config, logger: identityLogger });
+    resourceManager = new ResourceManager({ limits: resourceManagerConfig, logger: identityLogger });
+    connectionManager = new ConnectionManager({
+      ...resourceManagerConfig.connectionManager,
+      logger: identityLogger
+    });
   } catch (error) {
     identityLogger.error(error, 'Failed to validate node keypair against ENS identity');
     throw error;
@@ -455,7 +462,9 @@ export async function bootstrapContainer({
       healthGate,
       peerScoreStore: peerScoreRegistry,
       publicApiKey: config.API_PUBLIC_READ_KEY,
-      corsOrigin: config.API_DASHBOARD_ORIGIN
+      corsOrigin: config.API_DASHBOARD_ORIGIN,
+      resourceManager,
+      connectionManager
     });
     verifierServer = startVerifierServer({
       config,

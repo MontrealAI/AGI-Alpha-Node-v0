@@ -191,6 +191,34 @@ function coerceMultiaddrList(value) {
   return Array.from(new Set(splitEntries));
 }
 
+function coerceStringList(value) {
+  if (value === undefined || value === null) {
+    return [];
+  }
+  if (Array.isArray(value)) {
+    return Array.from(
+      new Set(
+        value
+          .map((entry) => (typeof entry === 'string' ? entry.trim() : String(entry)))
+          .filter((entry) => entry && entry.length > 0)
+      )
+    );
+  }
+  const stringValue = String(value).trim();
+  if (!stringValue) {
+    return [];
+  }
+  if (stringValue.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(stringValue);
+      return coerceStringList(parsed);
+    } catch (error) {
+      throw new Error(`Unable to parse list: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  return Array.from(new Set(stringValue.split(/[\s,]+/).map((entry) => entry.trim()).filter(Boolean)));
+}
+
 function coerceTopicParams(value) {
   if (value === undefined || value === null) {
     return {};
@@ -620,7 +648,11 @@ export const configSchemaBase = z
         const trimmed = value.trim();
         return trimmed.length ? trimmed : undefined;
       }),
+    NRM_BANNED_IPS: z.any().optional().transform((value) => coerceStringList(value)),
+    NRM_BANNED_PEERS: z.any().optional().transform((value) => coerceStringList(value)),
+    NRM_BANNED_ASNS: z.any().optional().transform((value) => coerceStringList(value)),
     MAX_CONNS_PER_IP: z.coerce.number().int().min(1).max(10_000).default(64),
+    MAX_CONNS_PER_ASN: z.coerce.number().int().min(1).max(100_000).default(256),
     CONN_LOW_WATER: z.coerce.number().int().min(1).max(100_000).default(512),
     CONN_HIGH_WATER: z.coerce.number().int().min(1).max(120_000).default(1_024),
     CONN_GRACE_PERIOD_SEC: z.coerce.number().int().min(1).max(86_400).default(120),

@@ -66,6 +66,7 @@
 >
 > - **Start everything**: `npm ci && npm run ci:verify && npm start` (mirrors PR protection, boots REST + metrics + governance surfaces, and keeps SQLite migrations aligned).
 > - **Observe the mesh**: `curl -s localhost:3000/debug/peerscore` to watch GossipSub v1.1 scores shift; `curl -s localhost:3000/metrics | grep peer_score` to view buckets and topic contributions live.
+> - **Audit DoS posture**: `curl -s localhost:3000/debug/resources` to view active connections/streams, denials, and pressure, then POST/DELETE `/governance/bans` with your owner token to quarantine IPs/peers/ASNs in real time.【F:src/network/apiServer.js†L1162-L1173】【F:src/network/apiServer.js†L1667-L1744】
 > - **Steer as owner**: `node src/index.js governance:pause` / `governance:resume` / `governance:set-validators` / `governance:set-rewards`—all routed through the `$AGIALPHA` binding so the owner can retune parameters, pause, or reroute flows instantly.
 > - **Deploy safely**: Docker + Helm charts ship the same guardrails; branch protection and `.github/required-checks.json` enforce visibility so every promotion to `main` stays green.
 > - **Prove contracts obey**: the canonical `$AGIALPHA` token is wired into `AlphaNodeManager.sol`, giving the owner unilateral control to pause/unpause, rotate validators, update ENS controllers, and move stake via `withdrawStake`—all without redeploying the network substrate.【F:contracts/AlphaNodeManager.sol†L1-L120】
@@ -1120,10 +1121,10 @@ flowchart TD
 
 ### DoS defenses & trimming (Sprint C)
 
-- **Network Resource Manager (NRM)**: `buildResourceManagerConfig` scales hard ceilings (connections, streams, memory, FDs, bandwidth) via `NRM_SCALE_FACTOR`, merges optional JSON/YAML overrides, and logs limit posture for operators.【F:src/network/resourceManagerConfig.js†L1-L119】
-- **Connection manager + per-IP caps**: Watermarks (`CONN_LOW_WATER`, `CONN_HIGH_WATER`, `CONN_GRACE_PERIOD_SEC`) and per-IP limits (`MAX_CONNS_PER_IP`) prune lowest-score peers first while preserving pinned/whitelisted nodes and protecting against Sybil floods.【F:src/network/resourceManagerConfig.js†L121-L259】【F:src/config/defaults.js†L23-L39】【F:src/config/schema.js†L18-L96】
-- **Abuse harness + plan**: `npm run p2p:load-tests` executes connection/stream flood drills and malformed gossip simulations; expected behaviors and observability notes live in `docs/dos-test-plan.md`.【F:test/network/resourceManagerConfig.test.js†L1-L98】【F:docs/dos-test-plan.md†L1-L33】
-- **Owner control**: Ban/unban hooks allow immediate quarantines without redeploying; all dials remain steerable so the contract owner retains full control over parameters, pausing, and governance pipelines.
+- **Network Resource Manager (NRM)**: `buildResourceManagerConfig` now scales hard ceilings (connections, streams, memory, FDs, bandwidth), merges optional JSON/YAML overrides, and seeds ban sets + per-IP/per-ASN ceilings from `NRM_BANNED_*`, `MAX_CONNS_PER_IP`, and `MAX_CONNS_PER_ASN`.【F:src/network/resourceManagerConfig.js†L91-L190】【F:src/config/defaults.js†L20-L47】
+- **Connection manager + trimming**: Watermarks (`CONN_LOW_WATER`, `CONN_HIGH_WATER`, `CONN_GRACE_PERIOD_SEC`) protect high-score, pinned, and grace-period peers while trimming the coldest connections first; per-IP/per-ASN pressure reporting surfaces utilization for dashboards and alerts.【F:src/network/resourceManagerConfig.js†L194-L390】
+- **Abuse harness + CI drills**: `npm run p2p:load-tests` executes connection/stream flood drills, malformed gossip simulations, and API ban flows to prove denials are logged instead of crashing the node.【F:package.json†L11-L45】【F:test/network/resourceManagerConfig.test.js†L57-L118】【F:test/network/apiServer.dos.test.js†L1-L48】
+- **Owner control surfaces**: `/debug/resources` streams live denials/pressure snapshots, while `/governance/bans` (GET/POST/DELETE) lets the owner quarantine IPs/peers/ASNs without redeploying, keeping governance and DoS posture under a single token-gated surface.【F:src/network/apiServer.js†L1162-L1173】【F:src/network/apiServer.js†L1667-L1744】
 
 ## Operations playbook
 
