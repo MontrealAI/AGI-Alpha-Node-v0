@@ -245,11 +245,16 @@ export async function bootstrapContainer({
     });
     logLibp2pHostConfig(hostConfig, identityLogger);
     resourceManagerConfig = buildResourceManagerConfig({ config, logger: identityLogger });
-    resourceManager = new ResourceManager({ limits: resourceManagerConfig, logger: identityLogger });
+    resourceManager = new ResourceManager({
+      limits: resourceManagerConfig,
+      logger: identityLogger,
+      metrics: networkMetrics
+    });
     resourceManager.attachDialerPolicy(dialerPolicy);
     connectionManager = new ConnectionManager({
       ...resourceManagerConfig.connectionManager,
-      logger: identityLogger
+      logger: identityLogger,
+      metrics: networkMetrics
     });
   } catch (error) {
     identityLogger.error(error, 'Failed to validate node keypair against ENS identity');

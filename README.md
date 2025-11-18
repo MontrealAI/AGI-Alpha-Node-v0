@@ -68,19 +68,19 @@
   </a>
 </p>
 
-> **AGI Alpha Node v0** metabolizes heterogeneous agentic labor into verifiable α‑Work Units (α‑WU) and Synthetic Labor Units (SLU), rebalances the Global Synthetic Labor Index (GSLI), exposes audited read‑only REST telemetry, and routes the `$AGIALPHA` treasury (token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) under complete owner command. Every dial can be paused, rerouted, or retuned without redeploying, delivering a production-grade intelligence core built to bend markets.
-> New for this sprint: a React/Vite single-page dashboard (Index | Providers | Telemetry Debug), live GSLI and SLU charts backed by `/index/history` and `/providers/*/scores`, and a telemetry stream reader at `/telemetry/task-runs` that keeps ingest visibility tight while remaining API-key gated for operators.
-> The runtime is tuned to operate like an ever-watchful macro trader—autonomous by default, yet instantly steerable by the contract owner to seize new parameters, pause subsystems, or redirect emissions without friction.
-> **Operational promise**: CI is fully green by default and enforced on PRs/main via `.github/required-checks.json`, with badges wired to the canonical workflow. The same gates run locally with `npm run ci:verify`, giving non-technical operators parity with branch protection before they ship.
-> **Sprint assurance (QUIC-first E1)**: QUIC/TCP/Relay/AutoNAT/DCUtR flags are unified behind the env/CLI surface, rankers prefer QUIC deterministically, and every dial/accept is traced with transport + latency so network posture is inspectable without guesswork. CI pins these expectations with dedicated unit tests and schema validation so drift is caught before deployment.【F:src/network/transportConfig.js†L23-L146】【F:test/network/transportConfig.test.js†L12-L132】
-> **Production safety bar (tl;dr)**
->
-> - ✅ **Owner supremacy preserved**: `AlphaNodeManager.sol` keeps pause/unpause, validator rotation, metadata refresh, treasury withdrawals, and emission tuning in one place—no redeploys required.【F:contracts/AlphaNodeManager.sol†L1-L120】
-> - ✅ **CI + branch gates visible**: `.github/workflows/ci.yml` mirrors `npm run ci:verify` and publishes badges; `.github/required-checks.json` keeps the same checks enforced on PRs and `main`. No hidden jobs, no surprise failures.【F:.github/workflows/ci.yml†L1-L210】【F:.github/required-checks.json†L1-L9】
-> - ✅ **Mesh/dialer presets wired**: `NETWORK_SIZE_PRESET=small|medium|large` plus dialer backoff + outbound ratio reconciliation are live defaults; explicit `PUBSUB_*` and `DIAL_*` overrides still win for bespoke experiments.【F:src/network/pubsubConfig.js†L4-L79】【F:src/network/dialerPolicy.js†L1-L62】
-> - ✅ **Mesh/dialer gauges exported**: Prometheus gauges expose live mesh targets (`agi_alpha_node_gossipsub_mesh_config`), gossip fan-out (`agi_alpha_node_gossipsub_gossip_config`), and dialer tolerance/ratios (`agi_alpha_node_dialer_policy`) so preset changes are visible in `/metrics` and dashboards.【F:src/telemetry/monitoring.js†L246-L307】【F:src/telemetry/monitoring.js†L406-L426】【F:src/orchestrator/monitorLoop.js†L112-L129】
-> - ✅ **Load harness documented**: `npm run p2p:simulate` (1k+ virtual nodes) and `docs/load-test-report.*` give reproducible latency/loss envelopes for scaling runs.【F:scripts/p2p-simulator.mjs†L1-L118】【F:docs/load-test-report.md†L1-L26】
-> - ✅ **Non-technical launch path**: `npm ci && npm run ci:verify && npm start` remains the single-source-of-truth boot path with SQLite migrations, REST/metrics/governance surfaces, and dashboard preview parity out of the box.
+**AGI Alpha Node v0** metabolizes heterogeneous agentic labor into verifiable α‑Work Units (α‑WU) and Synthetic Labor Units (SLU), rebalances the Global Synthetic Labor Index (GSLI), exposes audited read‑only REST telemetry, and routes the `$AGIALPHA` treasury (token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) under complete owner command. Every dial can be paused, rerouted, or retuned without redeploying, delivering a production-grade intelligence core built to bend markets.
+New for this sprint: a React/Vite single-page dashboard (Index | Providers | Telemetry Debug), live GSLI and SLU charts backed by `/index/history` and `/providers/*/scores`, and a telemetry stream reader at `/telemetry/task-runs` that keeps ingest visibility tight while remaining API-key gated for operators.
+The runtime is tuned to operate like an ever-watchful macro trader—autonomous by default, yet instantly steerable by the contract owner to seize new parameters, pause subsystems, or redirect emissions without friction.
+**Operational promise**: CI is fully green by default and enforced on PRs/main via `.github/required-checks.json`, with badges wired to the canonical workflow. The same gates run locally with `npm run ci:verify`, giving non-technical operators parity with branch protection before they ship.
+**Sprint assurance (QUIC-first E1)**: QUIC/TCP/Relay/AutoNAT/DCUtR flags are unified behind the env/CLI surface, rankers prefer QUIC deterministically, and every dial/accept is traced with transport + latency so network posture is inspectable without guesswork. CI pins these expectations with dedicated unit tests and schema validation so drift is caught before deployment.【F:src/network/transportConfig.js†L23-L146】【F:test/network/transportConfig.test.js†L12-L132】
+**Production safety bar (tl;dr)**
+
+- ✅ **Owner supremacy preserved**: `AlphaNodeManager.sol` keeps pause/unpause, validator rotation, metadata refresh, treasury withdrawals, and emission tuning in one place—no redeploys required.【F:contracts/AlphaNodeManager.sol†L1-L120】
+- ✅ **CI + branch gates visible**: `.github/workflows/ci.yml` mirrors `npm run ci:verify` and publishes badges; `.github/required-checks.json` keeps the same checks enforced on PRs and `main`. No hidden jobs, no surprise failures.【F:.github/workflows/ci.yml†L1-L210】【F:.github/required-checks.json†L1-L9】
+- ✅ **Mesh/dialer presets wired**: `NETWORK_SIZE_PRESET=small|medium|large` plus dialer backoff + outbound ratio reconciliation are live defaults; explicit `PUBSUB_*` and `DIAL_*` overrides still win for bespoke experiments.【F:src/network/pubsubConfig.js†L4-L79】【F:src/network/dialerPolicy.js†L1-L62】
+- ✅ **Mesh/dialer gauges exported**: Prometheus gauges expose live mesh targets (`agi_alpha_node_gossipsub_mesh_config`), gossip fan-out (`agi_alpha_node_gossipsub_gossip_config`), and dialer tolerance/ratios (`agi_alpha_node_dialer_policy`) so preset changes are visible in `/metrics` and dashboards.【F:src/telemetry/monitoring.js†L246-L307】【F:src/telemetry/monitoring.js†L406-L426】【F:src/orchestrator/monitorLoop.js†L112-L129】
+- ✅ **Load harness documented**: `npm run p2p:simulate` (1k+ virtual nodes) and `docs/load-test-report.*` give reproducible latency/loss envelopes for scaling runs.【F:scripts/p2p-simulator.mjs†L1-L118】【F:docs/load-test-report.md†L1-L26】
+- ✅ **Non-technical launch path**: `npm ci && npm run ci:verify && npm start` remains the single-source-of-truth boot path with SQLite migrations, REST/metrics/governance surfaces, and dashboard preview parity out of the box.
 
 ```mermaid
 flowchart TD
@@ -144,19 +144,19 @@ flowchart TD
 | `deploy/` | Docker + Helm charts for production rollout | `docker build .`, `deploy/helm/agi-alpha-node` |
 | `subgraph/` | GraphQL subgraph source + generated types | `npm run ci:ts` |
 
->
-> **Launchpad (10-second orientation)**
->
-> - **Start everything**: `npm ci && npm run ci:verify && npm start` (mirrors PR protection, boots REST + metrics + governance surfaces, and keeps SQLite migrations aligned).
-> - **Observe the mesh**: `curl -s localhost:3000/debug/peerscore` to watch GossipSub v1.1 scores shift; `curl -s localhost:3000/metrics | grep peer_score` to view buckets and topic contributions live.
-> - **Audit DoS posture**: `curl -s localhost:3000/debug/resources` to view active connections/streams, denials, and pressure, then POST/DELETE `/governance/bans` with your owner token to quarantine IPs/peers/ASNs in real time.【F:src/network/apiServer.js†L1162-L1173】【F:src/network/apiServer.js†L1667-L1744】
-> - **Steer as owner**: `node src/index.js governance:pause` / `governance:resume` / `governance:set-validators` / `governance:set-rewards`—all routed through the `$AGIALPHA` binding so the owner can retune parameters, pause, or reroute flows instantly.
-> - **Deploy safely**: Docker + Helm charts ship the same guardrails; branch protection and `.github/required-checks.json` enforce visibility so every promotion to `main` stays green.
-> - **Prove contracts obey**: the canonical `$AGIALPHA` token is wired into `AlphaNodeManager.sol`, giving the owner unilateral control to pause/unpause, rotate validators, update ENS controllers, and move stake via `withdrawStake`—all without redeploying the network substrate.【F:contracts/AlphaNodeManager.sol†L1-L120】
-> - **Stress without fear**: `npm run p2p:load-tests` executes the full abuse harness (connection floods, stream floods, malformed GossipSub) and expects the node to shed load via NRM caps, per-IP/ASN clamps, and peer scoring instead of crashing. Pair it with `curl -s localhost:3000/debug/resources` to watch pressure/utilization and denial reasons in real time.【F:package.json†L29-L38】【F:src/network/resourceManagerConfig.js†L34-L244】
->
-> **Transport & NAT sprint**: QUIC-first transport with TCP fallback, DCUtR hole punching, AutoNAT reachability-driven address advertisement, and Relay v2 quotas are now wired through `TRANSPORT_*`, `ENABLE_HOLE_PUNCHING`, `AUTONAT_*`, and `RELAY_*` environment toggles. Dial attempts are ordered toward QUIC where available, address announcements respect public/private posture, and relay slots/bandwidth remain capped for resilience. Logs surface reachability and transport choice so operators can verify QUIC-only, TCP-only, or mixed neighborhoods before rollout.
-> **Reachability observability (E2)**: `net_reachability_state` (0/1/2), `net_autonat_probes_total`, `net_autonat_failures_total`, and connection churn gauges keep AutoNAT and libp2p health visible; `createReachabilityState` synchronizes announce sets, metrics, and owner overrides without code changes.【F:src/network/transportConfig.js†L23-L86】【F:src/telemetry/networkMetrics.js†L1-L120】
+
+### Launchpad (10-second orientation)
+
+- **Start everything**: `npm ci && npm run ci:verify && npm start` (mirrors PR protection, boots REST + metrics + governance surfaces, and keeps SQLite migrations aligned).
+- **Observe the mesh**: `curl -s localhost:3000/debug/peerscore` to watch GossipSub v1.1 scores shift; `curl -s localhost:3000/metrics | grep peer_score` to view buckets and topic contributions live.
+- **Audit DoS posture**: `curl -s localhost:3000/debug/resources` to view active connections/streams, denials, and pressure, then POST/DELETE `/governance/bans` with your owner token to quarantine IPs/peers/ASNs in real time.【F:src/network/apiServer.js†L1162-L1173】【F:src/network/apiServer.js†L1667-L1744】
+- **Steer as owner**: `node src/index.js governance:pause` / `governance:resume` / `governance:set-validators` / `governance:set-rewards`—all routed through the `$AGIALPHA` binding so the owner can retune parameters, pause, or reroute flows instantly.
+- **Deploy safely**: Docker + Helm charts ship the same guardrails; branch protection and `.github/required-checks.json` enforce visibility so every promotion to `main` stays green.
+- **Prove contracts obey**: the canonical `$AGIALPHA` token is wired into `AlphaNodeManager.sol`, giving the owner unilateral control to pause/unpause, rotate validators, update ENS controllers, and move stake via `withdrawStake`—all without redeploying the network substrate.【F:contracts/AlphaNodeManager.sol†L1-L120】
+- **Stress without fear**: `npm run p2p:load-tests` executes the full abuse harness (connection floods, stream floods, malformed GossipSub) and expects the node to shed load via NRM caps, per-IP/ASN clamps, and peer scoring instead of crashing. Pair it with `curl -s localhost:3000/debug/resources` to watch pressure/utilization and denial reasons in real time.【F:package.json†L29-L38】【F:src/network/resourceManagerConfig.js†L34-L244】
+
+**Transport & NAT sprint**: QUIC-first transport with TCP fallback, DCUtR hole punching, AutoNAT reachability-driven address advertisement, and Relay v2 quotas are now wired through `TRANSPORT_*`, `ENABLE_HOLE_PUNCHING`, `AUTONAT_*`, and `RELAY_*` environment toggles. Dial attempts are ordered toward QUIC where available, address announcements respect public/private posture, and relay slots/bandwidth remain capped for resilience. Logs surface reachability and transport choice so operators can verify QUIC-only, TCP-only, or mixed neighborhoods before rollout.
+**Reachability observability (E2)**: `net_reachability_state` (0/1/2), `net_autonat_probes_total`, `net_autonat_failures_total`, and connection churn gauges keep AutoNAT and libp2p health visible; `createReachabilityState` synchronizes announce sets, metrics, and owner overrides without code changes.【F:src/network/transportConfig.js†L23-L86】【F:src/telemetry/networkMetrics.js†L1-L120】
 
 ## Sprint E2 — Reachability, AutoNAT, and churn (edge transport spine)
 
@@ -208,43 +208,43 @@ flowchart TB
   Registry --> Dashboards
 ```
 
-> **Operational stance**: the contract owner retains full authority to pause, retune emissions, rotate validators, and update registry pointers without redeploying; transport posture is observable and owner-steerable via the same control plane.
->
-> ### QUIC-first transport blueprint (Sprint Edge)
->
+**Operational stance**: the contract owner retains full authority to pause, retune emissions, rotate validators, and update registry pointers without redeploying; transport posture is observable and owner-steerable via the same control plane.
+
+### QUIC-first transport blueprint (Sprint Edge)
+
 - **Unified network surface (env/CLI)**: `TRANSPORT_ENABLE_QUIC`, `TRANSPORT_ENABLE_TCP`, `ENABLE_HOLE_PUNCHING`, `AUTONAT_ENABLED`, `AUTONAT_THROTTLE_SECONDS`, optional `AUTONAT_REACHABILITY`, `RELAY_ENABLE_CLIENT`, `RELAY_ENABLE_SERVER`, `RELAY_MAX_RESERVATIONS`, `RELAY_MAX_CIRCUITS_PER_PEER`, `RELAY_MAX_BANDWIDTH_BPS`, plus `P2P_LISTEN_MULTIADDRS`, `P2P_PUBLIC_MULTIADDRS`, `P2P_RELAY_MULTIADDRS`, `P2P_LAN_MULTIADDRS` are validated at startup so `npm run ci:verify` and PR gates catch bad inputs immediately.【F:src/config/schema.js†L594-L644】【F:src/config/defaults.js†L21-L83】
 - **QUIC-first dial ranking**: `rankDialableMultiaddrs` deterministically sorts multiaddrs as QUIC → TCP → relay → other while de-duping inputs, ensuring the dialer hits encrypted QUIC first and only falls back to TCP/relay when necessary.【F:src/network/transportConfig.js†L98-L146】
 - **Connection tracing hook**: `createTransportTracer` attaches to dial start/success/failure plus inbound accepts, emits structured logs (`conn_open`/`conn_success`/`conn_failure`) with peer ID, multiaddr, transport, direction, and latency, and wires Prometheus counters/histograms for dial attempts, successes, failures, inbound accepts, and per-transport latency.【F:src/network/libp2pHostConfig.js†L57-L166】【F:src/telemetry/networkMetrics.js†L1-L61】
 - **Metrics registered for export**: `startMonitoringServer` now instantiates the network counters/histograms on its Prometheus registry so the transport tracer feeds `/metrics` without extra wiring—dial attempt/success/failure totals and latency buckets surface alongside the existing job, alpha-WU, and peer-score gauges.【F:src/telemetry/monitoring.js†L1-L123】【F:src/telemetry/monitoring.js†L480-L604】
 - **QUIC-first libp2p host descriptor**: the synthesized host config returns ranked announce sets (reachability-aware), registered transports, dial preference description, NAT toggles, relay quotas, and the bound tracer so every connection path is observable.【F:src/network/libp2pHostConfig.js†L169-L227】
->
-> ```mermaid
-> flowchart LR
->   classDef accent fill:#0b1120,stroke:#22c55e,stroke-width:1.5px,color:#e2e8f0;
->   classDef warn fill:#0b1120,stroke:#f97316,stroke-width:1.5px,color:#fde68a;
->   Env[Env / CLI surface<br/>TRANSPORT_* · AUTONAT_* · RELAY_* · P2P_*]:::accent
->   Schema[Schema + defaults<br/>validated via ci:verify]:::accent
->   Plan[Transport plan<br/>QUIC-first · TCP fallback<br/>hole punching · AutoNAT]:::accent
->   Rank[rankDialableMultiaddrs<br/>QUIC → TCP → relay → other]:::accent
->   Host[libp2p host config<br/>listen · announce · NAT · relay]:::accent
->   Tracer[Transport tracer<br/>conn_open/success/failure<br/>Prom metrics]:::accent
->   Logs[Structured logs<br/>peer · addr · transport · latency]:::accent
->   Metrics[Prometheus counters<br/>dial_attempt/success/failure<br/>latency histogram]:::accent
->   Env --> Schema --> Plan --> Rank --> Host
->   Host --> Tracer --> Logs
->   Tracer --> Metrics
->   class Env,Schema,Plan,Rank,Host,Tracer,Logs,Metrics accent;
->   class Metrics warn;
-> ```
->
-> 🛰️ **Launch pad (non-technical operator)**
->
-> 1. **Install & verify**: `npm ci && npm run ci:verify` (mirrors branch protection locally and surfaces any dependency or Solidity drift).
-> 2. **Bring the node up**: `npm start` (reads `.env`, bootstraps SQLite, read-only REST, metrics, governance API, and ENS/owner alignment).
-> 3. **Open the cockpit**: `npm run dashboard:dev` (or `npm run dashboard:preview` after `npm run dashboard:build`) and point the connection bar to your API base + key. Data hydrates live—no rebuilds required.
-> 4. **Own every dial**: Use `node src/index.js governance:*` verbs or authenticated `/governance/*` calls to pause/unpause, rotate validators, reroute emissions/treasury, refresh metadata, and retune productivity without redeploying.
-> 5. **Confirm green**: Badges below reflect GitHub Actions visibility plus `.github/required-checks.json` enforcement; CI stays visible and required on PRs and `main`.
->
+
+```mermaid
+flowchart LR
+  classDef accent fill:#0b1120,stroke:#22c55e,stroke-width:1.5px,color:#e2e8f0;
+  classDef warn fill:#0b1120,stroke:#f97316,stroke-width:1.5px,color:#fde68a;
+  Env[Env / CLI surface<br/>TRANSPORT_* · AUTONAT_* · RELAY_* · P2P_*]:::accent
+  Schema[Schema + defaults<br/>validated via ci:verify]:::accent
+  Plan[Transport plan<br/>QUIC-first · TCP fallback<br/>hole punching · AutoNAT]:::accent
+  Rank[rankDialableMultiaddrs<br/>QUIC → TCP → relay → other]:::accent
+  Host[libp2p host config<br/>listen · announce · NAT · relay]:::accent
+  Tracer[Transport tracer<br/>conn_open/success/failure<br/>Prom metrics]:::accent
+  Logs[Structured logs<br/>peer · addr · transport · latency]:::accent
+  Metrics[Prometheus counters<br/>dial_attempt/success/failure<br/>latency histogram]:::accent
+  Env --> Schema --> Plan --> Rank --> Host
+  Host --> Tracer --> Logs
+  Tracer --> Metrics
+  class Env,Schema,Plan,Rank,Host,Tracer,Logs,Metrics accent;
+  class Metrics warn;
+```
+
+### 🛰️ Launch pad (non-technical operator)
+
+1. **Install & verify**: `npm ci && npm run ci:verify` (mirrors branch protection locally and surfaces any dependency or Solidity drift).
+2. **Bring the node up**: `npm start` (reads `.env`, bootstraps SQLite, read-only REST, metrics, governance API, and ENS/owner alignment).
+3. **Open the cockpit**: `npm run dashboard:dev` (or `npm run dashboard:preview` after `npm run dashboard:build`) and point the connection bar to your API base + key. Data hydrates live—no rebuilds required.
+4. **Own every dial**: Use `node src/index.js governance:*` verbs or authenticated `/governance/*` calls to pause/unpause, rotate validators, reroute emissions/treasury, refresh metadata, and retune productivity without redeploying.
+5. **Confirm green**: Badges below reflect GitHub Actions visibility plus `.github/required-checks.json` enforcement; CI stays visible and required on PRs and `main`.
+
 
 ### Network & telemetry spine at a glance
 
@@ -1641,13 +1641,14 @@ flowchart TD
 - `npm run ci:ts` – subgraph manifest render + `npm --prefix subgraph run build:ci`.
 - `npm run ci:security` – high-level `npm audit` scan mirroring CI behavior.
 
-### DoS defenses & trimming (Sprint C)
+### DoS defenses & trimming (Sprint C → E3 observability)
 
-- **Network Resource Manager (NRM)**: `buildResourceManagerConfig` now scales hard ceilings (connections, streams, memory, FDs, bandwidth), merges optional JSON/YAML overrides, and seeds ban sets + per-IP/per-ASN ceilings from `NRM_BANNED_*`, `MAX_CONNS_PER_IP`, and `MAX_CONNS_PER_ASN`.【F:src/network/resourceManagerConfig.js†L91-L190】【F:src/config/defaults.js†L20-L47】
-- **Connection manager + trimming**: Watermarks (`CONN_LOW_WATER`, `CONN_HIGH_WATER`, `CONN_GRACE_PERIOD_SEC`) protect high-score, pinned, and grace-period peers while trimming the coldest connections first; per-IP/per-ASN pressure reporting surfaces utilization for dashboards and alerts.【F:src/network/resourceManagerConfig.js†L194-L390】
-- **Abuse harness + CI drills**: `npm run p2p:load-tests` executes connection/stream flood drills, malformed gossip simulations, and API ban flows to prove denials are logged instead of crashing the node.【F:package.json†L11-L45】【F:test/network/resourceManagerConfig.test.js†L57-L118】【F:test/network/apiServer.dos.test.js†L1-L48】
+- **Network Resource Manager (NRM)**: `buildResourceManagerConfig` now scales hard ceilings (connections, streams, memory, FDs, bandwidth), merges optional JSON/YAML overrides, and seeds ban sets + per-IP/per-ASN ceilings from `NRM_BANNED_*`, `MAX_CONNS_PER_IP`, and `MAX_CONNS_PER_ASN`.【F:src/network/resourceManagerConfig.js†L91-L212】【F:src/config/defaults.js†L20-L47】
+- **Tagged denials + cap telemetry (Sprint E3)**: Every reject path emits structured logs plus `nrm_denials_total{limit_type,protocol}`; `/debug/resources` responds with `limits` and `usage` grids (global + per-protocol + per-IP/ASN) so `curl -s localhost:3000/debug/resources` shows caps, current load, and dialer ratios; ban gauges/counters (`banlist_entries`, `banlist_changes_total`) and `connmanager_trims_total{reason}` are wired for dashboards.【F:src/network/resourceManagerConfig.js†L140-L392】【F:src/network/apiServer.js†L1162-L1173】【F:src/telemetry/networkMetrics.js†L33-L84】
+- **Connection manager + trimming**: Watermarks (`CONN_LOW_WATER`, `CONN_HIGH_WATER`, `CONN_GRACE_PERIOD_SEC`) protect high-score, pinned, and grace-period peers while trimming the coldest connections first; per-IP/per-ASN pressure reporting surfaces utilization for dashboards and alerts.【F:src/network/resourceManagerConfig.js†L318-L392】
+- **Abuse harness + CI drills**: `npm run p2p:load-tests` executes connection/stream flood drills, malformed gossip simulations, and API ban flows to prove denials are logged instead of crashing the node.【F:package.json†L11-L45】【F:test/network/resourceManagerConfig.test.js†L57-L159】【F:test/network/apiServer.dos.test.js†L1-L48】
 - **Documented playbook**: `docs/dos-test-plan.md` lists the knobs, expected denial reasons, and observability cues to verify ceilings and ban hooks under stress before promoting changes; treat it as the canonical acceptance list for the Sprint C defenses.【F:docs/dos-test-plan.md†L1-L35】【F:docs/dos-test-plan.md†L37-L48】
-- **Owner control surfaces**: `/debug/resources` streams live denials/pressure snapshots, while `/governance/bans` (GET/POST/DELETE) lets the owner quarantine IPs/peers/ASNs without redeploying, keeping governance and DoS posture under a single token-gated surface.【F:src/network/apiServer.js†L1162-L1173】【F:src/network/apiServer.js†L1667-L1744】
+- **Owner control surfaces**: `/debug/resources` now returns both caps (`limits`) and live `usage`, while `/governance/bans` (GET/POST/DELETE) lets the owner quarantine IPs/peers/ASNs without redeploying; ban counters/gauges stay in lockstep with every mutation.【F:src/network/apiServer.js†L1162-L1173】【F:src/network/apiServer.js†L1667-L1744】【F:src/network/resourceManagerConfig.js†L167-L221】
 
 ```mermaid
 flowchart TD
@@ -1660,15 +1661,17 @@ flowchart TD
     Caps[Global/per-protocol caps]
     IPASN[Per-IP / per-ASN ceilings]
     Trim[Trim low-score peers]
-    Deny[Denied with reasons]
+    Deny[Denied with reasons +\nnrm_denials_total]
   end
   subgraph Owner[Owner controls]
-    Inspect[/GET /debug/resources/]
-    BanCLI[/POST/DELETE /governance/bans/]
+    Inspect[/GET /debug/resources/\nlimits + usage grids]
+    BanCLI[/POST/DELETE /governance/bans/\nbanlist_entries gauges]
     Scale[NRM_SCALE_FACTOR & overrides]
   end
+  Metrics[nrm_denials_total +\nconnmanager_trims_total +\nbanlist_changes_total]
   ConnFlood & StreamFlood & MalGossip --> Caps --> IPASN --> Trim --> Deny
-  Deny --> Inspect
+  Deny --> Metrics
+  Metrics --> Inspect
   Owner --> BanCLI
   Owner --> Scale
   BanCLI --> Caps
