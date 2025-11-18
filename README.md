@@ -244,6 +244,26 @@ flowchart LR
   AutoNAT --> Probes[net_autonat_probes_total\nnet_autonat_failures_total]:::metric
 ```
 
+### Sprint Edge E2 (reachability normalization + churn metrics)
+
+- **Unified reachability spine**: `createReachabilityState` now binds AutoNAT callbacks + owner overrides into a single, debounced tracker that feeds announce-set selection, metrics, and dashboards without duplicate wiring.【F:src/network/transportConfig.js†L23-L86】【F:src/telemetry/networkMetrics.js†L108-L169】
+- **Metrics that answer instantly**: `bindReachabilityGauge` and `bindAutonatReachability` subscribe the tracker and AutoNAT emitters to Prometheus so `net_reachability_state`, `net_autonat_probes_total`, and `net_autonat_failures_total` stay current without manual hooks.【F:src/telemetry/networkMetrics.js†L108-L169】【F:test/telemetry/networkMetrics.test.js†L72-L111】
+- **Churn clarity by direction/reason**: `net_connections_open_total{direction}`, `net_connections_close_total{direction,reason}`, and `net_connections_live{direction}` stay synchronized with libp2p connection lifecycle events via the transport tracer, preserving live counts during bursts.【F:src/telemetry/networkMetrics.js†L50-L105】【F:src/network/libp2pHostConfig.js†L57-L166】
+- **Owner-first controls still intact**: Governance verbs and the `$AGIALPHA` token binding (18 decimals, contract `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`) remain the single point of authority—reachability posture and emissions can be retuned without redeploys.【F:contracts/AlphaNodeManager.sol†L1-L120】
+
+```mermaid
+sequenceDiagram
+  autonat->>+Tracker: autonat:result | autonat:probe (public/private/unknown)
+  autonat-->>Tracker: probe failures tagged
+  Tracker->>Metrics: bindReachabilityGauge()
+  Metrics-->>Prometheus: net_reachability_state (0/1/2)
+  Metrics-->>Prometheus: net_autonat_probes_total / net_autonat_failures_total
+  Tracker->>Announcer: reachability-aware announce set (public+relay vs relay+LAN)
+  libp2p->>Metrics: net_connections_open/close_total{direction,reason}
+  libp2p->>Metrics: net_connections_live{direction}
+  Metrics-->>Dashboard: live charts / alerts
+```
+
 ## Orientation & quick links
 
 - **One-command proof**: `npm run ci:verify` mirrors the full PR gate locally (lint, tests, coverage, solidity, subgraph TS, security, policy, branch gate).

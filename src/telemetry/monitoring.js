@@ -1,6 +1,6 @@
 import http from 'node:http';
 import { collectDefaultMetrics, Counter, Gauge, Registry, Summary } from 'prom-client';
-import { createNetworkMetrics, updateReachabilityMetric } from './networkMetrics.js';
+import { bindReachabilityGauge, createNetworkMetrics, updateReachabilityMetric } from './networkMetrics.js';
 import { DEFAULT_PEER_SCORE_THRESHOLDS } from '../services/peerScoring.js';
 import { applyPeerScoreSnapshot, createPeerScoreMetrics } from './peerScoreMetrics.js';
 
@@ -241,9 +241,7 @@ export function startMonitoringServer({
       return null;
     }
     if (typeof reachabilityState.subscribe === 'function') {
-      return reachabilityState.subscribe((snapshot) => {
-        updateReachabilityMetric(networkMetrics, snapshot?.state ?? 'unknown');
-      });
+      return bindReachabilityGauge({ reachabilityState, metrics: networkMetrics });
     }
     updateReachabilityMetric(networkMetrics, reachabilityState?.getState?.() ?? reachabilityState);
     return null;
