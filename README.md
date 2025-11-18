@@ -176,6 +176,41 @@ sequenceDiagram
 - **Synthetic fleet harness**: `npm run p2p:simulate -- --nodes 1000 --duration 10 --rate 0.02 --latency 60 --loss 0.005` spins 1k+ virtual nodes that publish/subscribe to `agi.jobs` and `agi.control`, capturing p50/p95/p99 latencies, loss rate, and resource envelopes; results are checkpointed in `docs/load-test-report.json` and narrated in `docs/load-test-report.md`.【F:scripts/p2p-simulator.mjs†L1-L118】【F:docs/load-test-report.md†L1-L26】【F:docs/load-test-report.json†L1-L28】
 - **Owner override friendly**: all knobs flow through `.env`/CLI and the governance surface, preserving the owner’s ability to pause subsystems or retune parameters without redeploying.
 
+#### Mesh presets & dialer guardrails (operator crib sheet)
+
+| Mode | Mesh (`D/Dlo/Dhi/Dout/Dlazy`) | Gossip factor / retransmission | Dialer defaults (timeout · retries · backoff) | Outbound ratio policy |
+| --- | --- | --- | --- | --- |
+| `small` | 6 / 4 / 8 / 16 / 8 | 0.20 · 3 | 10s · 5 · 500ms→30s exp. | target 60% ±10%, min 64 conns |
+| `medium` (default) | 8 / 6 / 12 / 32 / 12 | 0.25 · 3 | 10s · 5 · 500ms→30s exp. | target 60% ±10%, min 64 conns |
+| `large` | 12 / 10 / 18 / 48 / 16 | 0.32 · 4 | 10s · 5 · 500ms→30s exp. | target 60% ±10%, min 64 conns |
+
+Switch presets with either `NETWORK_SIZE_PRESET=small|medium|large` or `--network-size-preset <preset>`. All values remain overridable via `PUBSUB_*` and `DIAL_*` flags for bespoke runs.
+
+#### Scale-test flight plan (1k–10k virtual peers)
+
+1. **Bootstrap simulation**
+   - `npm run p2p:simulate -- --nodes 1000 --duration 10 --rate 0.02 --latency 60 --loss 0.005 --topics agi.jobs,agi.control`
+   - Capture the JSON output into `docs/load-test-report.json` and append notes into `docs/load-test-report.md` after each sweep.
+2. **Sweep presets**
+   - Run the simulator for `small`, `medium`, and `large` presets via `NETWORK_SIZE_PRESET=<mode> npm start` in a separate terminal, then replay the simulator to watch mesh fan-out and latency response.
+3. **Partition rehearsal**
+   - Drop relays or blackhole a percentage of peers; confirm the outbound reconciler nudges toward the 60/40 balance instead of thrashing (watch `/debug/resources`).
+4. **Lock-in**
+   - Bake the winning preset into `.env.production` for the fleet and memorialize metrics snapshots (p50/p95/p99 latency, loss rate, CPU/RSS/FD) in the report.
+
+```mermaid
+stateDiagram-v2
+  [*] --> SimStart
+  SimStart: Launch p2p:simulate
+  SimStart --> SweepPresets: small → medium → large
+  SweepPresets --> PartitionDrill: induce relay drop / blackhole
+  PartitionDrill --> ReconcileCheck: confirm outbound 60/40 band
+  ReconcileCheck --> MetricsCapture: log p50/p95/p99 + loss
+  MetricsCapture --> ReportUpdate: write docs/load-test-report.*
+  ReportUpdate --> LockIn: choose env/CLI defaults
+  LockIn --> [*]
+```
+
 ```mermaid
 flowchart LR
   preset[NETWORK_SIZE_PRESET\nsmall | medium | large] --> mesh[D/Dlo/Dhi\nDout/Dlazy]
