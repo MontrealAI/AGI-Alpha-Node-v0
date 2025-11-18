@@ -198,6 +198,57 @@ flowchart TD
   class Env,Plan,Dialer,HolePunch,AutoNAT,Relay,Reachability,Announce,Peers,Connections,HostConfig,ObservabilityHost accent;
 ```
 
+### Epic C · DoS defenses (Resource Manager + Connection Manager + Ban Grid)
+
+- **Hard ceilings everywhere**: `buildResourceManagerConfig` enforces global caps on connections/streams with a tunable `NRM_SCALE_FACTOR` (0.5–2.0) plus optional JSON/YAML overrides via `NRM_LIMITS_JSON` or `NRM_LIMITS_PATH` for per-protocol/per-peer budgets.【F:src/network/resourceManagerConfig.js†L34-L119】
+- **Peer-aware shedding**: `ConnectionManager` trims only when above `CONN_HIGH_WATER`, respecting pins/whitelists + grace periods, and keeps the highest scores until back under `CONN_LOW_WATER`. Peers connected recently stay protected while the tail is pruned first.【F:src/network/resourceManagerConfig.js†L320-L373】
+- **Per-IP/ASN clamps + ban hooks**: configurable caps (`MAX_CONNS_PER_IP`, `MAX_CONNS_PER_ASN`) plus `/governance/bans` (GET/POST/DELETE) so owners can quarantine abusive IPs/peers/ASNs in real time without restart.【F:src/network/resourceManagerConfig.js†L121-L244】【F:src/network/apiServer.js†L1667-L1744】
+- **Owner cockpit**: the governance API and CLI verbs remain owner-token guarded; every limit can be tightened live (including total pause) so the node never cedes control when pressure spikes.【F:src/network/apiServer.js†L1162-L1173】【F:src/index.js†L2113-L2214】
+- **Abuse harness + p2p load drills**: `npm run p2p:load-tests` runs connection floods, stream floods, and malformed GossipSub scenarios against the ResourceManager/ConnectionManager stack. Results surface denials, pressure, and score thresholds without crashing the node.【F:package.json†L29-L38】【F:test/network/resourceManagerConfig.test.js†L70-L157】
+
+| Control plane knob | Env/CLI | Default | Effect |
+| --- | --- | --- | --- |
+| Global limits | `NRM_SCALE_FACTOR`, `NRM_LIMITS_JSON`, `NRM_LIMITS_PATH` | `1` + built-ins | Caps conns/streams; inline or file overrides for protocol/peer edges.【F:src/network/resourceManagerConfig.js†L34-L119】 |
+| Connection trim watermarks | `CONN_LOW_WATER`, `CONN_HIGH_WATER`, `CONN_GRACE_PERIOD_SEC` | `512 / 1024 / 120` | Drop low-score peers only when > high_water; preserve pinned/whitelisted + recent entrants (grace).【F:src/network/resourceManagerConfig.js†L308-L373】 |
+| Per-IP / Per-ASN caps | `MAX_CONNS_PER_IP`, `MAX_CONNS_PER_ASN` | `64 / 256` | Reject excess dials from a single IP/ASN and log denials; clamps unwind automatically when peers disconnect.【F:src/network/resourceManagerConfig.js†L121-L213】 |
+| Ban lists | `/governance/bans` (owner token) | empty | Add/remove IPs, peers, or ASNs instantly; exports current state for dashboards.【F:src/network/apiServer.js†L1667-L1744】 |
+| Abuse drills | `npm run p2p:load-tests` | — | Synthetic floods + malformed gossip scenarios; asserts node stability and visible denials/pressure telemetry.【F:test/network/resourceManagerConfig.test.js†L109-L157】 |
+
+```mermaid
+flowchart LR
+  subgraph Shield[DoS Shield]
+    Limits[NRM limits\n(conns/streams)]
+    PerIp[Per-IP/ASN caps]
+    CM[Connection Manager\n(high/low water + scores)]
+    Bans[Ban grid\nIP/Peer/ASN]
+  end
+  subgraph Ingress[Inbound pressure]
+    Flood[Conn/stream floods]
+    Malform[Malformed gossip]
+  end
+  subgraph Observability[Pressure telemetry]
+    Logs[Structured logs]
+    Metrics[Prom/OTel + /debug/resources]
+    Harness[Abuse harness\n`p2p:load-tests`]
+  end
+  Flood --> Limits
+  Flood --> PerIp
+  Flood --> CM
+  Flood --> Bans
+  Malform --> CM
+  Malform --> Bans
+  Limits --> Metrics
+  PerIp --> Metrics
+  CM --> Metrics
+  Bans --> Metrics
+  Harness --> Metrics
+  Metrics --> Logs
+  Logs -->|Owner token| Bans
+  Metrics -->|Owner token| CM
+  classDef accent fill:#0f172a,stroke:#22c55e,stroke-width:1.5px,color:#e2e8f0;
+  class Shield,Ingress,Observability,Limits,PerIp,CM,Bans,Flood,Malform,Logs,Metrics,Harness accent;
+```
+
 ```mermaid
 flowchart LR
   subgraph HostPlan[Host wiring]
