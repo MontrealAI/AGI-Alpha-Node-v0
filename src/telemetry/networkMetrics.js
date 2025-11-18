@@ -1,4 +1,5 @@
 import { Counter, Gauge, Histogram } from 'prom-client';
+import { summarizeReachabilityState } from '../network/transportConfig.js';
 
 const REACHABILITY_CODES = {
   unknown: 0,
@@ -8,6 +9,13 @@ const REACHABILITY_CODES = {
 
 const DEFAULT_DIRECTION = 'out';
 const DEFAULT_REASON = 'normal';
+const AUTONAT_EVENTS = [
+  'autonat:result',
+  'autonat:reachability',
+  'autonat:status',
+  'autonat:probe',
+  'reachability:change'
+];
 
 function buildRegisters(registry) {
   return registry ? [registry] : undefined;
@@ -182,4 +190,64 @@ export function recordAutonatProbe(metrics, { success = true } = {}) {
   if (!success) {
     metrics?.autonatFailuresTotal?.inc?.();
   }
+}
+
+function attachListener(target, event, handler) {
+  if (!target || !event || typeof handler !== 'function') return () => {};
+
+  if (typeof target.addEventListener === 'function') {
+    target.addEventListener(event, handler);
+    return () => target.removeEventListener?.(event, handler);
+  }
+
+  if (typeof target.on === 'function') {
+    target.on(event, handler);
+    return () => (target.off ?? target.removeListener)?.(event, handler);
+  }
+
+  return () => {};
+}
+
+function deriveReachability(detail) {
+  if (!detail) return 'unknown';
+  const payload = detail?.detail ?? detail;
+  const stateCandidate =
+    payload?.reachability ?? payload?.status ?? payload?.nat ?? payload?.state ?? payload;
+  return summarizeReachabilityState(stateCandidate);
+}
+
+export function bindReachabilityGauge({ reachabilityState, metrics } = {}) {
+  if (!reachabilityState?.subscribe || !metrics) return () => {};
+  const unsubscribe = reachabilityState.subscribe((snapshot) => {
+    updateReachabilityMetric(metrics, snapshot?.state ?? 'unknown');
+  });
+  return () => unsubscribe?.();
+}
+
+export function bindAutonatReachability({ autonat, reachabilityState, metrics, logger } = {}) {
+  if (!autonat || !reachabilityState) return () => {};
+
+  const disposers = AUTONAT_EVENTS.map((event) =>
+    attachListener(autonat, event, (detail) => {
+      const reachability = deriveReachability(detail);
+      const hasError = Boolean(detail?.error ?? detail?.err ?? detail?.detail?.error);
+      const success = !hasError && reachability !== 'unknown';
+
+      recordAutonatProbe(metrics, { success });
+      reachabilityState.updateFromAutonat?.(reachability);
+      updateReachabilityMetric(metrics, reachabilityState.getState?.() ?? reachability);
+
+      logger?.info?.(
+        {
+          event,
+          reachability: reachabilityState.getState?.() ?? reachability,
+          success,
+          source: 'autonat'
+        },
+        'AutoNAT reachability update received'
+      );
+    })
+  );
+
+  return () => disposers.forEach((dispose) => dispose());
 }
