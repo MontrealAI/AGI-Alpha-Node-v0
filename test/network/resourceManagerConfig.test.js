@@ -170,6 +170,30 @@ describe('ResourceManager guards', () => {
       );
     expect(perIpDenial?.value ?? 0).toBeGreaterThan(0);
   });
+
+  it('classifies per-protocol denials with protocol tags', async () => {
+    const registry = new Registry();
+    const networkMetrics = createNetworkMetrics({ registry });
+    const config = buildResourceManagerConfig({
+      config: { NRM_LIMITS_JSON: JSON.stringify({ perProtocol: { '/meshsub/1.1.0': { maxConnections: 1 } } }) }
+    });
+    const manager = new ResourceManager({ limits: config, metrics: networkMetrics });
+
+    manager.requestConnection({ peerId: 'peer-a', ip: '10.0.0.1', protocol: '/meshsub/1.1.0' });
+    manager.requestConnection({ peerId: 'peer-b', ip: '10.0.0.2', protocol: '/meshsub/1.1.0' });
+
+    const snapshot = manager.metrics();
+    expect(snapshot.denials.byLimitType.per_protocol).toBe(1);
+    expect(snapshot.denials.byProtocol['/meshsub/1.1.0']).toBe(1);
+
+    const metricsJson = await registry.getMetricsAsJSON();
+    const perProtocolDenial = metricsJson
+      .find((metric) => metric.name === 'nrm_denials_total')
+      ?.values?.find(
+        (entry) => entry.labels.limit_type === 'per_protocol' && entry.labels.protocol === '/meshsub/1.1.0'
+      );
+    expect(perProtocolDenial?.value ?? 0).toBeGreaterThan(0);
+  });
 });
 
 describe('ConnectionManager trimming', () => {

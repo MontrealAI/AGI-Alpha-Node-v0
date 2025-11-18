@@ -160,6 +160,7 @@ function inferLimitType(reason, type = 'connections') {
   if (reason?.includes?.('asn')) return 'per_asn';
   if (reason?.includes?.('ip')) return 'per_ip';
   if (reason?.includes?.('ban')) return 'banlist';
+  if (reason?.includes?.('protocol')) return 'per_protocol';
   if (reason?.includes?.('stream')) return 'streams';
   if (reason?.includes?.('memory')) return 'memory';
   if (reason?.includes?.('fd')) return 'fd';
@@ -170,6 +171,7 @@ function inferLimitType(reason, type = 'connections') {
 function normalizeLimitLabel(limitType, type = 'connections') {
   const normalized = limitType?.toString?.().toLowerCase?.();
   if (normalized === 'connections') return 'conns';
+  if (normalized === 'per-protocol' || normalized === 'per_protocol') return 'per_protocol';
   if (normalized) return normalized;
   return type === 'streams' ? 'streams' : 'conns';
 }
@@ -182,7 +184,7 @@ export class ResourceManager {
     this.connections = new Map();
     this.streamProtocols = new Map();
     this.peerStreams = new Map();
-    this.denials = { connections: 0, streams: 0, reasons: {}, byLimitType: {} };
+    this.denials = { connections: 0, streams: 0, reasons: {}, byLimitType: {}, byProtocol: {} };
     this.ipConns = new Map();
     this.asnConns = new Map();
     this.lastPressureLog = { connections: 0, streams: 0, ip: 0, asn: 0 };
@@ -278,9 +280,10 @@ export class ResourceManager {
   deny(reason, type = 'connections', context = {}) {
     this.denials[type] += 1;
     const limitType = normalizeLimitLabel(context.limitType ?? inferLimitType(reason, type), type);
+    const protocol = normalizeProtocol(context.protocol ?? 'unknown');
     this.denials.reasons[reason] = (this.denials.reasons[reason] ?? 0) + 1;
     this.denials.byLimitType[limitType] = (this.denials.byLimitType[limitType] ?? 0) + 1;
-    const protocol = normalizeProtocol(context.protocol ?? 'unknown');
+    this.denials.byProtocol[protocol] = (this.denials.byProtocol[protocol] ?? 0) + 1;
     this.log.warn(
       {
         reason,
@@ -388,7 +391,7 @@ export class ResourceManager {
         peerId,
         used: protocolCount,
         limit: perProtocol,
-        limitType: 'conns'
+        limitType: 'per_protocol'
       });
     }
 
