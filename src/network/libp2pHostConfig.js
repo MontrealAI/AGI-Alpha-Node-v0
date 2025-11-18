@@ -87,7 +87,9 @@ export function createTransportTracer({ plan, logger: baseLogger, metrics = null
       metrics?.inboundConnections?.inc?.({ transport });
     }
 
-    recordConnectionLatency(metrics, { transport, direction, latencyMs });
+    if (!(direction === 'out' && success === undefined)) {
+      recordConnectionLatency(metrics, { transport, direction, latencyMs });
+    }
 
     const eventName = event ?? (success === undefined ? 'conn_open' : success ? 'conn_success' : 'conn_failure');
 
