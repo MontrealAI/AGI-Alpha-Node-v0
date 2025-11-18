@@ -1165,9 +1165,11 @@ export function startAgentApi({
           return;
         }
         const snapshot = resourceManager.metrics();
+        const limits = snapshot.limitsGrid ?? snapshot.limits ?? {};
+        const usage = snapshot.usage ?? {};
         jsonResponse(res, 200, {
-          limits: snapshot.limitsGrid ?? snapshot.limits,
-          usage: snapshot.usage ?? null,
+          limits,
+          usage,
           metrics: snapshot,
           bans: exportBanState(),
           connectionManager: describeConnectionManager()
@@ -1708,6 +1710,16 @@ export function startAgentApi({
           peers.forEach((peer) => resourceManager.banPeer(peer));
           asns.forEach((asn) => resourceManager.banAsn(asn));
 
+          logger.info(
+            {
+              ips,
+              peers,
+              asns,
+              banCounts: resourceManager.metrics()?.limits?.ipLimiter ?? null
+            },
+            'Ban grid updated via governance API'
+          );
+
           jsonResponse(res, 200, { bans: exportBanState() });
         } catch (error) {
           logger.warn(error, 'Failed to apply ban request');
@@ -1739,6 +1751,16 @@ export function startAgentApi({
           ips.forEach((ip) => resourceManager.unbanIp(ip));
           peers.forEach((peer) => resourceManager.unbanPeer(peer));
           asns.forEach((asn) => resourceManager.unbanAsn(asn));
+
+          logger.info(
+            {
+              ips,
+              peers,
+              asns,
+              banCounts: resourceManager.metrics()?.limits?.ipLimiter ?? null
+            },
+            'Ban grid updated via governance API'
+          );
 
           jsonResponse(res, 200, { bans: exportBanState() });
         } catch (error) {

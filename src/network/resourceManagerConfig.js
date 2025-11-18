@@ -167,6 +167,13 @@ function inferLimitType(reason, type = 'connections') {
   return type === 'streams' ? 'streams' : 'conns';
 }
 
+function normalizeLimitLabel(limitType, type = 'connections') {
+  const normalized = limitType?.toString?.().toLowerCase?.();
+  if (normalized === 'connections') return 'conns';
+  if (normalized) return normalized;
+  return type === 'streams' ? 'streams' : 'conns';
+}
+
 export class ResourceManager {
   constructor({ limits, logger: baseLogger, metrics = null }) {
     this.log = typeof baseLogger?.info === 'function' ? baseLogger : logger;
@@ -271,7 +278,7 @@ export class ResourceManager {
   deny(reason, type = 'connections', context = {}) {
     this.denials[type] += 1;
     this.denials.reasons[reason] = (this.denials.reasons[reason] ?? 0) + 1;
-    const limitType = context.limitType ?? inferLimitType(reason, type);
+    const limitType = normalizeLimitLabel(context.limitType ?? inferLimitType(reason, type), type);
     const protocol = normalizeProtocol(context.protocol ?? 'unknown');
     this.log.warn(
       {
