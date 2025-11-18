@@ -1068,6 +1068,7 @@ program
   .option('--desired-validation-module <address>', 'Desired JobRegistry validation module address')
   .option('--desired-reputation-module <address>', 'Desired JobRegistry reputation module address')
   .option('--desired-dispute-module <address>', 'Desired JobRegistry dispute module address')
+  .option('--network-size-preset <preset>', 'PubSub mesh preset: small|medium|large')
   .option(
     '--role-share <role=bps>',
     'Role share target definition (repeatable). Example: guardian=250',
@@ -1107,6 +1108,7 @@ program
         DESIRED_VALIDATION_MODULE_ADDRESS: options.desiredValidationModule,
         DESIRED_REPUTATION_MODULE_ADDRESS: options.desiredReputationModule,
         DESIRED_DISPUTE_MODULE_ADDRESS: options.desiredDisputeModule,
+        NETWORK_SIZE_PRESET: options.networkSizePreset,
         ROLE_SHARE_TARGETS:
           options.roleShare && Object.keys(options.roleShare).length > 0 ? options.roleShare : undefined
       };
@@ -1170,6 +1172,7 @@ program
   .option('--desired-validation-module <address>', 'Desired JobRegistry validation module override')
   .option('--desired-reputation-module <address>', 'Desired JobRegistry reputation module override')
   .option('--desired-dispute-module <address>', 'Desired JobRegistry dispute module override')
+  .option('--network-size-preset <preset>', 'PubSub mesh preset: small|medium|large')
   .option(
     '--role-share <role=bps>',
     'Role share target definition (repeatable). Example: guardian=250',
@@ -1213,6 +1216,7 @@ program
         DESIRED_VALIDATION_MODULE_ADDRESS: options.desiredValidationModule,
         DESIRED_REPUTATION_MODULE_ADDRESS: options.desiredReputationModule,
         DESIRED_DISPUTE_MODULE_ADDRESS: options.desiredDisputeModule,
+        NETWORK_SIZE_PRESET: options.networkSizePreset,
         METRICS_PORT: options.metricsPort,
         API_PORT: options.apiPort,
         AUTO_STAKE: options.autoStake,

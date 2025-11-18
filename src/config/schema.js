@@ -595,6 +595,17 @@ export const configSchemaBase = z
     P2P_PUBLIC_MULTIADDRS: z.any().optional().transform((value) => coerceMultiaddrList(value)),
     P2P_RELAY_MULTIADDRS: z.any().optional().transform((value) => coerceMultiaddrList(value)),
     P2P_LAN_MULTIADDRS: z.any().optional().transform((value) => coerceMultiaddrList(value)),
+    NETWORK_SIZE_PRESET: z
+      .string()
+      .optional()
+      .transform((value) => {
+        if (!value) return 'medium';
+        const normalized = value.toLowerCase();
+        if (!['small', 'medium', 'large'].includes(normalized)) {
+          throw new Error('NETWORK_SIZE_PRESET must be one of small, medium, large');
+        }
+        return normalized;
+      }),
     AUTONAT_REACHABILITY: z
       .string()
       .optional()
@@ -656,6 +667,14 @@ export const configSchemaBase = z
     CONN_LOW_WATER: z.coerce.number().int().min(1).max(100_000).default(512),
     CONN_HIGH_WATER: z.coerce.number().int().min(1).max(120_000).default(1_024),
     CONN_GRACE_PERIOD_SEC: z.coerce.number().int().min(1).max(86_400).default(120),
+    DIAL_TIMEOUT_MS: z.coerce.number().int().min(500).max(120_000).default(10_000),
+    DIAL_MAX_RETRIES: z.coerce.number().int().min(0).max(32).default(5),
+    DIAL_BACKOFF_INITIAL_MS: z.coerce.number().int().min(50).max(60_000).default(500),
+    DIAL_BACKOFF_MAX_MS: z.coerce.number().int().min(500).max(300_000).default(30_000),
+    DIAL_OUTBOUND_TARGET_RATIO: z.coerce.number().min(0.1).max(0.95).default(0.6),
+    DIAL_OUTBOUND_RATIO_TOLERANCE: z.coerce.number().min(0.01).max(0.89).default(0.1),
+    DIAL_OUTBOUND_MIN_CONNECTIONS: z.coerce.number().int().min(1).max(10_000).default(64),
+    DIAL_RECONCILE_INTERVAL_MS: z.coerce.number().int().min(1_000).max(600_000).default(15_000),
     PUBSUB_D: z.coerce.number().int().min(2).max(128).default(8),
     PUBSUB_D_LOW: z.coerce.number().int().min(1).max(127).default(6),
     PUBSUB_D_HIGH: z.coerce.number().int().min(1).max(256).default(12),

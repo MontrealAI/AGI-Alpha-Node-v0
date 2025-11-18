@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import pino from 'pino';
+import { DialerPolicy } from './dialerPolicy.js';
 
 const logger = pino({ level: 'info', name: 'resource-manager-config' });
 
@@ -153,6 +154,12 @@ export class ResourceManager {
     this.ipConns = new Map();
     this.asnConns = new Map();
     this.lastPressureLog = { connections: 0, streams: 0, ip: 0, asn: 0 };
+    this.directionCounts = { inbound: 0, outbound: 0 };
+    this.dialerPolicy = null;
+  }
+
+  attachDialerPolicy(policyConfig) {
+    this.dialerPolicy = policyConfig ?? null;
   }
 
   isBannedIp(ip) {
@@ -231,7 +238,7 @@ export class ResourceManager {
     }
   }
 
-  requestConnection({ peerId, ip, protocol, asn } = {}) {
+  requestConnection({ peerId, ip, protocol, asn, direction = 'inbound' } = {}) {
     if (this.isBannedIp(ip)) {
       return this.deny('banned-ip', 'connections');
     }
@@ -282,10 +289,12 @@ export class ResourceManager {
     }
 
     this.connections.set(protocolKey, protocolCount + 1);
+    const normalizedDirection = direction === 'outbound' ? 'outbound' : 'inbound';
+    this.directionCounts[normalizedDirection] = (this.directionCounts[normalizedDirection] ?? 0) + 1;
     return { accepted: true };
   }
 
-  closeConnection({ protocol, ip, asn }) {
+  closeConnection({ protocol, ip, asn, direction = 'inbound' }) {
     if (protocol) {
       this.decrementMap(this.connections, protocol);
     }
@@ -295,6 +304,9 @@ export class ResourceManager {
     if (asn) {
       this.decrementMap(this.asnConns, asn);
     }
+    const normalizedDirection = direction === 'outbound' ? 'outbound' : 'inbound';
+    const existing = this.directionCounts[normalizedDirection] ?? 0;
+    this.directionCounts[normalizedDirection] = existing > 0 ? existing - 1 : 0;
   }
 
   requestStream({ peerId, protocol, ip, asn } = {}) {
@@ -348,6 +360,20 @@ export class ResourceManager {
     this.logPressure({ metric: 'connections', used: this.currentConnections(), limit: globalConnections });
     this.logPressure({ metric: 'streams', used: this.currentStreams(), limit: globalStreams });
 
+    const outbound = this.directionCounts.outbound ?? 0;
+    const inbound = this.directionCounts.inbound ?? 0;
+    const total = outbound + inbound;
+    const policy = this.dialerPolicy;
+    const planner = policy ? new DialerPolicy(policy) : null;
+    const availableCapacity =
+      Number.isFinite(globalConnections) && globalConnections !== null
+        ? Math.max(globalConnections - this.currentConnections(), 0)
+        : null;
+    const dialPlan =
+      planner && Number.isFinite(availableCapacity)
+        ? planner.computeOutboundPlan({ outbound, inbound, dialable: availableCapacity })
+        : null;
+
     const pressure = {
       connections: {
         used: this.currentConnections(),
@@ -386,7 +412,19 @@ export class ResourceManager {
       peerStreams: Object.fromEntries(this.peerStreams),
       denials: this.denials,
       limits: this.limits,
-      pressure
+      pressure,
+      direction: {
+        inbound,
+        outbound,
+        ratio: total > 0 ? outbound / total : null,
+        target: policy?.outbound?.targetRatio ?? null,
+        tolerance: policy?.outbound?.tolerance ?? null,
+        plan: dialPlan
+      },
+      capacity: {
+        maxConnections: globalConnections,
+        availableConnections: availableCapacity
+      }
     };
   }
 }

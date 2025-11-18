@@ -68,4 +68,17 @@ describe('GossipSub routing config', () => {
     expect(options.scoreThresholds.disconnect).toBe(-4);
     expect(scoringConfig).toBe(customScoreConfig);
   });
+
+  it('applies network size presets for mesh and gossip knobs', () => {
+    const { mesh, gossip } = buildGossipsubRoutingConfig({
+      config: {
+        NETWORK_SIZE_PRESET: 'large'
+      },
+      logger: silentLogger
+    });
+
+    expect(mesh).toEqual({ D: 12, Dlo: 10, Dhi: 18, Dout: 48, Dlazy: 16 });
+    expect(gossip.gossipFactor).toBeCloseTo(0.32);
+    expect(gossip.gossipRetransmission).toBe(4);
+  });
 });

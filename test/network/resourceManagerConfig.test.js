@@ -106,6 +106,23 @@ describe('ResourceManager guards', () => {
     expect(allowed.accepted).toBe(true);
     expect(manager.metrics().denials.streams).toBe(1);
   });
+
+  it('surfaces outbound/inbound ratios with dial plans attached', () => {
+    const config = buildResourceManagerConfig({ config: { NRM_SCALE_FACTOR: 1, MAX_CONNS_PER_IP: 10 } });
+    const manager = new ResourceManager({ limits: config });
+    manager.attachDialerPolicy({
+      outbound: { targetRatio: 0.6, tolerance: 0.1, minConnections: 4 },
+      backoff: { initialMs: 500, maxMs: 1000, factor: 2 }
+    });
+
+    manager.requestConnection({ peerId: 'a', ip: '1.1.1.1', protocol: 'gossipsub', direction: 'outbound' });
+    manager.requestConnection({ peerId: 'b', ip: '2.2.2.2', protocol: 'gossipsub' });
+    const metrics = manager.metrics();
+
+    expect(metrics.direction.outbound).toBe(1);
+    expect(metrics.direction.inbound).toBe(1);
+    expect(metrics.direction.plan.deficit).toBeGreaterThanOrEqual(1);
+  });
 });
 
 describe('ConnectionManager trimming', () => {
