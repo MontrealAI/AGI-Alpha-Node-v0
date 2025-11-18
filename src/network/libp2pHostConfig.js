@@ -2,13 +2,18 @@ import pino from 'pino';
 import {
   buildTransportConfig,
   classifyTransport,
+  createReachabilityState,
   describeDialPreference,
   logTransportPlan,
   rankDialableMultiaddrs,
   selectAnnounceableAddrs,
   summarizeReachabilityState
 } from './transportConfig.js';
-import { recordConnectionLatency } from '../telemetry/networkMetrics.js';
+import {
+  recordConnectionClose,
+  recordConnectionLatency,
+  recordConnectionOpen
+} from '../telemetry/networkMetrics.js';
 
 const logger = pino({ level: 'info', name: 'libp2p-host-config' });
 
@@ -85,10 +90,15 @@ export function createTransportTracer({ plan, logger: baseLogger, metrics = null
 
     if (direction === 'in') {
       metrics?.inboundConnections?.inc?.({ transport });
+      recordConnectionOpen(metrics, { direction });
     }
 
     if (!(direction === 'out' && success === undefined)) {
       recordConnectionLatency(metrics, { transport, direction, latencyMs });
+    }
+
+    if (direction === 'out' && success === true) {
+      recordConnectionOpen(metrics, { direction });
     }
 
     const eventName = event ?? (success === undefined ? 'conn_open' : success ? 'conn_success' : 'conn_failure');
@@ -155,10 +165,28 @@ export function createTransportTracer({ plan, logger: baseLogger, metrics = null
       });
     };
 
+    const recordClose = (detail) => {
+      const peerId = extractPeerId(detail);
+      const address = extractAddress(detail);
+      const reason = detail?.reason ?? detail?.error ?? detail?.code ?? detail?.status;
+      const direction = detail?.direction ?? detail?.dir ?? 'out';
+      recordConnectionClose(metrics, { direction, reason });
+      log.info(
+        {
+          peerId,
+          address,
+          direction,
+          reason
+        },
+        'conn_close'
+      );
+    };
+
     disposers.push(attachListener(libp2p, 'dial:start', ({ detail }) => recordStart(detail)));
     disposers.push(attachListener(libp2p, 'dial:success', ({ detail }) => recordResult(detail, true)));
     disposers.push(attachListener(libp2p, 'dial:failure', ({ detail }) => recordResult(detail, false)));
     disposers.push(attachListener(libp2p, 'connection:open', ({ detail }) => recordInbound(detail)));
+    disposers.push(attachListener(libp2p, 'connection:close', ({ detail }) => recordClose(detail)));
 
     return () => disposers.forEach((dispose) => dispose());
   };
@@ -174,10 +202,14 @@ export function buildLibp2pHostConfig({
   relayMultiaddrs = [],
   lanMultiaddrs = [],
   reachabilityHint,
-  networkMetrics = null
+  networkMetrics = null,
+  reachabilityState = null
 } = {}) {
   const plan = buildTransportConfig(config);
-  const reachability = summarizeReachabilityState(reachabilityHint ?? config.AUTONAT_REACHABILITY);
+  const reachabilityTracker =
+    reachabilityState ??
+    createReachabilityState({ initial: reachabilityHint, override: config.AUTONAT_REACHABILITY });
+  const reachability = reachabilityTracker.getState();
 
   const listen = sanitizeMultiaddrs(listenMultiaddrs);
   const announceCandidates = selectAnnounceableAddrs({
@@ -223,7 +255,8 @@ export function buildLibp2pHostConfig({
       maxCircuitsPerPeer: plan.relay.maxCircuitsPerPeer,
       maxBandwidthBps: plan.relay.maxBandwidthBps
     },
-    tracer: transportTracer
+    tracer: transportTracer,
+    reachabilityState: reachabilityTracker
   };
 }
 

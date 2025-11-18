@@ -1,6 +1,6 @@
 import http from 'node:http';
 import { collectDefaultMetrics, Counter, Gauge, Registry, Summary } from 'prom-client';
-import { createNetworkMetrics } from './networkMetrics.js';
+import { createNetworkMetrics, updateReachabilityMetric } from './networkMetrics.js';
 import { DEFAULT_PEER_SCORE_THRESHOLDS } from '../services/peerScoring.js';
 import { applyPeerScoreSnapshot, createPeerScoreMetrics } from './peerScoreMetrics.js';
 
@@ -227,12 +227,27 @@ export function startMonitoringServer({
   peerScoreThresholds = null,
   meshConfig = null,
   gossipConfig = null,
-  dialerPolicy = null
+  dialerPolicy = null,
+  reachabilityState = null
 } = {}) {
   const registry = new Registry();
   collectDefaultMetrics({ register: registry, prefix: 'agi_alpha_node_' });
 
   const networkMetrics = createNetworkMetrics({ registry });
+
+  const reachabilityUnsubscribe = (() => {
+    if (!reachabilityState) {
+      updateReachabilityMetric(networkMetrics, 'unknown');
+      return null;
+    }
+    if (typeof reachabilityState.subscribe === 'function') {
+      return reachabilityState.subscribe((snapshot) => {
+        updateReachabilityMetric(networkMetrics, snapshot?.state ?? 'unknown');
+      });
+    }
+    updateReachabilityMetric(networkMetrics, reachabilityState?.getState?.() ?? reachabilityState);
+    return null;
+  })();
 
   const peerScoreMetrics = createPeerScoreMetrics({ registry });
   const peerScoreThresholdConfig = {
@@ -534,6 +549,7 @@ export function startMonitoringServer({
 
   server.on('close', () => {
     peerScoreUnsubscribe?.();
+    reachabilityUnsubscribe?.();
   });
 
   return {

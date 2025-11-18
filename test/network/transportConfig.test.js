@@ -3,6 +3,7 @@ import {
   buildTransportConfig,
   classifyTransport,
   describeDialPreference,
+  createReachabilityState,
   rankDialableMultiaddrs,
   selectAnnounceableAddrs,
   summarizeReachabilityState
@@ -121,6 +122,23 @@ describe('transportConfig', () => {
     expect(summarizeReachabilityState('PUBLIC')).toBe('public');
     expect(summarizeReachabilityState('private')).toBe('private');
     expect(summarizeReachabilityState(undefined)).toBe('unknown');
+  });
+
+  it('maintains reachability state with override protection and subscriptions', () => {
+    const tracker = createReachabilityState({ initial: 'private', override: 'public' });
+    const snapshots = [];
+    const unsubscribe = tracker.subscribe((snapshot) => snapshots.push(snapshot));
+
+    tracker.updateFromAutonat('private');
+    tracker.setOverride('unknown');
+    tracker.updateFromAutonat('private');
+
+    unsubscribe();
+
+    expect(tracker.getState()).toBe('private');
+    expect(tracker.isOverridden()).toBe(false);
+    expect(snapshots[0].state).toBe('public');
+    expect(snapshots.at(-1).state).toBe('private');
   });
 
   it('classifies transports for trace logging clarity', () => {

@@ -154,6 +154,7 @@ flowchart TD
 > - **Stress without fear**: `npm run p2p:load-tests` executes the full abuse harness (connection floods, stream floods, malformed GossipSub) and expects the node to shed load via NRM caps, per-IP/ASN clamps, and peer scoring instead of crashing. Pair it with `curl -s localhost:3000/debug/resources` to watch pressure/utilization and denial reasons in real time.【F:package.json†L29-L38】【F:src/network/resourceManagerConfig.js†L34-L244】
 >
 > **Transport & NAT sprint**: QUIC-first transport with TCP fallback, DCUtR hole punching, AutoNAT reachability-driven address advertisement, and Relay v2 quotas are now wired through `TRANSPORT_*`, `ENABLE_HOLE_PUNCHING`, `AUTONAT_*`, and `RELAY_*` environment toggles. Dial attempts are ordered toward QUIC where available, address announcements respect public/private posture, and relay slots/bandwidth remain capped for resilience. Logs surface reachability and transport choice so operators can verify QUIC-only, TCP-only, or mixed neighborhoods before rollout.
+> **Reachability observability (E2)**: `net_reachability_state` (0/1/2), `net_autonat_probes_total`, `net_autonat_failures_total`, and connection churn gauges keep AutoNAT and libp2p health visible; `createReachabilityState` synchronizes announce sets, metrics, and owner overrides without code changes.【F:src/network/transportConfig.js†L23-L86】【F:src/telemetry/networkMetrics.js†L1-L120】
 >
 > ### QUIC-first transport blueprint (Sprint Edge)
 >
@@ -219,6 +220,28 @@ flowchart TB
   EnvCfg --> Schema --> TransportPlan --> Ranker --> Tracer
   Owner -. toggles .-> EnvCfg
   Tracer --> NetMetrics --> MetricsHTTP
+```
+
+### AutoNAT reachability + churn telemetry (Sprint Edge E2)
+
+- **In-memory reachability state**: `createReachabilityState` normalizes `public | private | unknown`, honors `AUTONAT_REACHABILITY` overrides, and fans out to announce-set selection plus the Prometheus gauge `net_reachability_state` (0/1/2 coding).
+- **AutoNAT insight**: Probe counters `net_autonat_probes_total` and `net_autonat_failures_total` expose NAT assessment health; subscribe your AutoNAT callbacks to the reachability tracker and watch the gauge flip in `/metrics`.
+- **Connection churn clarity**: `net_connections_open_total{direction}`, `net_connections_close_total{direction,reason}`, and `net_connections_live{direction}` stay in lockstep with libp2p connection events, alongside existing dial latency histograms.
+- **Announceables stay honest**: Address advertisement now reads the live reachability tracker so public peers announce public/relay first, while private peers lean on relay + LAN without manual tuning.
+
+```mermaid
+flowchart LR
+  classDef state fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#dcfce7;
+  classDef metric fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef event fill:#0b1120,stroke:#6366f1,stroke-width:2px,color:#e0e7ff;
+
+  AutoNAT[AutoNAT callbacks]:::event --> Tracker[Reachability tracker\n(public|private|unknown)]:::state
+  EnvOverride[AUTONAT_REACHABILITY override]:::event --> Tracker
+  Tracker --> Announce[Announce set selection\npublic+relay vs relay+LAN]:::state
+  Tracker --> ReachGauge[net_reachability_state\nGauge 0/1/2]:::metric
+  Libp2pConns[libp2p connection events]:::event --> ChurnCounters[net_connections_open/close_total\nnet_connections_live]:::metric
+  Libp2pConns --> Latency[agi_alpha_node_net_connection_latency_ms]:::metric
+  AutoNAT --> Probes[net_autonat_probes_total\nnet_autonat_failures_total]:::metric
 ```
 
 ## Orientation & quick links
