@@ -77,6 +77,8 @@ import { buildEnsRecordTemplate } from './ens/ens_config.js';
 import { createSyntheticLaborEngine } from './services/syntheticLaborEngine.js';
 import { createGlobalIndexEngine } from './services/globalIndexEngine.js';
 import { initializeDatabase } from './persistence/database.js';
+import { buildGossipsubRoutingConfig } from './network/pubsubConfig.js';
+import { buildDialerPolicyConfig } from './network/dialerPolicy.js';
 
 const program = new Command();
 
@@ -895,6 +897,17 @@ program
           Object.entries(configOverrides).filter(([, value]) => value !== undefined)
         )
       );
+
+      const networkMetrics = (() => {
+        try {
+          const gossipsubRouting = buildGossipsubRoutingConfig({ config, logger });
+          const dialerPolicy = buildDialerPolicyConfig({ config, baseLogger: logger });
+          return { meshConfig: gossipsubRouting.mesh, gossipConfig: gossipsubRouting.gossip, dialerPolicy };
+        } catch (error) {
+          logger?.warn?.(error, 'Unable to derive network metrics for telemetry');
+          return null;
+        }
+      })();
       const diagnostics = await runNodeDiagnostics({
         rpcUrl: config.RPC_URL,
         label: config.NODE_LABEL,
@@ -1025,7 +1038,8 @@ program
           stakeStatus: diagnostics.stakeStatus,
           performance: diagnostics.performance,
           runtimeMode: diagnostics.runtimeMode,
-          logger
+          logger,
+          networkMetrics
         });
         console.log(`Metrics available on :${options.metricsPort}/metrics`);
       }

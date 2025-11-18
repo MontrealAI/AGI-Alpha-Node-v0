@@ -5,6 +5,8 @@ import { loadOfflineSnapshot } from '../services/offlineSnapshot.js';
 import { applyAlphaWorkUnitMetricsToTelemetry } from '../telemetry/alphaMetrics.js';
 import { updateAlphaWorkUnitEpochMetrics } from '../telemetry/monitoring.js';
 import { getRecentEpochSummaries } from '../services/metering.js';
+import { buildGossipsubRoutingConfig } from '../network/pubsubConfig.js';
+import { buildDialerPolicyConfig } from '../network/dialerPolicy.js';
 
 function assertPositiveInteger(value, name) {
   if (!Number.isFinite(value) || value <= 0 || Math.floor(value) !== value) {
@@ -158,6 +160,21 @@ export async function startMonitorLoop({
   let shuttingDown = false;
   let timer = null;
   let pendingResolve = null;
+
+  const networkMetrics = (() => {
+    try {
+      const gossipsubRouting = buildGossipsubRoutingConfig({ config, logger });
+      const dialerPolicy = buildDialerPolicyConfig({ config, baseLogger: logger });
+      return {
+        meshConfig: gossipsubRouting.mesh,
+        gossipConfig: gossipsubRouting.gossip,
+        dialerPolicy
+      };
+    } catch (error) {
+      logger?.warn?.(error, 'Failed to derive network metrics configuration; gauges will remain unset');
+      return null;
+    }
+  })();
   const alphaWuHistory = [];
 
   const refreshAlphaWuHistory = () => {
@@ -264,7 +281,8 @@ export async function startMonitorLoop({
             runtimeMode: diagnostics.runtimeMode,
             logger,
             healthGate,
-            enableAlphaWuPerJob: Boolean(config.METRICS_ALPHA_WU_PER_JOB)
+            enableAlphaWuPerJob: Boolean(config.METRICS_ALPHA_WU_PER_JOB),
+            networkMetrics
           });
         } else {
           updateTelemetryGauges(telemetryServer, diagnostics, healthGate);
