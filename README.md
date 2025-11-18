@@ -70,6 +70,69 @@
 > New for this sprint: a React/Vite single-page dashboard (Index | Providers | Telemetry Debug), live GSLI and SLU charts backed by `/index/history` and `/providers/*/scores`, and a telemetry stream reader at `/telemetry/task-runs` that keeps ingest visibility tight while remaining API-key gated for operators.
 > The runtime is tuned to operate like an ever-watchful macro trader—autonomous by default, yet instantly steerable by the contract owner to seize new parameters, pause subsystems, or redirect emissions without friction.
 > **Operational promise**: CI is fully green by default and enforced on PRs/main via `.github/required-checks.json`, with badges wired to the canonical workflow. The same gates run locally with `npm run ci:verify`, giving non-technical operators parity with branch protection before they ship.
+
+```mermaid
+flowchart TD
+  subgraph OwnerDeck[Owner / Operator Surfaces]
+    CLI[node src/index.js\n(governance:*, monitor, container)]
+    REST[/REST & Governance API/]
+    Dashboard[React/Vite Dashboard]
+  end
+
+  subgraph Runtime[Node Runtime]
+    P2P[GossipSub v1.1 + libp2p host]
+    Jobs[α‑Work Unit Engine]
+    GSLI[Global Synthetic Labor Index]
+    Metrics[Prometheus + peer score gauges]
+    Storage[SQLite spine + migrations]
+  end
+
+  subgraph Safety[Guards & Gates]
+    NRM[Network Resource Manager]
+    Scoring[Peer scoring + DoS bans]
+    Health[/health | /healthz | allowlists]
+    Branch[CI gates + branch protection]
+  end
+
+  subgraph ScaleLab[Scaling & Simulation]
+    Presets[Mesh presets\nsmall | medium | large]
+    Dialer[Dialer backoff + outbound reconciler]
+    Simulator[p2p-simulator.mjs\n1k–10k virtual peers]
+    Reports[docs/load-test-report.*]
+  end
+
+  CLI --> REST
+  Dashboard --> REST
+  REST --> Runtime
+  Runtime --> Metrics
+  P2P --> Runtime
+  Jobs --> GSLI
+  Simulator --> Metrics
+  Presets --> P2P
+  Dialer --> P2P
+  Metrics --> Dashboard
+  NRM --> Runtime
+  Scoring --> P2P
+  Health --> REST
+  Branch --> OwnerDeck
+  Reports --> OwnerDeck
+  classDef accent fill:#0b1120,stroke:#22c55e,stroke-width:1.5px,color:#e2e8f0;
+  classDef warn fill:#0b1120,stroke:#f97316,stroke-width:1.5px,color:#fde68a;
+  class OwnerDeck,Runtime,Safety,ScaleLab,CLI,REST,Dashboard,P2P,Jobs,GSLI,Metrics,Storage,NRM,Scoring,Health,Branch,Presets,Dialer,Simulator,Reports accent;
+```
+
+## Repository map (operator-first)
+
+| Path | What lives here | Runbook anchors |
+| --- | --- | --- |
+| `src/` | Core runtime (libp2p host wiring, governance API, telemetry, persistence) | `npm start`, `node src/index.js governance:*` |
+| `dashboard/` | React/Vite cockpit for Index/Providers/Telemetry debug | `npm run dashboard:dev`, `npm run dashboard:preview` |
+| `contracts/` | `$AGIALPHA`-aligned Solidity toolkit (owner pause/withdraw/validators) | `npm run ci:solidity`, `scripts/run-solc.mjs` |
+| `scripts/` | Operational helpers (p2p simulator, health gates, branch gates) | `npm run ci:verify`, `npm run p2p:simulate -- --nodes 1000` |
+| `docs/` | Runbooks, economics, load-test reports, ENS identity recipes | `docs/load-test-report.md`, `docs/operator-runbook.md` |
+| `deploy/` | Docker + Helm charts for production rollout | `docker build .`, `deploy/helm/agi-alpha-node` |
+| `subgraph/` | GraphQL subgraph source + generated types | `npm run ci:ts` |
+
 >
 > **Launchpad (10-second orientation)**
 >
