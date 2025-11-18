@@ -186,6 +186,7 @@ flowchart LR
 - **AutoNAT/connection churn telemetry**: Prometheus counters/gauges emit `net_reachability_state`, `net_autonat_probes_total`, `net_autonat_failures_total`, `net_connections_open_total`, `net_connections_close_total{reason}`, and `net_connections_live{direction}` with reason normalization for timeouts, bans, NRM limits, and protocol errors.【F:src/telemetry/networkMetrics.js†L27-L128】【F:src/network/libp2pHostConfig.js†L176-L203】
 - **Cleaner monitoring bindings**: the monitoring server auto-wires reachability state into the Prometheus registry and tears bindings down on shutdown so `/metrics` always reflects current AutoNAT posture without dangling listeners.【F:src/telemetry/monitoring.js†L1-L105】
 - **Registry-synchronized telemetry**: bootstrap now builds a single Prometheus registry, injects shared network metrics into libp2p host synthesis, and hands the same collectors to the monitoring server, ensuring churn/reachability counters are live as soon as the host dials and remain visible on `/metrics` without duplicate registrations.【F:src/orchestrator/bootstrap.js†L120-L242】【F:src/orchestrator/nodeRuntime.js†L263-L311】【F:src/telemetry/monitoring.js†L225-L305】
+- **Operator runbook (copy/paste)**: hit the metrics endpoint locally with `curl -s localhost:9464/metrics | grep net_` to confirm gauges are live, then watch reachability settle with `watch -n 1 "curl -s localhost:9464/metrics | grep net_reachability_state"`. A healthy public node reads `net_reachability_state 2`; flapping AutoNAT will increment `net_autonat_probes_total` while keeping `net_autonat_failures_total` near zero. Connection churn should show `net_connections_live{direction="out"}` dropping back toward steady-state after load tests.
 
 ```mermaid
 flowchart TB
@@ -320,7 +321,7 @@ sequenceDiagram
 ## Orientation & quick links
 
 - **One-command proof**: `npm run ci:verify` mirrors the full PR gate locally (lint, tests, coverage, solidity, subgraph TS, security, policy, branch gate).
-- **CI visibility**: [Workflow dashboard](https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml) + [required checks manifest](.github/required-checks.json) keep enforcement transparent.
+- **CI visibility**: [Workflow dashboard](https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml?query=branch%3Amain) + [required checks manifest](.github/required-checks.json) keep enforcement transparent.
 - **Owner sovereignty**: Governance verbs live in `src/index.js` and calldata builders in `src/services/governance.js`, pointed at the canonical `$AGIALPHA` token (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`).
 - **Debug deck (SPA)**: `dashboard/` ships a React/Vite cockpit with a connection bar (API base + API key), per-tab refresh, and mocked smoke coverage via `dashboard/src/App.test.jsx`.
 - **Deploy fast**: `Dockerfile` + `deploy/helm/agi-alpha-node` emit production images and Kubernetes charts; defaults remain non-destructive for non-technical operators.
@@ -1033,7 +1034,7 @@ flowchart LR
 
 - **Every push gated**: GitHub Actions runs lint (`markdownlint` + link-check + policy gate), backend + dashboard tests, coverage export, Solidity lint/compile, subgraph TS build, Docker build smoke, and npm audit on pushes and PRs. Required checks are enumerated in [`.github/required-checks.json`](.github/required-checks.json) and enforced on `main` via branch protection.
 - **Local parity**: `npm run ci:verify` mirrors the PR gate, including health and branch policies, so non-technical operators can see the same signals as GitHub before opening a PR.
-- **Badges & visibility**: CI badges at the top of this README and the workflow dashboard ([actions/workflows/ci.yml](https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml)) expose real-time status; badge publishing is driven by `scripts/publish-badges.mjs` after all checks pass on `main`.
+- **Badges & visibility**: CI badges at the top of this README and the workflow dashboard ([actions/workflows/ci.yml](https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml?query=branch%3Amain)) expose real-time status; badge publishing is driven by `scripts/publish-badges.mjs` after all checks pass on `main`.
 - **Coverage discipline**: `npm run coverage` emits c8 reports and uploads artifacts; thresholds are visible in badges and align with branch protection.
 
 ### Observability & health contract
