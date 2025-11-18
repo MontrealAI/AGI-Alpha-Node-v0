@@ -5,6 +5,12 @@
     },
     {
       "pattern": "^#"
+    },
+    {
+      "pattern": "^https://img\\.shields\\.io/"
+    },
+    {
+      "pattern": "^https://app\\.ens\\.domains/"
     }
   ],
   "aliveStatusCodes": [200, 206, 403]

@@ -267,9 +267,17 @@ export async function launchMonitoring({
   runtimeMode = 'online',
   logger = pino({ level: 'info', name: 'agi-alpha-node' }),
   healthGate = null,
-  enableAlphaWuPerJob = false
+  enableAlphaWuPerJob = false,
+  networkMetrics = null
 }) {
-  const telemetry = startMonitoringServer({ port, logger, enableAlphaWuPerJob });
+  const telemetry = startMonitoringServer({
+    port,
+    logger,
+    enableAlphaWuPerJob,
+    meshConfig: networkMetrics?.meshConfig ?? null,
+    gossipConfig: networkMetrics?.gossipConfig ?? null,
+    dialerPolicy: networkMetrics?.dialerPolicy ?? null
+  });
   if (stakeStatus?.operatorStake) {
     telemetry.stakeGauge.set(Number(stakeStatus.operatorStake));
   }

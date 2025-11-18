@@ -223,7 +223,10 @@ export function startMonitoringServer({
   logger,
   enableAlphaWuPerJob = false,
   peerScoreRegistry = null,
-  peerScoreThresholds = null
+  peerScoreThresholds = null,
+  meshConfig = null,
+  gossipConfig = null,
+  dialerPolicy = null
 } = {}) {
   const registry = new Registry();
   collectDefaultMetrics({ register: registry, prefix: 'agi_alpha_node_' });
@@ -362,6 +365,27 @@ export function startMonitoringServer({
     registers: [registry]
   });
 
+  const gossipsubMeshGauge = new Gauge({
+    name: 'agi_alpha_node_gossipsub_mesh_config',
+    help: 'GossipSub mesh parameters (D, Dlo, Dhi, Dout, Dlazy)',
+    labelNames: ['param'],
+    registers: [registry]
+  });
+
+  const gossipParamGauge = new Gauge({
+    name: 'agi_alpha_node_gossipsub_gossip_config',
+    help: 'GossipSub gossip parameters (gossipFactor, retransmission, fanout TTL seconds)',
+    labelNames: ['param'],
+    registers: [registry]
+  });
+
+  const dialerPolicyGauge = new Gauge({
+    name: 'agi_alpha_node_dialer_policy',
+    help: 'Dialer backoff, retry, timeout, and outbound ratio targets',
+    labelNames: ['param'],
+    registers: [registry]
+  });
+
   const alphaWuPerJobGaugeCompat = enableAlphaWuPerJob
     ? new Gauge({
         name: 'agi_alpha_node_alpha_wu_per_job',
@@ -400,6 +424,34 @@ export function startMonitoringServer({
     perJobGauges: [alphaWuPerJobGaugeCompat, alphaWuPerJobGauge].filter(Boolean),
     perJobEnabled: enableAlphaWuPerJob
   });
+
+  if (meshConfig) {
+    gossipsubMeshGauge.reset();
+    gossipsubMeshGauge.set({ param: 'D' }, Number(meshConfig.D ?? 0));
+    gossipsubMeshGauge.set({ param: 'Dlo' }, Number(meshConfig.Dlo ?? 0));
+    gossipsubMeshGauge.set({ param: 'Dhi' }, Number(meshConfig.Dhi ?? 0));
+    gossipsubMeshGauge.set({ param: 'Dout' }, Number(meshConfig.Dout ?? 0));
+    gossipsubMeshGauge.set({ param: 'Dlazy' }, Number(meshConfig.Dlazy ?? 0));
+  }
+
+  if (gossipConfig) {
+    gossipParamGauge.reset();
+    gossipParamGauge.set({ param: 'gossipFactor' }, Number(gossipConfig.gossipFactor ?? 0));
+    gossipParamGauge.set({ param: 'gossipRetransmission' }, Number(gossipConfig.gossipRetransmission ?? 0));
+    gossipParamGauge.set({ param: 'fanoutTTLSeconds' }, Number(gossipConfig.fanoutTTLSeconds ?? 0));
+  }
+
+  if (dialerPolicy) {
+    dialerPolicyGauge.reset();
+    dialerPolicyGauge.set({ param: 'timeoutMs' }, Number(dialerPolicy.timeoutMs ?? 0));
+    dialerPolicyGauge.set({ param: 'maxRetries' }, Number(dialerPolicy.maxRetries ?? 0));
+    dialerPolicyGauge.set({ param: 'backoffInitialMs' }, Number(dialerPolicy.backoff?.initialMs ?? 0));
+    dialerPolicyGauge.set({ param: 'backoffMaxMs' }, Number(dialerPolicy.backoff?.maxMs ?? 0));
+    dialerPolicyGauge.set({ param: 'targetRatio' }, Number(dialerPolicy.outbound?.targetRatio ?? 0));
+    dialerPolicyGauge.set({ param: 'tolerance' }, Number(dialerPolicy.outbound?.tolerance ?? 0));
+    dialerPolicyGauge.set({ param: 'minConnections' }, Number(dialerPolicy.outbound?.minConnections ?? 0));
+    dialerPolicyGauge.set({ param: 'reconcileIntervalMs' }, Number(dialerPolicy.outbound?.reconcileIntervalMs ?? 0));
+  }
 
   const jobsRunningGauge = new Gauge({
     name: 'jobs_running',
@@ -505,6 +557,9 @@ export function startMonitoringServer({
     alphaWuTotalCounterCompat,
     alphaWuEpochGaugeCompat,
     alphaWuPerJobGaugeCompat,
+    gossipsubMeshGauge,
+    gossipParamGauge,
+    dialerPolicyGauge,
     jobsRunningGauge,
     jobsCompletedCounter,
     jobsFailedCounter,
