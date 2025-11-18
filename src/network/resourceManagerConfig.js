@@ -182,7 +182,7 @@ export class ResourceManager {
     this.connections = new Map();
     this.streamProtocols = new Map();
     this.peerStreams = new Map();
-    this.denials = { connections: 0, streams: 0, reasons: {} };
+    this.denials = { connections: 0, streams: 0, reasons: {}, byLimitType: {} };
     this.ipConns = new Map();
     this.asnConns = new Map();
     this.lastPressureLog = { connections: 0, streams: 0, ip: 0, asn: 0 };
@@ -277,8 +277,9 @@ export class ResourceManager {
 
   deny(reason, type = 'connections', context = {}) {
     this.denials[type] += 1;
-    this.denials.reasons[reason] = (this.denials.reasons[reason] ?? 0) + 1;
     const limitType = normalizeLimitLabel(context.limitType ?? inferLimitType(reason, type), type);
+    this.denials.reasons[reason] = (this.denials.reasons[reason] ?? 0) + 1;
+    this.denials.byLimitType[limitType] = (this.denials.byLimitType[limitType] ?? 0) + 1;
     const protocol = normalizeProtocol(context.protocol ?? 'unknown');
     this.log.warn(
       {
@@ -677,6 +678,7 @@ export class ConnectionManager {
       this.metrics?.connmanagerTrimsTotal?.inc?.({ reason });
       this.log.warn(
         {
+          reason,
           trimmed: trimmed.map((peer) => peer.peerId),
           kept: kept.map((peer) => peer.peerId),
           graceProtected: graceProtected.map((peer) => peer.peerId)

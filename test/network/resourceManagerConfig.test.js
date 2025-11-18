@@ -160,6 +160,7 @@ describe('ResourceManager guards', () => {
     expect(snapshot.usage.global.connections.used).toBe(1);
     expect(snapshot.usage.perProtocol['/meshsub/1.1.0'].connections.used).toBe(1);
     expect(snapshot.limitsGrid.perProtocol['/meshsub/1.1.0'].connections).toBe(1);
+    expect(snapshot.denials.byLimitType.per_ip).toBe(1);
 
     const metricsJson = await registry.getMetricsAsJSON();
     const perIpDenial = metricsJson

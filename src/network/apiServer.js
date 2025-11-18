@@ -1710,12 +1710,13 @@ export function startAgentApi({
           peers.forEach((peer) => resourceManager.banPeer(peer));
           asns.forEach((asn) => resourceManager.banAsn(asn));
 
+          const banSnapshot = resourceManager.metrics();
           logger.info(
             {
               ips,
               peers,
               asns,
-              banCounts: resourceManager.metrics()?.limits?.ipLimiter ?? null
+              banCounts: banSnapshot?.limitsGrid?.ipLimiter ?? banSnapshot?.limits?.ipLimiter ?? null
             },
             'Ban grid updated via governance API'
           );
@@ -1752,12 +1753,13 @@ export function startAgentApi({
           peers.forEach((peer) => resourceManager.unbanPeer(peer));
           asns.forEach((asn) => resourceManager.unbanAsn(asn));
 
+          const banSnapshot = resourceManager.metrics();
           logger.info(
             {
               ips,
               peers,
               asns,
-              banCounts: resourceManager.metrics()?.limits?.ipLimiter ?? null
+              banCounts: banSnapshot?.limitsGrid?.ipLimiter ?? banSnapshot?.limits?.ipLimiter ?? null
             },
             'Ban grid updated via governance API'
           );
