@@ -200,6 +200,39 @@ Switch presets with either `NETWORK_SIZE_PRESET=small|medium|large` or `--networ
 
 ```mermaid
 flowchart LR
+  classDef accent fill:#0f172a,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef warn fill:#0f172a,stroke:#f97316,stroke-width:2px,color:#fde68a;
+  subgraph MeshTuning[Mesh tuning cockpit]
+    Preset[Preset switcher<br/>small · medium · large]:::accent
+    MeshFanout[D/Dlo/Dhi/Dout/Dlazy
+    gossipFactor · retransmission]:::accent
+    Dialer[Dial policy<br/>timeout/backoff/retries]:::accent
+    Ratio[Outbound ratio reconciler<br/>60/40 ± tolerance]:::accent
+  end
+  subgraph Observability[Observability loops]
+    MetricsScrape[Prometheus scrape<br/>mesh degree · peer score]:::accent
+    Health[Health gates<br/>/health · /healthz]:::accent
+    OwnerCtl[Owner directives<br/>governance:* verbs]:::accent
+  end
+  Preset --> MeshFanout
+  MeshFanout --> MetricsScrape
+  Dialer --> Ratio
+  Ratio --> MetricsScrape
+  OwnerCtl -. pause/unpause .-> MeshFanout
+  OwnerCtl -. boost fan-out .-> Ratio
+  MetricsScrape -->|p50/p95/p99 latency| Observability
+  Observability -->|document| docs/load-test-report.md:::warn
+```
+
+#### Mesh tuning crib (copy/paste ready)
+
+- Flip presets live: `NETWORK_SIZE_PRESET=large npm start` or `node src/index.js --network-size-preset=small`.
+- Inspect mesh and scoring: `curl -s localhost:3000/debug/peerscore | jq '.mesh'` to spot D/Dlo/Dhi drift.
+- Track outbound ratio: `curl -s localhost:3000/debug/resources | jq '.dialer'` to confirm the reconciler is holding ~60/40 even after partitions.
+- Owners stay sovereign: pause/resume with `node src/index.js governance:pause` / `governance:resume` or rotate parameters via `/governance/*` endpoints without redeploying.
+
+```mermaid
+flowchart LR
   subgraph Mesh[GossipSub mesh]
     D(D / Dlo / Dhi)
     Dout(Dout fan-out)
