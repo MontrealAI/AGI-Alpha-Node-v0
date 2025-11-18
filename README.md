@@ -168,6 +168,29 @@ sequenceDiagram
   Note over Node: Configurable transports (QUIC/TCP), DCUtR, AutoNAT, Relay quotas
 ```
 
+### Sprint D – Scaling & Mesh Tuning (1k–10k peers)
+
+- **Network-size presets** (`small | medium | large`): `NETWORK_SIZE_PRESET` (or `--network-size-preset`) hydrates GossipSub with tuned `D/Dlo/Dhi/Dout/Dlazy`, `gossipFactor`, and `gossipRetransmission` defaults, while still honoring any explicit `PUBSUB_*` overrides for bespoke experiments.【F:src/network/pubsubConfig.js†L4-L79】【F:src/network/pubsubConfig.js†L91-L134】【F:src/config/schema.js†L47-L99】
+- **Dialer policy & outbound ratio reconciler**: `buildDialerPolicyConfig` wires dial timeout, retry ceiling, exponential backoff, and outbound/inbound ratio targets (default 60/40 with 15s reconciliation) so partitions trigger measured redials instead of thrash.【F:src/network/dialerPolicy.js†L1-L62】【F:src/network/dialerPolicy.js†L73-L114】
+- **Mesh inspection signals**: the routing config logs synthesized mesh degree, gossip fan-out, and scoring thresholds for every preset, letting operators validate fan-out drift in metrics before scaling runs.【F:src/network/pubsubConfig.js†L99-L133】【F:src/network/apiServer.js†L1162-L1173】
+- **Synthetic fleet harness**: `npm run p2p:simulate -- --nodes 1000 --duration 10 --rate 0.02 --latency 60 --loss 0.005` spins 1k+ virtual nodes that publish/subscribe to `agi.jobs` and `agi.control`, capturing p50/p95/p99 latencies, loss rate, and resource envelopes; results are checkpointed in `docs/load-test-report.json` and narrated in `docs/load-test-report.md`.【F:scripts/p2p-simulator.mjs†L1-L118】【F:docs/load-test-report.md†L1-L26】【F:docs/load-test-report.json†L1-L28】
+- **Owner override friendly**: all knobs flow through `.env`/CLI and the governance surface, preserving the owner’s ability to pause subsystems or retune parameters without redeploying.
+
+```mermaid
+flowchart LR
+  preset[NETWORK_SIZE_PRESET\nsmall | medium | large] --> mesh[D/Dlo/Dhi\nDout/Dlazy]
+  mesh --> gossip[gossipFactor\ngossipRetransmission]
+  mesh --> metrics[Mesh size &\nfan-out metrics]
+  dialer[Dialer policy\ntimeout/backoff\noutbound 60/40] --> reconciler[Outbound reconciler\nevery 15s]
+  reconciler --> dials[Targeted dials\n(respects NRM)]
+  dials --> metrics
+  simulate[p2p simulator\n1k+ virtual nodes] --> metrics
+  owner[Owner controls\npause/retune] --> preset
+  owner --> dialer
+  classDef accent fill:#0f172a,stroke:#ec4899,stroke-width:1.5px,color:#e2e8f0;
+  class preset,mesh,gossip,metrics,dialer,reconciler,dials,simulate,owner accent;
+```
+
 ### Transport + NAT traversal architecture (Sprint A)
 
 - **QUIC-first, TCP-ready**: `buildTransportConfig` keeps both stacks enabled by default and orders dial targets toward QUIC with TCP fallback so restrictive networks still connect.【F:src/network/transportConfig.js†L22-L101】【F:src/network/transportConfig.js†L115-L146】
