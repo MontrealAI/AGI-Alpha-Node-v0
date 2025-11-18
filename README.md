@@ -66,6 +66,7 @@
 > - **Observe the mesh**: `curl -s localhost:3000/debug/peerscore` to watch GossipSub v1.1 scores shift; `curl -s localhost:3000/metrics | grep peer_score` to view buckets and topic contributions live.
 > - **Steer as owner**: `node src/index.js governance:pause` / `governance:resume` / `governance:set-validators` / `governance:set-rewards`—all routed through the `$AGIALPHA` binding so the owner can retune parameters, pause, or reroute flows instantly.
 > - **Deploy safely**: Docker + Helm charts ship the same guardrails; branch protection and `.github/required-checks.json` enforce visibility so every promotion to `main` stays green.
+> - **Prove contracts obey**: the canonical `$AGIALPHA` token is wired into `AlphaNodeManager.sol`, giving the owner unilateral control to pause/unpause, rotate validators, update ENS controllers, and move stake via `withdrawStake`—all without redeploying the network substrate.【F:contracts/AlphaNodeManager.sol†L1-L120】
 >
 > **Transport & NAT sprint**: QUIC-first transport with TCP fallback, DCUtR hole punching, AutoNAT reachability-driven address advertisement, and Relay v2 quotas are now wired through `TRANSPORT_*`, `ENABLE_HOLE_PUNCHING`, `AUTONAT_*`, and `RELAY_*` environment toggles. Dial attempts are ordered toward QUIC where available, address announcements respect public/private posture, and relay slots/bandwidth remain capped for resilience. Logs surface reachability and transport choice so operators can verify QUIC-only, TCP-only, or mixed neighborhoods before rollout.
 >
@@ -280,6 +281,12 @@ PUBSUB_TOPIC_PARAMS='{"agi.jobs":{"expectedMessagePerSecond":0.5,"invalidMessage
 1) `npm start` (or container/Helm) then curl `GET /debug/peerscore?limit=5&direction=asc` to confirm snapshots are flowing.
 2) `curl -s localhost:3000/metrics | grep peer_score` to verify bucket/topic gauges report non-zero timestamps.
 3) Replay invalid payloads in a test mesh and watch the lowest bucket drift toward `graylist`/`disconnect`—log lines surface graft/prune decisions whenever scoring crosses thresholds.
+
+#### Minimal owner-sovereignty drill
+
+- Run `node src/index.js governance:pause` then `governance:resume` to confirm owner toggles propagate without affecting scoring state.
+- Rotate a validator with `governance:set-validators --validator <addr> --active true` and inspect the live registry via `GET /providers` (or `GET /governance/status`) to verify the mutation surfaced through the public API immediately.【F:contracts/AlphaNodeManager.sol†L69-L120】【F:src/network/apiServer.js†L1048-L1108】
+- Trigger a controlled stake release with `withdrawStake` (owner-only) for treasury rotations; confirmations land in the structured logs and do not require contract upgrades.【F:contracts/AlphaNodeManager.sol†L96-L120】
 
 ### Peer score operations (B1–B3 acceptance drill)
 
