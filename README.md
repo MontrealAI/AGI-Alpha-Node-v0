@@ -366,6 +366,63 @@ sequenceDiagram
   Metrics-->>Dashboard: live charts / alerts
 ```
 
+### Edge observability quick reference (public/private spine)
+
+- **Gauge the posture**: `net_reachability_state` (0 unknown · 1 private · 2 public) updates as soon as AutoNAT or an owner override fires, keeping announce sets in sync with the in-memory tracker without code changes.【F:src/network/transportConfig.js†L23-L86】【F:src/telemetry/networkMetrics.js†L17-L106】
+- **Audit NAT probes**: `net_autonat_probes_total` and `net_autonat_failures_total` increment on every AutoNAT callback so dashboards capture flapping or throttled NAT paths in real time.【F:src/telemetry/networkMetrics.js†L27-L103】
+- **Watch churn live**: `net_connections_open_total{direction}`, `net_connections_close_total{direction,reason}`, and `net_connections_live{direction}` stay consistent even during bursts thanks to the transport tracer’s hooks on dial/open/close events.【F:src/network/libp2pHostConfig.js†L40-L167】【F:src/telemetry/networkMetrics.js†L50-L176】
+- **Latency histogram on every dial**: `agi_alpha_node_net_connection_latency_ms{transport,direction}` captures first-byte latency per transport and direction for a quick QUIC-vs-TCP health read.【F:src/telemetry/networkMetrics.js†L73-L105】【F:src/network/libp2pHostConfig.js†L40-L167】
+- **Operator override wins**: `AUTONAT_REACHABILITY=public|private` locks the tracker and the gauge until cleared, ensuring the owner’s decision outranks AutoNAT while still exporting the state to Prometheus and the announce-set selector.【F:src/network/transportConfig.js†L23-L86】
+
+| Metric | Type | Labels | Why it matters |
+| --- | --- | --- | --- |
+| `net_reachability_state` | Gauge | _none_ | Single source of truth for announce-set selection and dashboards (public/private/unknown). |
+| `net_autonat_probes_total` | Counter | _none_ | Volume of AutoNAT probes (baseline for failure ratios). |
+| `net_autonat_failures_total` | Counter | _none_ | Detects NAT flapping or blocked probes. |
+| `net_connections_open_total` | Counter | `direction` (`in`/`out`) | Connection open rate by direction for capacity planning. |
+| `net_connections_close_total` | Counter | `direction`, `reason` | Close reasons normalized (`timeout`, `banned`, `nrm_limit`, `protocol`, `error`, `reset`, etc.). |
+| `net_connections_live` | Gauge | `direction` | Instantaneous live connections to spot leaks or churn spikes. |
+| `agi_alpha_node_net_connection_latency_ms` | Histogram | `transport`, `direction` | QUIC vs TCP latency slices with p50/p95/p99 visibility. |
+
+```mermaid
+flowchart LR
+  classDef neon fill:#020617,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef prism fill:#0b1120,stroke:#a855f7,stroke-width:2px,color:#ede9fe;
+  subgraph NAT[Reachability Spine]
+    Override[AUTONAT_REACHABILITY<br/>owner lock]:::prism
+    AutoNAT[AutoNAT emitter<br/>probe/status hooks]:::neon
+    Tracker[createReachabilityState<br/>public | private | unknown]:::neon
+  end
+  subgraph Metrics[Prometheus surface]
+    Gauge[net_reachability_state]:::prism
+    Probes[net_autonat_probes_total]:::prism
+    Fail[net_autonat_failures_total]:::prism
+    Open[net_connections_open_total]:::prism
+    Close[net_connections_close_total]:::prism
+    Live[net_connections_live]:::prism
+    Latency[agi_alpha_node_net_connection_latency_ms]:::prism
+  end
+  subgraph Libp2p[Transport tracer]
+    Dials[dial:start|success|failure]:::neon
+    Opens[connection:open]:::neon
+    Closes[connection:close]:::neon
+  end
+  Override --> Tracker
+  AutoNAT --> Tracker
+  Tracker --> Gauge
+  Tracker --> Probes
+  Tracker --> Fail
+  Dials --> Latency
+  Dials --> Open
+  Opens --> Open
+  Closes --> Close
+  Open --> Live
+  Close --> Live
+  Gauge --> Dash[Dashboards/alerts]
+  Live --> Dash
+  Latency --> Dash
+```
+
 ## Orientation & quick links
 
 - **One-command proof**: `npm run ci:verify` mirrors the full PR gate locally (lint, tests, coverage, solidity, subgraph TS, security, policy, branch gate).
