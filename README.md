@@ -71,6 +71,7 @@
 **AGI Alpha Node v0** metabolizes heterogeneous agentic labor into verifiable α‑Work Units (α‑WU) and Synthetic Labor Units (SLU), rebalances the Global Synthetic Labor Index (GSLI), exposes audited read‑only REST telemetry, and routes the `$AGIALPHA` treasury (token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) under complete owner command. Every dial can be paused, rerouted, or retuned without redeploying, delivering a production-grade intelligence core built to bend markets.
 New for this sprint: a React/Vite single-page dashboard (Index | Providers | Telemetry Debug), live GSLI and SLU charts backed by `/index/history` and `/providers/*/scores`, and a telemetry stream reader at `/telemetry/task-runs` that keeps ingest visibility tight while remaining API-key gated for operators.
 The runtime is tuned to operate like an ever-watchful macro trader—autonomous by default, yet instantly steerable by the contract owner to seize new parameters, pause subsystems, or redirect emissions without friction.
+AGI Alpha Nodes are the catalysts of this cognitive economy: each instance is a programmable farm that continuously harvests `$AGIALPHA` yield while the owner retains absolute veto, pause, and retuning authority.
 **Operational promise**: CI is fully green by default and enforced on PRs/main via `.github/required-checks.json`, with badges wired to the canonical workflow. The same gates run locally with `npm run ci:verify`, giving non-technical operators parity with branch protection before they ship.
 **Sprint assurance (QUIC-first E1)**: QUIC/TCP/Relay/AutoNAT/DCUtR flags are unified behind the env/CLI surface, rankers prefer QUIC deterministically, and every dial/accept is traced with transport + latency so network posture is inspectable without guesswork. CI pins these expectations with dedicated unit tests and schema validation so drift is caught before deployment.【F:src/network/transportConfig.js†L23-L146】【F:test/network/transportConfig.test.js†L12-L132】
 
@@ -79,6 +80,33 @@ The runtime is tuned to operate like an ever-watchful macro trader—autonomous 
 - **Every denial is tagged**: All NRM reject paths emit structured logs plus `nrm_denials_total{limit_type,protocol}` increments, giving instant clarity on whether the ceiling came from global caps, per-IP/ASN limits, per-peer caps, or banlist fences.【F:src/network/resourceManagerConfig.js†L246-L361】【F:src/network/resourceManagerConfig.js†L371-L456】
 - **Debug grid with per-protocol caps**: `GET /debug/resources` now returns a full limits+usage grid—global connections/streams/memory/fd/bandwidth, per-protocol caps for GossipSub/identify/bitswap/custom AGI protocols, per-IP/ASN ceilings, and live utilization/pressure telemetry—so operators never read code to see capacity.【F:src/network/resourceManagerConfig.js†L472-L566】【F:src/network/apiServer.js†L1162-L1175】【F:test/network/apiServer.dos.test.js†L16-L33】
 - **Watermarks + ban grid metrics**: Connection Manager trims above high-water emit `connmanager_trims_total{reason}`, while `/governance/bans` mutations update gauges/counters for IP/peer/ASN ban entries, keeping ban grids auditable and owner-steerable.【F:src/network/resourceManagerConfig.js†L600-L669】【F:src/telemetry/networkMetrics.js†L24-L76】【F:src/network/apiServer.js†L1667-L1744】
+
+### Debug surface (copy/paste proof)
+
+```bash
+curl -s localhost:3000/debug/resources | jq '{limits, usage, bans}'
+# limits.global, limits.perProtocol.*, and usage.perProtocol.* all render side-by-side
+# with live used/limit values so operators never spelunk code to understand capacity.
+```
+
+```mermaid
+flowchart LR
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+  subgraph LimitsGrid[Limits + Usage Grids]
+    Global[Global caps\n(conns/streams/memory/fd/bw)]:::frost
+    Protocol[Per-protocol caps\nGossipSub · identify · bitswap · agi/*]:::frost
+    PerIp[Per-IP / per-ASN ceilings]:::frost
+    Bans[Ban grid\nIP · Peer · ASN]:::lava
+  end
+  Requests[Inbound/outbound requests\n(conn | stream)]:::neon --> LimitsGrid
+  LimitsGrid --> Metrics[nrm_denials_total{limit_type,protocol}\nconnmanager_trims_total{reason}\nbanlist_entries/changes]:::lava
+  Metrics --> Debug[/GET /debug/resources\nlimits + usage + pressure/]:::neon
+  Owner[Owner token / governance:*]:::lava --> Bans
+  Owner --> Debug
+  class LimitsGrid,Global,Protocol,PerIp,Bans,Requests,Metrics,Debug,Owner neon;
+```
 
 ```mermaid
 flowchart LR
