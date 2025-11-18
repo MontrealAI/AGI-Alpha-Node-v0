@@ -239,6 +239,40 @@ flowchart LR
 | `agi.settlement` | 0.8 | 0.2 | -0.9 | 10s / 4 msgs | 720s / 0.028 |
 | `agi.*` (wildcard fallback) | 0.4 | 0.15 | -0.65 | 10s / 3 msgs | 450s / 0.02 |
 
+#### Operator-fast scoring bootstrap (env snippet)
+
+```bash
+# Mesh fan-out tuned for 1k–10k peers
+PUBSUB_D=8
+PUBSUB_D_LOW=6
+PUBSUB_D_HIGH=12
+PUBSUB_D_OUT=64
+PUBSUB_D_LAZY=16
+PUBSUB_GOSSIP_FACTOR=0.3
+PUBSUB_GOSSIP_RETRANSMISSION=4
+
+# Hardened thresholds (gossip / publish / graylist / disconnect)
+PUBSUB_GOSSIP_THRESHOLD=-2
+PUBSUB_PUBLISH_THRESHOLD=-4
+PUBSUB_GRAYLIST_THRESHOLD=-6
+PUBSUB_DISCONNECT_THRESHOLD=-9
+
+# Opportunistic grafting cadence
+PUBSUB_OPPORTUNISTIC_GRAFT_PEERS=8
+PUBSUB_OPPORTUNISTIC_GRAFT_THRESHOLD=5
+PUBSUB_OPPORTUNISTIC_GRAFT_TICKS=60
+PUBSUB_DIRECT_CONNECT_TICKS=360
+
+# Topic-specific overrides (JSON)
+PUBSUB_TOPIC_PARAMS='{"agi.jobs":{"expectedMessagePerSecond":0.5,"invalidMessagePenalty":-1.1},"agi.telemetry.*":{"topicWeight":0.45,"invalidMessagePenalty":-0.4}}'
+```
+
+#### Smoke validation loop (3 commands)
+
+1) `npm start` (or container/Helm) then curl `GET /debug/peerscore?limit=5&direction=asc` to confirm snapshots are flowing.
+2) `curl -s localhost:3000/metrics | grep peer_score` to verify bucket/topic gauges report non-zero timestamps.
+3) Replay invalid payloads in a test mesh and watch the lowest bucket drift toward `graylist`/`disconnect`—log lines surface graft/prune decisions whenever scoring crosses thresholds.
+
 ### Peer score operations (B1–B3 acceptance drill)
 
 1. **Launch with scoring on**: ensure `PUBSUB_PEER_EXCHANGE` and scoring thresholds stay at defaults (or supply overrides); bootstrap logs will print the mesh/gossip thresholds plus the active inspector hook.【F:src/network/pubsubConfig.js†L36-L92】【F:src/orchestrator/bootstrap.js†L108-L133】
