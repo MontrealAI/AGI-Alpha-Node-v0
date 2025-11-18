@@ -188,6 +188,31 @@ npm start           # launches REST + metrics + governance surfaces with SQLite 
 
 Additional entry points: `npm run p2p:simulate` (1k+ virtual peers), `npm run dashboard:dev` (React/Vite cockpit), and `npm run p2p:load-tests` (abuse harness: connection floods, stream floods, malformed gossip).【F:package.json†L10-L58】【F:scripts/p2p-simulator.mjs†L1-L118】
 
+### Operations playbook (zero-drama launch)
+
+1. **Install & hydrate**: `npm ci && npm run db:migrate && npm run db:seed` to prime the SQLite spine and dashboards.
+2. **Boot**: `npm start` (or `npm run dashboard:preview` for the cockpit) to expose `/health`, `/metrics`, `/debug/resources`, and governance surfaces on port 3000.
+3. **Observe**: `curl -s localhost:3000/metrics | head` to confirm NRM/ban/trim counters are live; `curl -s localhost:3000/debug/resources` to confirm per-protocol ceilings and bans load.
+4. **Govern**: Use authenticated `POST/DELETE /governance/bans` or `node src/index.js governance:*` to pause/unpause, rotate validators, or retune emissions without redeploying.
+5. **Harden**: Enforce branch protection with `.github/required-checks.json` and mirror CI locally via `npm run ci:verify` before opening PRs.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Operator as Operator / Owner
+  participant Node as AGI Alpha Node
+  participant Metrics as Prometheus / OTel
+  participant Governance as Governance API + CLI
+
+  Operator->>Node: npm ci && npm start
+  Node-->>Metrics: nrm_denials_total / connmanager_trims_total / banlist_*
+  Operator->>Node: curl /debug/resources (caps + usage + bans)
+  Operator->>Governance: POST /governance/bans (ip/peer/asn)
+  Governance-->>Node: ban grid updated + gauges/counters set
+  Operator->>Governance: governance:* (pause/unpause/retune)
+  Node-->>Operator: health OK + enforcement active
+```
+
 ## CI & branch protection (always green)
 
 - **Workflow fidelity**: The CI pipeline runs lint → unit/integration/frontend tests → coverage → Solidity lint/compile → subgraph TS build → `npm audit` → policy + branch gates. The same steps are wired into `npm run ci:verify` for local parity.【F:.github/workflows/ci.yml†L1-L210】【F:package.json†L29-L46】
@@ -207,6 +232,16 @@ flowchart LR
   Local --> Policy[Policy + Branch gates]:::neon
   Lint & Tests & Coverage & Solidity & Subgraph & Security & Policy --> Badge[Branch protection + badges]:::lava
 ```
+
+| Gate | What it proves |
+| --- | --- |
+| `lint` | Markdown, links, and Solidity styles align with repository standards. |
+| `test` / `test:frontend` | All service, protocol, and dashboard behaviors are deterministic under Vitest. |
+| `coverage` | `c8` enforces full coverage on the Vitest graph (badge mirrors `main`). |
+| `lint:sol` / `test:sol` | Smart contracts compile cleanly with solhint hygiene. |
+| `ci:ts` | Subgraph manifest generation + typegen + WASM build succeed. |
+| `ci:security` | `npm audit --audit-level=high` keeps dependencies hardened (owner may upgrade at will). |
+| `ci:policy` / `ci:branch` | Governance allowlists and branch naming stay within guardrails. |
 
 ## Dashboard & monitoring
 
