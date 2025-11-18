@@ -97,8 +97,37 @@ export function createNetworkMetrics({
     registers
   });
 
+  const nrmDenialsTotal = new Counter({
+    name: 'nrm_denials_total',
+    help: 'Resource manager denials grouped by limit type and protocol',
+    labelNames: ['limit_type', 'protocol'],
+    registers
+  });
+
+  const connmanagerTrimsTotal = new Counter({
+    name: 'connmanager_trims_total',
+    help: 'Connection manager peer trims grouped by reason',
+    labelNames: ['reason'],
+    registers
+  });
+
+  const banlistEntries = new Gauge({
+    name: 'banlist_entries',
+    help: 'Current banlist entries grouped by identifier type',
+    labelNames: ['type'],
+    registers
+  });
+
+  const banlistChangesTotal = new Counter({
+    name: 'banlist_changes_total',
+    help: 'Banlist changes grouped by identifier type and action',
+    labelNames: ['type', 'action'],
+    registers
+  });
+
   connectionsLive.set({ direction: 'in' }, liveConnections.in);
   connectionsLive.set({ direction: 'out' }, liveConnections.out);
+  ['ip', 'peer', 'asn'].forEach((type) => banlistEntries.set({ type }, 0));
 
   const connectionLatency = new Histogram({
     name: 'agi_alpha_node_net_connection_latency_ms',
@@ -152,6 +181,10 @@ export function createNetworkMetrics({
     connectionsClose,
     connectionsLive,
     connectionLatency,
+    nrmDenialsTotal,
+    connmanagerTrimsTotal,
+    banlistEntries,
+    banlistChangesTotal,
     liveConnections,
     stop: () => bindings.forEach((unbind) => unbind?.())
   };

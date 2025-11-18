@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { Registry } from 'prom-client';
 import { describe, expect, it } from 'vitest';
 import {
   ResourceManager,
@@ -8,6 +9,7 @@ import {
   buildAbuseHarness,
   buildResourceManagerConfig
 } from '../../src/network/resourceManagerConfig.js';
+import { createNetworkMetrics } from '../../src/telemetry/networkMetrics.js';
 
 describe('resourceManagerConfig', () => {
   it('applies scale factors and merges overrides', () => {
@@ -123,11 +125,46 @@ describe('ResourceManager guards', () => {
     expect(metrics.direction.inbound).toBe(1);
     expect(metrics.direction.plan.deficit).toBeGreaterThanOrEqual(1);
   });
+
+  it('emits denial metrics with protocol + limit type and usage grids', async () => {
+    const registry = new Registry();
+    const networkMetrics = createNetworkMetrics({ registry });
+    const config = buildResourceManagerConfig({
+      config: {
+        MAX_CONNS_PER_IP: 1,
+        NRM_LIMITS_JSON: JSON.stringify({ perProtocol: { '/meshsub/1.1.0': { maxConnections: 1 } } })
+      }
+    });
+    const manager = new ResourceManager({ limits: config, metrics: networkMetrics });
+
+    manager.requestConnection({ peerId: 'peer-a', ip: '10.0.0.1', protocol: '/meshsub/1.1.0' });
+    manager.requestConnection({ peerId: 'peer-b', ip: '10.0.0.1', protocol: '/meshsub/1.1.0' });
+
+    const snapshot = manager.metrics();
+    expect(snapshot.usage.global.connections.used).toBe(1);
+    expect(snapshot.usage.perProtocol['/meshsub/1.1.0'].connections.used).toBe(1);
+    expect(snapshot.limitsGrid.perProtocol['/meshsub/1.1.0'].connections).toBe(1);
+
+    const metricsJson = await registry.getMetricsAsJSON();
+    const perIpDenial = metricsJson
+      .find((metric) => metric.name === 'nrm_denials_total')
+      ?.values?.find(
+        (entry) => entry.labels.limit_type === 'per_ip' && entry.labels.protocol === '/meshsub/1.1.0'
+      );
+    expect(perIpDenial?.value ?? 0).toBeGreaterThan(0);
+  });
 });
 
 describe('ConnectionManager trimming', () => {
-  it('drops lowest scoring non-pinned peers first', () => {
-    const manager = new ConnectionManager({ lowWater: 2, highWater: 3, gracePeriodSeconds: 60 });
+  it('drops lowest scoring non-pinned peers first', async () => {
+    const registry = new Registry();
+    const networkMetrics = createNetworkMetrics({ registry });
+    const manager = new ConnectionManager({
+      lowWater: 2,
+      highWater: 3,
+      gracePeriodSeconds: 60,
+      metrics: networkMetrics
+    });
     const now = Date.now();
     const peers = [
       { peerId: 'good', score: 5, connectedAt: now - 120_000 },
@@ -142,6 +179,12 @@ describe('ConnectionManager trimming', () => {
     expect(kept.map((p) => p.peerId)).toContain('pinned');
     expect(trimmed.length).toBeGreaterThanOrEqual(3);
     expect(kept.map((peer) => peer.peerId)).toEqual(expect.arrayContaining(['pinned', 'fresh']));
+
+    const metricsJson = await registry.getMetricsAsJSON();
+    const overHighWater = metricsJson
+      .find((metric) => metric.name === 'connmanager_trims_total')
+      ?.values?.find((entry) => entry.labels.reason === 'over_high_water');
+    expect(overHighWater?.value ?? 0).toBeGreaterThan(0);
   });
 });
 

@@ -1166,6 +1166,8 @@ export function startAgentApi({
         }
         const snapshot = resourceManager.metrics();
         jsonResponse(res, 200, {
+          limits: snapshot.limitsGrid ?? snapshot.limits,
+          usage: snapshot.usage ?? null,
           metrics: snapshot,
           bans: exportBanState(),
           connectionManager: describeConnectionManager()
