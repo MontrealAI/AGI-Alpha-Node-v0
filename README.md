@@ -247,6 +247,8 @@ flowchart LR
 4. **Abuse test**: publish malformed messages on `agi.jobs` in a synthetic harness—the offending peer should slide past graylist into disconnect once invalid penalties accrue; healthy peers retain neutral/positive buckets. Thresholds are owner-tunable via `PUBSUB_GRAYLIST_THRESHOLD`/`PUBSUB_DISCONNECT_THRESHOLD`.【F:src/services/peerScoring.js†L1-L152】
 5. **Opportunistic grafting**: rely on `PUBSUB_OPPORTUNISTIC_GRAFT_PEERS`/`PUBSUB_OPPORTUNISTIC_GRAFT_THRESHOLD` to refresh low-quality meshes automatically; logs will note inspector attachment so you can correlate graft events with score swings.【F:src/network/pubsubConfig.js†L23-L75】
 
+Snapshots with no active peers still advance `peer_score_snapshot_seconds` while clearing bucket/topic gauges, keeping dashboards fresh even when meshes churn to zero.【F:src/telemetry/peerScoreMetrics.js†L44-L76】
+
 ```mermaid
 flowchart TD
   Config[ENV + .env + ENS\nPUBSUB_* overrides] --> Builder[buildPeerScoreConfig\n(topic + pattern aware)]
