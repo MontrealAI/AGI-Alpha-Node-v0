@@ -20,6 +20,57 @@ function coercePositiveInteger(value, fallback) {
   return coerced > 0 ? coerced : fallback;
 }
 
+export function createReachabilityState({ initial = 'unknown', override } = {}) {
+  let state = summarizeReachabilityState(override ?? initial);
+  let source = override ? 'override' : 'initial';
+  let overridden = summarizeReachabilityState(override) !== 'unknown';
+  let updatedAt = Date.now();
+  const listeners = new Set();
+
+  const snapshot = () => ({ state, source, overridden, updatedAt });
+  const notify = () => {
+    const view = snapshot();
+    listeners.forEach((listener) => {
+      try {
+        listener(view);
+      } catch {
+        // ignore listener errors
+      }
+    });
+  };
+
+  const setState = (nextState, nextSource) => {
+    const normalized = summarizeReachabilityState(nextState);
+    if (normalized === state && source === nextSource) return state;
+    state = normalized;
+    source = nextSource;
+    updatedAt = Date.now();
+    notify();
+    return state;
+  };
+
+  return {
+    getState: () => state,
+    isOverridden: () => overridden,
+    getSnapshot: snapshot,
+    subscribe: (listener) => {
+      if (typeof listener !== 'function') return () => {};
+      listeners.add(listener);
+      listener(snapshot());
+      return () => listeners.delete(listener);
+    },
+    setOverride: (nextState) => {
+      overridden = summarizeReachabilityState(nextState) !== 'unknown';
+      return setState(nextState, 'override');
+    },
+    updateFromAutonat: (nextState) => {
+      if (overridden) return state;
+      return setState(nextState ?? 'unknown', 'autonat');
+    },
+    updateManual: (nextState) => setState(nextState, 'manual')
+  };
+}
+
 export function buildTransportConfig(config) {
   const enableQuic = coerceBoolean(config.TRANSPORT_ENABLE_QUIC, true);
   const enableTcp = coerceBoolean(config.TRANSPORT_ENABLE_TCP, true);

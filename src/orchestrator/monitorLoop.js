@@ -145,7 +145,8 @@ export async function startMonitorLoop({
   maxIterations = Infinity,
   jobMetricsProvider = null,
   onDiagnostics = null,
-  healthGate = null
+  healthGate = null,
+  reachabilityState = null
 }) {
   if (!config) {
     throw new Error('config is required');
@@ -279,13 +280,14 @@ export async function startMonitorLoop({
             stakeStatus: diagnostics.stakeStatus,
             performance: diagnostics.performance,
             runtimeMode: diagnostics.runtimeMode,
-            logger,
-            healthGate,
-            enableAlphaWuPerJob: Boolean(config.METRICS_ALPHA_WU_PER_JOB),
-            networkMetrics
-          });
-        } else {
-          updateTelemetryGauges(telemetryServer, diagnostics, healthGate);
+          logger,
+          healthGate,
+          enableAlphaWuPerJob: Boolean(config.METRICS_ALPHA_WU_PER_JOB),
+          networkMetrics,
+          reachabilityState
+        });
+      } else {
+        updateTelemetryGauges(telemetryServer, diagnostics, healthGate);
         }
 
         refreshAlphaWuHistory();

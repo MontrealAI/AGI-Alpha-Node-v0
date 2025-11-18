@@ -135,6 +135,10 @@ describe('libp2pHostConfig', () => {
       dialSuccesses: { inc: vi.fn() },
       dialFailures: { inc: vi.fn() },
       inboundConnections: { inc: vi.fn() },
+      connectionsOpen: { inc: vi.fn() },
+      connectionsClose: { inc: vi.fn() },
+      connectionsLive: { set: vi.fn() },
+      liveConnections: { in: 0, out: 0 },
       connectionLatency: { observe: vi.fn() }
     };
     const events = [];
@@ -165,6 +169,12 @@ describe('libp2pHostConfig', () => {
       peerId: 'peer3',
       multiaddr: '/dns4/relay.example.com/tcp/443/wss/p2p-circuit'
     });
+    fakeLibp2p.dispatchEvent('connection:close', {
+      peerId: 'peer3',
+      multiaddr: '/dns4/relay.example.com/tcp/443/wss/p2p-circuit',
+      reason: 'timeout',
+      direction: 'in'
+    });
 
     unbind();
 
@@ -172,11 +182,15 @@ describe('libp2pHostConfig', () => {
     expect(metrics.dialSuccesses.inc).toHaveBeenCalledWith({ transport: 'quic' });
     expect(metrics.dialFailures.inc).toHaveBeenCalledWith({ transport: 'tcp' });
     expect(metrics.inboundConnections.inc).toHaveBeenCalledWith({ transport: 'relay' });
+    expect(metrics.connectionsOpen.inc).toHaveBeenCalledTimes(2);
+    expect(metrics.connectionsClose.inc).toHaveBeenCalledWith({ direction: 'in', reason: 'timeout' });
+    expect(metrics.connectionsLive.set).toHaveBeenCalled();
     expect(events.map((event) => event.message)).toEqual([
       'conn_open',
       'conn_success',
       'conn_failure',
-      'conn_success'
+      'conn_success',
+      'conn_close'
     ]);
   });
 });

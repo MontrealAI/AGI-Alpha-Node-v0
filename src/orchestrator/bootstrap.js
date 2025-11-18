@@ -32,7 +32,11 @@ import {
   validateKeypairAgainstEnsRecord
 } from '../identity/bootstrap.js';
 import { buildLibp2pHostConfig, logLibp2pHostConfig } from '../network/libp2pHostConfig.js';
-import { buildTransportConfig, logTransportPlan } from '../network/transportConfig.js';
+import {
+  buildTransportConfig,
+  createReachabilityState,
+  logTransportPlan
+} from '../network/transportConfig.js';
 import { ConnectionManager, ResourceManager, buildResourceManagerConfig } from '../network/resourceManagerConfig.js';
 import { buildDialerPolicyConfig } from '../network/dialerPolicy.js';
 
@@ -115,6 +119,10 @@ export async function bootstrapContainer({
 
   const transportPlan = buildTransportConfig(config);
   logTransportPlan(transportPlan);
+  const reachabilityState = createReachabilityState({
+    initial: config.AUTONAT_REACHABILITY,
+    override: config.AUTONAT_REACHABILITY
+  });
   const dialerPolicy = buildDialerPolicyConfig({ config, baseLogger: logger });
 
   initTelemetry(loadTelemetryConfig(process.env, logger));
@@ -221,7 +229,8 @@ export async function bootstrapContainer({
       listenMultiaddrs: config.P2P_LISTEN_MULTIADDRS,
       publicMultiaddrs,
       relayMultiaddrs: config.P2P_RELAY_MULTIADDRS,
-      lanMultiaddrs: config.P2P_LAN_MULTIADDRS
+      lanMultiaddrs: config.P2P_LAN_MULTIADDRS,
+      reachabilityState
     });
     logLibp2pHostConfig(hostConfig, identityLogger);
     resourceManagerConfig = buildResourceManagerConfig({ config, logger: identityLogger });
@@ -612,14 +621,15 @@ export async function bootstrapContainer({
       validatorRuntime,
       quorumEngine,
       nodeIdentity,
-      nodeKeypair,
-      hostConfig,
-      peerScoreConfig,
-      peerScoreInspector,
-      peerScoreRegistry,
-      gossipsubConfig
-    };
-  }
+    nodeKeypair,
+    hostConfig,
+    peerScoreConfig,
+    peerScoreInspector,
+    peerScoreRegistry,
+    gossipsubConfig,
+    reachabilityState
+  };
+}
 
   let monitor;
   try {
@@ -645,7 +655,8 @@ export async function bootstrapContainer({
       maxIterations,
       jobMetricsProvider: metricsProvider,
       onDiagnostics,
-      healthGate
+      healthGate,
+      reachabilityState
     });
   } catch (error) {
     if (apiServer) {
