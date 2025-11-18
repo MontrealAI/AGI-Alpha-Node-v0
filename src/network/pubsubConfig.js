@@ -1,6 +1,26 @@
 import pino from 'pino';
 import { buildPeerScoreConfig, buildGossipsubScoreParams } from '../services/peerScoring.js';
 
+const NETWORK_PRESETS = Object.freeze({
+  small: {
+    mesh: { D: 6, Dlo: 4, Dhi: 8, Dout: 16, Dlazy: 8 },
+    gossip: { gossipFactor: 0.2, gossipRetransmission: 3 }
+  },
+  medium: {
+    mesh: { D: 8, Dlo: 6, Dhi: 12, Dout: 32, Dlazy: 12 },
+    gossip: { gossipFactor: 0.25, gossipRetransmission: 3 }
+  },
+  large: {
+    mesh: { D: 12, Dlo: 10, Dhi: 18, Dout: 48, Dlazy: 16 },
+    gossip: { gossipFactor: 0.32, gossipRetransmission: 4 }
+  }
+});
+
+function resolveNetworkPreset(presetName = 'medium') {
+  const normalized = typeof presetName === 'string' ? presetName.toLowerCase() : 'medium';
+  return NETWORK_PRESETS[normalized] ?? NETWORK_PRESETS.medium;
+}
+
 function toFinite(value, fallback = 0) {
   const numeric = Number(value);
   return Number.isFinite(numeric) ? numeric : fallback;
@@ -10,33 +30,37 @@ function resolveLogger(baseLogger = pino({ level: 'info', name: 'pubsub-config' 
   return typeof baseLogger?.info === 'function' ? baseLogger : pino({ level: 'info', name: 'pubsub-config' });
 }
 
-function resolveMeshConfig(config = {}) {
+function resolveMeshConfig(config = {}, preset = resolveNetworkPreset(config.NETWORK_SIZE_PRESET)) {
   return {
-    D: toFinite(config.PUBSUB_D, 8),
-    Dlo: toFinite(config.PUBSUB_D_LOW, 6),
-    Dhi: toFinite(config.PUBSUB_D_HIGH, 12),
-    Dout: toFinite(config.PUBSUB_D_OUT, 32),
-    Dlazy: toFinite(config.PUBSUB_D_LAZY, 12)
+    D: toFinite(config.PUBSUB_D, preset.mesh.D),
+    Dlo: toFinite(config.PUBSUB_D_LOW, preset.mesh.Dlo),
+    Dhi: toFinite(config.PUBSUB_D_HIGH, preset.mesh.Dhi),
+    Dout: toFinite(config.PUBSUB_D_OUT, preset.mesh.Dout),
+    Dlazy: toFinite(config.PUBSUB_D_LAZY, preset.mesh.Dlazy)
   };
 }
 
-function resolveGossipConfig(config = {}) {
+function resolveGossipConfig(config = {}, preset = resolveNetworkPreset(config.NETWORK_SIZE_PRESET)) {
   const fanoutTTLSeconds = toFinite(config.PUBSUB_FANOUT_TTL_SECONDS, 60);
 
   return {
     fanoutTTLSeconds,
     fanoutTTL: fanoutTTLSeconds * 1000,
-    gossipFactor: toFinite(config.PUBSUB_GOSSIP_FACTOR, 0.25),
-    gossipRetransmission: toFinite(config.PUBSUB_GOSSIP_RETRANSMISSION, 3),
-    opportunisticGraftPeers: toFinite(config.PUBSUB_OPPORTUNISTIC_GRAFT_PEERS, toFinite(config.PUBSUB_D, 8)),
+    gossipFactor: toFinite(config.PUBSUB_GOSSIP_FACTOR, preset.gossip.gossipFactor),
+    gossipRetransmission: toFinite(config.PUBSUB_GOSSIP_RETRANSMISSION, preset.gossip.gossipRetransmission),
+    opportunisticGraftPeers: toFinite(
+      config.PUBSUB_OPPORTUNISTIC_GRAFT_PEERS,
+      toFinite(config.PUBSUB_D, preset.mesh.D)
+    ),
     opportunisticGraftThreshold: toFinite(config.PUBSUB_OPPORTUNISTIC_GRAFT_THRESHOLD, 5)
   };
 }
 
 export function buildGossipsubRoutingConfig({ config = {}, peerScoreConfig = null, peerScoreInspector = null, logger } = {}) {
   const log = resolveLogger(logger);
-  const mesh = resolveMeshConfig(config);
-  const gossip = resolveGossipConfig(config);
+  const preset = resolveNetworkPreset(config.NETWORK_SIZE_PRESET);
+  const mesh = resolveMeshConfig(config, preset);
+  const gossip = resolveGossipConfig(config, preset);
   const scoringConfig =
     peerScoreConfig ??
     buildPeerScoreConfig({
@@ -78,6 +102,7 @@ export function buildGossipsubRoutingConfig({ config = {}, peerScoreConfig = nul
 
   log.info(
     {
+      preset: config.NETWORK_SIZE_PRESET ?? 'medium',
       mesh,
       gossip,
       thresholds: options.scoreThresholds,

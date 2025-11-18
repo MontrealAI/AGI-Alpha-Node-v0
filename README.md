@@ -55,6 +55,9 @@
   <img src="https://img.shields.io/badge/Metrics-Prometheus%20%7C%20OTel-10b981?logo=prometheus&logoColor=white" alt="Metrics surfaces" />
   <img src="https://img.shields.io/badge/DoS%20Defense-NRM%20%7C%20ConnMgr%20%7C%20Per--IP%20caps-0ea5e9?logo=linux&logoColor=white" alt="DoS defenses" />
   <img src="https://img.shields.io/badge/Load%20Harness-p2p:load--tests-14b8a6?logo=testinglibrary&logoColor=white" alt="Load harness" />
+  <a href="docs/load-test-report.md">
+    <img src="https://img.shields.io/badge/Load%20Report-1k%20sim%20green-22c55e?logo=speedtest&logoColor=white" alt="1k peer load report" />
+  </a>
   <a href="docs/dos-test-plan.md">
     <img src="https://img.shields.io/badge/DoS%20Test%20Plan-Documented-22c55e?logo=readthedocs&logoColor=white" alt="DoS test plan" />
   </a>
@@ -108,6 +111,7 @@
 | Optional dashboard | `npm run dashboard:dev` or `npm run dashboard:preview` | React/Vite cockpit for Index, Providers, Telemetry debug; API key & base URL injected via the connection bar. |
 | Governance dials (owner) | `node src/index.js governance:*` verbs or authenticated `/governance/*` | Pause/unpause, rotate validators, redirect emissions/treasury, refresh metadata, or retune productivity—no redeploys required. |
 | Transport posture drills | Toggle `TRANSPORT_ENABLE_*`, `ENABLE_HOLE_PUNCHING`, `AUTONAT_*`, `RELAY_*` | Stage QUIC-only, TCP-only, or mixed neighborhoods; confirm logs show transport choice + reachability before jobs start. |
+| Mesh size presets | `NETWORK_SIZE_PRESET=small|medium|large npm start` or `--network-size-preset` on CLI | Tunes `D/Dlo/Dhi/Dout/Dlazy` + `gossipFactor`/`retransmission` for 1k–10k peers; pairs with dialer backoff + outbound ratio controls. |
 
 ```mermaid
 flowchart TD
@@ -205,6 +209,34 @@ flowchart TD
   class Env,Plan,Dialer,HolePunch,AutoNAT,Relay,Reachability,Announce,Peers,Connections,HostConfig,ObservabilityHost accent;
 ```
 
+### Mesh presets + dialer policy (Epic D)
+
+- **Network-size presets**: `NETWORK_SIZE_PRESET=small|medium|large` (or `--network-size-preset`) rehydrates GossipSub with tuned `D/Dlo/Dhi/Dout/Dlazy` and gossip fan-out (`gossipFactor`, `gossipRetransmission`) optimized for 1k–10k peers. Explicit `PUBSUB_*` overrides still win when set.【F:src/network/pubsubConfig.js†L4-L79】【F:src/network/pubsubConfig.js†L89-L133】【F:src/config/schema.js†L47-L99】
+- **Dialer backoff + ratio guardrails**: `DIAL_TIMEOUT_MS`, `DIAL_MAX_RETRIES`, `DIAL_BACKOFF_INITIAL_MS`, `DIAL_BACKOFF_MAX_MS`, `DIAL_OUTBOUND_TARGET_RATIO`, `DIAL_OUTBOUND_RATIO_TOLERANCE`, `DIAL_OUTBOUND_MIN_CONNECTIONS`, `DIAL_RECONCILE_INTERVAL_MS` form a deterministic dial plan with exponential backoff and outbound/inbound balancing. The policy is logged at bootstrap and attached to the libp2p dialer envelope for observability.【F:src/network/dialerPolicy.js†L1-L78】【F:src/orchestrator/bootstrap.js†L115-L157】【F:src/network/libp2pHostConfig.js†L30-L118】
+- **Ratio-aware diagnostics**: resource manager metrics export inbound/outbound counts, target ratios, and suggested dial plans derived from the policy so operators can reconcile without tight loops; bans, per-IP, and per-ASN clamps remain intact.【F:src/network/resourceManagerConfig.js†L1-L160】【F:src/network/resourceManagerConfig.js†L350-L426】
+- **CLI-first control**: `node src/index.js container --network-size-preset large --interval 30` runs the large preset with dialer backoff baked in; the same flag flows through `monitor` for dry-run diagnostics.【F:src/index.js†L1050-L1136】【F:src/index.js†L1149-L1235】
+
+```mermaid
+flowchart TD
+  subgraph Preset[Mesh presets]
+    Small[small: compact mesh\nD=6/Dout=16]
+    Medium[medium: balanced mesh\nD=8/Dout=32]
+    Large[large: 1k+ peers\nD=12/Dout=48]
+  end
+  subgraph Dialer[Dialer policy]
+    Timeout[Timeouts + retries]
+    Backoff[Exponential backoff\n500ms -> 30s]
+    Ratio[Outbound target 60%\nwith tolerance band]
+  end
+  Preset --> Gossip[buildGossipsubRoutingConfig]
+  Dialer --> Host[libp2p host dialer]
+  Host --> MetricsDial[Resource manager metrics\n(plan + ratio)]
+  Gossip --> MeshShape[Mesh degrees + gossip factor]
+  MetricsDial --> Operator[Operator reconciliation]
+  classDef accent fill:#0f172a,stroke:#9333ea,stroke-width:1.5px,color:#e2e8f0;
+  class Preset,Dialer,Gossip,Host,MetricsDial,Operator,MeshShape,Small,Medium,Large,Timeout,Backoff,Ratio accent;
+```
+
 ### Epic C · DoS defenses (Resource Manager + Connection Manager + Ban Grid)
 
 - **Hard ceilings everywhere**: `buildResourceManagerConfig` enforces global caps on connections/streams with a tunable `NRM_SCALE_FACTOR` (0.5–2.0) plus optional JSON/YAML overrides via `NRM_LIMITS_JSON` or `NRM_LIMITS_PATH` for per-protocol/per-peer budgets.【F:src/network/resourceManagerConfig.js†L34-L119】
@@ -212,6 +244,7 @@ flowchart TD
 - **Per-IP/ASN clamps + ban hooks**: configurable caps (`MAX_CONNS_PER_IP`, `MAX_CONNS_PER_ASN`) plus `/governance/bans` (GET/POST/DELETE) so owners can quarantine abusive IPs/peers/ASNs in real time without restart.【F:src/network/resourceManagerConfig.js†L121-L244】【F:src/network/apiServer.js†L1667-L1744】
 - **Owner cockpit**: the governance API and CLI verbs remain owner-token guarded; every limit can be tightened live (including total pause) so the node never cedes control when pressure spikes.【F:src/network/apiServer.js†L1162-L1173】【F:src/index.js†L2113-L2214】
 - **Abuse harness + p2p load drills**: `npm run p2p:load-tests` runs connection floods, stream floods, and malformed GossipSub scenarios against the ResourceManager/ConnectionManager stack. Results surface denials, pressure, and score thresholds without crashing the node.【F:package.json†L29-L38】【F:test/network/resourceManagerConfig.test.js†L70-L157】
+- **1k–10k simulator harness**: `npm run p2p:simulate -- --nodes 1000 --duration 3 --rate 0.01 --latency 60 --loss 0.005` fans synthetic gossip to 1k peers, exports latency/loss/CPU stats to `docs/load-test-report.json`, and ships a narrated summary in `docs/load-test-report.md` for reproducible scale drills.【F:scripts/p2p-simulator.mjs†L1-L169】【F:docs/load-test-report.md†L1-L16】【F:docs/load-test-report.json†L1-L21】
 - **Runbook in one place**: [DoS Test Plan](docs/dos-test-plan.md) outlines objectives, knobs (`NRM_SCALE_FACTOR`, `CONN_HIGH_WATER`, `MAX_CONNS_PER_IP`), and expected outcomes so operators can rehearse floods before production heat.【F:docs/dos-test-plan.md†L1-L37】
 
 | Control plane knob | Env/CLI | Default | Effect |

@@ -34,6 +34,7 @@ import {
 import { buildLibp2pHostConfig, logLibp2pHostConfig } from '../network/libp2pHostConfig.js';
 import { buildTransportConfig, logTransportPlan } from '../network/transportConfig.js';
 import { ConnectionManager, ResourceManager, buildResourceManagerConfig } from '../network/resourceManagerConfig.js';
+import { buildDialerPolicyConfig } from '../network/dialerPolicy.js';
 
 function assertConfigField(value, field) {
   if (!value) {
@@ -114,6 +115,7 @@ export async function bootstrapContainer({
 
   const transportPlan = buildTransportConfig(config);
   logTransportPlan(transportPlan);
+  const dialerPolicy = buildDialerPolicyConfig({ config, baseLogger: logger });
 
   initTelemetry(loadTelemetryConfig(process.env, logger));
 
@@ -215,6 +217,7 @@ export async function bootstrapContainer({
 
     hostConfig = buildLibp2pHostConfig({
       config,
+      dialerPolicy,
       listenMultiaddrs: config.P2P_LISTEN_MULTIADDRS,
       publicMultiaddrs,
       relayMultiaddrs: config.P2P_RELAY_MULTIADDRS,
@@ -223,6 +226,7 @@ export async function bootstrapContainer({
     logLibp2pHostConfig(hostConfig, identityLogger);
     resourceManagerConfig = buildResourceManagerConfig({ config, logger: identityLogger });
     resourceManager = new ResourceManager({ limits: resourceManagerConfig, logger: identityLogger });
+    resourceManager.attachDialerPolicy(dialerPolicy);
     connectionManager = new ConnectionManager({
       ...resourceManagerConfig.connectionManager,
       logger: identityLogger

@@ -50,6 +50,7 @@ export function createTransportTracer({ plan, logger: baseLogger } = {}) {
 
 export function buildLibp2pHostConfig({
   config = {},
+  dialerPolicy = null,
   listenMultiaddrs = [],
   publicMultiaddrs = [],
   relayMultiaddrs = [],
@@ -87,7 +88,8 @@ export function buildLibp2pHostConfig({
     dialer: {
       rank: (addresses) => rankDialableMultiaddrs(addresses, plan),
       preference: describeDialPreference(plan),
-      trace: createTransportTracer({ plan, logger })
+      trace: createTransportTracer({ plan, logger }),
+      policy: dialerPolicy
     },
     nat: {
       holePunching: plan.holePunching,
@@ -114,7 +116,8 @@ export function logLibp2pHostConfig(hostConfig, baseLogger = logger) {
       addresses: hostConfig.addresses,
       nat: hostConfig.nat,
       relay: hostConfig.relay,
-      dialPreference: hostConfig.dialer?.preference
+      dialPreference: hostConfig.dialer?.preference,
+      dialerPolicy: hostConfig.dialer?.policy
     },
     'libp2p host configuration synthesized'
   );
