@@ -105,6 +105,47 @@ curl -s localhost:3000/debug/resources | jq '{limits, usage, bans}'
 # per-IP/ASN limits, ban grid, and live utilization/pressure telemetry.
 ```
 
+**Debug snapshot payload (shape):**
+
+```jsonc
+{
+  "limits": {
+    "global": { "connections": 1024, "streams": 8192, "memoryBytes": 536870912, "fileDescriptors": 2048, "bandwidthBps": 67108864 },
+    "perProtocol": {
+      "/meshsub/1.1.0": { "connections": 60, "streams": 600 },
+      "agi/control/1.0.0": { "connections": 24, "streams": 240 }
+    },
+    "ipLimiter": {
+      "maxConnsPerIp": 64,
+      "maxConnsPerAsn": 256,
+      "bans": { "ips": ["203.0.113.7"], "peers": ["12D3KooXbad"], "asns": ["asn-fraud"] }
+    },
+    "perPeer": {
+      "12D3KooXowner": { "maxStreams": 128 }
+    }
+  },
+  "usage": {
+    "global": { "connections": { "used": 120, "limit": 1024 }, "streams": { "used": 800, "limit": 8192 } },
+    "perProtocol": {
+      "/meshsub/1.1.0": {
+        "connections": { "used": 16, "limit": 60 },
+        "streams": { "used": 144, "limit": 600 }
+      },
+      "agi/control/1.0.0": {
+        "connections": { "used": 6, "limit": 24 },
+        "streams": { "used": 36, "limit": 240 }
+      }
+    },
+    "perIp": { "busiest": { "203.0.113.7": 7 }, "limit": 64 },
+    "perAsn": { "busiest": { "asn-fraud": 12 }, "limit": 256 }
+  },
+  "connectionManager": { "lowWater": 512, "highWater": 1024, "gracePeriodSeconds": 120 },
+  "bans": { "ips": ["203.0.113.7"], "peers": ["12D3KooXbad"], "asns": ["asn-fraud"] }
+}
+```
+
+The snapshot is designed for dashboards: limits and usage are already normalized into grids, while ban grids double as governance audit trails. No spelunking, no missing labels—every denial is pre-tagged with `protocol` + `limit_type`.
+
 ```mermaid
 flowchart LR
   classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
