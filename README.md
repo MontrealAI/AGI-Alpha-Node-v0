@@ -213,6 +213,29 @@ sequenceDiagram
   Node-->>Operator: health OK + enforcement active
 ```
 
+### Deployment pathways (prod-grade switches)
+
+- **Docker**: `docker build -t agi-alpha-node:latest .` then `docker run --rm -p 3000:3000 agi-alpha-node:latest --help` to validate binaries before promotion.【F:Dockerfile†L1-L28】
+- **Helm**: `helm upgrade --install agi-alpha-node deploy/helm/agi-alpha-node -f deploy/helm/agi-alpha-node/values.yaml` to roll out the runtime with PR-enforced checks and metrics already wired.【F:deploy/helm/agi-alpha-node/values.yaml†L1-L153】
+- **Bare metal**: `npm ci && npm start` with `NRM_*` and `CONN_*` env vars tuned for your topology; `/debug/resources` remains stable across all deployment modes.【F:src/network/apiServer.js†L1126-L1177】
+
+```mermaid
+flowchart LR
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  Source[Main branch\nPR-protected]:::lava --> CI[CI pipeline\n(all gates)]:::frost
+  CI --> Image[Docker image\nbuilt from Dockerfile]:::neon
+  CI --> Chart[Helm chart\nvalues.yaml overrides]:::frost
+  Image --> Cluster[Kubernetes \nagi-alpha-node release]:::lava
+  Chart --> Cluster
+  Cluster --> Telemetry[Prometheus/OTel\n/metrics & /debug/resources]:::neon
+  Cluster --> GovernanceAPI[Owner commands\n/governance/*]:::lava
+  Telemetry --> Operator[Operator cockpit\nDashboards + CLI]:::frost
+  GovernanceAPI --> Operator
+```
+
 ## CI & branch protection (always green)
 
 - **Workflow fidelity**: The CI pipeline runs lint → unit/integration/frontend tests → coverage → Solidity lint/compile → subgraph TS build → `npm audit` → policy + branch gates. The same steps are wired into `npm run ci:verify` for local parity.【F:.github/workflows/ci.yml†L1-L210】【F:package.json†L29-L46】
