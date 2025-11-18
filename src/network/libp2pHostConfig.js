@@ -8,6 +8,7 @@ import {
   selectAnnounceableAddrs,
   summarizeReachabilityState
 } from './transportConfig.js';
+import { recordConnectionLatency } from '../telemetry/networkMetrics.js';
 
 const logger = pino({ level: 'info', name: 'libp2p-host-config' });
 
@@ -25,12 +26,72 @@ function sanitizeMultiaddrs(addresses = []) {
   );
 }
 
-export function createTransportTracer({ plan, logger: baseLogger } = {}) {
+function attachListener(target, event, handler) {
+  if (!target || !event || typeof handler !== 'function') return () => {};
+
+  if (typeof target.addEventListener === 'function') {
+    target.addEventListener(event, handler);
+    return () => target.removeEventListener?.(event, handler);
+  }
+
+  if (typeof target.on === 'function') {
+    target.on(event, handler);
+    return () => (target.off ?? target.removeListener)?.(event, handler);
+  }
+
+  return () => {};
+}
+
+function extractPeerId(detail = {}) {
+  return detail.peerId ?? detail.remotePeer ?? detail.peer ?? null;
+}
+
+function extractAddress(detail = {}) {
+  return detail.multiaddr ?? detail.address ?? detail.addr ?? detail.remoteAddr ?? detail.multiaddrString ?? null;
+}
+
+function nowMs() {
+  return Date.now();
+}
+
+export function createTransportTracer({ plan, logger: baseLogger, metrics = null } = {}) {
   const log = resolveLogger(baseLogger);
   const preference = plan?.transports?.preference ?? 'prefer-quic';
+  const inflightDials = new Map();
 
-  return function traceTransport({ peerId = null, address, direction = 'dial', success = true } = {}) {
+  const trace = function traceTransport({
+    peerId = null,
+    address,
+    direction = 'out',
+    success = undefined,
+    startedAt,
+    skipAttempt = false,
+    event
+  } = {}) {
     const transport = classifyTransport(address);
+    const latencyMs = startedAt ? Math.max(0, nowMs() - startedAt) : undefined;
+
+    if (direction === 'out' && !skipAttempt) {
+      metrics?.dialAttempts?.inc?.({ transport, direction: 'out' });
+    }
+
+    if (direction === 'out') {
+      if (success === true) {
+        metrics?.dialSuccesses?.inc?.({ transport });
+      } else if (success === false) {
+        metrics?.dialFailures?.inc?.({ transport });
+      }
+    }
+
+    if (direction === 'in') {
+      metrics?.inboundConnections?.inc?.({ transport });
+    }
+
+    if (!(direction === 'out' && success === undefined)) {
+      recordConnectionLatency(metrics, { transport, direction, latencyMs });
+    }
+
+    const eventName = event ?? (success === undefined ? 'conn_open' : success ? 'conn_success' : 'conn_failure');
 
     log.info(
       {
@@ -39,13 +100,70 @@ export function createTransportTracer({ plan, logger: baseLogger } = {}) {
         transport,
         direction,
         preference,
-        success
+        success,
+        latency_ms: latencyMs
       },
-      'libp2p transport selection observed'
+      eventName
     );
 
     return transport;
   };
+
+  trace.bindTo = (libp2p) => {
+    const disposers = [];
+
+    const recordStart = (detail) => {
+      const peerId = extractPeerId(detail);
+      const address = extractAddress(detail);
+      const startedAt = nowMs();
+      if (peerId || address) {
+        inflightDials.set(`${peerId ?? address}`, startedAt);
+      }
+      trace({ peerId, address, direction: 'out', success: undefined, startedAt, event: 'conn_open' });
+    };
+
+    const recordResult = (detail, success) => {
+      const peerId = extractPeerId(detail);
+      const address = extractAddress(detail);
+      const key = peerId ?? address;
+      const startedAt = inflightDials.get(key ?? '') ?? detail?.startedAt;
+      const seenStart = inflightDials.has(key ?? '');
+      if (key) {
+        inflightDials.delete(key);
+      }
+      trace({
+        peerId,
+        address,
+        direction: 'out',
+        success,
+        startedAt,
+        skipAttempt: seenStart,
+        event: success ? 'conn_success' : 'conn_failure'
+      });
+    };
+
+    const recordInbound = (detail) => {
+      const peerId = extractPeerId(detail);
+      const address = extractAddress(detail);
+      trace({
+        peerId,
+        address,
+        direction: 'in',
+        success: true,
+        startedAt: detail?.startedAt,
+        event: 'conn_success'
+      });
+    };
+
+    disposers.push(attachListener(libp2p, 'dial:start', ({ detail }) => recordStart(detail)));
+    disposers.push(attachListener(libp2p, 'dial:success', ({ detail }) => recordResult(detail, true)));
+    disposers.push(attachListener(libp2p, 'dial:failure', ({ detail }) => recordResult(detail, false)));
+    disposers.push(attachListener(libp2p, 'connection:open', ({ detail }) => recordInbound(detail)));
+
+    return () => disposers.forEach((dispose) => dispose());
+  };
+
+  return trace;
 }
 
 export function buildLibp2pHostConfig({
@@ -55,7 +173,8 @@ export function buildLibp2pHostConfig({
   publicMultiaddrs = [],
   relayMultiaddrs = [],
   lanMultiaddrs = [],
-  reachabilityHint
+  reachabilityHint,
+  networkMetrics = null
 } = {}) {
   const plan = buildTransportConfig(config);
   const reachability = summarizeReachabilityState(reachabilityHint ?? config.AUTONAT_REACHABILITY);
@@ -74,6 +193,8 @@ export function buildLibp2pHostConfig({
     ...(plan.transports.quic ? ['quic'] : [])
   ];
 
+  const transportTracer = createTransportTracer({ plan, logger, metrics: networkMetrics });
+
   return {
     plan,
     reachability,
@@ -88,7 +209,7 @@ export function buildLibp2pHostConfig({
     dialer: {
       rank: (addresses) => rankDialableMultiaddrs(addresses, plan),
       preference: describeDialPreference(plan),
-      trace: createTransportTracer({ plan, logger }),
+      trace: transportTracer,
       policy: dialerPolicy
     },
     nat: {
@@ -101,7 +222,8 @@ export function buildLibp2pHostConfig({
       maxReservations: plan.relay.maxReservations,
       maxCircuitsPerPeer: plan.relay.maxCircuitsPerPeer,
       maxBandwidthBps: plan.relay.maxBandwidthBps
-    }
+    },
+    tracer: transportTracer
   };
 }
 

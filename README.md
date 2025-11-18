@@ -154,6 +154,32 @@ flowchart TD
 >
 > **Transport & NAT sprint**: QUIC-first transport with TCP fallback, DCUtR hole punching, AutoNAT reachability-driven address advertisement, and Relay v2 quotas are now wired through `TRANSPORT_*`, `ENABLE_HOLE_PUNCHING`, `AUTONAT_*`, and `RELAY_*` environment toggles. Dial attempts are ordered toward QUIC where available, address announcements respect public/private posture, and relay slots/bandwidth remain capped for resilience. Logs surface reachability and transport choice so operators can verify QUIC-only, TCP-only, or mixed neighborhoods before rollout.
 >
+> ### QUIC-first transport blueprint (Sprint Edge)
+>
+> - **Unified network surface (env/CLI)**: `TRANSPORT_ENABLE_QUIC`, `TRANSPORT_ENABLE_TCP`, `ENABLE_HOLE_PUNCHING`, `AUTONAT_ENABLED`, `AUTONAT_THROTTLE_SECONDS`, optional `AUTONAT_REACHABILITY`, `RELAY_ENABLE_CLIENT`, `RELAY_ENABLE_SERVER`, `RELAY_MAX_RESERVATIONS`, `RELAY_MAX_CIRCUITS_PER_PEER`, `RELAY_MAX_BANDWIDTH_BPS`, plus `P2P_LISTEN_MULTIADDRS`, `P2P_PUBLIC_MULTIADDRS`, `P2P_RELAY_MULTIADDRS`, `P2P_LAN_MULTIADDRS` are validated at startup so `npm run ci:verify` and PR gates catch bad inputs immediately.【F:src/config/schema.js†L592-L653】【F:src/config/defaults.js†L17-L52】
+> - **QUIC-first dial ranking**: `rankDialableMultiaddrs` deterministically sorts multiaddrs as QUIC → TCP → relay → other while de-duping inputs, ensuring the dialer hits encrypted QUIC first and only falls back to TCP/relay when necessary.【F:src/network/transportConfig.js†L63-L111】
+> - **Connection tracing hook**: `createTransportTracer` attaches to dial start/success/failure plus inbound accepts, emits structured logs (`conn_open`/`conn_success`/`conn_failure`) with peer ID, multiaddr, transport, direction, and latency, and wires Prometheus counters/histograms for dial attempts, successes, failures, inbound accepts, and per-transport latency.【F:src/network/libp2pHostConfig.js†L1-L124】【F:src/telemetry/networkMetrics.js†L1-L48】
+> - **QUIC-first libp2p host descriptor**: the synthesized host config returns ranked announce sets (reachability-aware), registered transports, dial preference description, NAT toggles, relay quotas, and the bound tracer so every connection path is observable.【F:src/network/libp2pHostConfig.js†L125-L180】
+>
+> ```mermaid
+> flowchart LR
+>   classDef accent fill:#0b1120,stroke:#22c55e,stroke-width:1.5px,color:#e2e8f0;
+>   classDef warn fill:#0b1120,stroke:#f97316,stroke-width:1.5px,color:#fde68a;
+>   Env[Env / CLI surface<br/>TRANSPORT_* · AUTONAT_* · RELAY_* · P2P_*]:::accent
+>   Schema[Schema + defaults<br/>validated via ci:verify]:::accent
+>   Plan[Transport plan<br/>QUIC-first · TCP fallback<br/>hole punching · AutoNAT]:::accent
+>   Rank[rankDialableMultiaddrs<br/>QUIC → TCP → relay → other]:::accent
+>   Host[libp2p host config<br/>listen · announce · NAT · relay]:::accent
+>   Tracer[Transport tracer<br/>conn_open/success/failure<br/>Prom metrics]:::accent
+>   Logs[Structured logs<br/>peer · addr · transport · latency]:::accent
+>   Metrics[Prometheus counters<br/>dial_attempt/success/failure<br/>latency histogram]:::accent
+>   Env --> Schema --> Plan --> Rank --> Host
+>   Host --> Tracer --> Logs
+>   Tracer --> Metrics
+>   class Env,Schema,Plan,Rank,Host,Tracer,Logs,Metrics accent;
+>   class Metrics warn;
+> ```
+>
 > 🛰️ **Launch pad (non-technical operator)**
 >
 > 1. **Install & verify**: `npm ci && npm run ci:verify` (mirrors branch protection locally and surfaces any dependency or Solidity drift).

@@ -106,28 +106,41 @@ function sanitizeMultiaddrs(addresses) {
   );
 }
 
-function scoreTransportPreference(address, preference) {
-  const lower = address.toLowerCase();
-  const isQuic = lower.includes('/quic') || lower.includes('/udp/');
-  const isTcp = lower.includes('/tcp/');
+const TRANSPORT_ORDER = ['quic', 'tcp', 'relay', 'other', 'unknown'];
 
-  if (preference === 'quic-only') return isQuic ? 0 : 1;
-  if (preference === 'tcp-only') return isTcp ? 0 : 1;
+function resolveTransportOrder(preference = 'prefer-quic') {
+  if (preference === 'tcp-only') {
+    return ['tcp', 'relay', 'quic', 'other', 'unknown'];
+  }
+  if (preference === 'quic-only') {
+    return ['quic', 'relay', 'tcp', 'other', 'unknown'];
+  }
+  return TRANSPORT_ORDER;
+}
 
-  // prefer-quic
-  if (isQuic && !isTcp) return 0;
-  if (isTcp && !isQuic) return 1;
-  if (isQuic && isTcp) return 0.5; // dual stack: keep deterministic ordering
-  return 2; // unclassified transports sink to the bottom
+function scoreTransportPreference(address, plan) {
+  const preference = plan?.transports?.preference ?? 'prefer-quic';
+  const transport = classifyTransport(address);
+  const order = resolveTransportOrder(preference);
+  const enabledQuic = plan?.transports?.quic !== false;
+  const enabledTcp = plan?.transports?.tcp !== false;
+
+  const normalizedTransport = transport === 'unknown' ? 'unknown' : transport;
+  const baseScore = order.indexOf(normalizedTransport);
+  const score = baseScore === -1 ? order.length : baseScore;
+
+  const disabledPenalty =
+    (!enabledQuic && transport === 'quic') || (!enabledTcp && transport === 'tcp') ? order.length : 0;
+
+  return score + disabledPenalty;
 }
 
 export function rankDialableMultiaddrs(addresses, plan) {
   const sanitized = sanitizeMultiaddrs(addresses);
   if (!sanitized.length) return [];
 
-  const preference = plan?.transports?.preference ?? 'prefer-quic';
   return sanitized
-    .map((address) => ({ address, score: scoreTransportPreference(address, preference) }))
+    .map((address) => ({ address, score: scoreTransportPreference(address, plan) }))
     .sort((a, b) => a.score - b.score || a.address.localeCompare(b.address))
     .map((entry) => entry.address);
 }
