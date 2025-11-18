@@ -31,6 +31,8 @@
   <img src="https://img.shields.io/badge/Debug%20Surface-Telemetry%20%7C%20GSLI-0ea5e9?logo=prometheus&logoColor=white" alt="Debug surface" />
   <img src="https://img.shields.io/badge/Index%20Engine-GSLI%20Rebalancing-10b981?logo=apacheairflow&logoColor=white" alt="Index engine" />
   <img src="https://img.shields.io/badge/PubSub-GossipSub%20v1.1%20%7C%20Peer%20Scoring-6366f1?logo=probot&logoColor=white" alt="GossipSub v1.1" />
+  <img src="https://img.shields.io/badge/AutoNAT-Observable-22c55e?logo=libp2p&logoColor=white" alt="AutoNAT" />
+  <img src="https://img.shields.io/badge/Reachability-Public%20%7C%20Private%20%7C%20Unknown-0ea5e9?logo=chartdotjs&logoColor=white" alt="Reachability states" />
   <a href="https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa">
     <img src="https://img.shields.io/badge/$AGIALPHA-0xa61a...a1fa-ff3366?logo=ethereum&logoColor=white" alt="$AGIALPHA" />
   </a>
@@ -155,6 +157,36 @@ flowchart TD
 >
 > **Transport & NAT sprint**: QUIC-first transport with TCP fallback, DCUtR hole punching, AutoNAT reachability-driven address advertisement, and Relay v2 quotas are now wired through `TRANSPORT_*`, `ENABLE_HOLE_PUNCHING`, `AUTONAT_*`, and `RELAY_*` environment toggles. Dial attempts are ordered toward QUIC where available, address announcements respect public/private posture, and relay slots/bandwidth remain capped for resilience. Logs surface reachability and transport choice so operators can verify QUIC-only, TCP-only, or mixed neighborhoods before rollout.
 > **Reachability observability (E2)**: `net_reachability_state` (0/1/2), `net_autonat_probes_total`, `net_autonat_failures_total`, and connection churn gauges keep AutoNAT and libp2p health visible; `createReachabilityState` synchronizes announce sets, metrics, and owner overrides without code changes.【F:src/network/transportConfig.js†L23-L86】【F:src/telemetry/networkMetrics.js†L1-L120】
+
+## Sprint E2 — Reachability, AutoNAT, and churn (edge transport spine)
+
+```mermaid
+flowchart LR
+  classDef neon fill:#020617,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  AutoNAT[AutoNAT callbacks<br/>probe/status/reachability]:::neon
+  Override[AUTONAT_REACHABILITY<br/>override switch]:::lava
+  State[ReachabilityState<br/>public | private | unknown]:::neon
+  Announce[Announce set selection<br/>public vs relay/LAN]:::neon
+  Dial[rankDialableMultiaddrs<br/>QUIC→TCP→relay ordering]:::neon
+  Metrics[Prometheus gauges<br/>net_reachability_state<br/>net_autonat_*<br/>net_connections_*]:::lava
+  Tracer[Transport tracer<br/>dial/start/success/failure<br/>latency histogram]:::neon
+  AutoNAT --> State
+  Override --> State
+  State --> Announce
+  State --> Metrics
+  Announce --> Dial
+  Dial --> Tracer
+  Tracer --> Metrics
+```
+
+**What changed for E2?**
+
+- **Normalized reachability spine**: a single in-memory `ReachabilityState` now feeds announce-set selection, dial ranking, and telemetry, with AutoNAT probes updating the gauge unless an operator override wins.【F:src/network/transportConfig.js†L23-L86】【F:src/telemetry/networkMetrics.js†L1-L83】
+- **AutoNAT/connection churn telemetry**: Prometheus counters/gauges emit `net_reachability_state`, `net_autonat_probes_total`, `net_autonat_failures_total`, `net_connections_open_total`, `net_connections_close_total{reason}`, and `net_connections_live{direction}` with reason normalization for timeouts, bans, NRM limits, and protocol errors.【F:src/telemetry/networkMetrics.js†L27-L128】【F:src/network/libp2pHostConfig.js†L176-L203】
+- **Cleaner monitoring bindings**: the monitoring server auto-wires reachability state into the Prometheus registry and tears bindings down on shutdown so `/metrics` always reflects current AutoNAT posture without dangling listeners.【F:src/telemetry/monitoring.js†L1-L105】
+
+> **Operational stance**: the contract owner retains full authority to pause, retune emissions, rotate validators, and update registry pointers without redeploying; transport posture is observable and owner-steerable via the same control plane.
 >
 > ### QUIC-first transport blueprint (Sprint Edge)
 >

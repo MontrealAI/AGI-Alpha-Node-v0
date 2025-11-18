@@ -169,8 +169,9 @@ export function createTransportTracer({ plan, logger: baseLogger, metrics = null
       const peerId = extractPeerId(detail);
       const address = extractAddress(detail);
       const reason = detail?.reason ?? detail?.error ?? detail?.code ?? detail?.status;
-      const direction = detail?.direction ?? detail?.dir ?? 'out';
-      recordConnectionClose(metrics, { direction, reason });
+      const direction =
+        detail?.direction ?? detail?.dir ?? detail?.stat?.direction ?? detail?.connection?.stat?.direction ?? 'out';
+      recordConnectionClose(metrics, { direction, reason, detail });
       log.info(
         {
           peerId,
