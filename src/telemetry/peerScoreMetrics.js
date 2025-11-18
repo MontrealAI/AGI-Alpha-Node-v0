@@ -48,6 +48,14 @@ export function applyPeerScoreSnapshot({ metrics, snapshot, thresholds = DEFAULT
   const topicCounts = new Map();
 
   const peers = snapshot?.peers ?? [];
+  metrics.peerScoreBucketGauge.reset();
+  metrics.peerScoreTopicContributionGauge.reset();
+
+  if (peers.length === 0) {
+    metrics.peerScoreSnapshotGauge.set(coerceTimestampSeconds(snapshot.timestamp));
+    return;
+  }
+
   peers.forEach((peer) => {
     const score = toFinite(peer?.score, 0);
     const bucket = bucketPeer(score, thresholds);
@@ -76,12 +84,10 @@ export function applyPeerScoreSnapshot({ metrics, snapshot, thresholds = DEFAULT
     }
   });
 
-  metrics.peerScoreBucketGauge.reset();
   for (const [bucket, count] of Object.entries(buckets)) {
     metrics.peerScoreBucketGauge.set({ bucket }, toFinite(count, 0));
   }
 
-  metrics.peerScoreTopicContributionGauge.reset();
   for (const [topic, total] of topicTotals.entries()) {
     const count = toFinite(topicCounts.get(topic), 0) || 1;
     metrics.peerScoreTopicContributionGauge.set({ topic, component: 'total' }, toFinite(total, 0));
