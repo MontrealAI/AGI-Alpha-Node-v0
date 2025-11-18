@@ -1124,7 +1124,36 @@ flowchart TD
 - **Network Resource Manager (NRM)**: `buildResourceManagerConfig` now scales hard ceilings (connections, streams, memory, FDs, bandwidth), merges optional JSON/YAML overrides, and seeds ban sets + per-IP/per-ASN ceilings from `NRM_BANNED_*`, `MAX_CONNS_PER_IP`, and `MAX_CONNS_PER_ASN`.【F:src/network/resourceManagerConfig.js†L91-L190】【F:src/config/defaults.js†L20-L47】
 - **Connection manager + trimming**: Watermarks (`CONN_LOW_WATER`, `CONN_HIGH_WATER`, `CONN_GRACE_PERIOD_SEC`) protect high-score, pinned, and grace-period peers while trimming the coldest connections first; per-IP/per-ASN pressure reporting surfaces utilization for dashboards and alerts.【F:src/network/resourceManagerConfig.js†L194-L390】
 - **Abuse harness + CI drills**: `npm run p2p:load-tests` executes connection/stream flood drills, malformed gossip simulations, and API ban flows to prove denials are logged instead of crashing the node.【F:package.json†L11-L45】【F:test/network/resourceManagerConfig.test.js†L57-L118】【F:test/network/apiServer.dos.test.js†L1-L48】
+- **Documented playbook**: `docs/dos-test-plan.md` lists the knobs, expected denial reasons, and observability cues to verify ceilings and ban hooks under stress before promoting changes; treat it as the canonical acceptance list for the Sprint C defenses.【F:docs/dos-test-plan.md†L1-L35】【F:docs/dos-test-plan.md†L37-L48】
 - **Owner control surfaces**: `/debug/resources` streams live denials/pressure snapshots, while `/governance/bans` (GET/POST/DELETE) lets the owner quarantine IPs/peers/ASNs without redeploying, keeping governance and DoS posture under a single token-gated surface.【F:src/network/apiServer.js†L1162-L1173】【F:src/network/apiServer.js†L1667-L1744】
+
+```mermaid
+flowchart TD
+  subgraph Floods[Adversarial load]
+    ConnFlood[Connection floods]
+    StreamFlood[Stream floods]
+    MalGossip[Malformed gossip]
+  end
+  subgraph Guards[NRM + ConnMgr]
+    Caps[Global/per-protocol caps]
+    IPASN[Per-IP / per-ASN ceilings]
+    Trim[Trim low-score peers]
+    Deny[Denied with reasons]
+  end
+  subgraph Owner[Owner controls]
+    Inspect[/GET /debug/resources/]
+    BanCLI[/POST/DELETE /governance/bans/]
+    Scale[NRM_SCALE_FACTOR & overrides]
+  end
+  ConnFlood & StreamFlood & MalGossip --> Caps --> IPASN --> Trim --> Deny
+  Deny --> Inspect
+  Owner --> BanCLI
+  Owner --> Scale
+  BanCLI --> Caps
+  Scale --> Caps
+  classDef accent fill:#0f172a,stroke:#0ea5e9,stroke-width:1.5px,color:#e0f2fe;
+  class Floods,Guards,Owner,ConnFlood,StreamFlood,MalGossip,Caps,IPASN,Trim,Deny,Inspect,BanCLI,Scale accent;
+```
 
 ## Operations playbook
 
