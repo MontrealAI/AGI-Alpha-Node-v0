@@ -28,6 +28,7 @@ export function createNetworkMetrics({
   logger = null
 } = {}) {
   const registers = buildRegisters(registry);
+  const liveConnections = { in: 0, out: 0 };
 
   const reachabilityStateGauge = new Gauge({
     name: 'net_reachability_state',
@@ -96,6 +97,9 @@ export function createNetworkMetrics({
     registers
   });
 
+  connectionsLive.set({ direction: 'in' }, liveConnections.in);
+  connectionsLive.set({ direction: 'out' }, liveConnections.out);
+
   const connectionLatency = new Histogram({
     name: 'agi_alpha_node_net_connection_latency_ms',
     help: 'Observed connection latency in milliseconds grouped by transport and direction',
@@ -148,7 +152,7 @@ export function createNetworkMetrics({
     connectionsClose,
     connectionsLive,
     connectionLatency,
-    liveConnections: { in: 0, out: 0 },
+    liveConnections,
     stop: () => bindings.forEach((unbind) => unbind?.())
   };
 }
