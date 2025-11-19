@@ -67,6 +67,19 @@ Envelope schema:
 Guardians can now rely on the built-in signing CLI to produce identical
 Dilithium envelopes without recreating digest logic.
 
+### Generate key material first
+
+Run `npm run treasury:keygen -- --guardian-id guardian-1 --out ./keys/guardian-1` to emit:
+
+- `./keys/guardian-1.pk` – Base64 Dilithium public key ready for `config/guardians.json`.
+- `./keys/guardian-1.sk` – Base64 Dilithium private key (permissions default to `0600`).
+- `./keys/guardian-1.json` – Guardian metadata stub (id, parameter set, public key) you can
+  paste into the orchestrator registry.
+
+Use `--seed 0x…` (or `--seed @path/to/seed.bin`) when you need reproducible
+key material for HSM mirroring. The full custody runbook—storage guidance,
+rotation, and revocation—is documented in [`docs/runes/guardian.md`](./runes/guardian.md).
+
 ```mermaid
 flowchart LR
   IntentJSON[TreasuryIntentV1 JSON]:::lava --> Digest[digestTreasuryIntent\n(+domain binding)]:::neon

@@ -35,6 +35,12 @@ export interface VerificationResult {
   reason?: string;
 }
 
+export interface GuardianKeyPair {
+  parameterSet: DilithiumParameterSet;
+  publicKey: Uint8Array;
+  privateKey: Uint8Array;
+}
+
 const require = createRequire(import.meta.url);
 let dilithiumInstancePromise: Promise<any> | null = null;
 
@@ -94,6 +100,23 @@ export async function signIntentDigest(params: SignIntentParams): Promise<Signed
     signature: Buffer.from(signature).toString('base64'),
     metadata
   } satisfies SignedIntentEnvelope;
+}
+
+export async function generateGuardianKeyPair(
+  parameterSet: DilithiumParameterSet = 2,
+  seed?: Uint8Array | string
+): Promise<GuardianKeyPair> {
+  if (parameterSet < 0 || parameterSet > 3) {
+    throw new Error('Dilithium parameter set must be between 0 and 3.');
+  }
+  const dilithium = await getDilithiumInstance();
+  const normalizedSeed = seed ? toBytes(seed) : undefined;
+  const { publicKey, privateKey } = dilithium.generateKeys(parameterSet, normalizedSeed);
+  return {
+    parameterSet,
+    publicKey: new Uint8Array(publicKey),
+    privateKey: new Uint8Array(privateKey)
+  } satisfies GuardianKeyPair;
 }
 
 export async function verifySignedEnvelope(
