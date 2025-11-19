@@ -50,7 +50,18 @@ vi.mock('./api/client.js', () => {
     fetchIndexHistory: vi.fn().mockResolvedValue({ items: mockHistory }),
     fetchProviders: vi.fn().mockResolvedValue(mockProviders),
     fetchProviderScores: vi.fn().mockResolvedValue(mockScores),
-    fetchTelemetryRuns: vi.fn().mockResolvedValue(mockTelemetry)
+    fetchTelemetryRuns: vi.fn().mockResolvedValue(mockTelemetry),
+    fetchDebugNetwork: vi.fn().mockResolvedValue({
+      windowMinutes: 15,
+      reachability: { current: { state: 'public', updatedAt: Date.now() }, timeline: [] },
+      transportPosture: { connectionsByTransport: { quic: 5, tcp: 3 }, share: { quic: 0.62, tcp: 0.38 } },
+      churn: { live: { in: 1, out: 2 }, opensPerSec: { in: 0.1, out: 0.2 }, closesPerSec: { in: 0.05, out: 0.1 } },
+      dials: { recent: { successRate: 0.9 }, cumulative: { successRate: 0.95 } }
+    }),
+    fetchDebugResources: vi.fn().mockResolvedValue({
+      nrmDenials: { byLimitType: { streams: 1 }, byProtocol: { '/meshsub/1.1.0': 1 } },
+      connectionManagerStats: { trims: { over_high_water: 1 } }
+    })
   };
 });
 

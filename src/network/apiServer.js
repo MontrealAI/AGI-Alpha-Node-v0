@@ -93,6 +93,80 @@ function applyCorsHeaders(req, res, corsOrigin) {
   }
 }
 
+function snapshotCounter(counter) {
+  if (!counter?.get) {
+    return { timestamp: Date.now(), values: {} };
+  }
+  const { values = [] } = counter.get();
+  const snapshot = {};
+  for (const sample of values) {
+    const labels = sample.labels ?? {};
+    const key = JSON.stringify(labels);
+    snapshot[key] = { labels, value: Number(sample.value ?? 0) };
+  }
+  return { timestamp: Date.now(), values: snapshot };
+}
+
+function updateCounterHistory(history, counter, windowMs) {
+  const snapshot = snapshotCounter(counter);
+  history.push(snapshot);
+  const cutoff = snapshot.timestamp - windowMs;
+  while (history.length > 1 && history[0].timestamp < cutoff) {
+    history.shift();
+  }
+  return snapshot;
+}
+
+function aggregateDelta(samples, field = 'rate', deriveKey = (labels) => JSON.stringify(labels)) {
+  const output = {};
+  Object.values(samples ?? {}).forEach(({ labels, [field]: value }) => {
+    const key = deriveKey(labels ?? {});
+    output[key] = (output[key] ?? 0) + (Number.isFinite(value) ? value : 0);
+  });
+  return output;
+}
+
+function computeCounterDelta(history) {
+  if (!history?.length) {
+    return { delta: {}, windowSeconds: 0 };
+  }
+  const current = history[history.length - 1];
+  const baseline = history[0];
+  const windowSeconds = Math.max((current.timestamp - baseline.timestamp) / 1000, 1);
+  const keys = new Set([...Object.keys(current.values ?? {}), ...Object.keys(baseline.values ?? {})]);
+  const delta = {};
+  keys.forEach((key) => {
+    const currentValue = current.values?.[key]?.value ?? 0;
+    const baselineValue = baseline.values?.[key]?.value ?? 0;
+    const labels = current.values?.[key]?.labels ?? baseline.values?.[key]?.labels ?? {};
+    const diff = currentValue - baselineValue;
+    delta[key] = {
+      labels,
+      total: diff,
+      rate: diff / windowSeconds
+    };
+  });
+  return { delta, windowSeconds };
+}
+
+async function sumCounterByLabel(counter, deriveKey = (labels) => JSON.stringify(labels)) {
+  const metric = counter?.get?.();
+  const snapshot = metric && typeof metric.then === 'function' ? await metric : metric;
+  const { values = [] } = snapshot ?? {};
+  return values.reduce((acc, sample) => {
+    const key = deriveKey(sample.labels ?? {});
+    acc[key] = (acc[key] ?? 0) + Number(sample.value ?? 0);
+    return acc;
+  }, {});
+}
+
+function clampWindowMinutes(value, fallback = 15, maxMinutes = 60) {
+  const numeric = Number.parseInt(value ?? `${fallback}`, 10);
+  if (!Number.isFinite(numeric)) return fallback;
+  const bounded = Math.max(1, Math.min(numeric, maxMinutes));
+  return bounded;
+}
+
 function instrumentHttpRequest({ tracer, req, res, logger }) {
   const startedAt = process.hrtime.bigint();
   const extractedContext = propagation.extract(otelContext.active(), req.headers ?? {});
@@ -983,6 +1057,8 @@ export function startAgentApi({
   publicApiKey = null,
   corsOrigin = null,
   peerScoreStore = null,
+  networkMetrics = null,
+  reachabilityState = null,
   resourceManager = null,
   connectionManager = null,
   tracer: tracerOverride = null
@@ -1031,6 +1107,16 @@ export function startAgentApi({
   const publicReadKey = typeof publicApiKey === 'string' && publicApiKey.trim().length > 0 ? publicApiKey.trim() : null;
   const allowedCorsOrigin = typeof corsOrigin === 'string' && corsOrigin.trim().length > 0 ? corsOrigin.trim() : null;
 
+  const reachabilityTimeline = [];
+  const reachabilityTracker = reachabilityState;
+  const metricsHistory = {
+    connectionsOpen: [],
+    connectionsClose: [],
+    inboundConnections: [],
+    netDialSuccessTotal: [],
+    netDialFailTotal: []
+  };
+
   const resolveHealthGateState = () => (healthGate ? healthGate.getState() : null);
 
   const exportBanState = () => ({
@@ -1047,6 +1133,36 @@ export function startAgentApi({
           gracePeriodSeconds: connectionManager.gracePeriodSeconds
         }
       : null;
+
+  const reachabilitySnapshot = () => {
+    if (reachabilityTracker?.getSnapshot) {
+      return reachabilityTracker.getSnapshot();
+    }
+    const state = reachabilityTracker?.getState?.() ?? reachabilityTracker ?? 'unknown';
+    return { state, source: 'unknown', overridden: false, updatedAt: null };
+  };
+
+  if (reachabilityTracker?.subscribe) {
+    reachabilityTracker.subscribe((snapshot) => {
+      reachabilityTimeline.push({
+        state: snapshot?.state ?? 'unknown',
+        source: snapshot?.source ?? 'unknown',
+        overridden: snapshot?.overridden ?? false,
+        updatedAt: snapshot?.updatedAt ?? Date.now()
+      });
+      while (reachabilityTimeline.length > 120) {
+        reachabilityTimeline.shift();
+      }
+    });
+  } else {
+    const initial = reachabilitySnapshot();
+    reachabilityTimeline.push({
+      state: initial.state ?? 'unknown',
+      source: initial.source ?? 'unknown',
+      overridden: initial.overridden ?? false,
+      updatedAt: initial.updatedAt ?? Date.now()
+    });
+  }
 
   let lifecycleSubscription = null;
   let lifecycleActionSubscription = null;
@@ -1235,12 +1351,175 @@ export function startAgentApi({
         const snapshot = resourceManager.metrics();
         const limits = snapshot.limitsGrid ?? snapshot.limits ?? {};
         const usage = snapshot.usage ?? {};
+        const nrmDenials = networkMetrics
+          ? {
+              byLimitType: await sumCounterByLabel(networkMetrics.nrmDenialsTotal, (labels) => labels.limit_type ?? 'unknown'),
+              byProtocol: await sumCounterByLabel(networkMetrics.nrmDenialsTotal, (labels) => labels.protocol ?? 'unknown')
+            }
+          : null;
+        const connectionManagerStats = networkMetrics
+          ? {
+              trims: await sumCounterByLabel(networkMetrics.connmanagerTrimsTotal, (labels) => labels.reason ?? 'unknown')
+            }
+          : null;
         jsonResponse(res, 200, {
           limits,
           usage,
           metrics: snapshot,
           bans: exportBanState(),
-          connectionManager: describeConnectionManager()
+          connectionManager: describeConnectionManager(),
+          nrmDenials,
+          connectionManagerStats
+        });
+        return;
+      }
+
+      if (req.method === 'GET' && pathname === '/debug/network') {
+        if (!networkMetrics) {
+          jsonResponse(res, 503, { error: 'Network telemetry unavailable' });
+          return;
+        }
+
+        const windowMinutes = clampWindowMinutes(requestUrl.searchParams.get('window'), 15, 90);
+        const windowMs = windowMinutes * 60 * 1000;
+
+        updateCounterHistory(metricsHistory.connectionsOpen, networkMetrics.connectionsOpen, windowMs);
+        updateCounterHistory(metricsHistory.connectionsClose, networkMetrics.connectionsClose, windowMs);
+        updateCounterHistory(metricsHistory.inboundConnections, networkMetrics.inboundConnections, windowMs);
+        updateCounterHistory(metricsHistory.netDialSuccessTotal, networkMetrics.netDialSuccessTotal, windowMs);
+        updateCounterHistory(metricsHistory.netDialFailTotal, networkMetrics.netDialFailTotal, windowMs);
+
+        const opensDelta = computeCounterDelta(metricsHistory.connectionsOpen);
+        const closesDelta = computeCounterDelta(metricsHistory.connectionsClose);
+        const inboundDelta = computeCounterDelta(metricsHistory.inboundConnections);
+        const dialSuccessDelta = computeCounterDelta(metricsHistory.netDialSuccessTotal);
+        const dialFailDelta = computeCounterDelta(metricsHistory.netDialFailTotal);
+
+        const liveConnections = {
+          in: networkMetrics.liveConnections?.in ?? 0,
+          out: networkMetrics.liveConnections?.out ?? 0,
+          total: (networkMetrics.liveConnections?.in ?? 0) + (networkMetrics.liveConnections?.out ?? 0)
+        };
+
+        const opensPerSec = aggregateDelta(opensDelta.delta, 'rate', (labels) => labels.direction ?? 'unknown');
+        const closesPerSec = aggregateDelta(closesDelta.delta, 'rate', (labels) => labels.direction ?? 'unknown');
+        const closeReasonsPerSec = aggregateDelta(
+          closesDelta.delta,
+          'rate',
+          (labels) => `${labels.direction ?? 'unknown'}:${labels.reason ?? 'unknown'}`
+        );
+
+        const inboundConnectionsRecent = aggregateDelta(
+          inboundDelta.delta,
+          'total',
+          (labels) => labels.transport ?? 'unknown'
+        );
+        const dialSuccessRecent = aggregateDelta(
+          dialSuccessDelta.delta,
+          'total',
+          (labels) => labels.transport ?? 'unknown'
+        );
+        const dialFailureRecent = aggregateDelta(
+          dialFailDelta.delta,
+          'total',
+          (labels) => labels.transport ?? 'unknown'
+        );
+        const dialFailureReasonsRecent = aggregateDelta(
+          dialFailDelta.delta,
+          'total',
+          (labels) => `${labels.transport ?? 'unknown'}:${labels.reason ?? 'unknown'}`
+        );
+
+        const dialSuccessTotals = await sumCounterByLabel(
+          networkMetrics.netDialSuccessTotal,
+          (labels) => labels.transport ?? 'unknown'
+        );
+        const dialFailureTotals = await sumCounterByLabel(
+          networkMetrics.netDialFailTotal,
+          (labels) => labels.transport ?? 'unknown'
+        );
+        const dialFailureReasonsTotals = await sumCounterByLabel(
+          networkMetrics.netDialFailTotal,
+          (labels) => `${labels.transport ?? 'unknown'}:${labels.reason ?? 'unknown'}`
+        );
+
+        const inboundTotals = await sumCounterByLabel(
+          networkMetrics.inboundConnections,
+          (labels) => labels.transport ?? 'unknown'
+        );
+        const connectionsByTransport = {};
+        const transports = new Set([
+          ...Object.keys(inboundConnectionsRecent),
+          ...Object.keys(dialSuccessRecent),
+          ...Object.keys(dialFailureRecent)
+        ]);
+        transports.forEach((transport) => {
+          connectionsByTransport[transport] =
+            (inboundConnectionsRecent[transport] ?? 0) + (dialSuccessRecent[transport] ?? 0);
+        });
+        if (Object.keys(connectionsByTransport).length === 0) {
+          const fallbackTransports = new Set([
+            ...Object.keys(inboundTotals),
+            ...Object.keys(dialSuccessTotals)
+          ]);
+          fallbackTransports.forEach((transport) => {
+            connectionsByTransport[transport] = (inboundTotals[transport] ?? 0) + (dialSuccessTotals[transport] ?? 0);
+          });
+        }
+        const connectionsTotal = Object.values(connectionsByTransport).reduce((sum, value) => sum + value, 0);
+        const transportShare = Object.fromEntries(
+          Object.entries(connectionsByTransport).map(([transport, value]) => [
+            transport,
+            connectionsTotal > 0 ? value / connectionsTotal : 0
+          ])
+        );
+        const cumulativeSuccess = Object.values(dialSuccessTotals).reduce((sum, value) => sum + value, 0);
+        const cumulativeFailure = Object.values(dialFailureTotals).reduce((sum, value) => sum + value, 0);
+        const cumulativeRate =
+          cumulativeSuccess + cumulativeFailure > 0
+            ? cumulativeSuccess / (cumulativeSuccess + cumulativeFailure)
+            : null;
+
+        const recentSuccessTotal = Object.values(dialSuccessRecent).reduce((sum, value) => sum + value, 0);
+        const recentFailureTotal = Object.values(dialFailureRecent).reduce((sum, value) => sum + value, 0);
+        const recentSuccessRate =
+          dialSuccessDelta.windowSeconds > 0
+            ? recentSuccessTotal / ((recentSuccessTotal + recentFailureTotal) || 1)
+            : null;
+
+        jsonResponse(res, 200, {
+          reachability: {
+            current: reachabilitySnapshot(),
+            timeline: reachabilityTimeline.slice(-90)
+          },
+          churn: {
+            windowSeconds: Math.max(opensDelta.windowSeconds, closesDelta.windowSeconds),
+            live: liveConnections,
+            opensPerSec,
+            closesPerSec,
+            closeReasonsPerSec
+          },
+          dials: {
+            windowSeconds: Math.max(dialSuccessDelta.windowSeconds, dialFailDelta.windowSeconds),
+            recent: {
+              success: dialSuccessRecent,
+              failure: dialFailureRecent,
+              failureReasons: dialFailureReasonsRecent,
+              successRate: recentSuccessRate
+            },
+            cumulative: {
+              success: dialSuccessTotals,
+              failure: dialFailureTotals,
+              failureReasons: dialFailureReasonsTotals,
+              successRate: cumulativeRate
+            }
+          },
+          transportPosture: {
+            windowSeconds: Math.max(inboundDelta.windowSeconds, dialSuccessDelta.windowSeconds),
+            connectionsByTransport,
+            share: transportShare
+          },
+          windowMinutes
         });
         return;
       }

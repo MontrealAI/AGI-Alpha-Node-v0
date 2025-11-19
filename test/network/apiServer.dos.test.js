@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { startAgentApi } from '../../src/network/apiServer.js';
+import { createNetworkMetrics } from '../../src/telemetry/networkMetrics.js';
 import { ResourceManager, buildResourceManagerConfig } from '../../src/network/resourceManagerConfig.js';
 
 describe('agent API DoS surfaces', () => {
@@ -47,6 +48,29 @@ describe('agent API DoS surfaces', () => {
     expect(bansResponse.status).toBe(200);
     const bansPayload = await bansResponse.json();
     expect(bansPayload.bans.asns).toContain('asn-banned');
+
+    await api.stop();
+  });
+
+  it('exposes network debug telemetry including dials and transport posture', async () => {
+    const networkMetrics = createNetworkMetrics();
+    networkMetrics.connectionsOpen.inc({ direction: 'out' });
+    networkMetrics.connectionsClose.inc({ direction: 'out', reason: 'reset' });
+    networkMetrics.netDialSuccessTotal.inc({ transport: 'quic' });
+    networkMetrics.netDialFailTotal.inc({ transport: 'tcp', reason: 'timeout' });
+
+    const api = startAgentApi({ port: 0, networkMetrics });
+    const port = api.server.address().port;
+    const base = `http://127.0.0.1:${port}`;
+
+    const response = await fetch(`${base}/debug/network`);
+    expect(response.status).toBe(200);
+    const payload = await response.json();
+
+    expect(payload.dials.cumulative.success.quic).toBeGreaterThan(0);
+    expect(payload.dials.cumulative.failure.tcp).toBeGreaterThanOrEqual(0);
+    expect(payload.transportPosture.connectionsByTransport.quic).toBeGreaterThanOrEqual(0);
+    expect(payload.churn.live.out).toBeDefined();
 
     await api.stop();
   });

@@ -49,3 +49,14 @@ export async function fetchTelemetryRuns(baseUrl, apiKey, { from, to, providerId
   const url = `${baseUrl.replace(/\/$/, '')}/telemetry/task-runs?${params.toString()}`;
   return safeFetch(url, { headers: buildHeaders(apiKey) });
 }
+
+export async function fetchDebugNetwork(baseUrl, apiKey, { windowMinutes = 15 } = {}) {
+  const params = new URLSearchParams({ window: String(windowMinutes) });
+  const url = `${baseUrl.replace(/\/$/, '')}/debug/network?${params.toString()}`;
+  return safeFetch(url, { headers: buildHeaders(apiKey) });
+}
+
+export async function fetchDebugResources(baseUrl, apiKey) {
+  const url = `${baseUrl.replace(/\/$/, '')}/debug/resources`;
+  return safeFetch(url, { headers: buildHeaders(apiKey) });
+}
