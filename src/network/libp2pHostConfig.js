@@ -64,7 +64,9 @@ function nowMs() {
 export function createTransportTracer({ plan, logger: baseLogger, metrics = null, tracer: tracerOverride = null } = {}) {
   const log = resolveLogger(baseLogger);
   const preference = plan?.transports?.preference ?? 'prefer-quic';
-  const tracer = tracerOverride ?? getTelemetryTracer({ logger: baseLogger });
+  const { tracer } = tracerOverride
+    ? { tracer: tracerOverride }
+    : getTelemetryTracer({ logger: baseLogger });
   const inflightDials = new Map();
 
   const startDialSpan = ({ peerId, address, transport, startedAt }) => {

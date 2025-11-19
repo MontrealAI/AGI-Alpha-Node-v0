@@ -11,6 +11,7 @@ import { applyPeerScoreSnapshot, createPeerScoreMetrics } from './peerScoreMetri
 
 const DEFAULT_SERVICE_NAME = process.env.OTEL_SERVICE_NAME || 'agi-alpha-node';
 let cachedTracer = null;
+let cachedStop = async () => {};
 
 function parseOtlpHeaders(rawHeaders) {
   if (!rawHeaders || typeof rawHeaders !== 'string') {
@@ -33,7 +34,7 @@ function parseOtlpHeaders(rawHeaders) {
 
 export function configureOpenTelemetry({ logger } = {}) {
   if (cachedTracer) {
-    return { tracer: cachedTracer, stop: async () => {} };
+    return { tracer: cachedTracer, stop: cachedStop };
   }
 
   const resource = resourceFromAttributes({ 'service.name': DEFAULT_SERVICE_NAME });
@@ -60,15 +61,16 @@ export function configureOpenTelemetry({ logger } = {}) {
       logger?.warn?.(error, 'Failed to shutdown OpenTelemetry provider cleanly');
     } finally {
       cachedTracer = null;
+      cachedStop = async () => {};
     }
   };
 
+  cachedStop = stop;
   return { tracer: cachedTracer, stop };
 }
 
 export function getTelemetryTracer({ logger } = {}) {
-  const { tracer } = configureOpenTelemetry({ logger });
-  return tracer;
+  return configureOpenTelemetry({ logger });
 }
 
 const alphaWuMetricState = {
@@ -299,7 +301,7 @@ export function startMonitoringServer({
   networkMetrics = null,
   registry: providedRegistry = null
 } = {}) {
-  const tracer = getTelemetryTracer({ logger });
+  const { tracer, stop: stopTracer } = getTelemetryTracer({ logger });
   const registry = providedRegistry ?? new Registry();
   collectDefaultMetrics({ register: registry, prefix: 'agi_alpha_node_' });
 
@@ -604,10 +606,13 @@ export function startMonitoringServer({
     logger?.info?.({ port }, 'Telemetry server listening');
   });
 
-  server.on('close', () => {
+
+  const stop = async () => {
+    await new Promise((resolve) => server.close(resolve));
     peerScoreUnsubscribe?.();
     networkCollectors.stop?.();
-  });
+    await stopTracer?.();
+  };
 
   return {
     registry,
@@ -647,7 +652,8 @@ export function startMonitoringServer({
     peerScoreMetrics,
     peerScoreUnsubscribe,
     networkMetrics: networkCollectors,
-    registry
+    registry,
+    stop
   };
 }
 

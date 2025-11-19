@@ -34,12 +34,14 @@ describe('monitoring telemetry server', () => {
   });
 
   afterEach(async () => {
-    if (telemetry?.server) {
+    if (telemetry?.stop) {
+      await telemetry.stop();
+    } else if (telemetry?.server) {
       await new Promise((resolve) => {
         telemetry.server.close(() => resolve());
       });
-      telemetry = null;
     }
+    telemetry = null;
   });
 
   it('serves prometheus metrics populated by the gauges', async () => {

@@ -953,7 +953,9 @@ export function startAgentApi({
     }
   };
 
-  const tracer = tracerOverride ?? getTelemetryTracer({ logger });
+  const { tracer, stop: stopTracer } = tracerOverride
+    ? { tracer: tracerOverride, stop: async () => {} }
+    : getTelemetryTracer({ logger });
 
   const telemetryService =
     telemetry instanceof TelemetryIngestionService
@@ -2328,14 +2330,16 @@ export function startAgentApi({
     port,
     offlineMode,
     telemetry: telemetryService,
-    stop: () =>
-      new Promise((resolve) => {
+    stop: async () => {
+      await new Promise((resolve) => {
         server.close(() => {
           lifecycleSubscription?.();
           lifecycleActionSubscription?.();
           resolve();
         });
-      }),
+      });
+      await stopTracer?.();
+    },
     getMetrics: () => ({
       ...metrics,
       tokensEarned: metrics.tokensEarned,
