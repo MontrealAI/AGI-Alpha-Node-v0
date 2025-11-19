@@ -44,4 +44,35 @@ describe('Guardian threshold aggregation', () => {
     expect(report.thresholdMet).toBe(true);
     expect(report.pendingGuardians.map((g) => g.id)).toContain('guardian-3');
   });
+
+  it('rejects envelopes whose guardianId does not match the registered public key', async () => {
+    const dilithium = await getDilithiumInstance();
+    const keyPairs = [dilithium.generateKeys(2), dilithium.generateKeys(2)];
+
+    const guardians: GuardianRecord[] = keyPairs.map((pair, index) => ({
+      id: `guardian-${index + 1}`,
+      publicKey: Buffer.from(pair.publicKey).toString('base64'),
+      parameterSet: 2
+    }));
+
+    const registry = new GuardianRegistry(guardians);
+    const rogueKeys = dilithium.generateKeys(2);
+    const forgedEnvelope = await signIntentDigest({
+      digest,
+      privateKey: rogueKeys.privateKey,
+      publicKey: rogueKeys.publicKey,
+      metadata: { guardianId: 'guardian-1' }
+    });
+
+    const report = await aggregateGuardianEnvelopes([forgedEnvelope], {
+      digest,
+      threshold: 1,
+      registry
+    });
+
+    expect(report.approvals).toHaveLength(0);
+    expect(report.invalid).toHaveLength(1);
+    expect(report.invalid[0].reason).toMatch(/unknown guardian/i);
+    expect(report.thresholdMet).toBe(false);
+  });
 });

@@ -51,11 +51,25 @@ export class GuardianRegistry {
   }
 
   findByEnvelope(envelope: SignedIntentEnvelope): GuardianRecord | undefined {
+    const normalizedPublicKey = envelope.publicKey?.trim();
     const guardianId = envelope.metadata?.guardianId;
-    if (guardianId && this.#guardians.has(guardianId)) {
-      return this.#guardians.get(guardianId);
+
+    if (guardianId) {
+      const guardian = this.#guardians.get(guardianId);
+      if (!guardian) {
+        return undefined;
+      }
+      if (!normalizedPublicKey || guardian.publicKey !== normalizedPublicKey) {
+        return undefined;
+      }
+      return guardian;
     }
-    return this.#byPublicKey.get(envelope.publicKey);
+
+    if (!normalizedPublicKey) {
+      return undefined;
+    }
+
+    return this.#byPublicKey.get(normalizedPublicKey);
   }
 
   list(): GuardianRecord[] {
