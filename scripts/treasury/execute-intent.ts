@@ -15,6 +15,7 @@ import {
 } from '../../src/treasury/pqEnvelope.js';
 import { GuardianRegistry } from '../../src/treasury/guardianRegistry.js';
 import { aggregateGuardianEnvelopes } from '../../src/treasury/thresholdAggregator.js';
+import { IntentLedger } from '../../src/treasury/intentLedger.js';
 
 const program = new Command();
 program
@@ -30,6 +31,7 @@ program
   .option('--chain-id <id>', 'Chain id for domain binding', (value) => BigInt(value), process.env.CHAIN_ID ? BigInt(process.env.CHAIN_ID) : 0n)
   .option('--domain-version <version>', 'Domain separator version', (value) => Number.parseInt(value, 10), 1)
   .option('--function-signature <signature>', 'Function signature binding', EXECUTE_TRANSACTION_SIGNATURE)
+  .option('--ledger <file>', 'Path to the executed intent ledger', 'config/intent-ledger.json')
   .option('--dry-run', 'Only verify signatures without sending a transaction', false)
   .parse(process.argv);
 
@@ -43,6 +45,7 @@ const options = program.opts<{
   chainId: bigint;
   domainVersion: number;
   functionSignature: string;
+  ledger: string;
   dryRun: boolean;
 }>();
 
@@ -75,6 +78,14 @@ const digest = digestTreasuryIntent(intent, {
 });
 
 console.log(`Intent digest: ${digest}`);
+
+const ledger = new IntentLedger(options.ledger);
+if (ledger.isExecuted(digest)) {
+  const prior = ledger.getRecord(digest);
+  console.error(
+    `Digest already executed on ${prior?.at ?? 'an earlier run'}${prior?.txHash ? ` (tx ${prior.txHash})` : ''}.`);
+  process.exit(1);
+}
 
 const envelopeDir = resolve(options.envelopes);
 const envelopeFiles = readdirSync(envelopeDir, { withFileTypes: true })
@@ -139,3 +150,8 @@ if (receipt?.status !== 1n && receipt?.status !== 1) {
 }
 
 console.log(`Intent executed in tx ${tx.hash}`);
+ledger.recordExecution(digest, {
+  txHash: tx.hash,
+  approvals: report.approvals.map((approval) => approval.guardian.id)
+});
+console.log(`Ledger updated at ${ledger.path}`);
