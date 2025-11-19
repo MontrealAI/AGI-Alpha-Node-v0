@@ -4,6 +4,7 @@ import { createNetworkMetrics } from '../../src/telemetry/networkMetrics.js';
 import {
   estimatePayloadBytes,
   instrumentProtocolHandler,
+  observeProtocolExchange,
   trackProtocolMessage
 } from '../../src/network/protocols/metrics.js';
 
@@ -74,6 +75,36 @@ describe('protocol metrics instrumentation', () => {
     expect(secondBytes).toBeGreaterThan(0);
     expect(bytesEntry?.value).toBe(firstBytes + secondBytes);
     expect(msgsEntry?.value).toBe(2);
+  });
+
+  it('captures round-trip protocol exchanges with latency and byte totals', async () => {
+    const registry = new Registry();
+    const metrics = createNetworkMetrics({ registry });
+
+    const response = await observeProtocolExchange(
+      metrics,
+      { protocol: 'agi/settlement/1.0.0', direction: 'out', payload: { job: 'abc', bid: 10 } },
+      async () => {
+        await new Promise((resolve) => setTimeout(resolve, 2));
+        return { ok: true, receipt: '0xabc' };
+      }
+    );
+
+    expect(response.ok).toBe(true);
+
+    const snapshot = await registry.getMetricsAsJSON();
+    const latencyMetric = snapshot.find((metric) => metric.name === 'net_protocol_latency_ms');
+    const bytesMetric = snapshot.find((metric) => metric.name === 'net_bytes_total');
+
+    const latencyCount = latencyMetric?.values?.find(
+      (entry) => entry.labels.protocol === 'agi/settlement/1.0.0' && entry.labels.le === '+Inf'
+    )?.value;
+    const bytesEntry = bytesMetric?.values?.find(
+      (entry) => entry.labels.protocol === 'agi/settlement/1.0.0' && entry.labels.direction === 'out'
+    );
+
+    expect(latencyCount).toBeGreaterThanOrEqual(1);
+    expect(bytesEntry?.value).toBeGreaterThan(0);
   });
 
   it('estimates payload sizes across primitives and objects', () => {
