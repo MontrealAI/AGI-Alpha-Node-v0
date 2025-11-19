@@ -1,6 +1,6 @@
 import http from 'node:http';
 import { randomUUID } from 'node:crypto';
-import { context as otelContext, propagation, SpanKind, trace as otelTrace } from '@opentelemetry/api';
+import { context as otelContext, propagation, SpanKind, SpanStatusCode, trace as otelTrace } from '@opentelemetry/api';
 import pino from 'pino';
 import { getAddress, parseUnits } from 'ethers';
 import { z } from 'zod';
@@ -91,6 +91,61 @@ function applyCorsHeaders(req, res, corsOrigin) {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key');
     res.setHeader('Access-Control-Max-Age', '600');
   }
+}
+
+function instrumentHttpRequest({ tracer, req, res, logger }) {
+  const startedAt = process.hrtime.bigint();
+  const extractedContext = propagation.extract(otelContext.active(), req.headers ?? {});
+  const span = tracer?.startSpan(
+    'http.server',
+    {
+      kind: SpanKind.SERVER,
+      attributes: {
+        'http.method': req.method ?? 'UNKNOWN',
+        'http.target': req.url ?? '',
+        'http.route': req.url ?? 'unrouted'
+      }
+    },
+    extractedContext
+  );
+
+  const spanContext = span ? otelTrace.setSpan(extractedContext, span) : extractedContext;
+  let ended = false;
+
+  const endSpan = (statusCode = res.statusCode ?? 0, error = null) => {
+    if (!span || ended) {
+      ended = true;
+      return;
+    }
+    ended = true;
+    const latencyMs = Number(process.hrtime.bigint() - startedAt) / 1_000_000;
+    span.setAttribute('http.status_code', statusCode);
+    span.setAttribute('http.server.latency_ms', latencyMs);
+    span.setStatus({
+      code: statusCode >= 500 ? SpanStatusCode.ERROR : SpanStatusCode.OK,
+      message: statusCode >= 500 ? `HTTP ${statusCode}` : undefined
+    });
+    if (error) {
+      span.recordException(error);
+    }
+    span.end();
+  };
+
+  res.on('finish', () => endSpan(res.statusCode ?? 0));
+  res.on('close', () => endSpan(res.statusCode ?? 0));
+
+  return {
+    span,
+    context: spanContext,
+    updateRoute: (route) => span?.setAttribute('http.route', route ?? ''),
+    runWithContext: async (fn) => otelContext.with(spanContext, fn),
+    end: endSpan,
+    recordError: (error) => {
+      if (!span || !error) return;
+      span.recordException(error);
+      logger?.warn?.(error, 'HTTP handler raised');
+    }
+  };
 }
 
 function parseRequestBody(req) {
@@ -1130,31 +1185,7 @@ export function startAgentApi({
   }
 
   const server = http.createServer(async (req, res) => {
-    const startedAt = process.hrtime.bigint();
-    let routeLabel = req.url ?? 'unrouted';
-    const extractedContext = propagation.extract(otelContext.active(), req.headers ?? {});
-    const span = tracer?.startSpan(
-      'http.server',
-      {
-        kind: SpanKind.SERVER,
-        attributes: {
-          'http.method': req.method ?? 'UNKNOWN',
-          'http.target': req.url ?? '',
-          'http.route': routeLabel
-        }
-      },
-      extractedContext
-    );
-    const spanScope = span ? otelTrace.setSpan(extractedContext, span) : extractedContext;
-
-    const endSpan = (statusCode = res.statusCode ?? 0) => {
-      if (!span) return;
-      const latencyMs = Number(process.hrtime.bigint() - startedAt) / 1_000_000;
-      span.setAttribute('http.status_code', statusCode);
-      span.setAttribute('http.route', routeLabel);
-      span.setAttribute('http.server.latency_ms', latencyMs);
-      span.end();
-    };
+    const instrumentation = instrumentHttpRequest({ tracer, req, res, logger });
 
     const handleRequest = async () => {
       applyCorsHeaders(req, res, allowedCorsOrigin);
@@ -1174,16 +1205,13 @@ export function startAgentApi({
       }
 
       const { pathname } = requestUrl;
-      routeLabel = pathname || routeLabel;
 
       if (!req.url) {
         jsonResponse(res, 404, { error: 'Not found' });
         return;
       }
 
-      if (span && pathname) {
-        span.setAttribute('http.route', pathname);
-      }
+      instrumentation.updateRoute(pathname || 'unrouted');
 
       if (req.method === 'GET' && pathname === '/debug/peerscore') {
         if (!peerScoreStore) {
@@ -2310,14 +2338,15 @@ export function startAgentApi({
     };
 
     try {
-      await otelContext.with(spanScope, handleRequest);
+      await instrumentation.runWithContext(handleRequest);
     } catch (error) {
+      instrumentation.recordError(error);
       logger.error(error, 'API request handling failed');
       if (!res.headersSent) {
         jsonResponse(res, 500, { error: 'Internal server error' });
       }
     } finally {
-      endSpan(res.statusCode ?? 500);
+      instrumentation.end(res.statusCode ?? 500);
     }
   });
 
