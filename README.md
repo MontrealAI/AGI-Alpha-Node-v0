@@ -573,6 +573,26 @@ flowchart LR
 3. **Verify quorum + execute:** `npm run treasury:execute -- intents/payout.json --registry config/guardians.json --envelopes ./envelopes --ledger config/intent-ledger.json --threshold 3 --chain-id 11155111 --treasury 0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` aggregates signatures, prints missing guardians, aborts if the digest was already executed, and only then broadcasts `executeTransaction` from the orchestrator key.【F:scripts/treasury/execute-intent.ts†L1-L126】【F:src/treasury/intentLedger.ts†L1-L83】
 4. **Operate with confidence:** Cross-check the envelope/threshold flow against [`docs/treasury-mode-a.md`](docs/treasury-mode-a.md) so guardians and operators follow the exact CBOR schema and domain-binding rules shipped in this repo.【F:docs/treasury-mode-a.md†L1-L58】
 
+### Guardian aggregation & replay shield (operational map)
+
+```mermaid
+stateDiagram-v2
+  [*] --> Collect: Scan envelopes dir (.cbor/.json)
+  Collect --> Registry: Resolve guardian IDs/pubkeys
+  Registry --> Verify: verifySignedEnvelope(digest)
+  Verify --> DuplicateCheck: Reject duplicates per guardianId
+  DuplicateCheck --> Threshold: approvals >= M?
+  Threshold --> Execute: treasury:execute (ethers)
+  Threshold --> Pending: list missing guardians
+  Execute --> Ledger: IntentLedger.recordExecution(txHash)
+  Ledger --> [*]
+```
+
+- **Drop-zone aware:** `treasury:execute` loads `.cbor` or `.json` envelopes from the configured directory, keeping the operator workflow as simple as copying signed artifacts into a folder.【F:scripts/treasury/execute-intent.ts†L35-L83】
+- **Registry-first validation:** Every envelope is matched against the `GuardianRegistry` before signature checks, eliminating spoofed guardian IDs or reused public keys up-front.【F:src/treasury/guardianRegistry.ts†L1-L54】
+- **Deterministic aggregation:** `aggregateGuardianEnvelopes` refuses duplicates, parameter-set mismatches, and digest mismatches, returning a pending inventory for operators while only counting distinct valid signers toward M-of-N.【F:src/treasury/thresholdAggregator.ts†L1-L56】
+- **Replay armor:** After a successful broadcast, the digest + tx hash are written to `IntentLedger`; subsequent runs abort before touching the chain if the digest already exists.【F:src/treasury/intentLedger.ts†L1-L83】【F:scripts/treasury/execute-intent.ts†L85-L126】
+
 ### PQ envelope anatomy & enforcement
 
 ```mermaid
