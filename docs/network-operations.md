@@ -31,6 +31,8 @@ node src/index.js
 
 All endpoints remain read-only and API-key gated; responses are JSON shaped for dashboards and copy/paste into incident notes.
 
+> **Window discipline:** Pass the same `window` minutes parameter to `/debug/network` and `/debug/resources` so the QUIC/TCP share, churn curves, and NRM denials describe the identical observation period.
+
 ## Reading the dashboard tiles
 
 - **Transport posture**: Doughnut chart of QUIC/TCP (and relay/other, if present) share over the last window. Expect QUIC dominance when `TRANSPORT_ENABLE_QUIC=true`.

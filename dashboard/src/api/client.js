@@ -56,7 +56,8 @@ export async function fetchDebugNetwork(baseUrl, apiKey, { windowMinutes = 15 } 
   return safeFetch(url, { headers: buildHeaders(apiKey) });
 }
 
-export async function fetchDebugResources(baseUrl, apiKey) {
-  const url = `${baseUrl.replace(/\/$/, '')}/debug/resources`;
+export async function fetchDebugResources(baseUrl, apiKey, { windowMinutes = 15 } = {}) {
+  const params = new URLSearchParams({ window: String(windowMinutes) });
+  const url = `${baseUrl.replace(/\/$/, '')}/debug/resources?${params.toString()}`;
   return safeFetch(url, { headers: buildHeaders(apiKey) });
 }

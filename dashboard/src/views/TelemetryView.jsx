@@ -191,9 +191,10 @@ export function TelemetryView({ baseUrl, apiKey, refreshNonce = 0 }) {
 
   async function loadNetworkSurfaces() {
     try {
+      const requestWindowMinutes = networkDebug?.windowMinutes ?? 15;
       const [networkPayload, resourcePayload] = await Promise.all([
-        fetchDebugNetwork(baseUrl, apiKey, { windowMinutes: 15 }),
-        fetchDebugResources(baseUrl, apiKey)
+        fetchDebugNetwork(baseUrl, apiKey, { windowMinutes: requestWindowMinutes }),
+        fetchDebugResources(baseUrl, apiKey, { windowMinutes: requestWindowMinutes })
       ]);
       setNetworkDebug(networkPayload);
       setResourceDebug(resourcePayload);
