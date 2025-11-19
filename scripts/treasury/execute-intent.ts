@@ -1,5 +1,5 @@
 #!/usr/bin/env tsx
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Command } from 'commander';
 import { dataSlice, id, Interface, JsonRpcProvider, Wallet } from 'ethers';
@@ -9,13 +9,11 @@ import {
   EXECUTE_TRANSACTION_SIGNATURE,
   EXECUTE_TRANSACTION_SELECTOR
 } from '../../src/treasury/intentEncoding.js';
-import {
-  decodeEnvelopeFromCbor,
-  type SignedIntentEnvelope
-} from '../../src/treasury/pqEnvelope.js';
+import { type SignedIntentEnvelope } from '../../src/treasury/pqEnvelope.js';
 import { GuardianRegistry } from '../../src/treasury/guardianRegistry.js';
 import { aggregateGuardianEnvelopes } from '../../src/treasury/thresholdAggregator.js';
 import { IntentLedger } from '../../src/treasury/intentLedger.js';
+import { loadEnvelopesFromDirectory } from '../../src/treasury/envelopeCollector.js';
 
 const program = new Command();
 program
@@ -82,23 +80,14 @@ console.log(`Intent digest: ${digest}`);
 const ledger = new IntentLedger(options.ledger);
 
 const envelopeDir = resolve(options.envelopes);
-const envelopeFiles = readdirSync(envelopeDir, { withFileTypes: true })
-  .filter((entry) => entry.isFile())
-  .map((entry) => resolve(envelopeDir, entry.name));
+const loadResult = loadEnvelopesFromDirectory(envelopeDir);
+const envelopes: SignedIntentEnvelope[] = loadResult.envelopes;
 
-const envelopes: SignedIntentEnvelope[] = [];
-for (const filePath of envelopeFiles) {
-  const buffer = readFileSync(filePath);
-  try {
-    const envelope = decodeEnvelopeFromCbor(buffer);
-    envelopes.push(envelope);
-    continue;
-  } catch (error) {
-    try {
-      envelopes.push(JSON.parse(buffer.toString('utf8')) as SignedIntentEnvelope);
-    } catch (jsonError) {
-      console.warn(`Skipping ${filePath}: ${(error as Error).message ?? jsonError}`);
-    }
+for (const report of loadResult.reports) {
+  if (report.status === 'parsed') {
+    console.log(`  ✓ loaded ${report.file}`);
+  } else {
+    console.warn(`  ✗ skipped ${report.file}: ${report.reason}`);
   }
 }
 
