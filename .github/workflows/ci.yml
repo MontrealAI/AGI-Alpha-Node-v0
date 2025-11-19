@@ -198,6 +198,35 @@ jobs:
             agi-alpha-node:${{ github.sha }} \
             --help | tee docker-smoke-help.txt
 
+  verify:
+    name: Full CI Verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs:
+      - lint
+      - test
+      - solidity
+      - typescript
+      - coverage
+      - docker-smoke
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ci:verify (lint + tests + coverage + gates)
+        env:
+          CI: true
+        run: npm run ci:verify
+
       - name: Upload smoke test log
         if: always()
         uses: actions/upload-artifact@v4

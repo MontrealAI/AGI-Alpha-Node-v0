@@ -6,6 +6,7 @@
     "Docker Build & Smoke Test",
     "Solidity Lint & Compile",
     "Subgraph TypeScript Build",
-    "Dependency Security Scan"
+    "Dependency Security Scan",
+    "Full CI Verification"
   ]
 }

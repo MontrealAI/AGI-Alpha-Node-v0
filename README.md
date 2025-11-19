@@ -17,9 +17,12 @@
   <a href=".github/required-checks.json">
     <img src="https://img.shields.io/badge/Required%20Checks-Enforced%20on%20PRs-8b5cf6?logo=github" alt="Required PR checks" />
   </a>
+  <img src="https://img.shields.io/badge/Full%20CI-ci:verify-2563eb?logo=githubactions&logoColor=white" alt="Full CI verification" />
   <img src="https://img.shields.io/badge/Coverage-c8%20enforced-22c55e?logo=testinglibrary&logoColor=white" alt="Coverage" />
+  <img src="https://img.shields.io/badge/Network%20Coverage-%E2%89%A585%25-16a34a?logo=prometheus&logoColor=white" alt="Network coverage gate" />
   <img src="https://img.shields.io/badge/Test%20Matrix-vitest%20%7C%20solc%20%7C%20markdownlint-22c55e?logo=vitest&logoColor=white" alt="Test matrix" />
   <img src="https://img.shields.io/badge/Security-npm%20audit-ef4444?logo=npm&logoColor=white" alt="Security gates" />
+  <img src="https://img.shields.io/badge/p2p%20Load%20Harness-observability%20gated-0ea5e9?logo=libp2p&logoColor=white" alt="p2p load harness" />
   <a href="https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa">
     <img src="https://img.shields.io/badge/$AGIALPHA-0xa61a...a1fa-ff3366?logo=ethereum&logoColor=white" alt="$AGIALPHA" />
   </a>
@@ -51,7 +54,7 @@ This runtime is engineered as the operator-owned intelligence engine capable of 
 - **Hard DoS guardrails**: The Network Resource Manager (NRM) rejects every overage with structured logs, `nrm_denials_total{limit_type,protocol}` increments, and live `denials.byLimitType` + `denials.byProtocol` breakdowns; ban grid counters and gauges make denials auditable in real time.【F:src/network/resourceManagerConfig.js†L248-L305】【F:src/telemetry/networkMetrics.js†L114-L144】
 - **Debuggable capacity**: `GET /debug/resources` exposes global caps, per-protocol ceilings (GossipSub/identify/bitswap/agi/*), per-IP/ASN ceilings, bans, and live utilization so operators never spelunk code to understand pressure.【F:src/network/resourceManagerConfig.js†L485-L626】【F:src/network/apiServer.js†L1353-L1405】
 - **Watermarks + bans as metrics**: Connection Manager trims emit `connmanager_trims_total{reason}`; ban mutations raise gauges/counters for IP/peer/ASN entries to keep governance controls transparent.【F:src/network/resourceManagerConfig.js†L641-L694】【F:src/network/apiServer.js†L2050-L2130】
-- **Green by default**: `.github/workflows/ci.yml` mirrors `npm run ci:verify` and is enforced via `.github/required-checks.json`, keeping PRs and `main` permanently green with visible badges.【F:.github/workflows/ci.yml†L1-L210】【F:.github/required-checks.json†L1-L9】
+- **Green by default**: `.github/workflows/ci.yml` now adds a `Full CI Verification` job that runs `npm run ci:verify`, and `.github/required-checks.json` marks it as mandatory alongside the existing gates; `package.json` wires `npm run coverage` to `c8 report --check-coverage` over `src/network/**` + `src/telemetry/**` so ≥85% line coverage is enforced on every PR.【F:.github/workflows/ci.yml†L1-L210】【F:.github/required-checks.json†L1-L10】【F:package.json†L19-L40】
 - **Dial + protocol clarity**: QUIC/TCP dials now emit `net_dial_success_total{transport}` and `net_dial_fail_total{transport,reason}` directly from the libp2p tracer, while protocol handlers use `net_protocol_latency_ms`, `net_msgs_total`, and `net_bytes_total` to surface p50/p95/p99, ingress/egress, and chatter per topic.【F:src/network/libp2pHostConfig.js†L64-L195】【F:src/telemetry/networkMetrics.js†L24-L231】【F:src/network/protocols/metrics.js†L6-L149】
 
 ## System map
@@ -307,6 +310,31 @@ flowchart LR
   Dashboard --> Runbook[(Runbook drills:\nposture flips · reachability · DoS triage)]:::neon
 ```
 
+## Sprint E7 – Tests, CI & load harness
+
+- **Dial + reachability telemetry locked down:** `test/telemetry/networkMetrics.test.js` now simulates dial success/failure events through the transport tracer and asserts the reachability gauge flips with the backing state object, so transport counters cannot silently regress.【F:test/telemetry/networkMetrics.test.js†L1-L150】
+- **Ban grid coverage:** `test/network/resourceManagerConfig.test.js` extends the guard suite with ban add/remove assertions, proving `banlist_entries` gauges and `banlist_changes_total` counters stay in sync with owner governance calls.【F:test/network/resourceManagerConfig.test.js†L1-L210】
+- **Monitoring reachability parity:** `test/monitoring.test.js` boots the Prometheus server with a live reachability state and polls `/metrics` to ensure posture flips land in `net_reachability_state` instantly.【F:test/monitoring.test.js†L1-L150】
+- **Abuse harness observability:** `test/network/loadHarness.observability.test.js` drives connection floods, stream floods, and malformed gossip penalties, then verifies `/debug/resources` pressure grids, `nrm_denials_total`, `peer_score_bucket_total`, and `connmanager_trims_total` all move together.【F:test/network/loadHarness.observability.test.js†L1-L140】
+- **p2p load harness entry point:** `npm run p2p:load-tests` now includes the new observability checks so the abuse harness, API snapshots, and telemetry instrumentation stay verified in CI and local drills alike.【F:package.json†L29-L45】
+- **Coverage + CI gate:** `npm run coverage` invokes `c8 report --check-coverage` for `src/network/**` + `src/telemetry/**`, and the workflow-level `Full CI Verification` job blocks merges whenever that ≥85% line target slips.【F:package.json†L19-L40】【F:.github/workflows/ci.yml†L160-L220】
+
+```mermaid
+flowchart LR
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  Floods[Connection/Stream floods]:::lava --> Harness[Abuse harness\np2p:load-tests]:::neon
+  Gossip[Malformed gossip scripts]:::lava --> Harness
+  Harness -->|NRM denials| Metrics[nrm_denials_total\nbanlist_*]:::frost
+  Harness -->|pressure snapshot| DebugRes[/GET /debug/resources/]:::lava
+  Harness -->|peer penalties| PeerScore[peer_score_bucket_total]:::frost
+  PeerScore --> ConnMgr[Connection manager trims]:::neon
+  ConnMgr --> Metrics
+  Metrics --> Dashboards[(Dashboard & Grafana tiles)]:::neon
+```
+
 ## Owner controls & token
 
 - `$AGIALPHA` token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals). The owner retains absolute veto, pause, and retuning authority across runtime and emissions.
@@ -348,7 +376,7 @@ npm run ci:verify   # lint, tests, coverage, solidity, subgraph, audit, policy, 
 npm start           # launches REST + metrics + governance surfaces with SQLite migrations
 ```
 
-Additional entry points: `npm run p2p:simulate` (1k+ virtual peers), `npm run dashboard:dev` (React/Vite cockpit), and `npm run p2p:load-tests` (abuse harness: connection floods, stream floods, malformed gossip).【F:package.json†L10-L58】【F:scripts/p2p-simulator.mjs†L1-L118】
+Additional entry points: `npm run p2p:simulate` (1k+ virtual peers), `npm run dashboard:dev` (React/Vite cockpit), and `npm run p2p:load-tests` (abuse harness: connection floods, stream floods, malformed gossip with `/debug/resources` + peer-score/trim assertions).【F:package.json†L10-L58】【F:scripts/p2p-simulator.mjs†L1-L118】【F:test/network/loadHarness.observability.test.js†L1-L140】
 
 ### Operations playbook (zero-drama launch)
 

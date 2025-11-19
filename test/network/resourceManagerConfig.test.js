@@ -109,6 +109,32 @@ describe('ResourceManager guards', () => {
     expect(manager.metrics().denials.streams).toBe(1);
   });
 
+  it('updates ban metrics and change counters on add/remove events', async () => {
+    const registry = new Registry();
+    const networkMetrics = createNetworkMetrics({ registry });
+    const config = buildResourceManagerConfig({ config: {} });
+    const manager = new ResourceManager({ limits: config, metrics: networkMetrics });
+
+    manager.banIp('10.0.0.1');
+    manager.banPeer('peer-a');
+    manager.banAsn('asn-a');
+    manager.unbanIp('10.0.0.1');
+    manager.unbanPeer('peer-a');
+
+    const snapshot = await registry.getMetricsAsJSON();
+    const entriesMetric = snapshot.find((metric) => metric.name === 'banlist_entries');
+    const changesMetric = snapshot.find((metric) => metric.name === 'banlist_changes_total');
+
+    expect(entriesMetric?.values?.find((entry) => entry.labels.type === 'asn')?.value).toBe(1);
+    expect(entriesMetric?.values?.find((entry) => entry.labels.type === 'ip')?.value).toBe(0);
+    expect(
+      changesMetric?.values?.filter((entry) => entry.labels.type === 'ip' && entry.labels.action === 'add')?.length
+    ).toBeGreaterThan(0);
+    expect(
+      changesMetric?.values?.filter((entry) => entry.labels.type === 'ip' && entry.labels.action === 'remove')?.length
+    ).toBeGreaterThan(0);
+  });
+
   it('surfaces outbound/inbound ratios with dial plans attached', () => {
     const config = buildResourceManagerConfig({ config: { NRM_SCALE_FACTOR: 1, MAX_CONNS_PER_IP: 10 } });
     const manager = new ResourceManager({ limits: config });

@@ -14,6 +14,7 @@ import {
   __resetMonitoringStateForTests
 } from '../src/telemetry/monitoring.js';
 import { createPeerScoreRegistry } from '../src/services/peerScoring.js';
+import { createReachabilityState } from '../src/network/transportConfig.js';
 
 const noopLogger = { info: () => {}, warn: () => {}, error: () => {} };
 
@@ -125,6 +126,25 @@ describe('monitoring telemetry server', () => {
     expect(metrics).toContain('alpha_wu_validated_total');
     expect(metrics).toContain('alpha_wu_invalid_total');
     expect(metrics).toContain('alpha_wu_validation_latency_ms');
+  });
+
+  it('streams reachability gauge updates from a provided reachability state', async () => {
+    const reachabilityState = createReachabilityState({ initial: 'private' });
+    telemetry = startMonitoringServer({ port: 0, logger: noopLogger, reachabilityState });
+    await waitForServer(telemetry.server);
+    const { port } = telemetry.server.address();
+
+    await delay(10);
+    let metricsResponse = await fetch(`http://127.0.0.1:${port}/metrics`);
+    let metrics = await metricsResponse.text();
+    expect(metrics).toContain('net_reachability_state 1');
+
+    reachabilityState.updateManual('public');
+    await delay(10);
+
+    metricsResponse = await fetch(`http://127.0.0.1:${port}/metrics`);
+    metrics = await metricsResponse.text();
+    expect(metrics).toContain('net_reachability_state 2');
   });
 
   it('returns 404 for unknown routes', async () => {
