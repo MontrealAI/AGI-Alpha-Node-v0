@@ -67,4 +67,37 @@ function instrumentProtocolHandler({
   };
 }
 
-export { estimatePayloadBytes, instrumentProtocolHandler, trackProtocolMessage };
+async function observeProtocolExchange(
+  metrics,
+  { protocol, direction = 'out', payload = null, overheadBytes = 0, estimator = estimatePayloadBytes } = {},
+  operation
+) {
+  if (typeof operation !== 'function') {
+    throw new Error('observeProtocolExchange expects a function operation');
+  }
+
+  const timer = startProtocolTimer(metrics, { protocol, direction });
+  try {
+    const result = await operation();
+    const requestBytes = estimator(payload);
+    const responseBytes = estimator(result);
+    const boundedOverhead = Number.isFinite(overheadBytes) ? Math.max(0, overheadBytes) : 0;
+    const totalBytes = requestBytes + responseBytes + boundedOverhead;
+    recordProtocolTraffic(metrics, {
+      protocol,
+      direction,
+      bytes: Number.isFinite(totalBytes) ? totalBytes : requestBytes + boundedOverhead,
+      messages: 1
+    });
+    return result;
+  } finally {
+    timer.stop();
+  }
+}
+
+export {
+  estimatePayloadBytes,
+  instrumentProtocolHandler,
+  observeProtocolExchange,
+  trackProtocolMessage
+};

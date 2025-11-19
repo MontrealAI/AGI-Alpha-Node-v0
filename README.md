@@ -43,6 +43,8 @@
 
 This runtime is engineered as the operator-owned intelligence engine capable of redirecting economic gravity—the same class of system that could upend traditional market structures—while still keeping the owner in full command of every parameter, pause switch, and emission lever.
 
+> Owner directives stay absolute: the `$AGIALPHA` contract anchor (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) and `AlphaNodeManager.sol` keep every parameter, pause switch, and emission lever adjustable by the contract owner with no redeploy required.【F:contracts/AlphaNodeManager.sol†L1-L120】
+
 ## Why operators deploy this node
 
 - **Owner-first controls**: Pause/unpause, rotate validators, retune emissions, and update metadata through `AlphaNodeManager.sol` without redeploying the network substrate.【F:contracts/AlphaNodeManager.sol†L1-L120】
@@ -176,8 +178,8 @@ flowchart LR
 ## Sprint E5 – Higher-level network metrics (dial, latency, throughput)
 
 - **Dial success/failure by transport + reason:** The libp2p tracer increments `net_dial_success_total{transport}` and `net_dial_fail_total{transport,reason}` alongside legacy counters, giving Grafana-ready success rates for QUIC/TCP/relay with error breakdowns (timeout/refused/nrm_limit/etc.).【F:src/network/libp2pHostConfig.js†L71-L153】
-- **Per-protocol latency histograms:** `net_protocol_latency_ms` exposes p50/p95/p99 per handler via `startProtocolTimer` and `instrumentProtocolHandler`, keeping job/control/telemetry topics observable without changing handler signatures.【F:src/telemetry/networkMetrics.js†L96-L149】【F:src/network/protocols/metrics.js†L28-L63】
-- **Ingress/egress byte + message rates:** `net_bytes_total{direction,protocol}` and `net_msgs_total{direction,protocol}` are bumped by `recordProtocolTraffic` or the new `trackProtocolMessage` helper so dashboards can spot chatty peers and runaway payload sizes instantly.【F:src/telemetry/networkMetrics.js†L109-L141】【F:src/network/protocols/metrics.js†L9-L46】
+- **Per-protocol latency histograms:** `net_protocol_latency_ms` exposes p50/p95/p99 per handler via `startProtocolTimer` and `instrumentProtocolHandler`, keeping job/control/telemetry topics observable without changing handler signatures.【F:src/telemetry/networkMetrics.js†L96-L149】【F:src/network/protocols/metrics.js†L28-L86】
+- **Ingress/egress byte + message rates:** `net_bytes_total{direction,protocol}` and `net_msgs_total{direction,protocol}` are bumped by `recordProtocolTraffic`, the `observeProtocolExchange` round-trip helper, or the lightweight `trackProtocolMessage` shim so dashboards can spot chatty peers and runaway payload sizes instantly.【F:src/telemetry/networkMetrics.js†L109-L141】【F:src/network/protocols/metrics.js†L9-L86】
 
 ```mermaid
 flowchart LR
@@ -194,8 +196,32 @@ flowchart LR
   Prometheus --> Grafana[(Dashboards: p50/p95/p99 + byte/msg rates)]:::neon
 ```
 
+```mermaid
+flowchart TB
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  subgraph Protocols[AGI protocol surfaces]
+    Control[agi/control/1.0.0]:::lava
+    Jobs[agi/jobs/1.0.0]:::lava
+    Coord[agi/coordination/1.0.0]:::lava
+    Settle[agi/settlement/1.0.0]:::lava
+  end
+
+  Observe[observeProtocolExchange\n+ instrumentProtocolHandler]:::neon --> Lat[net_protocol_latency_ms]:::frost
+  Observe --> Bytes[net_bytes_total / net_msgs_total]:::frost
+  Control --> Observe
+  Jobs --> Observe
+  Coord --> Observe
+  Settle --> Observe
+  Lat --> Prom[/Prometheus registry/]:::frost
+  Bytes --> Prom
+  Prom --> Dash[(Dashboards: p50/p95/p99 + throughput)]:::neon
+```
+
 ```js
-import { instrumentProtocolHandler, trackProtocolMessage } from './src/network/protocols/metrics.js';
+import { instrumentProtocolHandler, observeProtocolExchange, trackProtocolMessage } from './src/network/protocols/metrics.js';
 
 const handleControl = instrumentProtocolHandler({
   metrics: networkMetrics,
@@ -205,6 +231,15 @@ const handleControl = instrumentProtocolHandler({
   // your protocol logic
   trackProtocolMessage(networkMetrics, { protocol: 'agi/control/1.0.0', direction: 'out', payload: { ack: true } });
 });
+
+// Round-trip example that captures latency + request/response bytes for settlement flows
+const result = await observeProtocolExchange(
+  networkMetrics,
+  { protocol: 'agi/settlement/1.0.0', direction: 'out', payload: { jobId: '123', amount: 10 } },
+  async () => {
+    return { ok: true, receipt: '0xabc' };
+  }
+);
 ```
 
 | Env var | Purpose | Default |
