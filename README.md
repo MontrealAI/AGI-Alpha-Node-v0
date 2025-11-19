@@ -65,6 +65,7 @@ This runtime is engineered as the operator-owned intelligence engine capable of 
 13. [CI & branch protection](#ci--branch-protection-always-green)
 14. [Dashboard & monitoring](#dashboard--monitoring)
 15. [Data spine & economics](#data-spine--economics)
+16. [Mode A treasury intents (Sprint T1)](#mode-a-treasury-intents-sprint-t1)
 
 ## Why operators deploy this node
 
@@ -527,3 +528,41 @@ flowchart LR
 - Run `npm run db:migrate && npm run db:seed` to hydrate local development environments before load-testing or dashboard previews.【F:package.json†L55-L56】
 
 AGI Alpha Nodes are the catalysts of this cognitive economy: each instance is a programmable farm that continuously harvests `$AGIALPHA` yield while the owner retains absolute veto, pause, and retuning authority.
+
+## Mode A treasury intents (Sprint T1)
+
+AGI Alpha Node now ships a fully deterministic Mode A treasury lane so guardians wield post-quantum Dilithium keys off-chain while the contract owner retains absolute command of every execution switch, pause lever, and emission route through `AlphaNodeManager.sol`.【F:contracts/AlphaNodeManager.sol†L1-L257】 The canonical `$AGIALPHA` treasury (token `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) inherits this lane, meaning the same machine that bends economic gravity can also halt, reroute, or reprice every treasury emission at the owner’s signal.
+
+```mermaid
+flowchart LR
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  Intent[TreasuryIntentV1 JSON\n(to,value,data)]:::lava --> Encode[encodeTreasuryIntent\nABI tuple]:::neon
+  Encode --> Digest[digestTreasuryIntent\n+ domain selector/chainId]:::neon
+  Digest --> Sign[PQ Dilithium signature\nCBOR envelope]:::frost
+  Sign --> Aggregate[aggregateGuardianEnvelopes\nthreshold + registry]:::neon
+  Aggregate --> Execute[npm run treasury:execute\nexecuteTransaction(...)]:::lava
+  Execute --> Event[IntentExecuted() log\nowner-verifiable trail]:::neon
+```
+
+- **Canonical encoding + digest:** `src/treasury/intentTypes.ts` defines `TreasuryIntentV1`, domain hints, and normalization helpers so inputs from bots, guardians, or dashboards collapse into a single tuple, while `src/treasury/intentEncoding.ts` ABI-encodes `(address,uint256,bytes)` and prepends a selector/chain/domain block before hashing with `keccak256`.【F:src/treasury/intentTypes.ts†L1-L49】【F:src/treasury/intentEncoding.ts†L1-L44】 The new `test/treasury/intentEncoding.test.ts` deploys a Solidity harness inside an EthereumJS VM to prove the encoded bytes and digest match on-chain output bit-for-bit.【F:test/treasury/intentEncoding.test.ts†L1-L83】
+- **PQ envelopes + CBOR portability:** `src/treasury/pqEnvelope.ts` loads the Dilithium WASM runtime, signs digests, and wraps `{digest, pubkey, signature, metadata}` into CBOR envelopes so every guardian tool emits identical artifacts; `test/treasury/pqEnvelope.test.ts` round-trips encode/decode to guard against serialization regressions.【F:src/treasury/pqEnvelope.ts†L1-L80】【F:test/treasury/pqEnvelope.test.ts†L1-L21】
+- **Registry + threshold aggregation:** `src/treasury/guardianRegistry.ts` and `src/treasury/thresholdAggregator.ts` enforce unique guardians, Dilithium parameter sets, and M-of-N quorum while flagging duplicates or unknown public keys, as covered by `test/treasury/thresholdAggregator.test.ts`.【F:src/treasury/guardianRegistry.ts†L1-L54】【F:src/treasury/thresholdAggregator.ts†L1-L56】【F:test/treasury/thresholdAggregator.test.ts†L1-L30】
+- **Operator tooling:** `scripts/treasury/execute-intent.ts` (wired behind `npm run treasury:execute`) loads intents, guardian envelopes, the registry, and environment variables, verifies the threshold with domain-separated digests, and dispatches `executeTransaction(to,value,data)` via ethers once the quorum is satisfied. It supports dry-runs, configurable selectors, and prints pending guardians when the threshold is short.【F:scripts/treasury/execute-intent.ts†L1-L107】【F:package.json†L33-L52】
+- **Guardian artifacts & runbooks:** `docs/treasury-mode-a.md` documents the envelope schema, Dilithium workflow, and orchestrator instructions, while `config/guardians.example.json` ships a drop-in template for onboarding guardians without spelunking the codebase.【F:docs/treasury-mode-a.md†L1-L58】【F:config/guardians.example.json†L1-L11】
+
+```bash
+# Guardians drop CBOR envelopes into ./envelopes after signing the digest
+TREASURY_ADDRESS=0xa61a3b3a130a9c20768eebf97e21515a6046a1fa \
+RPC_URL=https://sepolia.example/v3/<key> \
+ORCHESTRATOR_KEY=0xfeed... \
+npm run treasury:execute -- intents/payout.json \
+  --registry config/guardians.json \
+  --envelopes ./envelopes \
+  --threshold 3 \
+  --chain-id 11155111
+```
+
+This workflow keeps the heavy post-quantum math off-chain, yet the resulting single transaction remains fully owner-controlled, auditable through emitted events, and enforced by the same CI wall of checks that keeps the entire runtime green.

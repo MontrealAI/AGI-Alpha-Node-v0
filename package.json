@@ -41,6 +41,7 @@
     "db:seed": "node src/persistence/cli.js seed",
     "attestation:verify": "tsx scripts/attestation-verify.ts",
     "simulate:subgraph": "node scripts/subgraph-simulation.js",
+    "treasury:execute": "tsx scripts/treasury/execute-intent.ts",
     "prepare": "node -e \"const { existsSync } = require('node:fs'); const { join } = require('node:path'); const script = join(process.cwd(), 'scripts/prepare-husky.cjs'); if (!existsSync(script)) { console.log('husky prepare script missing; skipping'); process.exit(0); } require(script);\""
   },
   "engines": {
@@ -56,8 +57,10 @@
     "@opentelemetry/sdk-trace-node": "^2.2.0",
     "ajv": "^8.17.1",
     "better-sqlite3": "^9.4.5",
+    "cborg": "^4.3.0",
     "chalk": "^5.3.0",
     "commander": "^11.1.0",
+    "dilithium-crystals-js": "^1.1.3",
     "dotenv": "^16.4.5",
     "ethers": "^6.11.1",
     "pino": "^8.15.1",
@@ -66,6 +69,9 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@ethereumjs/common": "^10.1.0",
+    "@ethereumjs/util": "^10.1.0",
+    "@ethereumjs/vm": "^10.1.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.0.1",
     "@testing-library/user-event": "^14.6.1",
