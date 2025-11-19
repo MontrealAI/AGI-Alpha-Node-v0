@@ -1,0 +1,12 @@
+[
+  {
+    "id": "guardian-1",
+    "publicKey": "BASE64_DILITHIUM_PUBLIC_KEY",
+    "parameterSet": 2
+  },
+  {
+    "id": "guardian-2",
+    "publicKey": "BASE64_DILITHIUM_PUBLIC_KEY",
+    "parameterSet": 2
+  }
+]
