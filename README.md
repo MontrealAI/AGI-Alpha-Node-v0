@@ -313,6 +313,22 @@ flowchart LR
 - `AlphaNodeManager.sol` consolidates pause/unpause, validator rotation, metadata refresh, treasury withdrawal, and reward tuning under a single owner-controlled contract.【F:contracts/AlphaNodeManager.sol†L1-L120】
 - Governance verbs are exposed via CLI (`node src/index.js governance:*`) and authenticated REST endpoints so non-technical operators can steer without redeploying.【F:src/index.js†L1-L113】【F:src/network/apiServer.js†L1509-L2130】
 
+### Owner command matrix (`AlphaNodeManager` quick reference)
+
+| Verb | Capability | Notes |
+| --- | --- | --- |
+| `pause()` / `unpause()` | Freeze or resume every staking + mint/validate/accept workflow instantly. | Emits explicit `Paused/Unpaused` events so downstream automation can mirror the state.【F:contracts/AlphaNodeManager.sol†L78-L92】 |
+| `setValidator(address,bool)` | Curate the validator set without redeploying. | Rejects zero-address writes and emits `ValidatorUpdated` for audit trails.【F:contracts/AlphaNodeManager.sol†L94-L101】 |
+| `registerIdentity(bytes32,address)` / `updateIdentityController(bytes32,address)` | Map ENS nodes to controllers and rotate controllers on the fly. | Previous controllers are deactivated atomically so no stale keys can mint or validate work.【F:contracts/AlphaNodeManager.sol†L102-L137】 |
+| `setIdentityStatus(bytes32,bool)` / `revokeIdentity(bytes32)` | Toggle or tear down any identity once behavior drifts. | Active flags propagate directly into `_requireActiveIdentity`, shutting down unauthorized staking/minting at the source.【F:contracts/AlphaNodeManager.sol†L139-L156】【F:contracts/AlphaNodeManager.sol†L259-L264】 |
+| `stake(uint256)` / `withdrawStake(address,uint256)` | Move $AGIALPHA into or out of escrow while preserving audit trails. | Deposits require a live identity; withdrawals stay owner-only with explicit `StakeDeposited/StakeWithdrawn` logs.【F:contracts/AlphaNodeManager.sol†L177-L200】 |
+| `recordAlphaWUMint(bytes32,address,address)` | Canonicalize every α‑Work Unit mint with the agent + node metadata. | Only the agent or owner can submit, guaranteeing provenance for downstream SLU accounting.【F:contracts/AlphaNodeManager.sol†L202-L214】 |
+| `recordAlphaWUValidation(bytes32,uint256,uint256)` | Capture validator stake + scoring inputs for each work unit. | Reverts if the validator lacks the recorded stake, so false positives never land on-chain.【F:contracts/AlphaNodeManager.sol†L216-L231】 |
+| `recordAlphaWUAcceptance(bytes32)` | Accept work after quorums clear. | Owner and validators can both acknowledge completions, enabling hybrid operational models.【F:contracts/AlphaNodeManager.sol†L233-L241】 |
+| `applySlash(bytes32,address,uint256)` | Burnish economic discipline by emitting deterministic slash events. | Prevents zero-amount or unknown-validator slashes, giving auditors a crisp log of punitive actions.【F:contracts/AlphaNodeManager.sol†L243-L257】 |
+
+> This matrix keeps the operator’s omnipotent stance explicit: every operational lever from validator rosters to economic slashes and ENS identity curation is callable without any redeploy, and each verb surfaces concrete events for downstream automation.
+
 ## API surfaces (operator quick reference)
 
 | Endpoint | Purpose |
