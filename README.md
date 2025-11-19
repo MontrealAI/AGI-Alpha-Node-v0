@@ -557,6 +557,27 @@ flowchart LR
 - **Guardian keygen:** `npm run treasury:keygen` emits Dilithium key pairs (`.pk/.sk/.json`) with optional deterministic seeds so onboarding guardians can bootstrap hardware wallets or HSMs without touching low-level WASM glue. The JSON artefact drops straight into `config/guardians.json`, and the full runbook lives in [`docs/runes/guardian.md`](docs/runes/guardian.md).【F:scripts/treasury/keygen.ts†L1-L130】【F:docs/runes/guardian.md†L1-L120】
 - **Guardian artifacts & runbooks:** `docs/treasury-mode-a.md` documents the envelope schema, Dilithium workflow, and orchestrator instructions, while `config/guardians.example.json` ships a drop-in template for onboarding guardians without spelunking the codebase.【F:docs/treasury-mode-a.md†L1-L58】【F:config/guardians.example.json†L1-L11】
 
+### PQ envelope anatomy & enforcement
+
+```mermaid
+flowchart TB
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  Digest[digestTreasuryIntent\n32-byte hash]:::neon --> CBOR[CBOR envelope\n{digest,pubkey,signature,metadata}]:::frost
+  CBOR --> Registry[GuardianRegistry\nknown pubkeys + parameter sets]:::lava
+  Registry --> Aggregate[aggregateGuardianEnvelopes\nunique guardians only]:::neon
+  Aggregate --> Verify[verifySignedEnvelope\nDilithium signature check]:::frost
+  Verify --> Threshold[Threshold met?\nM-of-N enforced]:::lava
+  Threshold --> Orchestrator[npm run treasury:execute\nethers.executeTransaction]:::neon
+```
+
+- **Envelope invariants:** `pqEnvelope.ts` pins the payload to `{digest, publicKey, signature, metadata}` with Dilithium parameter sets, CBOR encoding helpers, and deterministic `verifySignedEnvelope` checks to reject malformed or mismatched digests.【F:src/treasury/pqEnvelope.ts†L1-L92】【F:src/treasury/pqEnvelope.ts†L94-L150】
+- **Registry truth source:** `config/guardians.example.json` seeds guardian identities + pubkeys, while `GuardianRegistry` defends against duplicate IDs, reused keys, or revoked guardians before aggregation counts a signature.【F:config/guardians.example.json†L1-L11】【F:src/treasury/guardianRegistry.ts†L1-L54】
+- **Aggregator guardrails:** `aggregateGuardianEnvelopes` refuses unknown guardians, duplicates, or invalid signatures, returns pending/invalid inventories, and only flips `thresholdMet` once M-of-N is satisfied for the exact digest supplied to the orchestrator.【F:src/treasury/thresholdAggregator.ts†L1-L56】
+- **Orchestrator enforcement:** `scripts/treasury/execute-intent.ts` binds the digest to the configured registry + threshold, prints missing guardians, and calls the treasury executor via ethers once quorum is achieved, keeping the owner in sole control of execution keys and pause levers.【F:scripts/treasury/execute-intent.ts†L1-L107】
+
 ```bash
 # Guardian-side signing (reads intent JSON, emits CBOR envelope)
 npm run treasury:sign -- intents/payout.json \
