@@ -1,4 +1,5 @@
 # Mode A Treasury Intents · Post-Quantum Guardian Path
+<!-- markdownlint-disable MD013 -->
 
 > Guardians sign canonicalized treasury intents with Dilithium envelopes,
 > aggregate them offline, and the orchestrator executes a single deterministic
@@ -60,6 +61,53 @@ Envelope schema:
 4. De-duplicate guardians so one signer cannot satisfy the threshold twice.
 5. Once approvals ≥ `threshold`, assemble calldata and submit
    `executeTransaction` to the treasury contract.
+
+## Guardian CLI (`npm run treasury:sign`)
+
+Guardians can now rely on the built-in signing CLI to produce identical
+Dilithium envelopes without recreating digest logic.
+
+```mermaid
+flowchart LR
+  IntentJSON[TreasuryIntentV1 JSON]:::lava --> Digest[digestTreasuryIntent\n(+domain binding)]:::neon
+  Digest --> GuardianCLI[`npm run treasury:sign`\nDilithium signer]:::frost
+  GuardianCLI --> Envelope[CBOR / JSON envelope]:::neon
+  Envelope --> OrchestratorCLI[`npm run treasury:execute`]:::lava
+  OrchestratorCLI --> Treasury[executeTransaction\nowner-controlled]:::neon
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+```
+
+```bash
+# Sign JSON intent with Dilithium keys stored on disk
+npm run treasury:sign -- intents/treasury.json \
+  --private-key @keys/guardian-1.sk \
+  --public-key @keys/guardian-1.pk \
+  --guardian-id guardian-1 \
+  --chain-id 11155111 \
+  --contract 0xa61a3b3a130a9c20768eebf97e21515a6046a1fa \
+  --out ./envelopes/guardian-1.cbor
+
+# Already have the digest? skip JSON parsing entirely
+npm run treasury:sign -- --digest 0x<32-bytes> \
+  --private-key @keys/guardian-1.sk \
+  --public-key @keys/guardian-1.pk \
+  --guardian-id guardian-1 \
+  --out ./envelopes/guardian-1.cbor
+```
+
+| Flag | Purpose |
+| ---- | ------- |
+| `--private-key`, `--public-key` | Accept base64/hex strings or `@path` files for Dilithium material. |
+| `--chain-id`, `--contract`, `--function-signature` | Bind the digest to chain + treasury selector to defeat replay. |
+| `--guardian-id`, `--note`, `--issued-at` | Populate envelope metadata; `issuedAt` auto-populates unless `--skip-timestamp` is set. |
+| `--digest` | Bypass JSON parsing when the orchestrator already distributed the hash. |
+| `--out` + extension | Write `.cbor` or `.json` envelopes directly; default stdout is pretty-printed JSON. |
+
+The CLI is implemented in `scripts/treasury/sign-intent.ts` and backed by the
+shared `signIntentWithKeys` helper to guarantee the digest matches the Solidity
+ABI encoding under test.【F:scripts/treasury/sign-intent.ts†L1-L190】【F:src/treasury/signingTools.ts†L1-L65】
 
 ## Orchestrator Runbook
 

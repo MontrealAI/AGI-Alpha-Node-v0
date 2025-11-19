@@ -17,21 +17,21 @@ export default defineConfig({
     deps: {
       optimizer: {
         ssr: {
-          exclude: ['better-sqlite3']
+          exclude: ['better-sqlite3', 'cborg', '@ethereumjs/vm']
         }
       }
     }
   },
   optimizeDeps: {
-    exclude: ['better-sqlite3']
+    exclude: ['better-sqlite3', 'cborg', '@ethereumjs/vm']
   },
   server: {
     deps: {
       // Ensure native bindings bypass the Vite transform pipeline
-      external: ['better-sqlite3']
+      external: ['better-sqlite3', 'cborg', '@ethereumjs/vm']
     }
   },
   ssr: {
-    external: ['better-sqlite3']
+    external: ['better-sqlite3', 'cborg', '@ethereumjs/vm']
   }
 });
