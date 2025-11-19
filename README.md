@@ -162,6 +162,56 @@ flowchart LR
   Bans --> Metrics
 ```
 
+## OTel + Prometheus observability (Sprint E4)
+
+- **Centralized wiring:** `startMonitoringServer` now initializes a shared OpenTelemetry tracer (service: `OTEL_SERVICE_NAME=agi-alpha-node`) and keeps `/metrics` online regardless of OTLP settings.【F:src/telemetry/monitoring.js†L1-L117】【F:src/telemetry/monitoring.js†L223-L301】
+- **OTLP on demand:** Set `OTEL_EXPORTER_OTLP_ENDPOINT` (and optional `OTEL_EXPORTER_OTLP_HEADERS`) to stream traces; leave it unset to run fully locally without breaking metrics exposure.【F:src/telemetry/monitoring.js†L53-L110】
+- **REST spans:** Every API call (health, telemetry ingest, governance, bans) is wrapped with an `http.server` span that captures method, route, status, latency, and propagates trace context into downstream services and request metadata.【F:src/network/apiServer.js†L917-L1051】【F:src/network/apiServer.js†L2285-L2310】
+- **Dial traces:** Each outbound libp2p dial emits a `net.dial` span with peer ID, transport, address, success, and latency; spans automatically link to active HTTP contexts so governance-triggered dials stay stitched to their request.【F:src/network/libp2pHostConfig.js†L62-L181】
+- **Prometheus-first:** `/metrics` remains Prometheus-native (peer scoring, α‑WU, NRM, bans) while traces route to OTLP; CI keeps markdown + link lint to guarantee rendered mermaid flowcharts remain gorgeous on GitHub Pages.【F:src/telemetry/monitoring.js†L223-L301】【F:package.json†L12-L46】
+
+| Env var | Purpose | Default |
+| --- | --- | --- |
+| `OTEL_SERVICE_NAME` | Trace resource name for every span | `agi-alpha-node` |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | Enable OTLP/HTTP trace export when set | _unset_ |
+| `OTEL_EXPORTER_OTLP_HEADERS` | Extra OTLP headers (e.g., auth) in `key=value` CSV | _unset_ |
+
+```mermaid
+flowchart TD
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  subgraph API[REST + Governance Surface]
+    Health[/GET /health(z)/]:::lava
+    Metrics[/GET /metrics/]:::frost
+    Gov[Governance + Bans]:::lava
+    Telemetry[Telemetry ingest]:::lava
+  end
+
+  subgraph OTel[Telemetry Core]
+    Tracer[Tracer\nservice.name=agi-alpha-node]:::neon
+    Export[OTLP HTTP exporter]:::frost
+    Prom[Prom-client registry]:::frost
+  end
+
+  subgraph Network[libp2p + Dialer]
+    Dials[net.dial spans\npeer.id + transport + latency]:::neon
+    NRM[Resource caps + bans]:::frost
+  end
+
+  API -->|context propagation| Tracer
+  Tracer --> Export
+  Tracer --> Dials
+  API --> Prom
+  Dials --> Prom
+  Prom --> Metrics
+  Export --> Jaeger[(Jaeger/Tempo)]:::frost
+  Export --> Grafana[(Grafana/Exemplars)]:::frost
+  NRM --> Metrics
+  class API,Tracer,Export,Prom,Network,Dials,NRM,Metrics,Health,Gov,Telemetry neon;
+```
+
 ## Owner controls & token
 
 - `$AGIALPHA` token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals). The owner retains absolute veto, pause, and retuning authority across runtime and emissions.

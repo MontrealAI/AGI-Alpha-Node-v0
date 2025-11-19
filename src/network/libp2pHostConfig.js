@@ -1,3 +1,4 @@
+import { context as otelContext, trace as otelTrace } from '@opentelemetry/api';
 import pino from 'pino';
 import {
   buildTransportConfig,
@@ -14,6 +15,7 @@ import {
   recordConnectionLatency,
   recordConnectionOpen
 } from '../telemetry/networkMetrics.js';
+import { getTelemetryTracer } from '../telemetry/monitoring.js';
 
 const logger = pino({ level: 'info', name: 'libp2p-host-config' });
 
@@ -59,21 +61,52 @@ function nowMs() {
   return Date.now();
 }
 
-export function createTransportTracer({ plan, logger: baseLogger, metrics = null } = {}) {
+export function createTransportTracer({ plan, logger: baseLogger, metrics = null, tracer: tracerOverride = null } = {}) {
   const log = resolveLogger(baseLogger);
   const preference = plan?.transports?.preference ?? 'prefer-quic';
+  const { tracer } = tracerOverride
+    ? { tracer: tracerOverride }
+    : getTelemetryTracer({ logger: baseLogger });
   const inflightDials = new Map();
 
-  const trace = function traceTransport({
+  const startDialSpan = ({ peerId, address, transport, startedAt }) => {
+    if (!tracer) return null;
+
+    const parentSpan = otelTrace.getSpan(otelContext.active());
+    const attributes = {
+      'peer.id': peerId ?? 'unknown',
+      'net.transport': transport ?? 'unknown',
+      'net.peer.addr': address ?? 'unknown'
+    };
+
+    const span = tracer.startSpan(
+      'net.dial',
+      {
+        attributes,
+        links: parentSpan ? [{ context: parentSpan.spanContext() }] : undefined
+      },
+      otelContext.active()
+    );
+
+    if (startedAt !== undefined) {
+      span.setAttribute('net.dial.latency_ms', 0);
+    }
+
+    return span;
+  };
+
+  const traceTransport = function traceTransport({
     peerId = null,
     address,
     direction = 'out',
     success = undefined,
     startedAt,
     skipAttempt = false,
-    event
+    event,
+    transportOverride = null,
+    span = null
   } = {}) {
-    const transport = classifyTransport(address);
+    const transport = transportOverride ?? classifyTransport(address);
     const latencyMs = startedAt ? Math.max(0, nowMs() - startedAt) : undefined;
 
     if (direction === 'out' && !skipAttempt) {
@@ -111,51 +144,82 @@ export function createTransportTracer({ plan, logger: baseLogger, metrics = null
         direction,
         preference,
         success,
-        latency_ms: latencyMs
-      },
-      eventName
+      latency_ms: latencyMs
+    },
+    eventName
     );
+
+    if (span) {
+      span.setAttribute('net.transport', transport);
+      if (success !== undefined) {
+        span.setAttribute('net.dial.success', Boolean(success));
+      }
+      if (latencyMs !== undefined) {
+        span.setAttribute('net.dial.latency_ms', latencyMs);
+      }
+      span.end();
+    }
 
     return transport;
   };
 
-  trace.bindTo = (libp2p) => {
+  traceTransport.bindTo = (libp2p) => {
     const disposers = [];
 
     const recordStart = (detail) => {
       const peerId = extractPeerId(detail);
       const address = extractAddress(detail);
       const startedAt = nowMs();
+      const transport = classifyTransport(address);
+      const span = startDialSpan({ peerId, address, transport, startedAt });
       if (peerId || address) {
-        inflightDials.set(`${peerId ?? address}`, startedAt);
+        inflightDials.set(`${peerId ?? address}`, { startedAt, span, transport });
       }
-      trace({ peerId, address, direction: 'out', success: undefined, startedAt, event: 'conn_open' });
+      traceTransport({
+        peerId,
+        address,
+        direction: 'out',
+        success: undefined,
+        startedAt,
+        event: 'conn_open',
+        transportOverride: transport
+      });
     };
 
     const recordResult = (detail, success) => {
       const peerId = extractPeerId(detail);
       const address = extractAddress(detail);
       const key = peerId ?? address;
-      const startedAt = inflightDials.get(key ?? '') ?? detail?.startedAt;
+      const inflight = inflightDials.get(key ?? '') ?? {};
+      const startedAt = inflight.startedAt ?? detail?.startedAt;
+      const span = inflight.span ?? startDialSpan({
+        peerId,
+        address,
+        transport: inflight.transport ?? classifyTransport(address),
+        startedAt
+      });
+      const transport = inflight.transport ?? classifyTransport(address);
       const seenStart = inflightDials.has(key ?? '');
       if (key) {
         inflightDials.delete(key);
       }
-      trace({
+      traceTransport({
         peerId,
         address,
         direction: 'out',
         success,
         startedAt,
         skipAttempt: seenStart,
-        event: success ? 'conn_success' : 'conn_failure'
+        event: success ? 'conn_success' : 'conn_failure',
+        transportOverride: transport,
+        span
       });
     };
 
     const recordInbound = (detail) => {
       const peerId = extractPeerId(detail);
       const address = extractAddress(detail);
-      trace({
+      traceTransport({
         peerId,
         address,
         direction: 'in',
@@ -192,7 +256,7 @@ export function createTransportTracer({ plan, logger: baseLogger, metrics = null
     return () => disposers.forEach((dispose) => dispose());
   };
 
-  return trace;
+  return traceTransport;
 }
 
 export function buildLibp2pHostConfig({
