@@ -10,9 +10,11 @@ import {
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import pino from 'pino';
+import { parseOtlpHeaders } from './otelHeaders.js';
 
 let tracerInstance = null;
 let providerInstance = null;
+let tracerServiceName = 'agi-alpha-node';
 
 function buildSampler(samplingRatio) {
   if (samplingRatio === undefined) {
@@ -29,20 +31,22 @@ export function initTelemetry(config) {
 
   const logger = config.logger ?? pino({ level: 'info', name: 'telemetry' });
   const sampler = buildSampler(config.samplingRatio);
+  const serviceName = config.serviceName || tracerServiceName;
   const exporterChoice = (config.exporter ?? 'console').toLowerCase();
   const spanProcessors = [];
 
   if (exporterChoice === 'otlp') {
     if (config.otlpEndpoint) {
-      spanProcessors.push(
-        new BatchSpanProcessor(
-          new OTLPTraceExporter({
-            url: config.otlpEndpoint
-          })
-        )
-      );
+        spanProcessors.push(
+          new BatchSpanProcessor(
+            new OTLPTraceExporter({
+              url: config.otlpEndpoint,
+              headers: config.otlpHeaders ?? parseOtlpHeaders(config.otlpHeaders)
+            })
+          )
+        );
     } else {
-      logger.warn('ALPHA_NODE_OTEL_EXPORTER=otlp set but ALPHA_NODE_OTLP_ENDPOINT missing; falling back to console exporter');
+      logger.warn('OTLP exporter requested but no OTEL_EXPORTER_OTLP_ENDPOINT was provided; falling back to console exporter');
     }
   }
 
@@ -51,12 +55,12 @@ export function initTelemetry(config) {
   }
 
   if (exporterChoice === 'none') {
-    logger.info('Telemetry exporter disabled (ALPHA_NODE_OTEL_EXPORTER=none)');
+    logger.info('Telemetry exporter disabled (exporter=none)');
   }
 
   const providerOptions = {
     resource: resourceFromAttributes({
-      'service.name': 'agi-alpha-node'
+      'service.name': serviceName
     }),
     sampler
   };
@@ -66,6 +70,7 @@ export function initTelemetry(config) {
   }
 
   providerInstance = new NodeTracerProvider(providerOptions);
+  tracerServiceName = serviceName;
 
   if (typeof providerInstance.addSpanProcessor === 'function') {
     spanProcessors.forEach((processor) => providerInstance.addSpanProcessor(processor));
@@ -74,7 +79,7 @@ export function initTelemetry(config) {
   }
 
   providerInstance.register();
-  tracerInstance = providerInstance.getTracer('agi-alpha-node');
+  tracerInstance = providerInstance.getTracer(tracerServiceName);
   logger.info({ exporter: exporterChoice, otlpEndpoint: config.otlpEndpoint ?? null }, 'Telemetry initialized');
 
   return tracerInstance;
@@ -84,7 +89,7 @@ export function getTracer() {
   if (tracerInstance) {
     return tracerInstance;
   }
-  return trace.getTracer('agi-alpha-node');
+  return trace.getTracer(tracerServiceName);
 }
 
 export function withActiveSpan(span, fn) {

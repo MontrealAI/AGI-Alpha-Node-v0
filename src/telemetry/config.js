@@ -1,4 +1,5 @@
 import pino from 'pino';
+import { parseOtlpHeaders } from './otelHeaders.js';
 
 export function parseTelemetryExporter(value, logger = pino({ level: 'info' })) {
   if (!value) {
@@ -28,19 +29,30 @@ export function parseSamplingRatio(value, logger = pino({ level: 'info' })) {
 }
 
 export function loadTelemetryConfig(env = process.env, logger = pino({ level: 'info' })) {
-  const exporter = parseTelemetryExporter(env.ALPHA_NODE_OTEL_EXPORTER, logger);
-  const samplingRatio = parseSamplingRatio(env.ALPHA_NODE_OTEL_SAMPLING_RATIO, logger);
-  const otlpEndpoint = env.ALPHA_NODE_OTLP_ENDPOINT?.trim() || undefined;
+  const otlpEndpoint =
+    env.OTEL_EXPORTER_OTLP_ENDPOINT?.trim() || env.ALPHA_NODE_OTLP_ENDPOINT?.trim() || undefined;
+  const rawExporter = env.ALPHA_NODE_OTEL_EXPORTER ?? (otlpEndpoint ? 'otlp' : 'console');
+  const exporter = parseTelemetryExporter(rawExporter, logger);
+  const samplingRatio = parseSamplingRatio(
+    env.OTEL_TRACES_SAMPLER?.startsWith('traceidratio')
+      ? env.OTEL_TRACES_SAMPLER.split(':')[1]
+      : env.ALPHA_NODE_OTEL_SAMPLING_RATIO,
+    logger
+  );
+  const serviceName = env.OTEL_SERVICE_NAME?.trim() || env.ALPHA_NODE_SERVICE_NAME?.trim() || 'agi-alpha-node';
+  const otlpHeaders = parseOtlpHeaders(env.OTEL_EXPORTER_OTLP_HEADERS ?? env.ALPHA_NODE_OTLP_HEADERS);
 
   if (exporter === 'otlp' && !otlpEndpoint) {
     logger.warn('ALPHA_NODE_OTEL_EXPORTER=otlp but ALPHA_NODE_OTLP_ENDPOINT not set; using console exporter');
-    return { exporter: 'console', samplingRatio, logger };
+    return { exporter: 'console', samplingRatio, logger, serviceName };
   }
 
   return {
     exporter,
     otlpEndpoint,
+    otlpHeaders,
     samplingRatio,
-    logger
+    logger,
+    serviceName
   };
 }
