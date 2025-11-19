@@ -557,6 +557,13 @@ flowchart LR
 - **Guardian keygen:** `npm run treasury:keygen` emits Dilithium key pairs (`.pk/.sk/.json`) with optional deterministic seeds so onboarding guardians can bootstrap hardware wallets or HSMs without touching low-level WASM glue. The JSON artefact drops straight into `config/guardians.json`, and the full runbook lives in [`docs/runes/guardian.md`](docs/runes/guardian.md).【F:scripts/treasury/keygen.ts†L1-L130】【F:docs/runes/guardian.md†L1-L120】
 - **Guardian artifacts & runbooks:** `docs/treasury-mode-a.md` documents the envelope schema, Dilithium workflow, and orchestrator instructions, while `config/guardians.example.json` ships a drop-in template for onboarding guardians without spelunking the codebase.【F:docs/treasury-mode-a.md†L1-L58】【F:config/guardians.example.json†L1-L11】
 
+**Mode A quickstart (guardians → orchestrator → chain):**
+
+1. **Generate keys:** `npm run treasury:keygen -- --out ./keys/guardian-1` to produce `.pk/.sk/.json` bundles aligned to the Dilithium parameter set in the registry template.【F:scripts/treasury/keygen.ts†L1-L130】【F:config/guardians.example.json†L1-L11】
+2. **Sign intent digests:** `npm run treasury:sign -- intents/payout.json --private-key @keys/guardian-1.sk --public-key @keys/guardian-1.pk --guardian-id guardian-1 --chain-id 11155111 --contract 0xa61a3b3a130a9c20768eebf97e21515a6046a1fa --out ./envelopes/guardian-1.cbor` to emit CBOR envelopes with embedded guardian IDs and metadata.【F:scripts/treasury/sign-intent.ts†L1-L180】
+3. **Verify quorum + execute:** `npm run treasury:execute -- intents/payout.json --registry config/guardians.json --envelopes ./envelopes --threshold 3 --chain-id 11155111 --treasury 0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` aggregates signatures, prints missing guardians, and only then broadcasts `executeTransaction` from the orchestrator key.【F:scripts/treasury/execute-intent.ts†L1-L107】
+4. **Operate with confidence:** Cross-check the envelope/threshold flow against [`docs/treasury-mode-a.md`](docs/treasury-mode-a.md) so guardians and operators follow the exact CBOR schema and domain-binding rules shipped in this repo.【F:docs/treasury-mode-a.md†L1-L58】
+
 ### PQ envelope anatomy & enforcement
 
 ```mermaid
