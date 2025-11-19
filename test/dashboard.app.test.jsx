@@ -8,17 +8,23 @@ vi.mock('chart.js', () => {
   const register = vi.fn();
   return {
     Chart: { register },
+    ChartJS: { register },
+    register,
     CategoryScale: {},
     LinearScale: {},
     PointElement: {},
     LineElement: {},
+    BarElement: {},
+    ArcElement: {},
     Tooltip: {},
     Legend: {}
   };
 });
 
 vi.mock('react-chartjs-2', () => ({
-  Line: (props) => <div data-testid="chart" {...props} />
+  Line: (props) => <div data-testid="chart" {...props} />,
+  Doughnut: (props) => <div data-testid="chart" {...props} />,
+  Bar: (props) => <div data-testid="chart" {...props} />
 }));
 
 import App from '../dashboard/src/App.jsx';

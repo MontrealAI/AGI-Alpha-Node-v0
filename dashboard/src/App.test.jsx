@@ -4,7 +4,9 @@ import App from './App.jsx';
 import { vi } from 'vitest';
 
 vi.mock('react-chartjs-2', () => ({
-  Line: (props) => <div data-testid="chart" {...props} />
+  Line: (props) => <div data-testid="chart" {...props} />,
+  Doughnut: (props) => <div data-testid="chart" {...props} />,
+  Bar: (props) => <div data-testid="chart" {...props} />
 }));
 
 vi.mock('./api/client.js', () => {

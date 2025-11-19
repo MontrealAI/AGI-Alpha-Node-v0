@@ -49,8 +49,8 @@ This runtime is engineered as the operator-owned intelligence engine capable of 
 
 - **Owner-first controls**: Pause/unpause, rotate validators, retune emissions, and update metadata through `AlphaNodeManager.sol` without redeploying the network substrate.【F:contracts/AlphaNodeManager.sol†L1-L120】
 - **Hard DoS guardrails**: The Network Resource Manager (NRM) rejects every overage with structured logs, `nrm_denials_total{limit_type,protocol}` increments, and live `denials.byLimitType` + `denials.byProtocol` breakdowns; ban grid counters and gauges make denials auditable in real time.【F:src/network/resourceManagerConfig.js†L248-L305】【F:src/telemetry/networkMetrics.js†L114-L144】
-- **Debuggable capacity**: `GET /debug/resources` exposes global caps, per-protocol ceilings (GossipSub/identify/bitswap/agi/*), per-IP/ASN ceilings, bans, and live utilization so operators never spelunk code to understand pressure.【F:src/network/resourceManagerConfig.js†L485-L626】【F:src/network/apiServer.js†L1230-L1244】
-- **Watermarks + bans as metrics**: Connection Manager trims emit `connmanager_trims_total{reason}`; ban mutations raise gauges/counters for IP/peer/ASN entries to keep governance controls transparent.【F:src/network/resourceManagerConfig.js†L641-L694】【F:src/network/apiServer.js†L1681-L1769】
+- **Debuggable capacity**: `GET /debug/resources` exposes global caps, per-protocol ceilings (GossipSub/identify/bitswap/agi/*), per-IP/ASN ceilings, bans, and live utilization so operators never spelunk code to understand pressure.【F:src/network/resourceManagerConfig.js†L485-L626】【F:src/network/apiServer.js†L1353-L1405】
+- **Watermarks + bans as metrics**: Connection Manager trims emit `connmanager_trims_total{reason}`; ban mutations raise gauges/counters for IP/peer/ASN entries to keep governance controls transparent.【F:src/network/resourceManagerConfig.js†L641-L694】【F:src/network/apiServer.js†L2050-L2130】
 - **Green by default**: `.github/workflows/ci.yml` mirrors `npm run ci:verify` and is enforced via `.github/required-checks.json`, keeping PRs and `main` permanently green with visible badges.【F:.github/workflows/ci.yml†L1-L210】【F:.github/required-checks.json†L1-L9】
 - **Dial + protocol clarity**: QUIC/TCP dials now emit `net_dial_success_total{transport}` and `net_dial_fail_total{transport,reason}` directly from the libp2p tracer, while protocol handlers use `net_protocol_latency_ms`, `net_msgs_total`, and `net_bytes_total` to surface p50/p95/p99, ingress/egress, and chatter per topic.【F:src/network/libp2pHostConfig.js†L64-L195】【F:src/telemetry/networkMetrics.js†L24-L231】【F:src/network/protocols/metrics.js†L6-L149】
 
@@ -102,7 +102,7 @@ flowchart TD
 - **Tag every denial**: All NRM reject paths produce structured logs with limit type, protocol, peer, IP/ASN context, and bump `nrm_denials_total{limit_type,protocol}` while accumulating `denials.byLimitType` and `denials.byProtocol` so dashboards can slice by cause instantly. Per-protocol stream caps surface as `limit_type="per_protocol"`, keeping stream floods distinguishable from global stream ceilings.【F:src/network/resourceManagerConfig.js†L248-L305】【F:src/telemetry/networkMetrics.js†L114-L169】
 - **Per-protocol clarity**: The NRM snapshot always includes GossipSub/identify/bitswap/agi protocol caps and usage, even when zero, making `/debug/resources` copy/paste friendly for runbooks and dashboards.【F:src/network/resourceManagerConfig.js†L485-L626】【F:test/network/resourceManagerConfig.test.js†L76-L128】
 - **Usage + pressure grid**: `metrics()` surfaces global/ per-protocol/ per-IP/ per-ASN usage with utilization, per-limit-type denial tallies, and dialer plans so operators see pressure before drops occur.【F:src/network/resourceManagerConfig.js†L485-L626】
-- **Connection trims + bans as metrics**: Peer trims increment `connmanager_trims_total{reason}`; ban additions/removals update `banlist_entries` gauges and `banlist_changes_total{type,action}` counters for IP/peer/ASN governance surfaces.【F:src/network/resourceManagerConfig.js†L641-L694】【F:src/network/apiServer.js†L1681-L1769】
+- **Connection trims + bans as metrics**: Peer trims increment `connmanager_trims_total{reason}`; ban additions/removals update `banlist_entries` gauges and `banlist_changes_total{type,action}` counters for IP/peer/ASN governance surfaces.【F:src/network/resourceManagerConfig.js†L641-L694】【F:src/network/apiServer.js†L2050-L2130】
 
 ```bash
 curl -s localhost:3000/debug/resources | jq '{limits, usage, bans}'
@@ -171,7 +171,7 @@ flowchart LR
 
 - **Centralized wiring:** `configureOpenTelemetry` and `loadTelemetryConfig` normalize `OTEL_SERVICE_NAME`, OTLP headers, and endpoints into a single tracer resource while `startMonitoringServer` always keeps the Prometheus registry and `/metrics` online.【F:src/telemetry/monitoring.js†L1-L52】【F:src/telemetry/config.js†L31-L57】【F:src/telemetry/monitoring.js†L280-L363】
 - **OTLP on demand:** Set `OTEL_EXPORTER_OTLP_ENDPOINT` (plus optional `OTEL_EXPORTER_OTLP_HEADERS` or `OTEL_TRACES_SAMPLER=traceidratio:<0-1>`) to stream traces; leave it unset to run fully locally without interrupting metrics exposure or shutdown flows.【F:src/telemetry/otelCore.js†L37-L82】【F:src/telemetry/config.js†L31-L57】
-- **REST spans + propagation:** Every REST/gov/health call is wrapped with an `http.server` span that captures method, route, status, latency, and keeps the trace context active for request metadata and downstream services.【F:src/network/apiServer.js†L1187-L1510】
+- **REST spans + propagation:** Every REST/gov/health call is wrapped with an `http.server` span that captures method, route, status, latency, and keeps the trace context active for request metadata and downstream services.【F:src/network/apiServer.js†L170-L243】【F:src/network/apiServer.js†L1305-L1505】
 - **Dial traces:** Each outbound libp2p dial emits a `net.dial` span with `peer.id`, `net.transport`, `net.peer.addr`, success, and latency while linking back to any active HTTP span for seamless cross-surface stitching.【F:src/network/libp2pHostConfig.js†L64-L164】
 - **Prometheus-first:** `/metrics` stays Prometheus-native (peer scoring, α‑WU, NRM, bans) while traces route to OTLP; CI lint/link checks keep mermaid diagrams rendering cleanly on GitHub Pages.【F:src/telemetry/monitoring.js†L291-L363】【F:package.json†L12-L46】
 
@@ -282,9 +282,9 @@ flowchart TD
 
 ## Sprint E6 – Debug APIs, dashboard tiles, and runbook
 
-- **Operator JSON for network posture:** `GET /debug/network?window=15` now emits reachability snapshots + timeline, connection churn (live + opens/sec + closes/sec), dial success/fail tallies by transport/reason, and transport posture shares for the last window, powered by the in-memory network metrics counters.【F:src/network/apiServer.js†L1237-L1432】
-- **NRM + connection manager counters:** `/debug/resources` adds `nrmDenials` and `connectionManagerStats` so dashboards see rcmgr drops and trim reasons without scraping Prometheus.【F:src/network/apiServer.js†L1217-L1235】
-- **Dashboard telemetry tab upgrade:** The Telemetry view now renders read-only tiles for transport posture, reachability timeline, resource pressure, and churn/dial health, all still gated by the same API key flow.【F:dashboard/src/views/TelemetryView.jsx†L8-L171】【F:dashboard/src/api/client.js†L31-L56】
+- **Operator JSON for network posture:** `GET /debug/network?window=15` now emits reachability snapshots + timeline, connection churn (live + opens/sec + closes/sec), dial success/fail tallies by transport/reason, and transport posture shares for the last window, powered by the in-memory network metrics counters.【F:src/network/apiServer.js†L1353-L1503】
+- **NRM + connection manager counters:** `/debug/resources` adds `nrmDenials` and `connectionManagerStats` so dashboards see rcmgr drops and trim reasons without scraping Prometheus.【F:src/network/apiServer.js†L1353-L1405】
+- **Dashboard telemetry tab upgrade:** The Telemetry view now renders read-only tiles for transport posture, reachability timeline, resource pressure, and churn/dial health, all still gated by the same API key flow.【F:dashboard/src/views/TelemetryView.jsx†L1-L323】【F:dashboard/src/api/client.js†L31-L56】
 - **Runbook for operators:** [`docs/network-operations.md`](docs/network-operations.md) ties posture flips, reachability interpretation, NRM DoS signals, and rollout dial validation into a single operations guide.【F:docs/network-operations.md†L1-L66】
 
 ```mermaid
@@ -304,15 +304,15 @@ flowchart LR
 
 - `$AGIALPHA` token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals). The owner retains absolute veto, pause, and retuning authority across runtime and emissions.
 - `AlphaNodeManager.sol` consolidates pause/unpause, validator rotation, metadata refresh, treasury withdrawal, and reward tuning under a single owner-controlled contract.【F:contracts/AlphaNodeManager.sol†L1-L120】
-- Governance verbs are exposed via CLI (`node src/index.js governance:*`) and authenticated REST endpoints so non-technical operators can steer without redeploying.【F:src/index.js†L1-L113】【F:src/network/apiServer.js†L1448-L1769】
+- Governance verbs are exposed via CLI (`node src/index.js governance:*`) and authenticated REST endpoints so non-technical operators can steer without redeploying.【F:src/index.js†L1-L113】【F:src/network/apiServer.js†L1509-L2130】
 
 ## API surfaces (operator quick reference)
 
 | Endpoint | Purpose |
 | --- | --- |
 | `GET /health` / `GET /healthz` | Liveness/readiness probes. |
-| `GET /debug/resources` | Limits + usage grid, bans, and NRM snapshot (per-protocol/IP/ASN).【F:src/network/apiServer.js†L1230-L1244】 |
-| `POST/DELETE /governance/bans` | Add or remove IP/peer/ASN bans (owner token required); updates gauges/counters automatically.【F:src/network/apiServer.js†L1739-L1775】 |
+| `GET /debug/resources` | Limits + usage grid, bans, and NRM snapshot (per-protocol/IP/ASN).【F:src/network/apiServer.js†L1353-L1405】 |
+| `POST/DELETE /governance/bans` | Add or remove IP/peer/ASN bans (owner token required); updates gauges/counters automatically.【F:src/network/apiServer.js†L2050-L2130】 |
 | `GET /debug/peerscore` | GossipSub v1.1 peer score summaries for mesh tuning. |
 | `GET /metrics` | Prometheus/OTel surface for network, peer scoring, SLU, and index gauges. |
 
@@ -355,7 +355,7 @@ sequenceDiagram
 
 - **Docker**: `docker build -t agi-alpha-node:latest .` then `docker run --rm -p 3000:3000 agi-alpha-node:latest --help` to validate binaries before promotion.【F:Dockerfile†L1-L28】
 - **Helm**: `helm upgrade --install agi-alpha-node deploy/helm/agi-alpha-node -f deploy/helm/agi-alpha-node/values.yaml` to roll out the runtime with PR-enforced checks and metrics already wired.【F:deploy/helm/agi-alpha-node/values.yaml†L1-L153】
-- **Bare metal**: `npm ci && npm start` with `NRM_*` and `CONN_*` env vars tuned for your topology; `/debug/resources` remains stable across all deployment modes.【F:src/network/apiServer.js†L1187-L1244】
+- **Bare metal**: `npm ci && npm start` with `NRM_*` and `CONN_*` env vars tuned for your topology; `/debug/resources` remains stable across all deployment modes.【F:src/network/apiServer.js†L1353-L1405】
 
 ```mermaid
 flowchart LR

@@ -1,5 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import {
+  Chart as ChartJS,
+  ArcElement,
+  BarElement,
+  CategoryScale,
+  Legend,
+  LineElement,
+  LinearScale,
+  PointElement,
+  Tooltip
+} from 'chart.js';
+import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import { fetchDebugNetwork, fetchDebugResources, fetchProviders, fetchTelemetryRuns } from '../api/client.js';
+
+ChartJS.register(ArcElement, BarElement, CategoryScale, Legend, LineElement, LinearScale, PointElement, Tooltip);
 
 function toIsoDate(date) {
   return date.toISOString().slice(0, 10);
@@ -30,6 +44,123 @@ export function TelemetryView({ baseUrl, apiKey, refreshNonce = 0 }) {
   function formatNumber(value, digits = 2) {
     return Number.isFinite(value) ? value.toFixed(digits) : '—';
   }
+
+  const reachabilitySeries = useMemo(() => {
+    const timeline = (networkDebug?.reachability?.timeline ?? []).slice(-20);
+    const map = { public: 2, private: 1, unknown: 0 };
+    const labels = timeline.map((entry) => new Date(entry.updatedAt ?? Date.now()).toLocaleTimeString());
+    const data = timeline.map((entry) => map[entry.state] ?? 0);
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Reachability (2=public,1=private,0=unknown)',
+          data,
+          borderColor: 'rgba(139, 92, 246, 0.9)',
+          backgroundColor: 'rgba(139, 92, 246, 0.25)',
+          tension: 0.25,
+          fill: true,
+          pointRadius: 2
+        }
+      ]
+    };
+  }, [networkDebug]);
+
+  const transportPostureData = useMemo(() => {
+    const connections = networkDebug?.transportPosture?.connectionsByTransport ?? {};
+    const labels = Object.keys(connections);
+    if (labels.length === 0) return null;
+    const shares = labels.map((label) => (networkDebug?.transportPosture?.share?.[label] ?? 0) * 100);
+    return {
+      labels: labels.map((label) => label.toUpperCase()),
+      datasets: [
+        {
+          label: 'Share of recent connections (%)',
+          data: shares,
+          backgroundColor: ['#22c55e', '#0ea5e9', '#f97316', '#eab308']
+        }
+      ]
+    };
+  }, [networkDebug]);
+
+  const churnDialData = useMemo(() => {
+    const opens = networkDebug?.churn?.opensPerSec ?? {};
+    const closes = networkDebug?.churn?.closesPerSec ?? {};
+    const successRate = networkDebug?.dials?.recent?.successRate ?? 0;
+    const failure = networkDebug?.dials?.recent?.failure ?? {};
+    const success = networkDebug?.dials?.recent?.success ?? {};
+    const transports = Array.from(new Set([...Object.keys(success ?? {}), ...Object.keys(failure ?? {})]));
+    const dialTotals = transports.map(
+      (transport) => (success?.[transport] ?? 0) + (failure?.[transport] ?? 0)
+    );
+    return {
+      churn: {
+        labels: ['Opens (in)', 'Opens (out)', 'Closes (in)', 'Closes (out)'],
+        datasets: [
+          {
+            label: 'Connections/sec',
+            data: [opens.in ?? 0, opens.out ?? 0, closes.in ?? 0, closes.out ?? 0],
+            backgroundColor: '#0ea5e9'
+          }
+        ]
+      },
+      dials: {
+        labels: transports.map((label) => label.toUpperCase()),
+        datasets: [
+          {
+            label: 'Dial attempts (recent window)',
+            data: dialTotals,
+            backgroundColor: '#22c55e'
+          }
+        ],
+        successRate
+      }
+    };
+  }, [networkDebug]);
+
+  const nrmPressureData = useMemo(() => {
+    const recent = resourceDebug?.nrmDenials?.recent;
+    const totals = resourceDebug?.nrmDenials;
+    if (!recent && !totals) return null;
+    const limitLabelsRaw = Object.keys(recent?.byLimitType ?? totals?.byLimitType ?? {});
+    const protocolLabelsRaw = Object.keys(recent?.byProtocol ?? totals?.byProtocol ?? {});
+    const limitLabels = limitLabelsRaw.length ? limitLabelsRaw : ['none'];
+    const protocolLabels = protocolLabelsRaw.length ? protocolLabelsRaw : ['none'];
+    return {
+      limitType: {
+        labels: limitLabels.map((label) => label.toUpperCase()),
+        datasets: [
+          {
+            label: 'Denials (recent window)',
+            data: limitLabels.map((label) => recent?.byLimitType?.[label] ?? 0),
+            backgroundColor: '#f97316'
+          }
+        ]
+      },
+      protocol: {
+        labels: protocolLabels.map((label) => label.toUpperCase()),
+        datasets: [
+          {
+            label: 'Denials (recent window)',
+            data: protocolLabels.map((label) => recent?.byProtocol?.[label] ?? 0),
+            backgroundColor: '#eab308'
+          }
+        ]
+      },
+      trims: {
+        labels: Object.keys(resourceDebug?.connectionManagerStats?.recent?.byReason ?? {}),
+        datasets: [
+          {
+            label: 'Trims (recent window)',
+            data: Object.values(resourceDebug?.connectionManagerStats?.recent?.byReason ?? {}),
+            backgroundColor: '#8b5cf6'
+          }
+        ],
+        windowSeconds: resourceDebug?.connectionManagerStats?.recent?.windowSeconds ?? 0,
+        windowMinutes: resourceDebug?.windowMinutes ?? 0
+      }
+    };
+  }, [resourceDebug]);
 
   async function loadProviders() {
     try {
@@ -92,46 +223,30 @@ export function TelemetryView({ baseUrl, apiKey, refreshNonce = 0 }) {
         <div className="metrics-grid">
           <div className="metric-card">
             <div className="label">Transport posture</div>
-            {Object.keys(networkDebug?.transportPosture?.connectionsByTransport ?? {}).length === 0 ? (
-              <div className="small-text">No dial data yet.</div>
+            {transportPostureData ? (
+              <Doughnut data={transportPostureData} aria-label="Transport posture share" />
             ) : (
-              <ul className="log-list">
-                {Object.entries(networkDebug?.transportPosture?.connectionsByTransport ?? {}).map(([transport, count]) => (
-                  <li key={transport} className="log-item">
-                    <div className="small-text">{transport.toUpperCase()}</div>
-                    <div className="small-text">
-                      Recent connections: {formatNumber(count, 2)} · Share:{' '}
-                      {formatNumber((networkDebug?.transportPosture?.share?.[transport] ?? 0) * 100, 1)}%
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <div className="small-text">No dial data yet.</div>
             )}
           </div>
 
           <div className="metric-card">
             <div className="label">Reachability timeline</div>
             <div className="small-text">Current: {networkDebug?.reachability?.current?.state ?? 'unknown'}</div>
-            <ul className="log-list">
-              {(networkDebug?.reachability?.timeline ?? []).slice(-4).reverse().map((entry, idx) => (
-                <li key={`${entry.updatedAt ?? idx}`} className="log-item">
-                  <div className="small-text">{entry.state} · source {entry.source}</div>
-                  <div className="small-text">
-                    {entry.updatedAt ? new Date(entry.updatedAt).toLocaleString() : '—'}
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <Line data={reachabilitySeries} options={{ scales: { y: { ticks: { stepSize: 1, max: 2, min: 0 } } } }} />
           </div>
 
           <div className="metric-card">
             <div className="label">Resource pressure</div>
-            {resourceDebug?.nrmDenials ? (
-              <div className="small-text">
-                Limits: {JSON.stringify(resourceDebug.nrmDenials.byLimitType)}
-                <br /> Protocols: {JSON.stringify(resourceDebug.nrmDenials.byProtocol)}
-                <br /> Trims: {JSON.stringify(resourceDebug.connectionManagerStats?.trims ?? {})}
-              </div>
+            {nrmPressureData ? (
+              <>
+                <Bar data={nrmPressureData.limitType} aria-label="NRM denials by limit" />
+                <Bar data={nrmPressureData.protocol} aria-label="NRM denials by protocol" />
+                <Bar data={nrmPressureData.trims} aria-label="Connection trims" />
+                <div className="small-text">
+                  Window: {nrmPressureData.trims.windowMinutes ?? windowMinutes}m · Recent denials captured
+                </div>
+              </>
             ) : (
               <div className="small-text">NRM counters unavailable.</div>
             )}
@@ -142,13 +257,9 @@ export function TelemetryView({ baseUrl, apiKey, refreshNonce = 0 }) {
             <div className="small-text">
               Live: in {networkDebug?.churn?.live?.in ?? 0} / out {networkDebug?.churn?.live?.out ?? 0}
             </div>
-            <div className="small-text">
-              Opens: in {formatNumber(networkDebug?.churn?.opensPerSec?.in ?? 0)} / out {formatNumber(networkDebug?.churn?.opensPerSec?.out ?? 0)}
-            </div>
-            <div className="small-text">
-              Closes: in {formatNumber(networkDebug?.churn?.closesPerSec?.in ?? 0)} / out {formatNumber(networkDebug?.churn?.closesPerSec?.out ?? 0)}
-            </div>
-            <div className="small-text">Dial success (window): {formatNumber(networkDebug?.dials?.recent?.successRate ?? 0, 3)}</div>
+            <Bar data={churnDialData.churn} aria-label="Connection churn" />
+            <Bar data={churnDialData.dials} aria-label="Dial attempts" />
+            <div className="small-text">Dial success (window): {formatNumber(churnDialData.dials.successRate ?? 0, 3)}</div>
             <div className="small-text">
               Dial success (cumulative): {formatNumber(networkDebug?.dials?.cumulative?.successRate ?? 0, 3)}
             </div>

@@ -1114,7 +1114,9 @@ export function startAgentApi({
     connectionsClose: [],
     inboundConnections: [],
     netDialSuccessTotal: [],
-    netDialFailTotal: []
+    netDialFailTotal: [],
+    nrmDenialsTotal: [],
+    connmanagerTrimsTotal: []
   };
 
   const resolveHealthGateState = () => (healthGate ? healthGate.getState() : null);
@@ -1348,18 +1350,47 @@ export function startAgentApi({
           jsonResponse(res, 503, { error: 'Resource manager unavailable' });
           return;
         }
+        const windowMinutes = clampWindowMinutes(requestUrl.searchParams.get('window'), 15, 90);
+        const windowMs = windowMinutes * 60 * 1000;
+
+        if (networkMetrics) {
+          updateCounterHistory(metricsHistory.nrmDenialsTotal, networkMetrics.nrmDenialsTotal, windowMs);
+          updateCounterHistory(metricsHistory.connmanagerTrimsTotal, networkMetrics.connmanagerTrimsTotal, windowMs);
+        }
+        const denialsDelta = networkMetrics
+          ? computeCounterDelta(metricsHistory.nrmDenialsTotal)
+          : { delta: {}, windowSeconds: 0 };
+        const trimsDelta = networkMetrics
+          ? computeCounterDelta(metricsHistory.connmanagerTrimsTotal)
+          : { delta: {}, windowSeconds: 0 };
         const snapshot = resourceManager.metrics();
         const limits = snapshot.limitsGrid ?? snapshot.limits ?? {};
         const usage = snapshot.usage ?? {};
         const nrmDenials = networkMetrics
           ? {
               byLimitType: await sumCounterByLabel(networkMetrics.nrmDenialsTotal, (labels) => labels.limit_type ?? 'unknown'),
-              byProtocol: await sumCounterByLabel(networkMetrics.nrmDenialsTotal, (labels) => labels.protocol ?? 'unknown')
+              byProtocol: await sumCounterByLabel(networkMetrics.nrmDenialsTotal, (labels) => labels.protocol ?? 'unknown'),
+              recent: {
+                windowSeconds: denialsDelta.windowSeconds,
+                byLimitType: aggregateDelta(denialsDelta.delta, 'total', (labels) => labels.limit_type ?? 'unknown'),
+                perSecond: aggregateDelta(denialsDelta.delta, 'rate', (labels) => labels.limit_type ?? 'unknown'),
+                byProtocol: aggregateDelta(denialsDelta.delta, 'total', (labels) => labels.protocol ?? 'unknown'),
+                perSecondByProtocol: aggregateDelta(
+                  denialsDelta.delta,
+                  'rate',
+                  (labels) => labels.protocol ?? 'unknown'
+                )
+              }
             }
           : null;
         const connectionManagerStats = networkMetrics
           ? {
-              trims: await sumCounterByLabel(networkMetrics.connmanagerTrimsTotal, (labels) => labels.reason ?? 'unknown')
+              trims: await sumCounterByLabel(networkMetrics.connmanagerTrimsTotal, (labels) => labels.reason ?? 'unknown'),
+              recent: {
+                windowSeconds: trimsDelta.windowSeconds,
+                byReason: aggregateDelta(trimsDelta.delta, 'total', (labels) => labels.reason ?? 'unknown'),
+                perSecond: aggregateDelta(trimsDelta.delta, 'rate', (labels) => labels.reason ?? 'unknown')
+              }
             }
           : null;
         jsonResponse(res, 200, {
@@ -1369,7 +1400,8 @@ export function startAgentApi({
           bans: exportBanState(),
           connectionManager: describeConnectionManager(),
           nrmDenials,
-          connectionManagerStats
+          connectionManagerStats,
+          windowMinutes
         });
         return;
       }
