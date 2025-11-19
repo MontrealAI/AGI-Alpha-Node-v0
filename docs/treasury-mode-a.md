@@ -141,3 +141,10 @@ npm run treasury:execute -- intents/treasury.json \
 Successful executions emit `IntentExecuted(intentHash, executor, to, value)`
 and appear in the CLI output with tx hash + gas stats. Dry-run mode halts
 before broadcasting but still proves the threshold is satisfied.
+
+## On-chain Treasury Executor
+
+- `contracts/TreasuryExecutor.sol` keeps the vault owner-supreme: orchestrator-only `executeTransaction`, pause/unpause toggles, digest deduplication, owner overrides (`setIntentStatus`), and `sweep` all surface deterministic events (notably `IntentExecuted` for the calldata hash).【F:contracts/TreasuryExecutor.sol†L1-L113】
+- `test/treasury/treasuryExecutor.test.ts` deploys the contract inside `@ethereumjs/vm`, proving orchestrator rotation, replay prevention, pause enforcement, and sweep mechanics before anything touches a public chain.【F:test/treasury/treasuryExecutor.test.ts†L1-L178】
+
+When onboarding, deploy `TreasuryExecutor` with your orchestrator address (or default to owner), store the address in `TREASURY_ADDRESS`, and bind every digest via `--contract` + `--chain-id` + `--function-signature` so the off-chain hash always matches the on-chain calldata fingerprint that shows up in `IntentExecuted`.
