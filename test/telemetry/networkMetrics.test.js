@@ -12,7 +12,8 @@ import {
   startProtocolTimer,
   updateReachabilityMetric
 } from '../../src/telemetry/networkMetrics.js';
-import { createReachabilityState } from '../../src/network/transportConfig.js';
+import { buildTransportConfig, createReachabilityState } from '../../src/network/transportConfig.js';
+import { createTransportTracer } from '../../src/network/libp2pHostConfig.js';
 
 describe('networkMetrics', () => {
   it('tracks reachability posture and autonat probes', async () => {
@@ -31,6 +32,44 @@ describe('networkMetrics', () => {
     expect(reachabilityMetric?.values?.[0]?.value).toBe(2);
     expect(probeMetric?.values?.[0]?.value).toBe(2);
     expect(failureMetric?.values?.[0]?.value).toBe(1);
+  });
+
+  it('increments dial success/failure metrics via the transport tracer', async () => {
+    const registry = new Registry();
+    const reachabilityState = createReachabilityState({ initial: 'private' });
+    const metrics = createNetworkMetrics({ registry, reachabilityState });
+    const tracer = createTransportTracer({
+      plan: buildTransportConfig({}),
+      metrics,
+      logger: { info: () => {} }
+    });
+
+    const startedAt = Date.now() - 5;
+    tracer({ direction: 'out', success: undefined, startedAt, transportOverride: 'quic' });
+    tracer({ direction: 'out', success: true, startedAt, transportOverride: 'quic' });
+    tracer({
+      direction: 'out',
+      success: false,
+      detail: { reason: 'timeout' },
+      transportOverride: 'tcp'
+    });
+
+    reachabilityState.updateManual('public');
+
+    const snapshot = await registry.getMetricsAsJSON();
+    const dialAttemptsMetric = snapshot.find((metric) => metric.name === 'agi_alpha_node_net_dial_attempt_total');
+    const dialSuccessMetric = snapshot.find((metric) => metric.name === 'net_dial_success_total');
+    const dialFailureMetric = snapshot.find((metric) => metric.name === 'net_dial_fail_total');
+    const reachabilityMetric = snapshot.find((metric) => metric.name === 'net_reachability_state');
+
+    expect(dialAttemptsMetric?.values?.find((entry) => entry.labels.transport === 'quic')?.value).toBeGreaterThanOrEqual(1);
+    expect(dialSuccessMetric?.values?.find((entry) => entry.labels.transport === 'quic')?.value).toBe(1);
+    expect(
+      dialFailureMetric?.values?.find(
+        (entry) => entry.labels.transport === 'tcp' && entry.labels.reason === 'timeout'
+      )?.value
+    ).toBe(1);
+    expect(reachabilityMetric?.values?.[0]?.value).toBe(2);
   });
 
   it('records connection churn and live counts by direction', async () => {
@@ -121,6 +160,19 @@ describe('networkMetrics', () => {
     expect(reachabilityMetric?.values?.[0]?.value).toBe(2);
 
     unsubscribe();
+  });
+
+  it('updates reachability gauges when a state object is provided at creation', async () => {
+    const registry = new Registry();
+    const reachabilityState = createReachabilityState({ initial: 'private' });
+    const metrics = createNetworkMetrics({ registry, reachabilityState });
+
+    reachabilityState.updateManual('public');
+
+    const snapshot = await registry.getMetricsAsJSON();
+    const reachabilityMetric = snapshot.find((metric) => metric.name === 'net_reachability_state');
+
+    expect(reachabilityMetric?.values?.[0]?.value).toBe(2);
   });
 
   it('captures AutoNAT reachability callbacks and probes', async () => {
