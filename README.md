@@ -574,6 +574,13 @@ flowchart LR
 3. **Verify quorum + execute:** `npm run treasury:execute -- intents/payout.json --registry config/guardians.json --envelopes ./envelopes --ledger config/intent-ledger.json --threshold 3 --chain-id 11155111 --treasury 0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` aggregates signatures, prints missing guardians, aborts if the digest was already executed, and only then broadcasts `executeTransaction` from the orchestrator key.【F:scripts/treasury/execute-intent.ts†L1-L126】【F:src/treasury/intentLedger.ts†L1-L83】
 4. **Operate with confidence:** Cross-check the envelope/threshold flow against [`docs/treasury-mode-a.md`](docs/treasury-mode-a.md) so guardians and operators follow the exact CBOR schema and domain-binding rules shipped in this repo.【F:docs/treasury-mode-a.md†L1-L58】
 
+**Operational validation checklist (keep the lane green):**
+
+- `npm test -- test/treasury/thresholdAggregator.test.ts` — proves duplicate/unknown guardians are rejected and replay flags surface before on-chain execution.【F:test/treasury/thresholdAggregator.test.ts†L1-L97】
+- `npm test -- test/treasury/envelopeCollector.test.ts` — validates the drop-zone loader parses CBOR/JSON envelopes and returns per-file diagnostics so GitHub renders Mermaid charts without being blocked by malformed artifacts.【F:test/treasury/envelopeCollector.test.ts†L1-L41】【F:src/treasury/envelopeCollector.ts†L1-L72】
+- `npm test -- test/treasury/intentLedger.test.ts` — confirms ledger persistence + replay shielding, mirroring the CLI’s refusal to rebroadcast already executed digests.【F:test/treasury/intentLedger.test.ts†L1-L35】【F:src/treasury/intentLedger.ts†L1-L83】
+- `npm run ci:verify` — executes the full badge-backed CI wall (lint, tests, coverage, Solidity, subgraph, audit, policy, branch gates) exactly as enforced on PRs and `main`, ensuring GitHub’s Mermaid rendering remains unblocked by failing checks.【F:.github/workflows/ci.yml†L1-L210】【F:package.json†L19-L40】
+
 ### Owner command & pause levers (always-on overrides)
 
 ```mermaid
