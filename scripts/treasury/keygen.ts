@@ -36,16 +36,15 @@ if (parameterSet < 0 || parameterSet > 3) {
 
 const seedBytes = options.seed ? loadSeed(options.seed) : undefined;
 
-const prefix = options.out
-  ? resolve(options.out)
-  : resolve(options.dir ?? 'keys', options.guardianId ?? `guardian-${Date.now()}`);
+const guardianId = options.guardianId ?? `guardian-${Date.now()}`;
 
-const guardianId = options.guardianId ?? null;
+const prefix = options.out ? resolve(options.out) : resolve(options.dir ?? 'keys', guardianId);
 
 const keyPair = await generateGuardianKeyPair(parameterSet, seedBytes);
 const publicKeyBase64 = Buffer.from(keyPair.publicKey).toString('base64');
 const privateKeyBase64 = Buffer.from(keyPair.privateKey).toString('base64');
 const metadata = {
+  id: guardianId,
   guardianId,
   parameterSet,
   publicKey: publicKeyBase64,
@@ -62,6 +61,7 @@ if (!options.stdout) {
   writeFileSync(`${prefix}.sk`, `${privateKeyBase64}\n`, { mode: 0o600 });
   const jsonPayload = JSON.stringify(
     {
+      id: guardianId,
       guardianId,
       parameterSet,
       publicKey: publicKeyBase64
