@@ -61,6 +61,8 @@ Envelope schema:
 4. De-duplicate guardians so one signer cannot satisfy the threshold twice.
 5. Once approvals ≥ `threshold`, assemble calldata and submit
    `executeTransaction` to the treasury contract.
+6. Stamp the digest + tx hash into the on-disk `IntentLedger` to block
+   replays before they ever reach the chain.
 
 ## Guardian CLI (`npm run treasury:sign`)
 
@@ -86,7 +88,8 @@ flowchart LR
   Digest --> GuardianCLI[`npm run treasury:sign`\nDilithium signer]:::frost
   GuardianCLI --> Envelope[CBOR / JSON envelope]:::neon
   Envelope --> OrchestratorCLI[`npm run treasury:execute`]:::lava
-  OrchestratorCLI --> Treasury[executeTransaction\nowner-controlled]:::neon
+  OrchestratorCLI --> Ledger[IntentLedger\nreplay guard]:::frost
+  Ledger --> Treasury[executeTransaction\nowner-controlled]:::neon
   classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
   classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
   classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
@@ -145,6 +148,7 @@ ORCHESTRATOR_KEY=0xabc... \
 npm run treasury:execute -- intents/treasury.json \
   --envelopes ./envelopes \
   --registry config/guardians.json \
+  --ledger ./state/intent-ledger.json \
   --threshold 2 \
   --chain-id 11155111 \
   --domain-version 1 \
@@ -153,7 +157,10 @@ npm run treasury:execute -- intents/treasury.json \
 
 Successful executions emit `IntentExecuted(intentHash, executor, to, value)`
 and appear in the CLI output with tx hash + gas stats. Dry-run mode halts
-before broadcasting but still proves the threshold is satisfied.
+before broadcasting but still proves the threshold is satisfied. The
+`--ledger` flag (default `config/intent-ledger.json`) writes every executed
+digest + tx hash to disk so replays are refused before a transaction ever
+leaves the orchestrator.
 
 ## On-chain Treasury Executor
 

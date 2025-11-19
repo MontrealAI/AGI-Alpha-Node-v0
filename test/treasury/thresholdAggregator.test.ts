@@ -75,4 +75,34 @@ describe('Guardian threshold aggregation', () => {
     expect(report.invalid[0].reason).toMatch(/unknown guardian/i);
     expect(report.thresholdMet).toBe(false);
   });
+
+  it('flags digest mismatches and keeps the registry inventory intact', async () => {
+    const dilithium = await getDilithiumInstance();
+    const [pairA, pairB] = [dilithium.generateKeys(2), dilithium.generateKeys(2)];
+    const guardians: GuardianRecord[] = [pairA, pairB].map((pair, index) => ({
+      id: `guardian-${index + 1}`,
+      publicKey: Buffer.from(pair.publicKey).toString('base64'),
+      parameterSet: 2
+    }));
+
+    const registry = new GuardianRegistry(guardians);
+    const mismatchedDigest = `0x${'22'.repeat(32)}`;
+    const envelope = await signIntentDigest({
+      digest: mismatchedDigest,
+      privateKey: pairA.privateKey,
+      publicKey: pairA.publicKey,
+      metadata: { guardianId: 'guardian-1' }
+    });
+
+    const report = await aggregateGuardianEnvelopes([envelope], {
+      digest,
+      threshold: 2,
+      registry
+    });
+
+    expect(report.approvals).toHaveLength(0);
+    expect(report.invalid[0].reason).toMatch(/digest mismatch/i);
+    expect(report.pendingGuardians).toHaveLength(2);
+    expect(report.thresholdMet).toBe(false);
+  });
 });
