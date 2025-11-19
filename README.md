@@ -48,6 +48,24 @@ This runtime is engineered as the operator-owned intelligence engine capable of 
 
 > Owner directives stay absolute: the `$AGIALPHA` contract anchor (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) and `AlphaNodeManager.sol` keep every parameter, pause switch, and emission lever adjustable by the contract owner with no redeploy required.【F:contracts/AlphaNodeManager.sol†L1-L120】
 
+## Table of contents
+
+1. [Why operators deploy this node](#why-operators-deploy-this-node)
+2. [System map](#system-map)
+3. [Resource manager & DoS telemetry (Sprint E3)](#resource-manager--dos-telemetry-sprint-e3)
+4. [Operator quickstart](#operator-quickstart)
+5. [OTel + Prometheus observability (Sprint E4)](#otel--prometheus-observability-sprint-e4)
+6. [Sprint E5 – Higher-level network metrics](#sprint-e5--higher-level-network-metrics-dial-latency-throughput)
+7. [Sprint E7 – Tests, CI & load harness](#sprint-e7--tests-ci--load-harness)
+8. [Deployment & governance controls](#deployment--governance-controls)
+9. [Sprint E6 – Debug APIs, dashboard tiles, and runbook](#sprint-e6--debug-apis-dashboard-tiles-and-runbook)
+10. [Owner controls & token](#owner-controls--token)
+11. [API surfaces & operator quick reference](#api-surfaces-operator-quick-reference)
+12. [Run it locally (mirrors CI gates)](#run-it-locally-mirrors-ci-gates)
+13. [CI & branch protection](#ci--branch-protection-always-green)
+14. [Dashboard & monitoring](#dashboard--monitoring)
+15. [Data spine & economics](#data-spine--economics)
+
 ## Why operators deploy this node
 
 - **Owner-first controls**: Pause/unpause, rotate validators, retune emissions, and update metadata through `AlphaNodeManager.sol` without redeploying the network substrate.【F:contracts/AlphaNodeManager.sol†L1-L120】
@@ -176,6 +194,18 @@ flowchart LR
   Bans --> Metrics
 ```
 
+## Operator quickstart
+
+| Step | Command | Outcome |
+| --- | --- | --- |
+| Install deps | `npm ci` | Locks in the audited Node.js 20.18+ toolchain, Vitest suites, Solidity toolchain, and dashboard build chain as wired in `package.json`.【F:package.json†L1-L74】 |
+| Bootstrap the cockpit | `npm run demo:local` | Spins up the local libp2p harness, sqlite spine, telemetry registry, and governance API so you can explore the cockpit without mainnet dependencies.【F:package.json†L13-L25】 |
+| Run the full CI battery | `npm run ci:verify` | Executes markdown lint, REST/backend/frontend tests, Solidity lint/compile, coverage enforcement over `src/network/**` + `src/telemetry/**`, security audit, and policy gates exactly like the `Full CI Verification` workflow job.【F:package.json†L26-L52】【F:.github/workflows/ci.yml†L1-L210】 |
+| Stress observability | `npm run p2p:load-tests` | Replays the connection/stream floods plus malformed gossip scenarios so `/debug/resources` and peer-score gauges visibly move before shipping changes.【F:package.json†L53-L60】【F:test/network/loadHarness.observability.test.js†L1-L90】 |
+| Ship dashboards | `npm run dashboard:build` | Emits the production cockpit bundle (Vite + React) mirroring the metrics/dial tiles documented below.【F:package.json†L61-L74】 |
+
+Once these steps are green, the node is already operating as the market-bending machine described above: every transport, ban grid, and treasury lever can be tuned live, and the CI stack enforces it stays that way on every PR.
+
 ## OTel + Prometheus observability (Sprint E4)
 
 - **Centralized wiring:** `configureOpenTelemetry` and `loadTelemetryConfig` normalize `OTEL_SERVICE_NAME`, OTLP headers, and endpoints into a single tracer resource while `startMonitoringServer` always keeps the Prometheus registry and `/metrics` online.【F:src/telemetry/monitoring.js†L1-L52】【F:src/telemetry/config.js†L31-L57】【F:src/telemetry/monitoring.js†L280-L363】
@@ -189,6 +219,46 @@ flowchart LR
 - **Dial success/failure by transport + reason:** The libp2p tracer increments `net_dial_success_total{transport}` and `net_dial_fail_total{transport,reason}` alongside legacy counters, giving Grafana-ready success rates for QUIC/TCP/relay with error breakdowns (timeout/refused/nrm_limit/etc.).【F:src/network/libp2pHostConfig.js†L64-L195】
 - **Per-protocol latency histograms + helpers:** `net_protocol_latency_ms` exposes p50/p95/p99 per handler via `startProtocolTimer`, and `buildCoreProtocolInstrumentation` wraps jobs/control/coordination/settlement handlers without changing signatures.【F:src/telemetry/networkMetrics.js†L146-L160】【F:src/network/protocols/metrics.js†L6-L149】
 - **Ingress/egress byte + message rates:** `net_bytes_total{direction,protocol}` and `net_msgs_total{direction,protocol}` are bumped by `recordProtocolTraffic`, the `observeProtocolExchange` round-trip helper, or the lightweight `trackProtocolMessage` shim so dashboards can spot chatty peers and runaway payload sizes instantly.【F:src/telemetry/networkMetrics.js†L162-L174】【F:src/network/protocols/metrics.js†L35-L103】
+
+## Sprint E7 – Tests, CI & load harness
+
+- **Metrics wiring tests:** `test/telemetry/networkMetrics.test.js` simulates dial success/failure, AutoNAT callbacks, banlist churn, and reachability transitions so the counters/gauges for `net_dial_*`, `nrm_denials_total`, `banlist_*`, and `net_reachability_state` are guaranteed to move when expected.【F:test/telemetry/networkMetrics.test.js†L1-L210】
+- **NRM + ban regression guardrails:** `test/network/resourceManagerConfig.test.js` covers per-IP/per-ASN caps, ban grid gauges/counters, per-protocol connection/stream denials, and connection-manager trims so governance and DoS guardrails always emit telemetry with labels intact.【F:test/network/resourceManagerConfig.test.js†L1-L240】
+- **Load harness observability:** `test/network/loadHarness.observability.test.js` drives the synthetic flood/trim harness, hits `/debug/resources`, and confirms Prometheus metrics for NRM denials, peer-score buckets, and trim reasons move in sync before shipping changes.【F:test/network/loadHarness.observability.test.js†L1-L108】
+- **Monitoring reachability parity:** `test/monitoring.test.js` boots the Prometheus server with a live reachability state, polls `/metrics`, and ensures `net_reachability_state` flips as soon as the backing state changes so dashboards stay truthful.【F:test/monitoring.test.js†L1-L120】
+- **One-command verification:** `npm run p2p:load-tests` is wired in `package.json` and called out in the operator quickstart so you can run the observability scenarios on demand, matching the CI expectation.【F:package.json†L53-L60】
+- **Full CI enforcement:** `.github/workflows/ci.yml` runs lint, tests, coverage, Solidity, TypeScript, docker smoke, security audit, and then the `Full CI Verification` job replays `npm run ci:verify` (which already calls `npm run coverage` with `c8 --check-coverage`) to enforce the exact same coverage thresholds developers run locally. `.github/required-checks.json` ensures every PR and push to `main` is blocked until those jobs are green.【F:.github/workflows/ci.yml†L1-L320】【F:.github/required-checks.json†L1-L10】【F:package.json†L19-L40】
+
+```mermaid
+flowchart LR
+  classDef job fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef gate fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+
+  Lint[Lint Markdown & Links\n(npm run lint)]:::job --> Verify
+  Test[Unit + Frontend Tests\n(npm run ci:test)]:::job --> Verify
+  Solidity[Solidity Lint & Compile]:::job --> Verify
+  TS[Subgraph TypeScript Build]:::job --> Verify
+  Coverage[Coverage Report\nc8 --check-coverage]:::job --> Verify
+  Docker[Docker Build & Smoke]:::job --> Verify
+  Security[Dependency Security Scan]:::job --> Badges
+  Verify[Full CI Verification\nnpm run ci:verify]:::gate --> Badges[Status Badges + Required Checks]:::gate
+```
+
+```mermaid
+flowchart LR
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  Floods[Connection/Stream floods]:::lava --> Harness[Abuse harness\np2p:load-tests]:::neon
+  Gossip[Malformed gossip scripts]:::lava --> Harness
+  Harness -->|NRM denials| Metrics[nrm_denials_total\nbanlist_*]:::frost
+  Harness -->|pressure snapshot| DebugRes[/GET /debug/resources/]:::lava
+  Harness -->|peer penalties| PeerScore[peer_score_bucket_total]:::frost
+  Metrics --> Dashboards[(Cockpit tiles + Grafana)]:::neon
+  DebugRes --> Dashboards
+  PeerScore --> Dashboards
+```
 
 ```mermaid
 flowchart LR
@@ -204,6 +274,15 @@ flowchart LR
   Volume --> Prometheus
   Prometheus --> Grafana[(Dashboards: p50/p95/p99 + byte/msg rates)]:::neon
 ```
+
+## Deployment & governance controls
+
+- **Full-spectrum owner switches:** `AlphaNodeManager.sol` exposes `pause`, `unpause`, `setValidator`, identity registration/rotation, and staking deposit/withdrawal entry points, all `onlyOwner`, so the operator can change validators, controllers, and payout posture instantly without redeployment.【F:contracts/AlphaNodeManager.sol†L1-L140】
+- **Treasury alignment:** The canonical `$AGIALPHA` token contract (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) is wired into the manager as the immutable staking token to ensure emissions and governance budgets stay in sync with on-chain balances.【F:contracts/AlphaNodeManager.sol†L34-L74】
+- **Governance API:** `src/network/apiServer.js` keeps the REST governance plane online (governance routes, `/debug/*`, `/metrics`) so even a non-technical owner can invoke validator updates, ban changes, or telemetry pulls through authenticated HTTP calls or the React cockpit.【F:src/network/apiServer.js†L1-L450】【F:dashboard/src/App.jsx†L1-L200】
+- **Policy gates + health:** The health gate script (`scripts/verify-health-gate.mjs`) and branch gate script ensure PRs cannot merge if the runtime would violate minimum staking posture, health, or branch policy, mirroring the owner’s demand for absolute release control.【F:scripts/verify-health-gate.mjs†L1-L200】【F:scripts/verify-branch-gate.mjs†L1-L120】
+
+These controls, paired with the unstoppable telemetry core above, are why this node behaves like the intelligence engine that can realign markets while remaining under a single set of keys.
 
 ```mermaid
 flowchart TB
@@ -308,31 +387,6 @@ flowchart LR
   DebugNet --> Dashboard[(Dashboard Telemetry tab\nTransport posture · Reachability · Churn/dials)]:::neon
   DebugRes --> Dashboard
   Dashboard --> Runbook[(Runbook drills:\nposture flips · reachability · DoS triage)]:::neon
-```
-
-## Sprint E7 – Tests, CI & load harness
-
-- **Dial + reachability telemetry locked down:** `test/telemetry/networkMetrics.test.js` now simulates dial success/failure events through the transport tracer and asserts the reachability gauge flips with the backing state object, so transport counters cannot silently regress.【F:test/telemetry/networkMetrics.test.js†L1-L150】
-- **Ban grid coverage:** `test/network/resourceManagerConfig.test.js` extends the guard suite with ban add/remove assertions, proving `banlist_entries` gauges and `banlist_changes_total` counters stay in sync with owner governance calls.【F:test/network/resourceManagerConfig.test.js†L1-L210】
-- **Monitoring reachability parity:** `test/monitoring.test.js` boots the Prometheus server with a live reachability state and polls `/metrics` to ensure posture flips land in `net_reachability_state` instantly.【F:test/monitoring.test.js†L1-L150】
-- **Abuse harness observability:** `test/network/loadHarness.observability.test.js` drives connection floods, stream floods, and malformed gossip penalties, then verifies `/debug/resources` pressure grids, `nrm_denials_total`, `peer_score_bucket_total`, and `connmanager_trims_total` all move together.【F:test/network/loadHarness.observability.test.js†L1-L140】
-- **p2p load harness entry point:** `npm run p2p:load-tests` now includes the new observability checks so the abuse harness, API snapshots, and telemetry instrumentation stay verified in CI and local drills alike.【F:package.json†L29-L45】
-- **Coverage + CI gate:** `npm run coverage` invokes `c8 report --check-coverage` for `src/network/**` + `src/telemetry/**`, and the workflow-level `Full CI Verification` job blocks merges whenever that ≥85% line target slips.【F:package.json†L19-L40】【F:.github/workflows/ci.yml†L160-L220】
-
-```mermaid
-flowchart LR
-  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
-  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
-  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
-
-  Floods[Connection/Stream floods]:::lava --> Harness[Abuse harness\np2p:load-tests]:::neon
-  Gossip[Malformed gossip scripts]:::lava --> Harness
-  Harness -->|NRM denials| Metrics[nrm_denials_total\nbanlist_*]:::frost
-  Harness -->|pressure snapshot| DebugRes[/GET /debug/resources/]:::lava
-  Harness -->|peer penalties| PeerScore[peer_score_bucket_total]:::frost
-  PeerScore --> ConnMgr[Connection manager trims]:::neon
-  ConnMgr --> Metrics
-  Metrics --> Dashboards[(Dashboard & Grafana tiles)]:::neon
 ```
 
 ## Owner controls & token
