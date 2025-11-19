@@ -574,6 +574,25 @@ flowchart LR
 3. **Verify quorum + execute:** `npm run treasury:execute -- intents/payout.json --registry config/guardians.json --envelopes ./envelopes --ledger config/intent-ledger.json --threshold 3 --chain-id 11155111 --treasury 0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` aggregates signatures, prints missing guardians, aborts if the digest was already executed, and only then broadcasts `executeTransaction` from the orchestrator key.【F:scripts/treasury/execute-intent.ts†L1-L126】【F:src/treasury/intentLedger.ts†L1-L83】
 4. **Operate with confidence:** Cross-check the envelope/threshold flow against [`docs/treasury-mode-a.md`](docs/treasury-mode-a.md) so guardians and operators follow the exact CBOR schema and domain-binding rules shipped in this repo.【F:docs/treasury-mode-a.md†L1-L58】
 
+### Owner command & pause levers (always-on overrides)
+
+```mermaid
+flowchart TD
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  Owner[Owner wallet\n(governance EOA)]:::lava --> Manager[AlphaNodeManager.sol\nall params mutable]:::neon
+  Owner --> Treasury[TreasuryExecutor.sol\nexecute/pause/sweep]:::frost
+  Manager --> Runtime[Node runtime\nlimits, emissions, metadata]:::neon
+  Treasury --> Chain[executeTransaction\nowner-controlled]:::lava
+  Chain --> LedgerRelay[IntentLedger + events\nreplay shield + audit]:::frost
+```
+
+- **Total mutability without redeploys:** `AlphaNodeManager.sol` keeps emissions, metadata, pausing, validator sets, and orchestration dials owner-updatable at any time, matching the “complete control” mandate while leaving guardian flows untouched.【F:contracts/AlphaNodeManager.sol†L1-L257】
+- **Treasury veto + sweep:** `TreasuryExecutor.sol` restricts `executeTransaction` to the orchestrator the owner designates, ships a pause switch, and exposes `sweep`/`setOrchestrator` hooks so the owner can reroute flows or evacuate assets instantly.【F:contracts/TreasuryExecutor.sol†L1-L113】
+- **Replay-aware logging:** Every successful intent is recorded through `IntentLedger` and Solidity events, letting the owner or auditors confirm which digest executed, with which guardians, and in which transaction before authorizing further runs.【F:src/treasury/intentLedger.ts†L1-L83】【F:test/treasury/treasuryExecutor.test.ts†L1-L178】
+
 ### Guardian aggregation & replay shield (operational map)
 
 ```mermaid
