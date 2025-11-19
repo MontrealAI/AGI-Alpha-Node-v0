@@ -293,3 +293,19 @@ a {
   color: #94a3b8;
   font-size: 0.9rem;
 }
+
+.inline-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.inline-list li {
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 9999px;
+  padding: 0.25rem 0.6rem;
+}
