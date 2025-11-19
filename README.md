@@ -615,4 +615,26 @@ npm run treasury:execute -- intents/payout.json \
   --chain-id 11155111
 ```
 
+### Threshold status + replay guardrails
+
+- **Ledger-gated quorum:** The orchestrator halts immediately if the digest already exists in the `IntentLedger`, preventing replay before any signatures are counted or calldata is crafted.【F:scripts/treasury/execute-intent.ts†L52-L79】【F:src/treasury/intentLedger.ts†L1-L83】
+- **Operator-grade visibility:** Aggregation results enumerate approvals, invalid envelopes (with reasons), and pending guardians so operators know exactly which signature is missing before retrying execution.【F:src/treasury/thresholdAggregator.ts†L16-L59】
+- **Owner-first execution loop:** Once quorum clears, the executor stamps the digest into the ledger with the tx hash and guardian IDs, preserving a durable audit trail that the owner can override or reset later if business logic demands it.【F:scripts/treasury/execute-intent.ts†L82-L107】【F:src/treasury/intentLedger.ts†L24-L83】
+
+```mermaid
+flowchart TD
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  Collect[Collect envelopes\nfrom --envelopes dir]:::lava --> Verify[verifySignedEnvelope\n(Dilithium)]:::frost
+  Verify -->|valid| Dedup[GuardianRegistry\nunique id + paramSet]:::neon
+  Dedup --> Count[Count approvals\nvs threshold M]:::neon
+  Count -->|< M| Pending[Report pending guardians\n+ invalid reasons]:::lava
+  Count -->|≥ M| Ledger[IntentLedger.isExecuted?]:::frost
+  Ledger -->|seen| Abort[Abort: digest already executed]:::lava
+  Ledger -->|new| Execute[treasury:execute\nexecuteTransaction(...)]:::neon
+  Execute --> Record[recordExecution\n(tx hash + guardian ids)]:::frost
+```
+
 This workflow keeps the heavy post-quantum math off-chain, yet the resulting single transaction remains fully owner-controlled, auditable through emitted events, and enforced by the same CI wall of checks that keeps the entire runtime green.
