@@ -591,7 +591,7 @@ flowchart TB
 
 - **Envelope invariants:** `pqEnvelope.ts` pins the payload to `{digest, publicKey, signature, metadata}` with Dilithium parameter sets, CBOR encoding helpers, and deterministic `verifySignedEnvelope` checks to reject malformed or mismatched digests.【F:src/treasury/pqEnvelope.ts†L1-L92】【F:src/treasury/pqEnvelope.ts†L94-L150】
 - **Registry truth source:** `config/guardians.example.json` seeds guardian identities + pubkeys, while `GuardianRegistry` defends against duplicate IDs, reused keys, or revoked guardians before aggregation counts a signature.【F:config/guardians.example.json†L1-L11】【F:src/treasury/guardianRegistry.ts†L1-L54】
-- **Aggregator guardrails:** `aggregateGuardianEnvelopes` refuses unknown guardians, duplicates, or invalid signatures, returns pending/invalid inventories, and only flips `thresholdMet` once M-of-N is satisfied for the exact digest supplied to the orchestrator.【F:src/treasury/thresholdAggregator.ts†L1-L56】
+- **Aggregator guardrails:** `aggregateGuardianEnvelopes` refuses unknown guardians, duplicate signers, parameter-set mismatches, or invalid signatures, returns pending/invalid inventories, and only flips `thresholdMet` once M-of-N is satisfied for the exact digest supplied to the orchestrator.【F:src/treasury/thresholdAggregator.ts†L1-L59】
 - **Orchestrator enforcement:** `scripts/treasury/execute-intent.ts` binds the digest to the configured registry + threshold, prints missing guardians, and calls the treasury executor via ethers once quorum is achieved, keeping the owner in sole control of execution keys and pause levers.【F:scripts/treasury/execute-intent.ts†L1-L107】
 
 ```bash

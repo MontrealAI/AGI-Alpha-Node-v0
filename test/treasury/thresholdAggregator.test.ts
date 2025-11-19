@@ -76,6 +76,36 @@ describe('Guardian threshold aggregation', () => {
     expect(report.thresholdMet).toBe(false);
   });
 
+  it('fails validation when the Dilithium parameter set differs from the registry', async () => {
+    const dilithium = await getDilithiumInstance();
+    const [pairA, pairB] = [dilithium.generateKeys(1), dilithium.generateKeys(2)];
+
+    const guardians: GuardianRecord[] = [
+      { id: 'guardian-1', publicKey: Buffer.from(pairA.publicKey).toString('base64'), parameterSet: 2 },
+      { id: 'guardian-2', publicKey: Buffer.from(pairB.publicKey).toString('base64'), parameterSet: 2 }
+    ];
+
+    const registry = new GuardianRegistry(guardians);
+    const envelope = await signIntentDigest({
+      digest,
+      privateKey: pairA.privateKey,
+      publicKey: pairA.publicKey,
+      parameterSet: 1,
+      metadata: { guardianId: 'guardian-1' }
+    });
+
+    const report = await aggregateGuardianEnvelopes([envelope], {
+      digest,
+      threshold: 1,
+      registry
+    });
+
+    expect(report.approvals).toHaveLength(0);
+    expect(report.invalid[0].reason).toMatch(/parameter set mismatch/i);
+    expect(report.pendingGuardians.map((g) => g.id)).toEqual(['guardian-1', 'guardian-2']);
+    expect(report.thresholdMet).toBe(false);
+  });
+
   it('flags digest mismatches and keeps the registry inventory intact', async () => {
     const dilithium = await getDilithiumInstance();
     const [pairA, pairB] = [dilithium.generateKeys(2), dilithium.generateKeys(2)];
