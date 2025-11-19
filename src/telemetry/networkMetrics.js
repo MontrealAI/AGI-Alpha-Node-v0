@@ -69,6 +69,20 @@ export function createNetworkMetrics({
     registers
   });
 
+  const netDialSuccessTotal = new Counter({
+    name: 'net_dial_success_total',
+    help: 'Total successful outbound dials grouped by transport',
+    labelNames: ['transport'],
+    registers
+  });
+
+  const netDialFailTotal = new Counter({
+    name: 'net_dial_fail_total',
+    help: 'Total failed outbound dials grouped by transport and reason',
+    labelNames: ['transport', 'reason'],
+    registers
+  });
+
   const inboundConnections = new Counter({
     name: 'agi_alpha_node_net_inbound_connection_total',
     help: 'Inbound connections accepted grouped by transport',
@@ -137,6 +151,28 @@ export function createNetworkMetrics({
     registers
   });
 
+  const protocolLatency = new Histogram({
+    name: 'net_protocol_latency_ms',
+    help: 'Observed protocol latency in milliseconds grouped by protocol and direction',
+    labelNames: ['protocol', 'direction'],
+    buckets: [1, 5, 10, 25, 50, 100, 250, 500, 1_000, 2_500, 5_000, 10_000, 20_000],
+    registers
+  });
+
+  const protocolBytesTotal = new Counter({
+    name: 'net_bytes_total',
+    help: 'Total bytes exchanged grouped by direction and protocol',
+    labelNames: ['direction', 'protocol'],
+    registers
+  });
+
+  const protocolMsgsTotal = new Counter({
+    name: 'net_msgs_total',
+    help: 'Total messages exchanged grouped by direction and protocol',
+    labelNames: ['direction', 'protocol'],
+    registers
+  });
+
   updateReachabilityMetric({ reachabilityState: reachabilityStateGauge }, 'unknown');
 
   const bindings = [];
@@ -176,11 +212,16 @@ export function createNetworkMetrics({
     dialAttempts,
     dialSuccesses,
     dialFailures,
+    netDialSuccessTotal,
+    netDialFailTotal,
     inboundConnections,
     connectionsOpen,
     connectionsClose,
     connectionsLive,
     connectionLatency,
+    protocolLatency,
+    protocolBytesTotal,
+    protocolMsgsTotal,
     nrmDenialsTotal,
     connmanagerTrimsTotal,
     banlistEntries,
@@ -198,6 +239,42 @@ export function recordConnectionLatency(metrics, { transport, direction = 'out',
   metrics.connectionLatency.observe({ transport, direction }, boundedLatency);
 }
 
+export function recordProtocolLatency(metrics, { protocol, direction = DEFAULT_DIRECTION, latencyMs }) {
+  if (!metrics?.protocolLatency || latencyMs === undefined || latencyMs === null) {
+    return;
+  }
+  const normalizedProtocol = normalizeProtocol(protocol);
+  const normalizedDirection = normalizeDirection(direction);
+  const boundedLatency = latencyMs < 0 ? 0 : latencyMs;
+  metrics.protocolLatency.observe({ protocol: normalizedProtocol, direction: normalizedDirection }, boundedLatency);
+}
+
+export function startProtocolTimer(metrics, { protocol, direction = DEFAULT_DIRECTION } = {}) {
+  const startedAt = Date.now();
+  const stop = () => {
+    const latencyMs = Math.max(0, Date.now() - startedAt);
+    recordProtocolLatency(metrics, { protocol, direction, latencyMs });
+    return latencyMs;
+  };
+  return { stop };
+}
+
+export function recordProtocolTraffic(
+  metrics,
+  { protocol, direction = DEFAULT_DIRECTION, bytes = 0, messages = 1 } = {}
+) {
+  const normalizedProtocol = normalizeProtocol(protocol);
+  const normalizedDirection = normalizeDirection(direction);
+  if (metrics?.protocolBytesTotal && Number.isFinite(bytes)) {
+    const boundedBytes = bytes < 0 ? 0 : bytes;
+    metrics.protocolBytesTotal.inc({ direction: normalizedDirection, protocol: normalizedProtocol }, boundedBytes);
+  }
+  if (metrics?.protocolMsgsTotal && Number.isFinite(messages)) {
+    const boundedMessages = messages < 0 ? 0 : messages;
+    metrics.protocolMsgsTotal.inc({ direction: normalizedDirection, protocol: normalizedProtocol }, boundedMessages);
+  }
+}
+
 function normalizeDirection(direction) {
   if (direction?.stat?.direction) {
     return normalizeDirection(direction.stat.direction);
@@ -207,6 +284,12 @@ function normalizeDirection(direction) {
   if (normalized === 'in' || normalized === 'inbound') return 'in';
   if (normalized === 'out' || normalized === 'outbound') return 'out';
   return DEFAULT_DIRECTION;
+}
+
+function normalizeProtocol(protocol) {
+  if (!protocol && protocol !== 0) return 'unknown';
+  const normalized = String(protocol).trim().toLowerCase();
+  return normalized.length ? normalized : 'unknown';
 }
 
 function normalizeCloseReason(reason) {

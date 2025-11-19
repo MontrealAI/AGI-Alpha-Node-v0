@@ -61,6 +61,32 @@ function nowMs() {
   return Date.now();
 }
 
+function resolveDialFailureReason(detail, fallback = 'error') {
+  if (!detail) return fallback;
+  const reason =
+    detail?.reason ??
+    detail?.error?.code ??
+    detail?.error?.message ??
+    detail?.code ??
+    detail?.status ??
+    detail?.message;
+  return reason ?? fallback;
+}
+
+function normalizeDialFailureReason(reason) {
+  if (!reason) return 'error';
+  const normalized = String(reason).toLowerCase();
+  if (normalized.includes('timeout')) return 'timeout';
+  if (normalized.includes('reset')) return 'reset';
+  if (normalized.includes('refused') || normalized.includes('refuse')) return 'refused';
+  if (normalized.includes('ban')) return 'banned';
+  if (normalized.includes('protocol')) return 'protocol';
+  if (normalized.includes('dns')) return 'dns';
+  if (normalized.includes('tls')) return 'tls';
+  if (normalized.includes('limit')) return 'nrm_limit';
+  return normalized.length ? normalized : 'error';
+}
+
 export function createTransportTracer({ plan, logger: baseLogger, metrics = null, tracer: tracerOverride = null } = {}) {
   const log = resolveLogger(baseLogger);
   const preference = plan?.transports?.preference ?? 'prefer-quic';
@@ -104,7 +130,8 @@ export function createTransportTracer({ plan, logger: baseLogger, metrics = null
     skipAttempt = false,
     event,
     transportOverride = null,
-    span = null
+    span = null,
+    detail = null
   } = {}) {
     const transport = transportOverride ?? classifyTransport(address);
     const latencyMs = startedAt ? Math.max(0, nowMs() - startedAt) : undefined;
@@ -116,8 +143,11 @@ export function createTransportTracer({ plan, logger: baseLogger, metrics = null
     if (direction === 'out') {
       if (success === true) {
         metrics?.dialSuccesses?.inc?.({ transport });
+        metrics?.netDialSuccessTotal?.inc?.({ transport });
       } else if (success === false) {
+        const reason = normalizeDialFailureReason(resolveDialFailureReason(detail));
         metrics?.dialFailures?.inc?.({ transport });
+        metrics?.netDialFailTotal?.inc?.({ transport, reason });
       }
     }
 
@@ -213,7 +243,8 @@ export function createTransportTracer({ plan, logger: baseLogger, metrics = null
         skipAttempt: seenStart,
         event: success ? 'conn_success' : 'conn_failure',
         transportOverride: transport,
-        span
+        span,
+        detail
       });
     };
 
@@ -226,7 +257,8 @@ export function createTransportTracer({ plan, logger: baseLogger, metrics = null
         direction: 'in',
         success: true,
         startedAt: detail?.startedAt,
-        event: 'conn_success'
+        event: 'conn_success',
+        detail
       });
     };
 
