@@ -72,6 +72,7 @@
     "@types/node": "^20.14.10",
     "@vitejs/plugin-react": "^5.1.1",
     "c8": "^9.1.0",
+    "chart.js": "^4.5.1",
     "cross-env": "^7.0.3",
     "husky": "^9.1.6",
     "jsdom": "^24.1.0",

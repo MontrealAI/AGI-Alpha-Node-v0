@@ -1,58 +1,65 @@
-# Network operations runbook
-<!-- markdownlint-disable MD013 -->
+# Network Operations Runbook
 
-The AGI Alpha Node network stack is instrumented to stay observable and reversible during transport flips, AutoNAT learning, and NRM enforcement. Use this runbook when operating production clusters or CI smoke environments.
+<!-- markdownlint-disable MD013 MD033 -->
 
-## Transport postures (QUIC-only, TCP-only, mixed)
+This runbook distills the network posture controls, debug overlays, and dashboard tiles operators need for the AGI Alpha Node runtime.
 
-Set posture via environment or Helm values and restart the node. QUIC-first remains the recommended default.
+## Transport posture switches (QUIC-first by default)
+
+| Mode | Environment overrides | Notes |
+| --- | --- | --- |
+| QUIC-only | `TRANSPORT_ENABLE_QUIC=true`<br/>`TRANSPORT_ENABLE_TCP=false` | Fastest path; preferred when NAT traversal is healthy. |
+| TCP-only | `TRANSPORT_ENABLE_QUIC=false`<br/>`TRANSPORT_ENABLE_TCP=true` | Fallback for QUIC-blocked environments. |
+| Mixed (QUIC-first) | `TRANSPORT_ENABLE_QUIC=true`<br/>`TRANSPORT_ENABLE_TCP=true` | Default: QUIC with TCP safety net. |
+
+Apply overrides via the process environment or a systemd unit drop-in, then restart the node. The libp2p transport planner validates that at least one transport stays enabled and logs the resolved dial preference on boot.
 
 ```bash
-# QUIC-first with TCP fallback (default)
-export TRANSPORT_ENABLE_QUIC=true
-export TRANSPORT_ENABLE_TCP=true
-export AUTONAT_ENABLED=true
-
-# QUIC-only (preferred for Internet-facing rollouts)
+# Example: force QUIC-only on a fleet
 export TRANSPORT_ENABLE_QUIC=true
 export TRANSPORT_ENABLE_TCP=false
-export AUTONAT_ENABLED=true
-
-# TCP-only (rollback / restrictive firewalls)
-export TRANSPORT_ENABLE_QUIC=false
-export TRANSPORT_ENABLE_TCP=true
-export AUTONAT_ENABLED=false
+node src/index.js
 ```
 
-`ENABLE_HOLE_PUNCHING=true` keeps relay/hole-punching online for private peers; disable it only if policy requires it. After posture changes, confirm the plan via `/debug/network` (transport posture tile) or the Prometheus `net_dial_*` counters.
+> The reachability tracker honours manual overrides: set `AUTONAT_ENABLED=false` to freeze the state, or keep it on for self-assessment.
 
-## Reachability and churn panels
+## Debugging surfaces to bookmark
 
-- **Reachability timeline** (dashboard: Network posture → Reachability timeline): tracks the AutoNAT/override view of `public | private | unknown`. Flips to `public` after successful AutoNAT probes; prolonged `unknown` means AutoNAT is disabled or starved.
-- **Churn & dials**:
-  - `opensPerSec` / `closesPerSec` show directional churn. A sustained close rate > open rate signals trims or remote resets.
-  - `dials.recent.successRate` reflects QUIC/TCP dial health over the selected window. Drop below 0.98 triggers investigation (DNS, firewall, rcmgr denials).
-  - Live counts (`churn.live`) mirror the in-memory connection gauges.
+- `GET /debug/network?window=15` — reachability timeline, live connection churn (opens/sec, closes/sec), dial success/failure by transport, and transport share for the window.
+- `GET /debug/resources?window=15` — normalized resource limits/usage grids, NRM denials (by limit type & protocol) with per-second rates, and connection manager trims by reason.
+- `GET /metrics` — Prometheus exposition (dial, protocol latency, NRM/bans, ConnMgr trims).
 
-## Detecting DoS/overload via NRM & bans
+All endpoints remain read-only and API-key gated; responses are JSON shaped for dashboards and copy/paste into incident notes.
 
-- `/debug/resources` surfaces per-limit and per-protocol NRM denials (`nrmDenials.byLimitType`, `nrmDenials.byProtocol`) plus connection-manager trims.
-- Spikes on `per_protocol` or `streams` limits with matching `connmanager_trims_total` usually indicate a gossip/bitswap surge; raise only the specific protocol caps after confirming workload.
-- Ban grid changes appear in `banlist_*` metrics and the `bans` payload; if abuse is concentrated on a single ASN/IP, apply a ban via governance and watch `banlist_changes_total`.
+## Reading the dashboard tiles
 
-## Confirming dial health during rollouts
+- **Transport posture**: Doughnut chart of QUIC/TCP (and relay/other, if present) share over the last window. Expect QUIC dominance when `TRANSPORT_ENABLE_QUIC=true`.
+- **Reachability timeline**: Step-line series mapped to `public=2`, `private=1`, `unknown=0`. Sustained zeros usually means AutoNAT is disabled or blocked.
+- **Resource pressure**: Stacked bars of `nrm_denials_total` by limit type and protocol plus connection trims. Rising trims + rising denials implies the Connection Manager is actively shedding load.
+- **Churn & dials**: Bar charts for opens/closes per second and dial attempts per transport; success rate is annotated (recent + cumulative) to spot rollout regressions quickly.
 
-1. Flip posture (see above) and redeploy.
-2. Watch **Transport posture** and **Dial success (window)** in `/debug/network`:
-   - QUIC share should trend toward 100% in QUIC-only mode; TCP-only should show QUIC=0.
-   - `dials.recent.successRate` should stabilize ≥0.98 within a few minutes.
-3. Verify reachability transitions: the timeline should show `public` (Internet) or `private` (LAN) after AutoNAT probes. If stuck on `unknown`, ensure `AUTONAT_ENABLED` and UDP reachability.
-4. If success rate drops, check `nrmDenials` for `limit_type=streams|connections` and `failureReasons` that include `timeout`, `reset`, or `nrm_limit`. Adjust per-protocol limits first; revert transport posture last.
+## Detecting DoS or overload
 
-## Quick API references
+1. Check `/debug/resources`: spikes in `nrmDenials.recent.byLimitType.fd` or `memory` indicate exhaustion; protocol-heavy spikes (e.g., `/meshsub/1.1.0`) are per-protocol DoS candidates.
+2. Inspect `connectionManagerStats.recent.byReason`: frequent `high_water` trims confirm the Connection Manager is defending watermarks.
+3. Validate dial success: in `/debug/network`, a drop in `dials.recent.successRate` for QUIC but not TCP suggests UDP/QUIC filtering; switch to TCP-only temporarily if needed.
+4. Ban abusive origins: use the governance ban APIs to block offending IPs/peers/ASNs; the ban grid in `/debug/resources` updates immediately for auditability.
 
-- `/debug/network?window=15` → transport share, dial success/failure rollups, churn (opens/closes/sec), reachability timeline, and live counts.
-- `/debug/resources` → NRM limit grids, usage, denials, connection-manager watermarks/trims, and ban state.
-- `/metrics` → Prometheus counters/gauges (`net_dial_*`, `nrm_denials_total`, `connmanager_trims_total`, `banlist_*`).
+## Rolling out to a new neighbourhood
 
-Use these together: if churn spikes and `nrm_denials_total` climbs for `/meshsub/1.1.0`, trim gossip peers and monitor the dial success rate; if reachability flaps between `public` and `unknown`, prioritize NAT debugging before widening limits.
+1. Set the target transport mix (QUIC-first recommended) and confirm the plan in logs on startup.
+2. Watch the **Churn & dials** tile: success rates per transport should stay ≥98% and opens/closes should stabilise after initial peer discovery.
+3. Watch the **Reachability timeline**: reachability should settle on `public` or `private` consistently; flapping suggests NAT traversal issues.
+4. If rcmgr denials spike for the rollout protocol, raise the specific per-protocol caps instead of global caps and recheck `/debug/resources`.
+
+## Quick incident drill
+
+```bash
+# Snapshot the last 15 minutes of posture
+curl -H "x-api-key: $API_KEY" "$BASE_URL/debug/network?window=15" | jq '.reachability, .churn, .dials'
+
+# Capture NRM denials and connection trims
+curl -H "x-api-key: $API_KEY" "$BASE_URL/debug/resources?window=15" | jq '.nrmDenials, .connectionManagerStats'
+```
+
+Record the window, limit type, protocol, and transport implicated; triage by narrowing the transport mix (QUIC-only or TCP-only) and tightening protocol-specific caps before adjusting globals.
