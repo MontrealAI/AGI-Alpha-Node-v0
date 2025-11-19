@@ -48,6 +48,13 @@ This runtime is engineered as the operator-owned intelligence engine capable of 
 
 > Owner directives stay absolute: the `$AGIALPHA` contract anchor (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) and `AlphaNodeManager.sol` keep every parameter, pause switch, and emission lever adjustable by the contract owner with no redeploy required.【F:contracts/AlphaNodeManager.sol†L1-L120】
 
+## At a glance (Mode A + treasury control)
+
+- **Post‑quantum guardians, standard envelopes:** Guardians sign the canonicalized treasury digest with Dilithium, emitting CBOR envelopes that bundle `{digest, pubkey, signature, metadata}` for verifiable portability across any handoff or storage medium.【F:src/treasury/pqEnvelope.ts†L1-L92】
+- **Registry‑backed thresholding:** The orchestrator tallies guardian envelopes against a registry, rejects duplicates or unknown keys, and flips the execution switch only when the M‑of‑N quorum is satisfied for the exact digest under review.【F:src/treasury/guardianRegistry.ts†L1-L54】【F:src/treasury/thresholdAggregator.ts†L1-L56】
+- **Owner‑gated on‑chain execution:** Once quorum is met, the orchestrator dispatches `executeTransaction(address,uint256,bytes)` through the owner‑controlled Treasury Executor, preserving pause, replay armor, and sweep levers without touching guardian keys.【F:contracts/TreasuryExecutor.sol†L1-L113】【F:scripts/treasury/execute-intent.ts†L1-L107】
+- **CI wall remains green:** `npm run ci:verify` mirrors the GitHub Actions matrix (lint, tests, coverage, Solidity, subgraph, audit, policy) so branch protection and badges reflect the same bar locally and on PRs.【F:.github/workflows/ci.yml†L1-L210】【F:package.json†L29-L46】
+
 ## Table of contents
 
 1. [Why operators deploy this node](#why-operators-deploy-this-node)
