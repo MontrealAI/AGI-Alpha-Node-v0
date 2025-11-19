@@ -1,8 +1,75 @@
 import http from 'node:http';
+import { trace } from '@opentelemetry/api';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
+import { resourceFromAttributes } from '@opentelemetry/resources';
+import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { collectDefaultMetrics, Counter, Gauge, Registry, Summary } from 'prom-client';
 import { createNetworkMetrics } from './networkMetrics.js';
 import { DEFAULT_PEER_SCORE_THRESHOLDS } from '../services/peerScoring.js';
 import { applyPeerScoreSnapshot, createPeerScoreMetrics } from './peerScoreMetrics.js';
+
+const DEFAULT_SERVICE_NAME = process.env.OTEL_SERVICE_NAME || 'agi-alpha-node';
+let cachedTracer = null;
+
+function parseOtlpHeaders(rawHeaders) {
+  if (!rawHeaders || typeof rawHeaders !== 'string') {
+    return undefined;
+  }
+
+  return rawHeaders
+    .split(/[,;]/)
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.includes('='))
+    .reduce((acc, entry) => {
+      const [key, ...rest] = entry.split('=');
+      const value = rest.join('=').trim();
+      if (key && value) {
+        acc[key.trim()] = value;
+      }
+      return acc;
+    }, {});
+}
+
+export function configureOpenTelemetry({ logger } = {}) {
+  if (cachedTracer) {
+    return { tracer: cachedTracer, stop: async () => {} };
+  }
+
+  const resource = resourceFromAttributes({ 'service.name': DEFAULT_SERVICE_NAME });
+  const provider = new NodeTracerProvider({ resource });
+
+  const otlpEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
+  const otlpHeaders = parseOtlpHeaders(process.env.OTEL_EXPORTER_OTLP_HEADERS);
+
+  if (otlpEndpoint) {
+    const exporter = new OTLPTraceExporter({ url: otlpEndpoint, headers: otlpHeaders });
+    provider.addSpanProcessor(new BatchSpanProcessor(exporter));
+    logger?.info?.({ otlpEndpoint }, 'OTLP trace exporter configured');
+  } else {
+    logger?.info?.('OTLP trace exporter disabled; spans remain local until an endpoint is configured');
+  }
+
+  provider.register();
+  cachedTracer = trace.getTracer(DEFAULT_SERVICE_NAME);
+
+  const stop = async () => {
+    try {
+      await provider.shutdown();
+    } catch (error) {
+      logger?.warn?.(error, 'Failed to shutdown OpenTelemetry provider cleanly');
+    } finally {
+      cachedTracer = null;
+    }
+  };
+
+  return { tracer: cachedTracer, stop };
+}
+
+export function getTelemetryTracer({ logger } = {}) {
+  const { tracer } = configureOpenTelemetry({ logger });
+  return tracer;
+}
 
 const alphaWuMetricState = {
   totalCounters: [],
@@ -232,6 +299,7 @@ export function startMonitoringServer({
   networkMetrics = null,
   registry: providedRegistry = null
 } = {}) {
+  const tracer = getTelemetryTracer({ logger });
   const registry = providedRegistry ?? new Registry();
   collectDefaultMetrics({ register: registry, prefix: 'agi_alpha_node_' });
 
@@ -543,6 +611,7 @@ export function startMonitoringServer({
 
   return {
     registry,
+    tracer,
     server,
     stakeGauge,
     heartbeatGauge,

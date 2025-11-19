@@ -1,5 +1,6 @@
 import http from 'node:http';
 import { randomUUID } from 'node:crypto';
+import { context as otelContext, propagation, SpanKind, trace as otelTrace } from '@opentelemetry/api';
 import pino from 'pino';
 import { getAddress, parseUnits } from 'ethers';
 import { z } from 'zod';
@@ -52,6 +53,7 @@ import {
 } from '../services/telemetryIngestion.js';
 import { createGlobalIndexEngine } from '../services/globalIndexEngine.js';
 import { createSyntheticLaborEngine } from '../services/syntheticLaborEngine.js';
+import { getTelemetryTracer } from '../telemetry/monitoring.js';
 
 function jsonResponse(res, statusCode, payload) {
   const body = JSON.stringify(payload, (_, value) => (typeof value === 'bigint' ? value.toString() : value));
@@ -927,7 +929,8 @@ export function startAgentApi({
   corsOrigin = null,
   peerScoreStore = null,
   resourceManager = null,
-  connectionManager = null
+  connectionManager = null,
+  tracer: tracerOverride = null
 } = {}) {
   const jobs = new Map();
   const lifecycleJobs = new Map();
@@ -949,6 +952,8 @@ export function startAgentApi({
       ledgerEntries: 0
     }
   };
+
+  const tracer = tracerOverride ?? getTelemetryTracer({ logger });
 
   const telemetryService =
     telemetry instanceof TelemetryIngestionService
@@ -1012,9 +1017,11 @@ export function startAgentApi({
   }
 
   function buildRequestMeta(req) {
+    const activeSpan = otelTrace.getSpan(otelContext.active());
     return {
       ip: req.socket?.remoteAddress ?? null,
-      userAgent: req.headers?.['user-agent'] ?? null
+      userAgent: req.headers?.['user-agent'] ?? null,
+      traceId: activeSpan?.spanContext?.().traceId ?? null
     };
   }
 
@@ -1121,7 +1128,33 @@ export function startAgentApi({
   }
 
   const server = http.createServer(async (req, res) => {
-    try {
+    const startedAt = process.hrtime.bigint();
+    let routeLabel = req.url ?? 'unrouted';
+    const extractedContext = propagation.extract(otelContext.active(), req.headers ?? {});
+    const span = tracer?.startSpan(
+      'http.server',
+      {
+        kind: SpanKind.SERVER,
+        attributes: {
+          'http.method': req.method ?? 'UNKNOWN',
+          'http.target': req.url ?? '',
+          'http.route': routeLabel
+        }
+      },
+      extractedContext
+    );
+    const spanScope = span ? otelTrace.setSpan(extractedContext, span) : extractedContext;
+
+    const endSpan = (statusCode = res.statusCode ?? 0) => {
+      if (!span) return;
+      const latencyMs = Number(process.hrtime.bigint() - startedAt) / 1_000_000;
+      span.setAttribute('http.status_code', statusCode);
+      span.setAttribute('http.route', routeLabel);
+      span.setAttribute('http.server.latency_ms', latencyMs);
+      span.end();
+    };
+
+    const handleRequest = async () => {
       applyCorsHeaders(req, res, allowedCorsOrigin);
 
       if (req.method === 'OPTIONS') {
@@ -1139,10 +1172,15 @@ export function startAgentApi({
       }
 
       const { pathname } = requestUrl;
+      routeLabel = pathname || routeLabel;
 
       if (!req.url) {
         jsonResponse(res, 404, { error: 'Not found' });
         return;
+      }
+
+      if (span && pathname) {
+        span.setAttribute('http.route', pathname);
       }
 
       if (req.method === 'GET' && pathname === '/debug/peerscore') {
@@ -2267,9 +2305,17 @@ export function startAgentApi({
       }
 
       jsonResponse(res, 404, { error: 'Not found' });
+    };
+
+    try {
+      await otelContext.with(spanScope, handleRequest);
     } catch (error) {
       logger.error(error, 'API request handling failed');
-      jsonResponse(res, 500, { error: 'Internal server error' });
+      if (!res.headersSent) {
+        jsonResponse(res, 500, { error: 'Internal server error' });
+      }
+    } finally {
+      endSpan(res.statusCode ?? 500);
     }
   });
 
