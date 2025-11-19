@@ -110,6 +110,12 @@ curl -s localhost:3000/debug/resources | jq '{limits, usage, bans}'
 # per-IP/ASN limits, ban grid, and live utilization/pressure telemetry.
 ```
 
+```bash
+curl -s localhost:3000/debug/network?window=15 | jq '{reachability, churn, dials, transportPosture}'
+# Mirrors the dashboard tiles: reachability timeline, connection churn snapshots,
+# dial success/failure by transport, and QUIC/TCP share for the selected window.
+```
+
 **Debug snapshot payload (shape):**
 
 ```jsonc
@@ -284,6 +290,7 @@ flowchart TD
 
 - **Operator JSON for network posture:** `GET /debug/network?window=15` now emits reachability snapshots + timeline, connection churn (live + opens/sec + closes/sec), dial success/fail tallies by transport/reason, and transport posture shares for the last window, powered by the in-memory network metrics counters.【F:src/network/apiServer.js†L1353-L1503】
 - **NRM + connection manager counters:** `/debug/resources` adds `nrmDenials` and `connectionManagerStats` so dashboards see rcmgr drops and trim reasons without scraping Prometheus.【F:src/network/apiServer.js†L1353-L1405】
+- **Window-synced resource overlays:** The cockpit now calls `/debug/resources?window=<n>` so NRM denials and connection-manager trims share the same observation window as `/debug/network`, making the Telemetry tab’s tiles and runbook drills match reality down to the minute.【F:dashboard/src/api/client.js†L45-L57】【F:dashboard/src/views/TelemetryView.jsx†L121-L199】
 - **Dashboard telemetry tab upgrade:** The Telemetry view now renders read-only tiles for transport posture, reachability timeline, resource pressure, and churn/dial health, all still gated by the same API key flow.【F:dashboard/src/views/TelemetryView.jsx†L1-L323】【F:dashboard/src/api/client.js†L31-L56】
 - **Runbook for operators:** [`docs/network-operations.md`](docs/network-operations.md) ties posture flips, reachability interpretation, NRM DoS signals, and rollout dial validation into a single operations guide.【F:docs/network-operations.md†L1-L66】
 
@@ -312,6 +319,7 @@ flowchart LR
 | --- | --- |
 | `GET /health` / `GET /healthz` | Liveness/readiness probes. |
 | `GET /debug/resources` | Limits + usage grid, bans, and NRM snapshot (per-protocol/IP/ASN).【F:src/network/apiServer.js†L1353-L1405】 |
+| `GET /debug/network` | Reachability timeline, connection churn, dial success/failure, and transport posture windows.【F:src/network/apiServer.js†L1409-L1552】 |
 | `POST/DELETE /governance/bans` | Add or remove IP/peer/ASN bans (owner token required); updates gauges/counters automatically.【F:src/network/apiServer.js†L2050-L2130】 |
 | `GET /debug/peerscore` | GossipSub v1.1 peer score summaries for mesh tuning. |
 | `GET /metrics` | Prometheus/OTel surface for network, peer scoring, SLU, and index gauges. |
@@ -330,7 +338,7 @@ Additional entry points: `npm run p2p:simulate` (1k+ virtual peers), `npm run da
 
 1. **Install & hydrate**: `npm ci && npm run db:migrate && npm run db:seed` to prime the SQLite spine and dashboards.
 2. **Boot**: `npm start` (or `npm run dashboard:preview` for the cockpit) to expose `/health`, `/metrics`, `/debug/resources`, and governance surfaces on port 3000.
-3. **Observe**: `curl -s localhost:3000/metrics | head` to confirm NRM/ban/trim counters are live; `curl -s localhost:3000/debug/resources` to confirm per-protocol ceilings and bans load.
+3. **Observe**: `curl -s localhost:3000/metrics | head` to confirm NRM/ban/trim counters are live; `curl -s localhost:3000/debug/resources` to confirm per-protocol ceilings and bans load; `curl -s localhost:3000/debug/network?window=15` to verify reachability, churn, and dial success are advancing.
 4. **Govern**: Use authenticated `POST/DELETE /governance/bans` or `node src/index.js governance:*` to pause/unpause, rotate validators, or retune emissions without redeploying.
 5. **Harden**: Enforce branch protection with `.github/required-checks.json` and mirror CI locally via `npm run ci:verify` before opening PRs.
 
