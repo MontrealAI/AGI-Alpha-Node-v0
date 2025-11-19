@@ -616,3 +616,42 @@ npm run treasury:execute -- intents/payout.json \
 ```
 
 This workflow keeps the heavy post-quantum math off-chain, yet the resulting single transaction remains fully owner-controlled, auditable through emitted events, and enforced by the same CI wall of checks that keeps the entire runtime green.
+
+### Guardian quorum + replay armor (visual)
+
+```mermaid
+flowchart LR
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  subgraph Intake[Envelope intake]
+    Inbox[Guardian CBOR drops\n./envelopes/*.cbor]:::frost
+    Registry[GuardianRegistry\nconfig/guardians.json]:::lava
+  end
+
+  subgraph Verification[Verification + threshold]
+    Verify[verifySignedEnvelope\n(digest match + Dilithium)]:::neon
+    Unique[Unique guardians only\nno duplicate IDs/keys]:::neon
+    Threshold[thresholdMet?\nM-of-N approvals]:::lava
+  end
+
+  subgraph Execution[Execution + replay lock]
+    Ledger[IntentLedger\nexecuted digests + tx hashes]:::frost
+    Execute[executeTransaction(to,value,data)\nowner-orchestrated call]:::lava
+    Event[IntentExecuted event\nwith digest + executor]:::neon
+  end
+
+  Inbox --> Verify
+  Registry --> Verify
+  Verify --> Unique --> Threshold
+  Threshold -- "< M" --> Pending[Print pending guardians\nabort run]:::frost
+  Threshold -- "≥ M" --> Execute
+  Execute --> Ledger
+  Ledger -->|replay check| Verify
+  Execute --> Event
+```
+
+- **Configurable quorum:** `aggregateGuardianEnvelopes` respects the `--threshold` flag or `THRESHOLD_M` env var so operators can raise/lower M without redeploying; every invalid or duplicate signature is reported with the guardian ID for quick remediation.【F:src/treasury/thresholdAggregator.ts†L1-L56】【F:scripts/treasury/execute-intent.ts†L1-L107】
+- **Replay safety baked in:** `IntentLedger` snapshots every executed digest with tx hash + guardian set, and `treasury:execute` refuses to broadcast anything already recorded—closing the door on accidental replays or duplicate payouts.【F:src/treasury/intentLedger.ts†L1-L83】【F:scripts/treasury/execute-intent.ts†L1-L126】
+- **Owner override + pause control:** The owner can rotate orchestrators, pause execution, or wipe/re-mark digests directly on `TreasuryExecutor.sol`, keeping every lever in one contract while the off-chain pipeline does the heavy PQ lifting.【F:contracts/TreasuryExecutor.sol†L1-L113】
