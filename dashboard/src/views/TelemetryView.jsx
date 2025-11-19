@@ -46,7 +46,7 @@ export function TelemetryView({ baseUrl, apiKey, refreshNonce = 0 }) {
   }
 
   const reachabilitySeries = useMemo(() => {
-    const timeline = (networkDebug?.reachability?.timeline ?? []).slice(-20);
+    const timeline = (networkDebug?.reachability?.timeline ?? []).slice(-60);
     const map = { public: 2, private: 1, unknown: 0 };
     const labels = timeline.map((entry) => new Date(entry.updatedAt ?? Date.now()).toLocaleTimeString());
     const data = timeline.map((entry) => map[entry.state] ?? 0);
@@ -81,6 +81,16 @@ export function TelemetryView({ baseUrl, apiKey, refreshNonce = 0 }) {
         }
       ]
     };
+  }, [networkDebug]);
+
+  const transportHealth = useMemo(() => {
+    const perTransport = networkDebug?.dials?.recent?.perTransport ?? {};
+    return Object.entries(perTransport).map(([transport, stats]) => ({
+      transport,
+      success: stats?.success ?? 0,
+      failure: stats?.failure ?? 0,
+      successRate: stats?.successRate ?? null
+    }));
   }, [networkDebug]);
 
   const churnDialData = useMemo(() => {
@@ -162,6 +172,10 @@ export function TelemetryView({ baseUrl, apiKey, refreshNonce = 0 }) {
     };
   }, [resourceDebug]);
 
+  const reachabilityWindowSeconds = networkDebug?.reachability?.windowSeconds ?? windowMinutes * 60;
+  const latestDenialSnapshot = resourceDebug?.nrmDenials?.latest;
+  const latestTrimsSnapshot = resourceDebug?.connectionManagerStats?.latest;
+
   async function loadProviders() {
     try {
       const payload = await fetchProviders(baseUrl, apiKey, { limit: 100 });
@@ -229,11 +243,25 @@ export function TelemetryView({ baseUrl, apiKey, refreshNonce = 0 }) {
             ) : (
               <div className="small-text">No dial data yet.</div>
             )}
+            {transportHealth.length > 0 && (
+              <ul className="inline-list small-text" aria-label="Per-transport success share">
+                {transportHealth.map((row) => {
+                  const total = row.success + row.failure;
+                  return (
+                    <li key={row.transport}>
+                      <strong>{row.transport.toUpperCase()}</strong> · sr{' '}
+                      {row.successRate !== null ? formatNumber(row.successRate * 100, 2) : '—'}% · {row.success}/{total}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
 
           <div className="metric-card">
             <div className="label">Reachability timeline</div>
             <div className="small-text">Current: {networkDebug?.reachability?.current?.state ?? 'unknown'}</div>
+            <div className="small-text">Window ≈ {Math.round(reachabilityWindowSeconds)}s</div>
             <Line data={reachabilitySeries} options={{ scales: { y: { ticks: { stepSize: 1, max: 2, min: 0 } } } }} />
           </div>
 
@@ -247,6 +275,24 @@ export function TelemetryView({ baseUrl, apiKey, refreshNonce = 0 }) {
                 <div className="small-text">
                   Window: {nrmPressureData.trims.windowMinutes ?? windowMinutes}m · Recent denials captured
                 </div>
+                {latestDenialSnapshot && (
+                  <div className="small-text">
+                    Latest snapshot ({new Date(latestDenialSnapshot.timestamp).toLocaleTimeString()}):
+                    {' '}
+                    {Object.entries(latestDenialSnapshot.byLimitType ?? {})
+                      .map(([limit, value]) => `${limit}=${value}`)
+                      .join(', ') || 'no denials'}
+                  </div>
+                )}
+                {latestTrimsSnapshot && (
+                  <div className="small-text">
+                    Trims snapshot ({new Date(latestTrimsSnapshot.timestamp).toLocaleTimeString()}):
+                    {' '}
+                    {Object.entries(latestTrimsSnapshot.byReason ?? {})
+                      .map(([reason, value]) => `${reason}=${value}`)
+                      .join(', ') || 'no trims'}
+                  </div>
+                )}
               </>
             ) : (
               <div className="small-text">NRM counters unavailable.</div>
@@ -264,6 +310,14 @@ export function TelemetryView({ baseUrl, apiKey, refreshNonce = 0 }) {
             <div className="small-text">
               Dial success (cumulative): {formatNumber(networkDebug?.dials?.cumulative?.successRate ?? 0, 3)}
             </div>
+            {transportHealth.length > 0 && (
+              <div className="small-text">
+                {transportHealth.map((row) => {
+                  const label = row.transport.toUpperCase();
+                  return `${label}: ${formatNumber((row.successRate ?? 0) * 100, 2)}%`;
+                }).join(' · ')}
+              </div>
+            )}
           </div>
         </div>
       </section>

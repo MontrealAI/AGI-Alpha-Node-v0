@@ -126,6 +126,48 @@ flowchart TD
   class Owner,Runtime,Safety,CLI,REST,Dashboard,P2P,Jobs,GSLI,Metrics,Storage,NRM,ConnMgr,Bans,Scoring neon;
 ```
 
+## Sprint E6 – Operator debug overlays & cockpit tiles
+
+- **Window-aligned network health:** `GET /debug/network?window=N` trims the reachability timeline to the requested window, exposes `windowSeconds`, per-transport success/failure (including `{ success, failure, successRate }`), QUIC/TCP connection share, and a fresh churn snapshot (live conns, opens/sec, closes/sec, close reasons) so operators can reason about posture without scraping Prometheus.【F:src/network/apiServer.js†L1415-L1519】
+- **Structured resource snapshots:** `GET /debug/resources?window=N` now piggybacks the latest `nrm_denials_total` and `connmanager_trims_total` samples (timestamped, grouped by limit type/protocol/reason) on top of the existing limits/usage/bans grid, making the JSON payload self-sufficient for runbooks and dashboards.【F:src/network/apiServer.js†L1342-L1408】
+- **SPA telemetry tiles:** The Telemetry tab renders the four sprint tiles with the new data—transport posture (with per-transport success share pills), reachability timeline window, resource pressure bars plus latest snapshots, and churn+dials overlays that annotate `% success` per transport—while staying read-only and API-key gated.【F:dashboard/src/views/TelemetryView.jsx†L21-L190】【F:dashboard/src/styles.css†L1-L120】
+- **Runbook alignment:** `docs/network-operations.md` explains how to flip QUIC/TCP modes, interpret each tile, drill into `dials.recent.perTransport`, and capture incident-ready snippets without spelunking raw metrics. Keep it beside the ops console for a single source of truth.【F:docs/network-operations.md†L1-L90】
+
+```mermaid
+flowchart LR
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  subgraph JSON[API Surfaces]
+    Net[/GET /debug/network/]:::lava
+    Res[/GET /debug/resources/]:::lava
+  end
+
+  subgraph Dashboard[Telemetry SPA]
+    Transport[Transport posture tile]:::neon
+    Reachability[Reachability timeline tile]:::neon
+    Resource[Resource pressure tile]:::neon
+    Churn[Churn & dials tile]:::neon
+  end
+
+  subgraph Runbook[Network operations runbook]
+    Modes[Transport modes]:::frost
+    Panels[Panel interpretation]:::frost
+    DoS[DoS triage]:::frost
+  end
+
+  Net --> Transport
+  Net --> Reachability
+  Net --> Churn
+  Res --> Resource
+  Res --> Modes
+  Res --> DoS
+  Dashboard --> Panels
+  Panels --> Runbook
+  class JSON,Dashboard,Runbook neon;
+```
+
 ## Resource manager & DoS telemetry (Sprint E3)
 
 - **Tag every denial**: All NRM reject paths produce structured logs with limit type, protocol, peer, IP/ASN context, and bump `nrm_denials_total{limit_type,protocol}` while accumulating `denials.byLimitType` and `denials.byProtocol` so dashboards can slice by cause instantly. Per-protocol stream caps surface as `limit_type="per_protocol"`, keeping stream floods distinguishable from global stream ceilings.【F:src/network/resourceManagerConfig.js†L248-L305】【F:src/telemetry/networkMetrics.js†L114-L169】

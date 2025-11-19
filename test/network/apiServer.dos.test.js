@@ -1,19 +1,24 @@
 import { describe, expect, it } from 'vitest';
+import { Registry } from 'prom-client';
 import { startAgentApi } from '../../src/network/apiServer.js';
 import { createNetworkMetrics } from '../../src/telemetry/networkMetrics.js';
 import { ResourceManager, buildResourceManagerConfig } from '../../src/network/resourceManagerConfig.js';
 
 describe('agent API DoS surfaces', () => {
-  it('exposes resource metrics and ban mutations', async () => {
+  it('exposes resource metrics, latest denials, and ban mutations', async () => {
     const ownerToken = 'secret-owner-token';
     const config = buildResourceManagerConfig({ config: { MAX_CONNS_PER_IP: 2, MAX_CONNS_PER_ASN: 1 } });
     const resourceManager = new ResourceManager({ limits: config });
+    const networkMetrics = createNetworkMetrics({ registry: new Registry() });
+    networkMetrics.nrmDenialsTotal.inc({ limit_type: 'fd', protocol: '/meshsub/1.1.0' });
+    networkMetrics.connmanagerTrimsTotal.inc({ reason: 'high_water' });
 
     const api = startAgentApi({
       port: 0,
       ownerToken,
       resourceManager,
-      connectionManager: null
+      connectionManager: null,
+      networkMetrics
     });
 
     const port = api.server.address().port;
@@ -28,6 +33,8 @@ describe('agent API DoS surfaces', () => {
     expect(debugPayload.usage.global.connections.used).toBe(0);
     expect(debugPayload.limits.perProtocol['/meshsub/1.1.0']).toBeDefined();
     expect(debugPayload.usage.perProtocol['/meshsub/1.1.0']).toBeDefined();
+    expect(debugPayload.nrmDenials.latest.byLimitType.fd).toBeGreaterThanOrEqual(0);
+    expect(debugPayload.connectionManagerStats.latest.byReason['high_water']).toBeGreaterThanOrEqual(0);
 
     const addBan = await fetch(`${base}/governance/bans`, {
       method: 'POST',
@@ -53,7 +60,7 @@ describe('agent API DoS surfaces', () => {
   });
 
   it('exposes network debug telemetry including dials and transport posture', async () => {
-    const networkMetrics = createNetworkMetrics();
+    const networkMetrics = createNetworkMetrics({ registry: new Registry() });
     networkMetrics.connectionsOpen.inc({ direction: 'out' });
     networkMetrics.connectionsClose.inc({ direction: 'out', reason: 'reset' });
     networkMetrics.netDialSuccessTotal.inc({ transport: 'quic' });
@@ -71,6 +78,8 @@ describe('agent API DoS surfaces', () => {
     expect(payload.dials.cumulative.failure.tcp).toBeGreaterThanOrEqual(0);
     expect(payload.transportPosture.connectionsByTransport.quic).toBeGreaterThanOrEqual(0);
     expect(payload.churn.live.out).toBeDefined();
+    expect(payload.dials.recent.perTransport.quic.success).toBeGreaterThanOrEqual(0);
+    expect(payload.reachability.windowSeconds).toBeGreaterThan(0);
 
     await api.stop();
   });

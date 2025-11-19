@@ -93,22 +93,24 @@ function applyCorsHeaders(req, res, corsOrigin) {
   }
 }
 
-function snapshotCounter(counter) {
+async function snapshotCounter(counter) {
   if (!counter?.get) {
     return { timestamp: Date.now(), values: {} };
   }
-  const { values = [] } = counter.get();
-  const snapshot = {};
+  const metric = counter.get();
+  const snapshot = metric && typeof metric.then === 'function' ? await metric : metric;
+  const { values = [] } = snapshot ?? {};
+  const mapped = {};
   for (const sample of values) {
     const labels = sample.labels ?? {};
     const key = JSON.stringify(labels);
-    snapshot[key] = { labels, value: Number(sample.value ?? 0) };
+    mapped[key] = { labels, value: Number(sample.value ?? 0) };
   }
-  return { timestamp: Date.now(), values: snapshot };
+  return { timestamp: Date.now(), values: mapped };
 }
 
-function updateCounterHistory(history, counter, windowMs) {
-  const snapshot = snapshotCounter(counter);
+async function updateCounterHistory(history, counter, windowMs) {
+  const snapshot = await snapshotCounter(counter);
   history.push(snapshot);
   const cutoff = snapshot.timestamp - windowMs;
   while (history.length > 1 && history[0].timestamp < cutoff) {
@@ -149,6 +151,18 @@ function computeCounterDelta(history) {
   return { delta, windowSeconds };
 }
 
+function aggregateSnapshotValues(snapshot, deriveKey = (labels) => JSON.stringify(labels)) {
+  if (!snapshot?.values) {
+    return {};
+  }
+  return Object.values(snapshot.values).reduce((acc, sample) => {
+    const labels = sample?.labels ?? {};
+    const key = deriveKey(labels);
+    acc[key] = (acc[key] ?? 0) + Number(sample?.value ?? 0);
+    return acc;
+  }, {});
+}
+
 async function sumCounterByLabel(counter, deriveKey = (labels) => JSON.stringify(labels)) {
   const metric = counter?.get?.();
   const snapshot = metric && typeof metric.then === 'function' ? await metric : metric;
@@ -165,6 +179,53 @@ function clampWindowMinutes(value, fallback = 15, maxMinutes = 60) {
   if (!Number.isFinite(numeric)) return fallback;
   const bounded = Math.max(1, Math.min(numeric, maxMinutes));
   return bounded;
+}
+
+function buildDialPerTransport(successMap, failureMap) {
+  const transports = new Set([
+    ...Object.keys(successMap ?? {}),
+    ...Object.keys(failureMap ?? {})
+  ]);
+  const perTransport = {};
+  transports.forEach((transport) => {
+    const success = Number(successMap?.[transport] ?? 0);
+    const failure = Number(failureMap?.[transport] ?? 0);
+    const total = success + failure;
+    perTransport[transport] = {
+      success,
+      failure,
+      successRate: total > 0 ? success / total : null
+    };
+  });
+  return perTransport;
+}
+
+function buildSuccessShare(successMap, failureMap) {
+  const transports = new Set([
+    ...Object.keys(successMap ?? {}),
+    ...Object.keys(failureMap ?? {})
+  ]);
+  const share = {};
+  transports.forEach((transport) => {
+    const success = Number(successMap?.[transport] ?? 0);
+    const failure = Number(failureMap?.[transport] ?? 0);
+    const total = success + failure;
+    share[transport] = total > 0 ? success / total : null;
+  });
+  return share;
+}
+
+function filterReachabilityTimeline(timeline, windowMs) {
+  if (!Array.isArray(timeline) || timeline.length === 0) {
+    return [];
+  }
+  const now = Date.now();
+  const cutoff = now - windowMs;
+  const filtered = timeline.filter((entry) => (entry?.updatedAt ?? 0) >= cutoff);
+  if (filtered.length === 0) {
+    return [timeline[timeline.length - 1]];
+  }
+  return filtered.slice(-120);
 }
 
 function instrumentHttpRequest({ tracer, req, res, logger }) {
@@ -1353,9 +1414,19 @@ export function startAgentApi({
         const windowMinutes = clampWindowMinutes(requestUrl.searchParams.get('window'), 15, 90);
         const windowMs = windowMinutes * 60 * 1000;
 
+        let latestDenialSnapshot = null;
+        let latestTrimSnapshot = null;
         if (networkMetrics) {
-          updateCounterHistory(metricsHistory.nrmDenialsTotal, networkMetrics.nrmDenialsTotal, windowMs);
-          updateCounterHistory(metricsHistory.connmanagerTrimsTotal, networkMetrics.connmanagerTrimsTotal, windowMs);
+          latestDenialSnapshot = await updateCounterHistory(
+            metricsHistory.nrmDenialsTotal,
+            networkMetrics.nrmDenialsTotal,
+            windowMs
+          );
+          latestTrimSnapshot = await updateCounterHistory(
+            metricsHistory.connmanagerTrimsTotal,
+            networkMetrics.connmanagerTrimsTotal,
+            windowMs
+          );
         }
         const denialsDelta = networkMetrics
           ? computeCounterDelta(metricsHistory.nrmDenialsTotal)
@@ -1380,7 +1451,21 @@ export function startAgentApi({
                   'rate',
                   (labels) => labels.protocol ?? 'unknown'
                 )
-              }
+              },
+              latest:
+                latestDenialSnapshot?.values && Object.keys(latestDenialSnapshot.values).length
+                  ? {
+                      timestamp: latestDenialSnapshot.timestamp,
+                      byLimitType: aggregateSnapshotValues(
+                        latestDenialSnapshot,
+                        (labels) => labels.limit_type ?? 'unknown'
+                      ),
+                      byProtocol: aggregateSnapshotValues(
+                        latestDenialSnapshot,
+                        (labels) => labels.protocol ?? 'unknown'
+                      )
+                    }
+                  : null
             }
           : null;
         const connectionManagerStats = networkMetrics
@@ -1390,7 +1475,17 @@ export function startAgentApi({
                 windowSeconds: trimsDelta.windowSeconds,
                 byReason: aggregateDelta(trimsDelta.delta, 'total', (labels) => labels.reason ?? 'unknown'),
                 perSecond: aggregateDelta(trimsDelta.delta, 'rate', (labels) => labels.reason ?? 'unknown')
-              }
+              },
+              latest:
+                latestTrimSnapshot?.values && Object.keys(latestTrimSnapshot.values).length
+                  ? {
+                      timestamp: latestTrimSnapshot.timestamp,
+                      byReason: aggregateSnapshotValues(
+                        latestTrimSnapshot,
+                        (labels) => labels.reason ?? 'unknown'
+                      )
+                    }
+                  : null
             }
           : null;
         jsonResponse(res, 200, {
@@ -1415,17 +1510,28 @@ export function startAgentApi({
         const windowMinutes = clampWindowMinutes(requestUrl.searchParams.get('window'), 15, 90);
         const windowMs = windowMinutes * 60 * 1000;
 
-        updateCounterHistory(metricsHistory.connectionsOpen, networkMetrics.connectionsOpen, windowMs);
-        updateCounterHistory(metricsHistory.connectionsClose, networkMetrics.connectionsClose, windowMs);
-        updateCounterHistory(metricsHistory.inboundConnections, networkMetrics.inboundConnections, windowMs);
-        updateCounterHistory(metricsHistory.netDialSuccessTotal, networkMetrics.netDialSuccessTotal, windowMs);
-        updateCounterHistory(metricsHistory.netDialFailTotal, networkMetrics.netDialFailTotal, windowMs);
+        await Promise.all([
+          updateCounterHistory(metricsHistory.connectionsOpen, networkMetrics.connectionsOpen, windowMs),
+          updateCounterHistory(metricsHistory.connectionsClose, networkMetrics.connectionsClose, windowMs),
+          updateCounterHistory(metricsHistory.inboundConnections, networkMetrics.inboundConnections, windowMs),
+          updateCounterHistory(metricsHistory.netDialSuccessTotal, networkMetrics.netDialSuccessTotal, windowMs),
+          updateCounterHistory(metricsHistory.netDialFailTotal, networkMetrics.netDialFailTotal, windowMs)
+        ]);
 
         const opensDelta = computeCounterDelta(metricsHistory.connectionsOpen);
         const closesDelta = computeCounterDelta(metricsHistory.connectionsClose);
         const inboundDelta = computeCounterDelta(metricsHistory.inboundConnections);
         const dialSuccessDelta = computeCounterDelta(metricsHistory.netDialSuccessTotal);
         const dialFailDelta = computeCounterDelta(metricsHistory.netDialFailTotal);
+
+        const reachabilityWindow = filterReachabilityTimeline(reachabilityTimeline, windowMs);
+        const reachabilityWindowSeconds =
+          reachabilityWindow.length > 1
+            ? Math.max(
+                (reachabilityWindow[reachabilityWindow.length - 1].updatedAt - reachabilityWindow[0].updatedAt) / 1000,
+                0
+              )
+            : windowMinutes * 60;
 
         const liveConnections = {
           in: networkMetrics.liveConnections?.in ?? 0,
@@ -1475,6 +1581,10 @@ export function startAgentApi({
           (labels) => `${labels.transport ?? 'unknown'}:${labels.reason ?? 'unknown'}`
         );
 
+        const dialRecentPerTransport = buildDialPerTransport(dialSuccessRecent, dialFailureRecent);
+        const dialCumulativePerTransport = buildDialPerTransport(dialSuccessTotals, dialFailureTotals);
+        const successShare = buildSuccessShare(dialSuccessRecent, dialFailureRecent);
+
         const inboundTotals = await sumCounterByLabel(
           networkMetrics.inboundConnections,
           (labels) => labels.transport ?? 'unknown'
@@ -1522,7 +1632,8 @@ export function startAgentApi({
         jsonResponse(res, 200, {
           reachability: {
             current: reachabilitySnapshot(),
-            timeline: reachabilityTimeline.slice(-90)
+            timeline: reachabilityWindow,
+            windowSeconds: reachabilityWindowSeconds
           },
           churn: {
             windowSeconds: Math.max(opensDelta.windowSeconds, closesDelta.windowSeconds),
@@ -1537,19 +1648,22 @@ export function startAgentApi({
               success: dialSuccessRecent,
               failure: dialFailureRecent,
               failureReasons: dialFailureReasonsRecent,
-              successRate: recentSuccessRate
+              successRate: recentSuccessRate,
+              perTransport: dialRecentPerTransport
             },
             cumulative: {
               success: dialSuccessTotals,
               failure: dialFailureTotals,
               failureReasons: dialFailureReasonsTotals,
-              successRate: cumulativeRate
+              successRate: cumulativeRate,
+              perTransport: dialCumulativePerTransport
             }
           },
           transportPosture: {
             windowSeconds: Math.max(inboundDelta.windowSeconds, dialSuccessDelta.windowSeconds),
             connectionsByTransport,
-            share: transportShare
+            share: transportShare,
+            successShare
           },
           windowMinutes
         });

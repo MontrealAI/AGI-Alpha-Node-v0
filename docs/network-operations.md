@@ -25,7 +25,7 @@ node src/index.js
 
 ## Debugging surfaces to bookmark
 
-- `GET /debug/network?window=15` — reachability timeline, live connection churn (opens/sec, closes/sec), dial success/failure by transport, and transport share for the window.
+- `GET /debug/network?window=15` — reachability timeline (now trimmed to the requested window and annotated with `windowSeconds`), live connection churn (opens/sec, closes/sec), dial success/failure by transport, and transport share for the window.
 - `GET /debug/resources?window=15` — normalized resource limits/usage grids, NRM denials (by limit type & protocol) with per-second rates, and connection manager trims by reason.
 - `GET /metrics` — Prometheus exposition (dial, protocol latency, NRM/bans, ConnMgr trims).
 
@@ -35,16 +35,22 @@ All endpoints remain read-only and API-key gated; responses are JSON shaped for 
 
 ## Reading the dashboard tiles
 
-- **Transport posture**: Doughnut chart of QUIC/TCP (and relay/other, if present) share over the last window. Expect QUIC dominance when `TRANSPORT_ENABLE_QUIC=true`.
+- **Transport posture**: Doughnut chart of QUIC/TCP (and relay/other, if present) share over the last window. Expect QUIC dominance when `TRANSPORT_ENABLE_QUIC=true`. Under the chart, the dashboard renders per-transport success rates sourced from `/debug/network.dials.recent.perTransport` so you can see whether QUIC or TCP is actually succeeding.
 - **Reachability timeline**: Step-line series mapped to `public=2`, `private=1`, `unknown=0`. Sustained zeros usually means AutoNAT is disabled or blocked.
-- **Resource pressure**: Stacked bars of `nrm_denials_total` by limit type and protocol plus connection trims. Rising trims + rising denials implies the Connection Manager is actively shedding load.
-- **Churn & dials**: Bar charts for opens/closes per second and dial attempts per transport; success rate is annotated (recent + cumulative) to spot rollout regressions quickly.
+- **Resource pressure**: Stacked bars of `nrm_denials_total` by limit type and protocol plus connection trims. Rising trims + rising denials implies the Connection Manager is actively shedding load. The latest denials + trims snapshot timestamps (from `/debug/resources.nrmDenials.latest` and `.connectionManagerStats.latest`) confirm when the counters last advanced.
+- **Churn & dials**: Bar charts for opens/closes per second and dial attempts per transport; success rate is annotated (recent + cumulative) to spot rollout regressions quickly, with an inline legend calling out `% success` per transport.
+
+## Per-transport dial investigations
+
+- **Dial share vs success share**: Compare `/debug/network.transportPosture.share` with `.successShare`. If QUIC dominates connection share but has a lower success share, investigate UDP filtering in that region.
+- **Look at `dials.recent.perTransport`**: Each entry exposes `{ success, failure, successRate }` for the latest window. The dashboard renders the same breakdown; copy/paste it for incident notes.
+- **Failure taxonomy**: `/debug/network.dials.recent.failureReasons` still enumerates `transport:reason` pairs so you can correlate a drop in success share with a spike in timeouts or NRM rejections.
 
 ## Detecting DoS or overload
 
 1. Check `/debug/resources`: spikes in `nrmDenials.recent.byLimitType.fd` or `memory` indicate exhaustion; protocol-heavy spikes (e.g., `/meshsub/1.1.0`) are per-protocol DoS candidates.
 2. Inspect `connectionManagerStats.recent.byReason`: frequent `high_water` trims confirm the Connection Manager is defending watermarks.
-3. Validate dial success: in `/debug/network`, a drop in `dials.recent.successRate` for QUIC but not TCP suggests UDP/QUIC filtering; switch to TCP-only temporarily if needed.
+3. Validate dial success: in `/debug/network`, a drop in `dials.recent.successRate` for QUIC but not TCP (visible via `perTransport`) suggests UDP/QUIC filtering; switch to TCP-only temporarily if needed.
 4. Ban abusive origins: use the governance ban APIs to block offending IPs/peers/ASNs; the ban grid in `/debug/resources` updates immediately for auditability.
 
 ## Rolling out to a new neighbourhood
