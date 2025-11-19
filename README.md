@@ -551,7 +551,23 @@ flowchart LR
 - **PQ envelopes + CBOR portability:** `src/treasury/pqEnvelope.ts` loads the Dilithium WASM runtime, signs digests, and wraps `{digest, pubkey, signature, metadata}` into CBOR envelopes so every guardian tool emits identical artifacts; `test/treasury/pqEnvelope.test.ts` round-trips encode/decode to guard against serialization regressions.【F:src/treasury/pqEnvelope.ts†L1-L80】【F:test/treasury/pqEnvelope.test.ts†L1-L21】
 - **Registry + threshold aggregation:** `src/treasury/guardianRegistry.ts` and `src/treasury/thresholdAggregator.ts` enforce unique guardians, Dilithium parameter sets, and M-of-N quorum while flagging duplicates or unknown public keys, as covered by `test/treasury/thresholdAggregator.test.ts`.【F:src/treasury/guardianRegistry.ts†L1-L54】【F:src/treasury/thresholdAggregator.ts†L1-L56】【F:test/treasury/thresholdAggregator.test.ts†L1-L30】
 - **Operator tooling:** `scripts/treasury/execute-intent.ts` (wired behind `npm run treasury:execute`) loads intents, guardian envelopes, the registry, and environment variables, verifies the threshold with domain-separated digests, and dispatches `executeTransaction(to,value,data)` via ethers once the quorum is satisfied. It supports dry-runs, configurable selectors, and prints pending guardians when the threshold is short.【F:scripts/treasury/execute-intent.ts†L1-L107】【F:package.json†L33-L52】
+- **Guardian CLI:** `scripts/treasury/sign-intent.ts` (invoked with `npm run treasury:sign`) lets guardians recompute digests, feed Dilithium keys from files or env vars, and emit CBOR/JSON envelopes with embedded metadata so every approval artifact stays deterministic and auditable.【F:scripts/treasury/sign-intent.ts†L1-L146】【F:package.json†L33-L53】 Pair it with [`docs/guardian-runbook.md`](docs/guardian-runbook.md) for turnkey PQ onboarding.
 - **Guardian artifacts & runbooks:** `docs/treasury-mode-a.md` documents the envelope schema, Dilithium workflow, and orchestrator instructions, while `config/guardians.example.json` ships a drop-in template for onboarding guardians without spelunking the codebase.【F:docs/treasury-mode-a.md†L1-L58】【F:config/guardians.example.json†L1-L11】
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Guardian
+  participant CLI as npm run treasury:sign
+  participant Orchestrator
+  participant Treasury
+  Guardian->>CLI: Provide intent.json or digest + Dilithium keys
+  CLI->>Guardian: Emit CBOR + JSON envelope (digest, pubkey, signature)
+  Guardian-->>Orchestrator: Deliver envelope artifacts
+  Orchestrator->>Orchestrator: aggregateGuardianEnvelopes() ≥ threshold
+  Orchestrator->>Treasury: executeTransaction(to,value,data)
+  Treasury-->>Guardian: IntentExecuted log with digest + executor
+```
 
 ```bash
 # Guardians drop CBOR envelopes into ./envelopes after signing the digest

@@ -75,9 +75,18 @@ cat > intents/treasury.json <<'JSON'
 }
 JSON
 
-# Guardians sign the digest with the signing tool (see docs/runes/guardian.md)
+# Guardians sign the digest with the signing tool (see docs/guardian-runbook.md)
 # and drop CBOR envelopes into ./envelopes
 
+# Guardian workstation
+GUARDIAN_PRIVATE_KEY_BASE64=... \
+GUARDIAN_PUBLIC_KEY_BASE64=... \
+npm run treasury:sign -- \
+  --intent intents/treasury.json \
+  --guardian-id guardian-1 \
+  --emit-json
+
+# Orchestrator terminal
 TREASURY_ADDRESS=0x123... \
 RPC_URL=https://sepolia.infura.io/v3/... \
 ORCHESTRATOR_KEY=0xabc... \
