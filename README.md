@@ -371,7 +371,13 @@ flowchart LR
   Local --> Subgraph[Subgraph TS Build]:::neon
   Local --> Security[npm audit (high+)]:::neon
   Local --> Policy[Policy + Branch gates]:::neon
-  Lint & Tests & Coverage & Solidity & Subgraph & Security & Policy --> Badge[Branch protection + badges]:::lava
+  Lint --> Badge[Branch protection + badges]:::lava
+  Tests --> Badge
+  Coverage --> Badge
+  Solidity --> Badge
+  Subgraph --> Badge
+  Security --> Badge
+  Policy --> Badge
 ```
 
 | Gate | What it proves |
