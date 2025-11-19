@@ -58,13 +58,13 @@ export async function aggregateGuardianEnvelopes(
       invalid.push({ envelope, reason: 'Parameter set mismatch' });
       continue;
     }
-    if (claimedGuardians.has(guardian.id)) {
-      invalid.push({ envelope, reason: 'Duplicate guardian signature' });
-      continue;
-    }
     const verification = await verifySignedEnvelope(envelope, options.digest);
     if (!verification.valid) {
       invalid.push({ envelope, reason: verification.reason ?? 'Invalid signature' });
+      continue;
+    }
+    if (claimedGuardians.has(guardian.id)) {
+      invalid.push({ envelope, reason: 'Duplicate guardian signature' });
       continue;
     }
     claimedGuardians.add(guardian.id);
