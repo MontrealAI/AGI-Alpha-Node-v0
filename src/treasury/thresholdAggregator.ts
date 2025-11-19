@@ -43,6 +43,10 @@ export async function aggregateGuardianEnvelopes(
       invalid.push({ envelope, reason: 'Unknown guardian' });
       continue;
     }
+    if (guardian.parameterSet !== envelope.parameterSet) {
+      invalid.push({ envelope, reason: 'Parameter set mismatch' });
+      continue;
+    }
     if (claimedGuardians.has(guardian.id)) {
       invalid.push({ envelope, reason: 'Duplicate guardian signature' });
       continue;
