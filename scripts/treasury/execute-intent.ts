@@ -80,12 +80,6 @@ const digest = digestTreasuryIntent(intent, {
 console.log(`Intent digest: ${digest}`);
 
 const ledger = new IntentLedger(options.ledger);
-if (ledger.isExecuted(digest)) {
-  const prior = ledger.getRecord(digest);
-  console.error(
-    `Digest already executed on ${prior?.at ?? 'an earlier run'}${prior?.txHash ? ` (tx ${prior.txHash})` : ''}.`);
-  process.exit(1);
-}
 
 const envelopeDir = resolve(options.envelopes);
 const envelopeFiles = readdirSync(envelopeDir, { withFileTypes: true })
@@ -116,7 +110,8 @@ const registry = GuardianRegistry.fromConfigFile(options.registry);
 const report = await aggregateGuardianEnvelopes(envelopes, {
   digest,
   threshold: options.threshold,
-  registry
+  registry,
+  executedCheck: (candidate) => ledger.getRecord(candidate)
 });
 
 console.log(`\nCollected ${report.approvals.length} valid approval(s). Threshold: ${report.threshold}`);
@@ -127,7 +122,16 @@ for (const invalid of report.invalid) {
   console.warn(`  ✗ invalid envelope (${invalid.reason})`);
 }
 if (!report.thresholdMet) {
-  console.error('Threshold not met. Pending guardians:', report.pendingGuardians.map((g) => g.id).join(', '));
+  if (report.replayDetected) {
+    const prior = report.executedRecord;
+    console.error(
+      `Digest already executed on ${prior?.at ?? 'a prior run'}${prior?.txHash ? ` (tx ${prior.txHash})` : ''}.`);
+  } else {
+    const pending = report.pendingGuardians.map((g) => g.id).join(', ') || 'none';
+    console.error(
+      `Threshold not met. Approvals=${report.approvals.length}/${report.threshold} (shortfall ${report.shortfall}). Pending guardians: ${pending}`
+    );
+  }
   process.exit(1);
 }
 
