@@ -61,8 +61,10 @@ Envelope schema:
 4. De-duplicate guardians so one signer cannot satisfy the threshold twice.
 5. Once approvals ≥ `threshold`, assemble calldata and submit
    `executeTransaction` to the treasury contract.
-6. Stamp the digest + tx hash into the on-disk `IntentLedger` to block
-   replays before they ever reach the chain.
+6. Stamp the digest + tx hash into the on-disk `IntentLedger` and feed it
+   back into the aggregator’s `executedCheck` hook so replays are flagged
+   (with prior tx hash/timestamp) before the threshold can ever flip to
+   true.
 
 ## Guardian CLI (`npm run treasury:sign`)
 

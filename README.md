@@ -590,8 +590,8 @@ stateDiagram-v2
 
 - **Drop-zone aware:** `treasury:execute` loads `.cbor` or `.json` envelopes from the configured directory, keeping the operator workflow as simple as copying signed artifacts into a folder.【F:scripts/treasury/execute-intent.ts†L35-L83】
 - **Registry-first validation:** Every envelope is matched against the `GuardianRegistry` before signature checks, eliminating spoofed guardian IDs or reused public keys up-front.【F:src/treasury/guardianRegistry.ts†L1-L54】
-- **Deterministic aggregation:** `aggregateGuardianEnvelopes` refuses duplicates, parameter-set mismatches, and digest mismatches, returning a pending inventory for operators while only counting distinct valid signers toward M-of-N.【F:src/treasury/thresholdAggregator.ts†L1-L56】
-- **Replay armor:** After a successful broadcast, the digest + tx hash are written to `IntentLedger`; subsequent runs abort before touching the chain if the digest already exists.【F:src/treasury/intentLedger.ts†L1-L83】【F:scripts/treasury/execute-intent.ts†L85-L126】
+- **Deterministic aggregation:** `aggregateGuardianEnvelopes` refuses duplicates, parameter-set mismatches, and digest mismatches, returning a pending inventory for operators while only counting distinct valid signers toward M-of-N.【F:src/treasury/thresholdAggregator.ts†L1-L83】
+- **Ledger-aware gating:** The aggregator now consults `IntentLedger` (or any `executedCheck` hook) before blessing a quorum, marks replays with prior tx hash/timestamp, and emits a shortfall count so ops can see how many guardians remain before a retry.【F:src/treasury/thresholdAggregator.ts†L1-L83】【F:scripts/treasury/execute-intent.ts†L1-L129】【F:src/treasury/intentLedger.ts†L1-L83】
 
 ### PQ envelope anatomy & enforcement
 

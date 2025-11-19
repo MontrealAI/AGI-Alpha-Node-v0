@@ -41,6 +41,8 @@ describe('Guardian threshold aggregation', () => {
     expect(report.approvals).toHaveLength(2);
     expect(report.invalid).toHaveLength(1);
     expect(report.invalid[0].reason).toMatch(/duplicate/i);
+    expect(report.replayDetected).toBe(false);
+    expect(report.shortfall).toBe(0);
     expect(report.thresholdMet).toBe(true);
     expect(report.pendingGuardians.map((g) => g.id)).toContain('guardian-3');
   });
@@ -73,6 +75,8 @@ describe('Guardian threshold aggregation', () => {
     expect(report.approvals).toHaveLength(0);
     expect(report.invalid).toHaveLength(1);
     expect(report.invalid[0].reason).toMatch(/unknown guardian/i);
+    expect(report.shortfall).toBe(1);
+    expect(report.replayDetected).toBe(false);
     expect(report.thresholdMet).toBe(false);
   });
 
@@ -103,6 +107,8 @@ describe('Guardian threshold aggregation', () => {
     expect(report.approvals).toHaveLength(0);
     expect(report.invalid[0].reason).toMatch(/parameter set mismatch/i);
     expect(report.pendingGuardians.map((g) => g.id)).toEqual(['guardian-1', 'guardian-2']);
+    expect(report.shortfall).toBe(1);
+    expect(report.replayDetected).toBe(false);
     expect(report.thresholdMet).toBe(false);
   });
 
@@ -133,6 +139,65 @@ describe('Guardian threshold aggregation', () => {
     expect(report.approvals).toHaveLength(0);
     expect(report.invalid[0].reason).toMatch(/digest mismatch/i);
     expect(report.pendingGuardians).toHaveLength(2);
+    expect(report.shortfall).toBe(2);
+    expect(report.replayDetected).toBe(false);
     expect(report.thresholdMet).toBe(false);
+  });
+
+  it('tracks shortfall when approvals are below the threshold', async () => {
+    const dilithium = await getDilithiumInstance();
+    const keyPairs = [dilithium.generateKeys(2), dilithium.generateKeys(2)];
+    const guardians: GuardianRecord[] = keyPairs.map((pair, index) => ({
+      id: `guardian-${index + 1}`,
+      publicKey: Buffer.from(pair.publicKey).toString('base64'),
+      parameterSet: 2
+    }));
+
+    const registry = new GuardianRegistry(guardians);
+    const envelope = await signIntentDigest({
+      digest,
+      privateKey: keyPairs[0].privateKey,
+      publicKey: keyPairs[0].publicKey,
+      metadata: { guardianId: 'guardian-1' }
+    });
+
+    const report = await aggregateGuardianEnvelopes([envelope], {
+      digest,
+      threshold: 2,
+      registry
+    });
+
+    expect(report.approvals).toHaveLength(1);
+    expect(report.shortfall).toBe(1);
+    expect(report.thresholdMet).toBe(false);
+    expect(report.pendingGuardians.map((g) => g.id)).toEqual(['guardian-2']);
+  });
+
+  it('marks reports when the digest was already executed in the ledger', async () => {
+    const dilithium = await getDilithiumInstance();
+    const keyPairs = [dilithium.generateKeys(2)];
+    const guardians: GuardianRecord[] = [
+      { id: 'guardian-1', publicKey: Buffer.from(keyPairs[0].publicKey).toString('base64'), parameterSet: 2 }
+    ];
+    const registry = new GuardianRegistry(guardians);
+    const envelope = await signIntentDigest({
+      digest,
+      privateKey: keyPairs[0].privateKey,
+      publicKey: keyPairs[0].publicKey,
+      metadata: { guardianId: 'guardian-1' }
+    });
+
+    const report = await aggregateGuardianEnvelopes([envelope], {
+      digest,
+      threshold: 1,
+      registry,
+      executedCheck: () => ({ digest, at: new Date().toISOString(), txHash: '0xbeef', approvals: ['guardian-1'] })
+    });
+
+    expect(report.approvals).toHaveLength(1);
+    expect(report.replayDetected).toBe(true);
+    expect(report.executedRecord?.txHash).toBe('0xbeef');
+    expect(report.thresholdMet).toBe(false);
+    expect(report.shortfall).toBe(0);
   });
 });
