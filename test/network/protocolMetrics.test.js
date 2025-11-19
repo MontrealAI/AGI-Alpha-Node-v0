@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { Registry } from 'prom-client';
 import { createNetworkMetrics } from '../../src/telemetry/networkMetrics.js';
 import {
+  CORE_PROTOCOLS,
+  buildCoreProtocolInstrumentation,
   estimatePayloadBytes,
   instrumentProtocolHandler,
   observeProtocolExchange,
@@ -105,6 +107,51 @@ describe('protocol metrics instrumentation', () => {
 
     expect(latencyCount).toBeGreaterThanOrEqual(1);
     expect(bytesEntry?.value).toBeGreaterThan(0);
+  });
+
+  it('ships helpers for core protocols to keep jobs/control/coordination/settlement observable', async () => {
+    const registry = new Registry();
+    const metrics = createNetworkMetrics({ registry });
+    const helpers = buildCoreProtocolInstrumentation(metrics);
+
+    const inboundJobHandler = helpers.inbound('jobs', async (message) => {
+      await new Promise((resolve) => setTimeout(resolve, 1));
+      return { ok: true, message };
+    });
+    await inboundJobHandler({ id: 'job-1', payload: 'data' });
+
+    await helpers.observe('settlement', { jobId: 'job-1', amount: 10 }, async () => {
+      await new Promise((resolve) => setTimeout(resolve, 2));
+      return { receipt: '0xabc' };
+    });
+
+    helpers.record('coordination', { step: 'sync' });
+
+    const snapshot = await registry.getMetricsAsJSON();
+    const latencyMetric = snapshot.find((metric) => metric.name === 'net_protocol_latency_ms');
+    const bytesMetric = snapshot.find((metric) => metric.name === 'net_bytes_total');
+    const msgsMetric = snapshot.find((metric) => metric.name === 'net_msgs_total');
+
+    const inboundJobsLatency = latencyMetric?.values?.find(
+      (entry) =>
+        entry.labels.protocol === CORE_PROTOCOLS.jobs &&
+        entry.labels.direction === 'in' &&
+        entry.labels.le === '+Inf'
+    )?.value;
+    const settlementLatency = latencyMetric?.values?.find(
+      (entry) => entry.labels.protocol === CORE_PROTOCOLS.settlement && entry.labels.direction === 'out'
+    );
+    const coordinationBytes = bytesMetric?.values?.find(
+      (entry) => entry.labels.protocol === CORE_PROTOCOLS.coordination && entry.labels.direction === 'out'
+    )?.value;
+    const coordinationMsgs = msgsMetric?.values?.find(
+      (entry) => entry.labels.protocol === CORE_PROTOCOLS.coordination && entry.labels.direction === 'out'
+    )?.value;
+
+    expect(inboundJobsLatency).toBeGreaterThanOrEqual(1);
+    expect(settlementLatency).toBeTruthy();
+    expect(coordinationBytes).toBeGreaterThan(0);
+    expect(coordinationMsgs).toBe(1);
   });
 
   it('estimates payload sizes across primitives and objects', () => {

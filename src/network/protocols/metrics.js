@@ -3,6 +3,13 @@ import {
   startProtocolTimer
 } from '../../telemetry/networkMetrics.js';
 
+const CORE_PROTOCOLS = Object.freeze({
+  control: 'agi/control/1.0.0',
+  jobs: 'agi/jobs/1.0.0',
+  coordination: 'agi/coordination/1.0.0',
+  settlement: 'agi/settlement/1.0.0'
+});
+
 function estimatePayloadBytes(payload) {
   if (payload === null || payload === undefined) return 0;
   if (typeof payload === 'string') return Buffer.byteLength(payload, 'utf8');
@@ -99,5 +106,45 @@ export {
   estimatePayloadBytes,
   instrumentProtocolHandler,
   observeProtocolExchange,
-  trackProtocolMessage
+  trackProtocolMessage,
+  CORE_PROTOCOLS,
+  buildCoreProtocolInstrumentation
 };
+
+function buildCoreProtocolInstrumentation(metrics) {
+  const resolveProtocol = (protocol) => CORE_PROTOCOLS[protocol] ?? protocol;
+
+  return {
+    inbound: (protocol, handler, options = {}) =>
+      instrumentProtocolHandler({
+        metrics,
+        protocol: resolveProtocol(protocol),
+        direction: 'in',
+        ...options
+      })(handler),
+    outbound: (protocol, handler, options = {}) =>
+      instrumentProtocolHandler({
+        metrics,
+        protocol: resolveProtocol(protocol),
+        direction: 'out',
+        ...options
+      })(handler),
+    observe: (protocol, payload, operation, options = {}) =>
+      observeProtocolExchange(
+        metrics,
+        {
+          protocol: resolveProtocol(protocol),
+          direction: 'out',
+          payload,
+          ...options
+        },
+        operation
+      ),
+    record: (protocol, payload, options = {}) =>
+      trackProtocolMessage(metrics, {
+        protocol: resolveProtocol(protocol),
+        payload,
+        ...options
+      })
+  };
+}
