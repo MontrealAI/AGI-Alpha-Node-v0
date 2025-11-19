@@ -30,17 +30,20 @@ describe('Guardian threshold aggregation', () => {
       publicKey: keyPairs[1].publicKey,
       metadata: { guardianId: 'guardian-2' }
     });
+    const duplicate = { ...envelopeA };
     const tampered = { ...envelopeA, digest: '0x1234' };
 
-    const report = await aggregateGuardianEnvelopes([envelopeA, envelopeB, tampered], {
+    const report = await aggregateGuardianEnvelopes([envelopeA, envelopeB, duplicate, tampered], {
       digest,
       threshold: 2,
       registry
     });
 
     expect(report.approvals).toHaveLength(2);
-    expect(report.invalid).toHaveLength(1);
-    expect(report.invalid[0].reason).toMatch(/duplicate/i);
+    expect(report.invalid).toHaveLength(2);
+    expect(report.invalid.map((item) => item.reason?.toLowerCase())).toEqual(
+      expect.arrayContaining(['duplicate guardian signature', 'digest mismatch'])
+    );
     expect(report.replayDetected).toBe(false);
     expect(report.shortfall).toBe(0);
     expect(report.thresholdMet).toBe(true);
