@@ -7,6 +7,9 @@ import {
   recordAutonatProbe,
   recordConnectionClose,
   recordConnectionOpen,
+  recordProtocolLatency,
+  recordProtocolTraffic,
+  startProtocolTimer,
   updateReachabilityMetric
 } from '../../src/telemetry/networkMetrics.js';
 import { createReachabilityState } from '../../src/network/transportConfig.js';
@@ -70,6 +73,39 @@ describe('networkMetrics', () => {
     expect(closeMetrics?.values?.find((entry) => entry.labels.direction === 'out')?.value).toBe(1);
     expect(liveMetrics?.values?.find((entry) => entry.labels.direction === 'in')?.value).toBe(0);
     expect(liveMetrics?.values?.find((entry) => entry.labels.direction === 'out')?.value).toBe(0);
+  });
+
+  it('captures per-protocol latency histograms and traffic counters', async () => {
+    const registry = new Registry();
+    const metrics = createNetworkMetrics({ registry });
+
+    recordProtocolLatency(metrics, { protocol: 'agi/control/1.0.0', direction: 'OUTBOUND', latencyMs: 42 });
+    const timer = startProtocolTimer(metrics, { protocol: 'agi/control/1.0.0', direction: 'inbound' });
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    timer.stop();
+
+    recordProtocolTraffic(metrics, { protocol: 'agi/jobs/1.0.0', direction: 'out', bytes: 512, messages: 2 });
+    recordProtocolTraffic(metrics, { protocol: 'agi/jobs/1.0.0', direction: 'OUTBOUND', bytes: 10 });
+
+    const snapshot = await registry.getMetricsAsJSON();
+    const latencyMetric = snapshot.find((metric) => metric.name === 'net_protocol_latency_ms');
+    const bytesMetric = snapshot.find((metric) => metric.name === 'net_bytes_total');
+    const messagesMetric = snapshot.find((metric) => metric.name === 'net_msgs_total');
+
+    const latencyCounts = latencyMetric?.values
+      ?.filter((entry) => entry.labels.protocol === 'agi/control/1.0.0' && entry.labels.le === '+Inf')
+      ?.map((entry) => entry.value);
+    const latencyCount = (latencyCounts ?? []).reduce((sum, value) => sum + value, 0);
+    const bytesEntry = bytesMetric?.values?.find(
+      (entry) => entry.labels.protocol === 'agi/jobs/1.0.0' && entry.labels.direction === 'out'
+    );
+    const messagesEntry = messagesMetric?.values?.find(
+      (entry) => entry.labels.protocol === 'agi/jobs/1.0.0' && entry.labels.direction === 'out'
+    );
+
+    expect(latencyCount).toBeGreaterThanOrEqual(2);
+    expect(bytesEntry?.value).toBe(522);
+    expect(messagesEntry?.value).toBe(3);
   });
   it('binds reachability state changes to the reachability gauge', async () => {
     const registry = new Registry();

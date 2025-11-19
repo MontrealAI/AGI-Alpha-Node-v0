@@ -41,6 +41,8 @@
 
 **AGI Alpha Node v0** metabolizes heterogeneous agentic labor into verifiable α‑Work Units (α‑WU) and Synthetic Labor Units (SLU), rebalances the Global Synthetic Labor Index (GSLI), exposes audited read‑only REST telemetry, and routes the `$AGIALPHA` treasury (token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) under complete owner command. Every dial can be paused, rerouted, or retuned without redeploying, delivering a production-grade intelligence core built to bend markets.
 
+This runtime is engineered as the operator-owned intelligence engine capable of redirecting economic gravity—the same class of system that could upend traditional market structures—while still keeping the owner in full command of every parameter, pause switch, and emission lever.
+
 ## Why operators deploy this node
 
 - **Owner-first controls**: Pause/unpause, rotate validators, retune emissions, and update metadata through `AlphaNodeManager.sol` without redeploying the network substrate.【F:contracts/AlphaNodeManager.sol†L1-L120】
@@ -48,6 +50,7 @@
 - **Debuggable capacity**: `GET /debug/resources` exposes global caps, per-protocol ceilings (GossipSub/identify/bitswap/agi/*), per-IP/ASN ceilings, bans, and live utilization so operators never spelunk code to understand pressure.【F:src/network/resourceManagerConfig.js†L485-L626】【F:src/network/apiServer.js†L1230-L1244】
 - **Watermarks + bans as metrics**: Connection Manager trims emit `connmanager_trims_total{reason}`; ban mutations raise gauges/counters for IP/peer/ASN entries to keep governance controls transparent.【F:src/network/resourceManagerConfig.js†L641-L694】【F:src/network/apiServer.js†L1681-L1769】
 - **Green by default**: `.github/workflows/ci.yml` mirrors `npm run ci:verify` and is enforced via `.github/required-checks.json`, keeping PRs and `main` permanently green with visible badges.【F:.github/workflows/ci.yml†L1-L210】【F:.github/required-checks.json†L1-L9】
+- **Dial + protocol clarity**: QUIC/TCP dials now emit `net_dial_success_total{transport}` and `net_dial_fail_total{transport,reason}` directly from the libp2p tracer, while protocol handlers use `net_protocol_latency_ms`, `net_msgs_total`, and `net_bytes_total` to surface p50/p95/p99, ingress/egress, and chatter per topic.【F:src/network/libp2pHostConfig.js†L76-L152】【F:src/telemetry/networkMetrics.js†L32-L169】【F:src/network/protocols/metrics.js†L1-L63】
 
 ## System map
 
@@ -169,6 +172,40 @@ flowchart LR
 - **REST spans + propagation:** Every REST/gov/health call is wrapped with an `http.server` span that captures method, route, status, latency, and keeps the trace context active for request metadata and downstream services.【F:src/network/apiServer.js†L1187-L1510】
 - **Dial traces:** Each outbound libp2p dial emits a `net.dial` span with `peer.id`, `net.transport`, `net.peer.addr`, success, and latency while linking back to any active HTTP span for seamless cross-surface stitching.【F:src/network/libp2pHostConfig.js†L64-L164】
 - **Prometheus-first:** `/metrics` stays Prometheus-native (peer scoring, α‑WU, NRM, bans) while traces route to OTLP; CI lint/link checks keep mermaid diagrams rendering cleanly on GitHub Pages.【F:src/telemetry/monitoring.js†L291-L363】【F:package.json†L12-L46】
+
+## Sprint E5 – Higher-level network metrics (dial, latency, throughput)
+
+- **Dial success/failure by transport + reason:** The libp2p tracer increments `net_dial_success_total{transport}` and `net_dial_fail_total{transport,reason}` alongside legacy counters, giving Grafana-ready success rates for QUIC/TCP/relay with error breakdowns (timeout/refused/nrm_limit/etc.).【F:src/network/libp2pHostConfig.js†L71-L153】
+- **Per-protocol latency histograms:** `net_protocol_latency_ms` exposes p50/p95/p99 per handler via `startProtocolTimer` and `instrumentProtocolHandler`, keeping job/control/telemetry topics observable without changing handler signatures.【F:src/telemetry/networkMetrics.js†L96-L149】【F:src/network/protocols/metrics.js†L28-L63】
+- **Ingress/egress byte + message rates:** `net_bytes_total{direction,protocol}` and `net_msgs_total{direction,protocol}` are bumped by `recordProtocolTraffic` or the new `trackProtocolMessage` helper so dashboards can spot chatty peers and runaway payload sizes instantly.【F:src/telemetry/networkMetrics.js†L109-L141】【F:src/network/protocols/metrics.js†L9-L46】
+
+```mermaid
+flowchart LR
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  Dials[libp2p dial tracer\nnet_dial_*]:::neon --> Rates[Success/fail by transport\n(net_dial_*_total)]:::frost
+  Handlers[Protocol handlers\nstartProtocolTimer]:::lava --> Latency[net_protocol_latency_ms]:::frost
+  Traffic[trackProtocolMessage\nrecordProtocolTraffic]:::lava --> Volume[net_bytes_total / net_msgs_total]:::frost
+  Rates --> Prometheus[/Prometheus registry/]:::frost
+  Latency --> Prometheus
+  Volume --> Prometheus
+  Prometheus --> Grafana[(Dashboards: p50/p95/p99 + byte/msg rates)]:::neon
+```
+
+```js
+import { instrumentProtocolHandler, trackProtocolMessage } from './src/network/protocols/metrics.js';
+
+const handleControl = instrumentProtocolHandler({
+  metrics: networkMetrics,
+  protocol: 'agi/control/1.0.0',
+  direction: 'in'
+})(async (message) => {
+  // your protocol logic
+  trackProtocolMessage(networkMetrics, { protocol: 'agi/control/1.0.0', direction: 'out', payload: { ack: true } });
+});
+```
 
 | Env var | Purpose | Default |
 | --- | --- | --- |

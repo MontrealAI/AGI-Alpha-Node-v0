@@ -134,6 +134,8 @@ describe('libp2pHostConfig', () => {
       dialAttempts: { inc: vi.fn() },
       dialSuccesses: { inc: vi.fn() },
       dialFailures: { inc: vi.fn() },
+      netDialSuccessTotal: { inc: vi.fn() },
+      netDialFailTotal: { inc: vi.fn() },
       inboundConnections: { inc: vi.fn() },
       connectionsOpen: { inc: vi.fn() },
       connectionsClose: { inc: vi.fn() },
@@ -181,6 +183,8 @@ describe('libp2pHostConfig', () => {
     expect(metrics.dialAttempts.inc).toHaveBeenCalledTimes(2);
     expect(metrics.dialSuccesses.inc).toHaveBeenCalledWith({ transport: 'quic' });
     expect(metrics.dialFailures.inc).toHaveBeenCalledWith({ transport: 'tcp' });
+    expect(metrics.netDialSuccessTotal.inc).toHaveBeenCalledWith({ transport: 'quic' });
+    expect(metrics.netDialFailTotal.inc).toHaveBeenCalledWith({ transport: 'tcp', reason: 'error' });
     expect(metrics.inboundConnections.inc).toHaveBeenCalledWith({ transport: 'relay' });
     expect(metrics.connectionsOpen.inc).toHaveBeenCalledTimes(2);
     expect(metrics.connectionsClose.inc).toHaveBeenCalledWith({ direction: 'in', reason: 'timeout' });
