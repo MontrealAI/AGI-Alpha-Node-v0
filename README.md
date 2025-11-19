@@ -280,6 +280,26 @@ flowchart TD
   class API,Tracer,Export,Prom,Network,Dials,NRM,Metrics,Health,Gov,Telemetry neon;
 ```
 
+## Sprint E6 – Debug APIs, dashboard tiles, and runbook
+
+- **Operator JSON for network posture:** `GET /debug/network?window=15` now emits reachability snapshots + timeline, connection churn (live + opens/sec + closes/sec), dial success/fail tallies by transport/reason, and transport posture shares for the last window, powered by the in-memory network metrics counters.【F:src/network/apiServer.js†L1237-L1432】
+- **NRM + connection manager counters:** `/debug/resources` adds `nrmDenials` and `connectionManagerStats` so dashboards see rcmgr drops and trim reasons without scraping Prometheus.【F:src/network/apiServer.js†L1217-L1235】
+- **Dashboard telemetry tab upgrade:** The Telemetry view now renders read-only tiles for transport posture, reachability timeline, resource pressure, and churn/dial health, all still gated by the same API key flow.【F:dashboard/src/views/TelemetryView.jsx†L8-L171】【F:dashboard/src/api/client.js†L31-L56】
+- **Runbook for operators:** [`docs/network-operations.md`](docs/network-operations.md) ties posture flips, reachability interpretation, NRM DoS signals, and rollout dial validation into a single operations guide.【F:docs/network-operations.md†L1-L66】
+
+```mermaid
+flowchart LR
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  Metrics[/networkMetrics\nconn open/close\nnet_dial_*/]:::frost --> DebugNet[/GET /debug/network/]:::lava
+  Resource[/Resource Manager\nmetrics()/NRM denials/]:::frost --> DebugRes[/GET /debug/resources/]:::lava
+  DebugNet --> Dashboard[(Dashboard Telemetry tab\nTransport posture · Reachability · Churn/dials)]:::neon
+  DebugRes --> Dashboard
+  Dashboard --> Runbook[(Runbook drills:\nposture flips · reachability · DoS triage)]:::neon
+```
+
 ## Owner controls & token
 
 - `$AGIALPHA` token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals). The owner retains absolute veto, pause, and retuning authority across runtime and emissions.

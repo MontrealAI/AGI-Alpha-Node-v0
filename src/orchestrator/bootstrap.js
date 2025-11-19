@@ -492,6 +492,8 @@ export async function bootstrapContainer({
       peerScoreStore: peerScoreRegistry,
       publicApiKey: config.API_PUBLIC_READ_KEY,
       corsOrigin: config.API_DASHBOARD_ORIGIN,
+      reachabilityState,
+      networkMetrics,
       resourceManager,
       connectionManager
     });
