@@ -551,9 +551,19 @@ flowchart LR
 - **PQ envelopes + CBOR portability:** `src/treasury/pqEnvelope.ts` loads the Dilithium WASM runtime, signs digests, and wraps `{digest, pubkey, signature, metadata}` into CBOR envelopes so every guardian tool emits identical artifacts; `test/treasury/pqEnvelope.test.ts` round-trips encode/decode to guard against serialization regressions.【F:src/treasury/pqEnvelope.ts†L1-L80】【F:test/treasury/pqEnvelope.test.ts†L1-L21】
 - **Registry + threshold aggregation:** `src/treasury/guardianRegistry.ts` and `src/treasury/thresholdAggregator.ts` enforce unique guardians, Dilithium parameter sets, and M-of-N quorum while flagging duplicates or unknown public keys, as covered by `test/treasury/thresholdAggregator.test.ts`.【F:src/treasury/guardianRegistry.ts†L1-L54】【F:src/treasury/thresholdAggregator.ts†L1-L56】【F:test/treasury/thresholdAggregator.test.ts†L1-L30】
 - **Operator tooling:** `scripts/treasury/execute-intent.ts` (wired behind `npm run treasury:execute`) loads intents, guardian envelopes, the registry, and environment variables, verifies the threshold with domain-separated digests, and dispatches `executeTransaction(to,value,data)` via ethers once the quorum is satisfied. It supports dry-runs, configurable selectors, and prints pending guardians when the threshold is short.【F:scripts/treasury/execute-intent.ts†L1-L107】【F:package.json†L33-L52】
+- **Guardian CLI:** `npm run treasury:sign` wraps Dilithium signing, CBOR emission, metadata stamping, and domain binding so guardians can sign JSON intents or raw digests without writing bespoke tooling. It reads keys from strings or files, enforces selector/chain binding, and outputs either `.cbor` or `.json` envelopes for the orchestrator to consume.【F:scripts/treasury/sign-intent.ts†L1-L180】【F:package.json†L33-L53】
 - **Guardian artifacts & runbooks:** `docs/treasury-mode-a.md` documents the envelope schema, Dilithium workflow, and orchestrator instructions, while `config/guardians.example.json` ships a drop-in template for onboarding guardians without spelunking the codebase.【F:docs/treasury-mode-a.md†L1-L58】【F:config/guardians.example.json†L1-L11】
 
 ```bash
+# Guardian-side signing (reads intent JSON, emits CBOR envelope)
+npm run treasury:sign -- intents/payout.json \
+  --private-key @keys/guardian-1.sk \
+  --public-key @keys/guardian-1.pk \
+  --guardian-id guardian-1 \
+  --chain-id 11155111 \
+  --contract 0xa61a3b3a130a9c20768eebf97e21515a6046a1fa \
+  --out ./envelopes/guardian-1.cbor
+
 # Guardians drop CBOR envelopes into ./envelopes after signing the digest
 TREASURY_ADDRESS=0xa61a3b3a130a9c20768eebf97e21515a6046a1fa \
 RPC_URL=https://sepolia.example/v3/<key> \
