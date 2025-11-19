@@ -144,13 +144,14 @@ export function createTransportTracer({ plan, logger: baseLogger, metrics = null
         direction,
         preference,
         success,
-      latency_ms: latencyMs
-    },
-    eventName
+        latency_ms: latencyMs
+      },
+      eventName
     );
 
     if (span) {
       span.setAttribute('net.transport', transport);
+      span.setAttribute('net.peer.addr', address ?? 'unknown');
       if (success !== undefined) {
         span.setAttribute('net.dial.success', Boolean(success));
       }
