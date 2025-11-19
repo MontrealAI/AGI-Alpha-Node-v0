@@ -7,7 +7,9 @@ export type TelemetryExporter = 'otlp' | 'console' | 'none';
 export interface TelemetryConfig {
   exporter?: TelemetryExporter;
   otlpEndpoint?: string;
+  otlpHeaders?: Record<string, string> | undefined;
   samplingRatio?: number;
+  serviceName?: string;
   logger?: Logger;
 }
 

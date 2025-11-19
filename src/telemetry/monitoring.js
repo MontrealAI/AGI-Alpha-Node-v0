@@ -8,29 +8,11 @@ import { collectDefaultMetrics, Counter, Gauge, Registry, Summary } from 'prom-c
 import { createNetworkMetrics } from './networkMetrics.js';
 import { DEFAULT_PEER_SCORE_THRESHOLDS } from '../services/peerScoring.js';
 import { applyPeerScoreSnapshot, createPeerScoreMetrics } from './peerScoreMetrics.js';
+import { parseOtlpHeaders } from './otelHeaders.js';
 
 const DEFAULT_SERVICE_NAME = process.env.OTEL_SERVICE_NAME || 'agi-alpha-node';
 let cachedTracer = null;
 let cachedStop = async () => {};
-
-function parseOtlpHeaders(rawHeaders) {
-  if (!rawHeaders || typeof rawHeaders !== 'string') {
-    return undefined;
-  }
-
-  return rawHeaders
-    .split(/[,;]/)
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.includes('='))
-    .reduce((acc, entry) => {
-      const [key, ...rest] = entry.split('=');
-      const value = rest.join('=').trim();
-      if (key && value) {
-        acc[key.trim()] = value;
-      }
-      return acc;
-    }, {});
-}
 
 export function configureOpenTelemetry({ logger } = {}) {
   if (cachedTracer) {

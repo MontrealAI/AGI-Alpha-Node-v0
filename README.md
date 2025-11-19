@@ -164,8 +164,8 @@ flowchart LR
 
 ## OTel + Prometheus observability (Sprint E4)
 
-- **Centralized wiring:** `configureOpenTelemetry` builds a shared tracer (service: `OTEL_SERVICE_NAME=agi-alpha-node`) and optional OTLP exporter while `startMonitoringServer` always keeps the Prometheus registry and `/metrics` online.【F:src/telemetry/monitoring.js†L12-L110】【F:src/telemetry/monitoring.js†L291-L363】
-- **OTLP on demand:** Set `OTEL_EXPORTER_OTLP_ENDPOINT` (plus optional `OTEL_EXPORTER_OTLP_HEADERS`) to stream traces; leave it unset to run fully locally without interrupting metrics exposure or shutdown flows.【F:src/telemetry/monitoring.js†L35-L70】
+- **Centralized wiring:** `configureOpenTelemetry` and `loadTelemetryConfig` normalize `OTEL_SERVICE_NAME`, OTLP headers, and endpoints into a single tracer resource while `startMonitoringServer` always keeps the Prometheus registry and `/metrics` online.【F:src/telemetry/monitoring.js†L1-L52】【F:src/telemetry/config.js†L31-L57】【F:src/telemetry/monitoring.js†L280-L363】
+- **OTLP on demand:** Set `OTEL_EXPORTER_OTLP_ENDPOINT` (plus optional `OTEL_EXPORTER_OTLP_HEADERS` or `OTEL_TRACES_SAMPLER=traceidratio:<0-1>`) to stream traces; leave it unset to run fully locally without interrupting metrics exposure or shutdown flows.【F:src/telemetry/otelCore.js†L37-L82】【F:src/telemetry/config.js†L31-L57】
 - **REST spans + propagation:** Every REST/gov/health call is wrapped with an `http.server` span that captures method, route, status, latency, and keeps the trace context active for request metadata and downstream services.【F:src/network/apiServer.js†L1187-L1510】
 - **Dial traces:** Each outbound libp2p dial emits a `net.dial` span with `peer.id`, `net.transport`, `net.peer.addr`, success, and latency while linking back to any active HTTP span for seamless cross-surface stitching.【F:src/network/libp2pHostConfig.js†L64-L164】
 - **Prometheus-first:** `/metrics` stays Prometheus-native (peer scoring, α‑WU, NRM, bans) while traces route to OTLP; CI lint/link checks keep mermaid diagrams rendering cleanly on GitHub Pages.【F:src/telemetry/monitoring.js†L291-L363】【F:package.json†L12-L46】
@@ -175,6 +175,7 @@ flowchart LR
 | `OTEL_SERVICE_NAME` | Trace resource name for every span | `agi-alpha-node` |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | Enable OTLP/HTTP trace export when set | _unset_ |
 | `OTEL_EXPORTER_OTLP_HEADERS` | Extra OTLP headers (e.g., auth) in `key=value` CSV | _unset_ |
+| `OTEL_TRACES_SAMPLER` | Optional `traceidratio:<0-1>` sampler ratio | _unset_ (parent-based) |
 
 ```mermaid
 flowchart TD
@@ -319,7 +320,7 @@ flowchart LR
 ## Dashboard & monitoring
 
 - React/Vite dashboard lives in `dashboard/` with tests in `dashboard/src/App.test.jsx`; previews via `npm run dashboard:preview` align with the REST debug surfaces.
-- Prometheus collectors cover transport reachability (`net_reachability_state`, AutoNAT probes/failures), dial success/failure/latency, churn gauges, peer scoring buckets, and the new NRM/ban/trim counters so observability stays unified.【F:src/telemetry/networkMetrics.js†L1-L169】【F:src/telemetry/monitoring.js†L225-L307】
+- Prometheus collectors cover transport reachability (`net_reachability_state`, AutoNAT probes/failures), dial success/failure/latency, churn gauges, peer scoring buckets, and the new NRM/ban/trim counters so observability stays unified.【F:src/telemetry/networkMetrics.js†L1-L169】【F:src/telemetry/monitoring.js†L280-L363】
 
 ## Data spine & economics
 
