@@ -291,7 +291,7 @@ gh api \
   -X PUT \
   repos/MontrealAI/AGI-Alpha-Node-v0/branches/main/protection \
   -f required_status_checks.strict=true \
-  -f required_status_checks.contexts[]@.github/required-checks.json
+  $(jq -r '.required_status_checks[] | @sh "-frequired_status_checks.contexts[]=\(.)"' .github/required-checks.json)
 ```
 
 - Keep badges green locally with `npm run ci:verify` before opening a PR; GitHub enforces the same matrix using the required ch
