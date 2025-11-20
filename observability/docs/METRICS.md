@@ -1,43 +1,53 @@
 # DCUtR Prometheus Metrics Stub
 <!-- markdownlint-disable MD013 -->
 
-This document describes the DCUtR (Direct Connection Upgrade through Relay) metrics scaffold exposed by the AGI Alpha Node runtime. The goal is to wire production-grade Prometheus and Grafana visibility before the punch pipeline goes live.
+This document specifies the Direct Connection Upgrade through Relay (DCUtR) telemetry surface exposed by the AGI Alpha Node runtime. It aligns with the DCUtR primer in the README and feeds the Grafana dashboard stub under `observability/grafana/dcutr_dashboard.json`.
+
+## Labels
+
+Every metric shares the same cardinality grid so drill-downs stay consistent:
+
+- `region` — geographic hint such as `us-east` or `eu-west`.
+- `asn` — autonomous system number or provider slug (for example `as16509`).
+- `transport` — negotiated transport (`quic` or `tcp`).
+- `relay_id` — relay peer ID coordinating the rendezvous.
 
 ## Metric catalogue
 
-All DCUtR metrics are labeled with:
-
-- `region` — geographic hint (e.g., `us-east`, `eu-west`).
-- `asn` — autonomous system number or provider slug (e.g., `as16509`).
-- `transport` — transport negotiated for the punch attempt (`quic`, `tcp`).
-- `relay_id` — the relay peer ID guiding the rendezvous.
-
 | Metric | Type | Description |
 | --- | --- | --- |
-| `dcutr_punch_attempts_total{region,asn,transport,relay_id}` | Counter | Total hole punch attempts coordinated over relays. |
-| `dcutr_punch_success_total{region,asn,transport,relay_id}` | Counter | Successful punches that migrated to direct paths. |
-| `dcutr_punch_failure_total{region,asn,transport,relay_id}` | Counter | Failed punches that stayed on relays. |
-| `dcutr_punch_success_rate{region,asn,transport,relay_id}` | Gauge (computed) | Success ratio derived from attempts and successes; calculated per label set during scrape. |
-| `dcutr_time_to_direct_seconds_bucket{region,asn,transport,relay_id}` | Histogram | Seconds from relay rendezvous to confirmed direct path (p50/p95 from buckets). |
-| `dcutr_path_quality_rtt_ms{region,asn,transport,relay_id}` | Gauge | Round-trip time for the selected direct path. |
+| `dcutr_punch_attempts_total{region,asn,transport,relay_id}` | Counter | Coordinated hole punch attempts over relays. |
+| `dcutr_punch_success_total{region,asn,transport,relay_id}` | Counter | Successful punches that migrated to a direct path. |
+| `dcutr_punch_failure_total{region,asn,transport,relay_id}` | Counter | Punch attempts that failed and stayed on the relay. |
+| `dcutr_punch_success_rate{region,asn,transport,relay_id}` | Gauge (computed) | Derived success ratio per label set during scrape time. |
+| `dcutr_time_to_direct_seconds_bucket{region,asn,transport,relay_id}` | Histogram | Wall-clock seconds from relay rendezvous to confirmed direct path (p50/p95 from buckets). |
+| `dcutr_path_quality_rtt_ms{region,asn,transport,relay_id}` | Gauge | Round-trip time for the elected direct path. |
 | `dcutr_path_quality_loss_rate{region,asn,transport,relay_id}` | Gauge | Packet loss rate percentage for the direct path. |
-| `dcutr_fallback_relay_total{region,asn,transport,relay_id}` | Counter | Connections that stayed on relays after a punch attempt. |
-| `dcutr_relay_offload_total{region,asn,transport,relay_id}` | Counter | Connections that offloaded from relay to direct. |
+| `dcutr_fallback_relay_total{region,asn,transport,relay_id}` | Counter | Connections that remained on relays after an attempted punch. |
+| `dcutr_relay_offload_total{region,asn,transport,relay_id}` | Counter | Connections that successfully offloaded from relay to direct. |
 | `dcutr_relay_data_bytes_total{region,asn,transport,relay_id}` | Counter | Bytes transmitted over relays during DCUtR sessions. |
-| `dcutr_direct_data_bytes_total{region,asn,transport,relay_id}` | Counter | Bytes transmitted over direct paths post-upgrade. |
+| `dcutr_direct_data_bytes_total{region,asn,transport,relay_id}` | Counter | Bytes transmitted over direct paths after upgrade. |
 
-Example: `dcutr_punch_success_total{region="us-east",asn="as16509",transport="quic",relay_id="12D3KooW..."} 128`
+Example emission: `dcutr_punch_success_total{region="us-east",asn="as16509",transport="quic",relay_id="12D3KooW..."} 128`
+
+## Ops SLO mapping
+
+- **Punch success rate** → `dcutr_punch_success_rate` (top-line KPI, slice by `region × asn × transport`).
+- **Time-to-direct** → histogram p95 of `dcutr_time_to_direct_seconds_bucket` (alert on drift > 2× baseline).
+- **Relay offload %** → `dcutr_relay_offload_total` ÷ `dcutr_punch_attempts_total` (ratio computed in Grafana).
+- **Direct path quality** → `dcutr_path_quality_rtt_ms` and `dcutr_path_quality_loss_rate` compared against relay baselines.
+- **Fallback pressure** → `dcutr_fallback_relay_total` paired with `dcutr_punch_failure_total` to catch symmetric NAT pockets.
 
 ## Wiring plan
 
-1. Import and register metrics once at process bootstrap:
+1. Register metrics once at bootstrap (includes `collectDefaultMetrics`):
 
    ```ts
    import { registerDCUtRMetrics } from '../observability/prometheus/metrics_dcutr.js';
    registerDCUtRMetrics();
    ```
 
-2. Hook emitters into punch lifecycle signals (labels are optional; omitted labels default to `unknown` for stability):
+2. Emit lifecycle events with optional labels (missing labels default to `unknown` to keep scrapes stable):
 
    ```ts
    import {
@@ -67,8 +77,8 @@ Example: `dcutr_punch_success_total{region="us-east",asn="as16509",transport="qu
    onDirectBytes(8192, labels);
    ```
 
-3. Expose `/metrics` via your existing Prometheus HTTP handler or Node server.
-4. Import `observability/grafana/dcutr_dashboard.json` into Grafana and point panels to your Prometheus datasource.
+3. Expose `/metrics` through your existing Prometheus HTTP handler.
+4. Import `observability/grafana/dcutr_dashboard.json` into Grafana and bind it to your Prometheus datasource.
 
 ## Diagram
 
@@ -85,9 +95,10 @@ flowchart LR
   Grafana --> Ops[Ops cockpit\nalerts + SLOs]:::neon
 ```
 
-## Health tips
+## Health and debugging tips
 
-- Keep punch timing aligned with observed RTTs; histogram buckets default to sub-30s to detect jitter.
-- Track relay bytes vs direct bytes; growing relay usage is a cost regression.
-- Success rate is computed server side—do not hand-roll client math that can drift during scrape races.
-- `collectDefaultMetrics` is already called inside `registerDCUtRMetrics`; avoid duplicate registration to keep CI green.
+- Align punch timing windows with observed RTTs; the histogram buckets default to sub-30s so you can see jitter early.
+- Track relay bytes vs direct bytes; climbing relay usage signals cost regression or blocked transports.
+- Trust the computed `dcutr_punch_success_rate` instead of client-side math to avoid scrape race drift.
+- `collectDefaultMetrics` is already invoked inside `registerDCUtRMetrics`; avoid double-registration to keep CI green.
+- When success rates crater in a single region/ASN, compare `transport` splits to decide whether to flip to TCP temporarily.

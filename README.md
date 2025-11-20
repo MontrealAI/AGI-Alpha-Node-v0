@@ -71,13 +71,14 @@
 4. [Mode A treasury (post-quantum, cheap on-chain)](#mode-a-treasury-post-quantum-cheap-on-chain)
 5. [Owner controls & token](#owner-controls--token)
 6. [Observability & DoS guardrails](#observability--dos-guardrails)
-7. [DCUtR metrics sprint (drop-in)](#dcutr-metrics-sprint-drop-in)
-8. [CI wall (always green)](#ci-wall-always-green)
-9. [API surfaces](#api-surfaces)
-10. [Run it locally](#run-it-locally)
-11. [Deployment paths](#deployment-paths)
-12. [Validation & tests](#validation--tests)
-13. [Runbooks & references](#runbooks--references)
+7. [DCUtR production primer](#dcutr-production-primer)
+8. [DCUtR metrics sprint (drop-in)](#dcutr-metrics-sprint-drop-in)
+9. [CI wall (always green)](#ci-wall-always-green)
+10. [API surfaces](#api-surfaces)
+11. [Run it locally](#run-it-locally)
+12. [Deployment paths](#deployment-paths)
+13. [Validation & tests](#validation--tests)
+14. [Runbooks & references](#runbooks--references)
 
 ## System map
 
@@ -276,6 +277,34 @@ flowchart LR
 - **Prometheus + OTel**: `startMonitoringServer` keeps `/metrics` and OTLP wiring alive; libp2p dial traces and protocol handlers feed latency/volume histograms ready for Grafana overlays.【F:src/telemetry/monitoring.js†L280-L363】【F:src/network/libp2pHostConfig.js†L64-L195】【F:src/network/protocols/metrics.js†L6-L149】
 - **Dashboard parity**: The React/Vite cockpit consumes the same debug endpoints to render transport posture, reachability, resource pressure, and churn tiles with zero bespoke wiring.【F:dashboard/src/views/TelemetryView.jsx†L1-L323】【F:dashboard/src/api/client.js†L31-L56】
 - **DCUtR punch health kit**: `observability/prometheus/metrics_dcutr.ts` defines counters, gauges, histograms, and a `registerDCUtRMetrics` hook with label-aware emitters (`region`, `asn`, `transport`, `relay_id`) so per-relay success rates stay correlated to topology. Pair it with `observability/grafana/dcutr_dashboard.json` and the walkthrough in `observability/docs/METRICS.md` + `observability/docs/DASHBOARD.md` (with dashboard placeholder) to visualize success rate, time-to-direct, path quality, and relay offload without bespoke wiring.【F:observability/prometheus/metrics_dcutr.ts†L1-L221】【F:observability/grafana/dcutr_dashboard.json†L1-L111】【F:observability/docs/METRICS.md†L1-L93】【F:observability/docs/DASHBOARD.md†L1-L43】
+
+## DCUtR production primer
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant PeerA as Peer A (behind NAT)
+  participant Relay as Relay rendezvous
+  participant PeerB as Peer B (behind NAT)
+  participant Direct as Direct path
+
+  PeerA->>Relay: Dial via relay (fallback path)
+  PeerB->>Relay: Dial via relay
+  Relay-->>PeerA: Reachability hints + punch window
+  Relay-->>PeerB: Reachability hints + punch window
+  PeerA-->>PeerB: Timed UDP/TCP punches (QUIC-preferred)
+  PeerB-->>PeerA: Timed UDP/TCP punches (QUIC-preferred)
+  PeerA-->>Direct: Probe & confirm best path
+  PeerB-->>Direct: Probe & confirm best path
+  Direct-->>Relay: Tear down relay (keep as backup if desired)
+```
+
+- **Why it matters**: DCUtR (Direct Connection Upgrade through Relay) lets two NATed peers meet on a relay, coordinate a punch, and shift traffic to a direct path for lower latency, lower cost, and higher throughput.
+- **SLOs to watch**: punch success rate (global and by `region × asn × transport`), time-to-direct p50/p95, relay offload %, direct path quality vs relay baseline, fallback rate, and relay cost per GB.
+- **Typical failure modes**: symmetric NATs or strict firewalls, punch-window jitter or clock drift, mismatched transports (UDP blocked), and relay policy limits or reservation expiry.
+- **Fast wins**: prefer QUIC/UDP with TCP fallback, tune punch windows to observed RTTs, colocate relays near users, cache observed addresses with short TTLs, and maintain a small diverse relay set.
+- **Playbook when graphs dip**: scope impact (global vs single region/AS), check transport split (QUIC blocks → flip to TCP), validate relay reservations/limits, review recent timing changes, and run Punchr-style canaries before rolling forward.
+- **Config hints**: enable AutoNAT + AutoRelay, prefer QUIC-first then TCP, keep relay reservations with sane TTL/backoff, and log connection gating decisions for post-mortems.
 
 ```mermaid
 flowchart LR
