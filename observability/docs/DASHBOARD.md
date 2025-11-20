@@ -3,6 +3,8 @@
 
 Import `observability/grafana/dcutr_dashboard.json` into Grafana to visualize the hole punching control loop end-to-end.
 
+> Mermaid fences here match GitHub’s renderer, so the topology sketch below renders cleanly on GitHub Pages and in previews.
+
 ![DCUtR dashboard placeholder](./assets/dcutr-dashboard-placeholder.svg)
 
 ## Panel guide
