@@ -14,6 +14,17 @@ Every metric shares the same cardinality grid so drill-downs stay consistent:
 
 ## Metric catalogue
 
+Metric descriptions (all metrics accept `{region,asn,transport,relay_id}`):
+
+- **Attempts** (`dcutr_punch_attempts_total`) — punch coordination attempts started via a relay rendezvous.
+- **Success** (`dcutr_punch_success_total`) — attempts that migrated traffic off the relay to a direct path.
+- **Failure** (`dcutr_punch_failure_total`) — attempts that never converged on a direct path (typically due to NAT/firewall posture).
+- **Success rate** (`dcutr_punch_success_rate`) — computed gauge that divides successes by attempts on scrape, pinned to `0` when no attempts are recorded to avoid flapping dashboards.
+- **Time-to-direct** (`dcutr_time_to_direct_seconds_bucket`) — histogram capturing wall-clock seconds from rendezvous to confirmed direct path; drive p50/p95.
+- **Direct quality** (`dcutr_path_quality_rtt_ms`, `dcutr_path_quality_loss_rate`) — RTT and packet-loss gauges post-upgrade.
+- **Relay posture** (`dcutr_fallback_relay_total`, `dcutr_relay_offload_total`) — whether sessions stuck to relays or successfully offloaded.
+- **Volume mix** (`dcutr_relay_data_bytes_total`, `dcutr_direct_data_bytes_total`) — traffic split between relays and direct paths to surface cost regressions.
+
 | Metric | Type | Description |
 | --- | --- | --- |
 | `dcutr_punch_attempts_total{region,asn,transport,relay_id}` | Counter | Coordinated hole punch attempts over relays. |

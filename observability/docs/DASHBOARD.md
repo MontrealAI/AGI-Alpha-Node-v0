@@ -16,12 +16,20 @@ Import `observability/grafana/dcutr_dashboard.json` into Grafana to visualize th
 7. **Heatmap: Success by Region × AS** — correlates geography with provider behavior to detect asymmetric NAT pockets.
 8. **Incidents rail** — top failing relays/regions in the last 24h and 7d to anchor incident response.
 
+Panel wiring hints:
+
+- Prometheus datasource set to the same scrape target that registers `registerDCUtRMetrics`.
+- Use `region=~".*"` and `asn=~".*"` regex variables to drive the heatmap and KPI slices.
+- Overlay `transport` in tooltips for every panel to quickly decide when to flip to TCP.
+
 ## Import steps
 
 1. Navigate to **Dashboards → New → Import** in Grafana.
 2. Upload `observability/grafana/dcutr_dashboard.json` or paste its JSON payload.
 3. Select your Prometheus datasource and save.
 4. (Recommended) Wire alert rules for `dcutr_punch_success_rate` and p95 `dcutr_time_to_direct_seconds` to match your SLOs.
+
+Screenshot placeholder file: `observability/docs/assets/dcutr-dashboard-placeholder.svg` (replace with your exported Grafana image when ready to ship dashboards to stakeholders).
 
 ## Playbook overlays (from the README primer)
 
