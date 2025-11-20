@@ -9,6 +9,7 @@ export interface IntentExecutionRecord {
   txHash?: string;
   approvals?: string[];
   note?: string;
+  onChainDigest?: HexData;
 }
 
 interface LedgerFileSchema {

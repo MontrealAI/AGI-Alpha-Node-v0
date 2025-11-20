@@ -79,10 +79,11 @@ const digest = digestTreasuryIntent(intent, {
     includeSelector: true
   }
 });
+const onChainDigest = digestTreasuryIntent(intent, { domain: false });
 
 const logger = createExecutionLogger({
   logPath: options.logFile,
-  baseFields: { digest, treasury: options.treasury }
+  baseFields: { digest, onChainDigest, treasury: options.treasury }
 });
 
 const ledger = new IntentLedger(options.ledger);
@@ -104,8 +105,9 @@ async function sendWebhook(body: Record<string, unknown>) {
 }
 
 async function main() {
-  logger.intentReceived({ intentDigest: digest, intent });
-  console.log(`Intent digest: ${digest}`);
+  logger.intentReceived({ intentDigest: digest, onChainDigest, intent });
+  console.log(`Intent digest (domain-bound): ${digest}`);
+  console.log(`On-chain digest (TreasuryExecutor.computeIntentHash): ${onChainDigest}`);
 
   const envelopeDir = resolve(options.envelopes);
   const loadResult = loadEnvelopesFromDirectory(envelopeDir);
@@ -123,7 +125,7 @@ async function main() {
     throw new Error('No signed envelopes found.');
   }
 
-  logger.signaturesLoaded(envelopes.length, { intentDigest: digest });
+  logger.signaturesLoaded(envelopes.length, { intentDigest: digest, onChainDigest });
 
   const registry = GuardianRegistry.fromConfigFile(options.registry);
   const report = await aggregateGuardianEnvelopes(envelopes, {
@@ -146,54 +148,105 @@ async function main() {
       const prior = report.executedRecord;
       const note = `Digest already executed on ${prior?.at ?? 'a prior run'}${prior?.txHash ? ` (tx ${prior.txHash})` : ''}.`;
       console.error(note);
-      logger.thresholdShortfall(report.threshold, report.approvals.length, report.pendingGuardians.map((g) => g.id), {
-        intentDigest: digest,
-        note
-      });
+      logger.thresholdShortfall(
+        report.threshold,
+        report.approvals.length,
+        report.pendingGuardians.map((g) => g.id),
+        {
+          intentDigest: digest,
+          onChainDigest,
+          note
+        }
+      );
     } else {
       const pending = report.pendingGuardians.map((g) => g.id);
       const note = `Threshold not met. Approvals=${report.approvals.length}/${report.threshold} (shortfall ${report.shortfall}). Pending guardians: ${pending.join(', ') || 'none'}`;
       console.error(note);
-      logger.thresholdShortfall(report.threshold, report.approvals.length, pending, { intentDigest: digest });
+      logger.thresholdShortfall(report.threshold, report.approvals.length, pending, {
+        intentDigest: digest,
+        onChainDigest
+      });
     }
     process.exit(1);
   }
 
   const approvedGuardians = report.approvals.map((approval) => approval.guardian.id);
-  logger.thresholdSatisfied(report.threshold, approvedGuardians, { intentDigest: digest });
+  logger.thresholdSatisfied(report.threshold, approvedGuardians, { intentDigest: digest, onChainDigest });
 
   if (options.dryRun) {
     console.log('Dry-run enabled. Threshold satisfied; skipping on-chain execution.');
-    await sendWebhook({ status: 'dry-run', digest, guardians: approvedGuardians });
+    await sendWebhook({ status: 'dry-run', digest, onChainDigest, guardians: approvedGuardians });
     process.exit(0);
   }
 
   const provider = new JsonRpcProvider(options.rpcUrl);
   const wallet = new Wallet(options.key, provider);
-  const iface = new Interface(['function executeTransaction(address to, uint256 value, bytes data)']);
+  const iface = new Interface([
+    'function executeTransaction(address to, uint256 value, bytes data)',
+    'event IntentExecuted(bytes32 indexed intentHash, address indexed executor, address indexed to, uint256 value, bytes data)'
+  ]);
   const txData = iface.encodeFunctionData('executeTransaction', [intent.to, intent.value, intent.data]);
 
   console.log('\nBroadcasting executeTransaction call...');
   const tx = await wallet.sendTransaction({ to: options.treasury, data: txData });
-  logger.broadcast(tx.hash, { intentDigest: digest });
+  logger.broadcast(tx.hash, { intentDigest: digest, onChainDigest });
   const receipt = await tx.wait();
 
   if (receipt?.status !== 1n && receipt?.status !== 1) {
     throw new Error(`Transaction failed: ${tx.hash}`);
   }
 
+  const eventFragment = iface.getEvent('IntentExecuted');
+  const intentTopic = iface.getEventTopic(eventFragment);
+  const intentLog = receipt.logs?.find((log) => log.topics?.[0]?.toLowerCase() === intentTopic.toLowerCase());
+
+  if (!intentLog) {
+    throw new Error('IntentExecuted event not found in receipt.');
+  }
+
+  const parsed = iface.parseLog({ topics: intentLog.topics, data: intentLog.data });
+  const emittedDigest = (parsed.args.intentHash as string).toLowerCase();
+  if (emittedDigest !== onChainDigest.toLowerCase()) {
+    throw new Error(
+      `IntentExecuted digest mismatch: expected ${onChainDigest}, received ${parsed.args.intentHash as string}`
+    );
+  }
+  const emittedTo = (parsed.args.to as string).toLowerCase();
+  const emittedValue = BigInt(parsed.args.value);
+  if (emittedTo !== intent.to.toLowerCase() || emittedValue !== intent.value) {
+    throw new Error('IntentExecuted payload mismatch.');
+  }
+
   console.log(`Intent executed in tx ${tx.hash}`);
-  logger.executed(tx.hash, { intentDigest: digest });
+  logger.executed(tx.hash, {
+    intentDigest: digest,
+    onChainDigest,
+    event: {
+      intentHash: parsed.args.intentHash,
+      executor: parsed.args.executor,
+      to: parsed.args.to,
+      value: parsed.args.value,
+      data: parsed.args.data
+    }
+  });
   ledger.recordExecution(digest, {
     txHash: tx.hash,
-    approvals: approvedGuardians
+    approvals: approvedGuardians,
+    onChainDigest
   });
   console.log(`Ledger updated at ${ledger.path}`);
-  await sendWebhook({ status: 'executed', digest, txHash: tx.hash, guardians: approvedGuardians });
+  await sendWebhook({
+    status: 'executed',
+    digest,
+    onChainDigest,
+    txHash: tx.hash,
+    guardians: approvedGuardians,
+    event: parsed.args
+  });
 }
 
 main().catch((error) => {
-  logger.failure(error, { intentDigest: digest });
+  logger.failure(error, { intentDigest: digest, onChainDigest });
   console.error(error);
   process.exit(1);
 });
