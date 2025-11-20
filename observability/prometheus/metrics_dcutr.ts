@@ -69,6 +69,12 @@ export const dcutrPunchSuccessRate = new Gauge({
   },
 });
 
+const DEFAULT_METRIC_NAMES = new Set([
+  'process_cpu_user_seconds_total',
+  'process_start_time_seconds',
+  'process_resident_memory_bytes',
+]);
+
 let metricsRegistered = false;
 
 export function registerDCUtRMetrics(registry: Registry = defaultRegistry): void {
@@ -76,7 +82,13 @@ export function registerDCUtRMetrics(registry: Registry = defaultRegistry): void
     return;
   }
 
-  collectDefaultMetrics({ register: registry });
+  const defaultMetricsAlreadyRegistered = registry
+    .getMetricsAsArray()
+    .some((metric) => DEFAULT_METRIC_NAMES.has(metric.name));
+
+  if (!defaultMetricsAlreadyRegistered) {
+    collectDefaultMetrics({ register: registry });
+  }
   registry.registerMetric(dcutrPunchAttemptsTotal);
   registry.registerMetric(dcutrPunchSuccessTotal);
   registry.registerMetric(dcutrPunchFailureTotal);
