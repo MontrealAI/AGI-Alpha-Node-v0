@@ -11,6 +11,9 @@
     },
     {
       "pattern": "^https://app\\.ens\\.domains/"
+    },
+    {
+      "pattern": "^https://github\\.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci\\.yml"
     }
   ],
   "aliveStatusCodes": [200, 206, 403]
