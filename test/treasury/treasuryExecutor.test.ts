@@ -99,6 +99,7 @@ describe('TreasuryExecutor', () => {
     expect(log.args.executor.toLowerCase()).toBe(orchestrator.toString().toLowerCase());
     expect(log.args.to.toLowerCase()).toBe(recipient.toString().toLowerCase());
     expect(log.args.value).toBe(transferValue);
+    expect(log.args.data).toBe('0x');
   });
 
   it('rejects duplicate executions until owner resets the intent status', async () => {
