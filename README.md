@@ -67,8 +67,8 @@
 
 **This node is the wealth engine**: every control surface, metric, and runbook is wired so the owner can tune economics, transport posture, and treasury dispatch in one place while auditors and operators see the same telemetry. The alpha flow is sovereign, survivable, and designed to compound value without conceding a single lever of control to anyone but the owner.
 
+> **Catalyst callout**: AGI Alpha Nodes behave like digital farmers in a cognitive field—yielding `$AGIALPHA` while bridging aspiration to achievement. The token contract lives at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals), and every surface (governance API, CLI, dashboards, treasury controls) keeps the owner in total command so parameters, relays, and treasury routes can be updated live.
 > **DCUtR observability sprint (fresh)**: drop-in Prometheus primitives live at `observability/prometheus/metrics_dcutr.ts`, the paired Grafana stub sits in `observability/grafana/dcutr_dashboard.json`, and operator notes land in `observability/docs/METRICS.md` + `observability/docs/DASHBOARD.md` so you can register collectors, emit punch lifecycle events with labeled detail, and publish dashboards without bespoke wiring.【F:observability/prometheus/metrics_dcutr.ts†L1-L221】【F:observability/grafana/dcutr_dashboard.json†L1-L111】【F:observability/docs/METRICS.md†L1-L93】【F:observability/docs/DASHBOARD.md†L1-L43】
->
 > **Owner supremacy callout**: The treasury vault remains entirely owner-steerable: `setOrchestrator` can rebind execution authority in one transaction, `pause` halts dispatches instantly, `setIntentStatus` clears or resurrects digests, and `sweep` drains holdings to any recipient the owner chooses—all without redeploying the contract or disrupting guardian workflows.【F:contracts/TreasuryExecutor.sol†L22-L119】
 
 ## Table of contents
@@ -241,6 +241,8 @@ sequenceDiagram
 - `AlphaNodeManager.sol` unifies staking, identity control, validator curation, emissions, and pause/unpause flows under a single owner-controlled contract.【F:contracts/AlphaNodeManager.sol†L1-L265】
 - `TreasuryExecutor.sol` anchors Mode A: orchestrator-only execution, owner-controlled pause/unpause, digest deduplication, and `sweep`/`setOrchestrator` levers keep the vault obedient.【F:contracts/TreasuryExecutor.sol†L1-L113】
 - Governance verbs are exposed through CLI (`node src/index.js governance:*`) and authenticated REST endpoints, enabling non-technical owners to command the system.【F:src/index.js†L1-L113】【F:src/network/apiServer.js†L1509-L2130】
+
+> Owner command envelope: every runtime parameter (pause state, orchestrator selection, validator sets, metadata, emissions, and treasury routes) can be updated live via REST/CLI without redeploying, keeping the platform fully owner-steerable and ready for emergency intervention.
 
 ### Treasury control deck (owner quick reference)
 

@@ -14,7 +14,7 @@ Every metric shares the same cardinality grid so drill-downs stay consistent:
 - `transport` — negotiated transport (`quic` or `tcp`).
 - `relay_id` — relay peer ID coordinating the rendezvous.
 
-## Metric catalogue
+## Metric descriptions
 
 Metric descriptions (all metrics accept `{region,asn,transport,relay_id}`):
 
@@ -41,7 +41,10 @@ Metric descriptions (all metrics accept `{region,asn,transport,relay_id}`):
 | `dcutr_relay_data_bytes_total{region,asn,transport,relay_id}` | Counter | Bytes transmitted over relays during DCUtR sessions. |
 | `dcutr_direct_data_bytes_total{region,asn,transport,relay_id}` | Counter | Bytes transmitted over direct paths after upgrade. |
 
-Example emission: `dcutr_punch_success_total{region="us-east",asn="as16509",transport="quic",relay_id="12D3KooW..."} 128`
+### Examples
+
+- Prompt-aligned sample: `dcutr_punch_success_total{region="us-east",transport="quic"} 128`
+- Full label set: `dcutr_punch_success_total{region="us-east",asn="as16509",transport="quic",relay_id="12D3KooW..."} 128`
 
 ## Ops SLO mapping
 
