@@ -1,25 +1,33 @@
 # DCUtR Grafana Dashboard Stub
 <!-- markdownlint-disable MD013 -->
 
-Import `observability/grafana/dcutr_dashboard.json` into Grafana to visualize the hole punching control loop.
+Import `observability/grafana/dcutr_dashboard.json` into Grafana to visualize the hole punching control loop end-to-end.
 
 ![DCUtR dashboard placeholder](./assets/dcutr-dashboard-placeholder.svg)
 
-## Panels
+## Panel guide
 
-1. **Punch Success %** — live gauge sourced from `dcutr_punch_success_rate{region,asn,transport,relay_id}`; slice by region and transport to find hotspots.
-2. **Attempts vs Success vs Failure** — compare per-5m rates of attempts, successes, and failures with matching labels to spot localized regressions.
-3. **Time to Direct p50/p95** — quantiles over `dcutr_time_to_direct_seconds_bucket` to catch latency drift by relay and transport.
-4. **Path Quality (RTT & Loss)** — direct path quality gauges for jitter and loss anomalies keyed by `relay_id` and `asn`.
-5. **Relay vs Direct Data** — bytes per second over relay vs direct paths to surface cost regressions and bandwidth drainage.
-6. **Relay Fallback vs Offload** — rate of connections sticking to relays or leaving them; supports drill-down by `region` and `transport`.
+1. **Punch Success %** — live gauge sourced from `dcutr_punch_success_rate{region,asn,transport,relay_id}`; slice by geography and transport to spot hotspots.
+2. **Attempts vs Success vs Failure** — per-5m rate comparison of attempts, successes, and failures to isolate regressions or blocked transports.
+3. **Time to Direct p50/p95** — quantiles over `dcutr_time_to_direct_seconds_bucket` to catch coordination jitter by relay or AS.
+4. **Path Quality (RTT & Loss)** — gauges keyed by `relay_id` and `asn` for jitter/loss anomalies after a successful punch.
+5. **Relay vs Direct Data** — bytes per second over relay vs direct paths to highlight cost regressions or underperforming direct paths.
+6. **Relay Fallback vs Offload** — rate of sessions sticking to relays or offloading; drill down by `region` and `transport` to validate policy flips.
+7. **Heatmap: Success by Region × AS** — correlates geography with provider behavior to detect asymmetric NAT pockets.
+8. **Incidents rail** — top failing relays/regions in the last 24h and 7d to anchor incident response.
 
 ## Import steps
 
 1. Navigate to **Dashboards → New → Import** in Grafana.
 2. Upload `observability/grafana/dcutr_dashboard.json` or paste its JSON payload.
 3. Select your Prometheus datasource and save.
-4. (Optional) Add alert rules for p95 `dcutr_time_to_direct_seconds` and falling `dcutr_punch_success_rate`.
+4. (Recommended) Wire alert rules for `dcutr_punch_success_rate` and p95 `dcutr_time_to_direct_seconds` to match your SLOs.
+
+## Playbook overlays (from the README primer)
+
+- If a graph dips, scope whether it is global or limited to a region/AS and check the transport split (QUIC vs TCP).
+- Inspect relay reservations and expiration churn when success collapses despite healthy transports.
+- Verify punch timing changes against RTT estimates; roll back overly aggressive jitter.
 
 ## Topology
 
