@@ -97,9 +97,9 @@ jobs:
         run: npm ci
 
       - name: Run Solidity checks
-    env:
-      CI: true
-    run: npm run ci:solidity
+        env:
+          CI: true
+        run: npm run ci:solidity
 
   grafana:
     name: Grafana Dashboard Lint
