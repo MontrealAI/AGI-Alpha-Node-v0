@@ -71,12 +71,13 @@
 4. [Mode A treasury (post-quantum, cheap on-chain)](#mode-a-treasury-post-quantum-cheap-on-chain)
 5. [Owner controls & token](#owner-controls--token)
 6. [Observability & DoS guardrails](#observability--dos-guardrails)
-7. [CI wall (always green)](#ci-wall-always-green)
-8. [API surfaces](#api-surfaces)
-9. [Run it locally](#run-it-locally)
-10. [Deployment paths](#deployment-paths)
-11. [Validation & tests](#validation--tests)
-12. [Runbooks & references](#runbooks--references)
+7. [DCUtR metrics sprint (drop-in)](#dcutr-metrics-sprint-drop-in)
+8. [CI wall (always green)](#ci-wall-always-green)
+9. [API surfaces](#api-surfaces)
+10. [Run it locally](#run-it-locally)
+11. [Deployment paths](#deployment-paths)
+12. [Validation & tests](#validation--tests)
+13. [Runbooks & references](#runbooks--references)
 
 ## System map
 
@@ -297,6 +298,43 @@ flowchart LR
   Registry[registerDCUtRMetrics\nPrometheus registry + defaults]:::frost --> Scrape[Prometheus scrape]:::frost
   Scrape --> Grafana[dcutr_dashboard.json\n(p50/p95, success %, offload)]:::neon
   Grafana --> Operator[Operator cockpit + alerts]:::neon
+```
+
+## DCUtR metrics sprint (drop-in)
+
+The sprint artifacts live under `observability/` and are wired to render cleanly on GitHub (Mermaid + badges) and in Grafana. They align the repo layout with the DCUtR primer above.
+
+- **File map**: Prometheus stub (`observability/prometheus/metrics_dcutr.ts`), Grafana stub (`observability/grafana/dcutr_dashboard.json`), operator notes (`observability/docs/METRICS.md`, `observability/docs/DASHBOARD.md`).【F:observability/prometheus/metrics_dcutr.ts†L1-L116】【F:observability/grafana/dcutr_dashboard.json†L1-L153】【F:observability/docs/METRICS.md†L1-L63】【F:observability/docs/DASHBOARD.md†L1-L44】
+- **Metrics declared**: attempts/success/failure, computed success rate, time-to-direct histogram, RTT + loss gauges, relay fallback/offload counters, relay vs direct byte counters.【F:observability/prometheus/metrics_dcutr.ts†L7-L73】【F:observability/prometheus/metrics_dcutr.ts†L83-L116】
+- **Emitters**: `onPunchStart`, `onPunchSuccess`, `onPunchFailure`, `onPunchLatency`, `onDirectRttMs`, `onDirectLossRate`, `onRelayFallback`, `onRelayOffload`, `onRelayBytes`, `onDirectBytes` (all tested under `test/observability/metrics_dcutr.test.ts`).【F:observability/prometheus/metrics_dcutr.ts†L83-L116】【F:test/observability/metrics_dcutr.test.ts†L1-L95】
+- **Owner-ops quickstart**: register once and expose `/metrics`:
+
+  ```ts
+  import { registerDCUtRMetrics, onPunchStart, onPunchSuccess, onPunchFailure } from './observability/prometheus/metrics_dcutr.js';
+
+  registerDCUtRMetrics();
+  onPunchStart();
+  onPunchSuccess();
+  onPunchFailure();
+  ```
+
+- **Grafana import**: upload `observability/grafana/dcutr_dashboard.json`, point it at your Prometheus datasource, and you instantly get KPI, heatmap, and offload panels sized for production drill-downs.【F:observability/grafana/dcutr_dashboard.json†L1-L153】
+
+```mermaid
+flowchart TB
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  subgraph PunchLoop[DCUtR punch loop]
+    PunchStart[Hole punch start]:::lava --> PunchOutcome[Success / Failure]:::lava
+    PunchOutcome --> DirectPath[Direct path quality\nRTT + loss]:::frost
+    PunchOutcome --> VolumeFlows[Relay vs direct bytes]:::frost
+  end
+
+  PunchLoop --> RegistryF[Prometheus registry\nregisterDCUtRMetrics]:::neon
+  RegistryF --> Panels[Grafana panels\np50/p95, success %, offload]:::neon
+  Panels --> OwnerOps[Owner cockpit + alerts\n(pause/offload policies)]:::lava
 ```
 
 ## CI wall (always green)
