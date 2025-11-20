@@ -58,9 +58,9 @@ export const dcutrPathQualityLossRate = new Gauge({
 export const dcutrPunchSuccessRate = new Gauge({
   name: 'dcutr_punch_success_rate',
   help: 'Computed success ratio of hole punch attempts vs successes.',
-  collect() {
-    const attempts = dcutrPunchAttemptsTotal.get().values?.[0]?.value ?? 0;
-    const successes = dcutrPunchSuccessTotal.get().values?.[0]?.value ?? 0;
+  async collect() {
+    const attempts = (await dcutrPunchAttemptsTotal.get()).values?.[0]?.value ?? 0;
+    const successes = (await dcutrPunchSuccessTotal.get()).values?.[0]?.value ?? 0;
     if (attempts === 0) {
       this.set(0);
       return;
