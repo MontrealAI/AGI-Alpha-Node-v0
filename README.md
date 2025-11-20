@@ -383,6 +383,7 @@ flowchart LR
 ## Runbooks & references
 
 - Guardian onboarding + signing: [`docs/runes/guardian.md`](docs/runes/guardian.md)
+- Orchestrator execution (Mode A): [`docs/runes/orchestrator.md`](docs/runes/orchestrator.md)
 - Mode A flow, envelope schema, orchestrator steps: [`docs/treasury-mode-a.md`](docs/treasury-mode-a.md)
 - Network operations (reachability, DoS triage, posture flips): [`docs/network-operations.md`](docs/network-operations.md)
 - Economics & identity background: [`docs/economics.md`](docs/economics.md), [`docs/identity.md`](docs/identity.md), [`docs/manifesto.md`](docs/manifesto.md)
