@@ -21,6 +21,7 @@ Panel wiring hints:
 - Prometheus datasource set to the same scrape target that registers `registerDCUtRMetrics`.
 - Use `region=~".*"` and `asn=~".*"` regex variables to drive the heatmap and KPI slices.
 - Overlay `transport` in tooltips for every panel to quickly decide when to flip to TCP.
+- Mirror your SLOs directly: punch success ≥ target, p95 time-to-direct within budget, relay offload trending upward with explicit annotations for changes to punch windows or relay policies.
 
 ## Import steps
 
