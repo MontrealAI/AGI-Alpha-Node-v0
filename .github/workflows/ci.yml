@@ -97,9 +97,25 @@ jobs:
         run: npm ci
 
       - name: Run Solidity checks
+    env:
+      CI: true
+    run: npm run ci:solidity
+
+  grafana:
+    name: Grafana Dashboard Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify Docker availability
+        run: docker version
+
+      - name: Lint Grafana dashboards
         env:
           CI: true
-        run: npm run ci:solidity
+        run: npm run lint:grafana
 
   typescript:
     name: Subgraph TypeScript Build
@@ -204,6 +220,7 @@ jobs:
     timeout-minutes: 30
     needs:
       - lint
+      - grafana
       - test
       - solidity
       - typescript
@@ -264,6 +281,7 @@ jobs:
     if: ${{ github.ref == 'refs/heads/main' }}
     needs:
       - lint
+      - grafana
       - test
       - solidity
       - typescript
@@ -283,6 +301,7 @@ jobs:
           import { writeFileSync } from 'node:fs';
           const results = {
             lint: process.env.LINT_RESULT,
+            grafana: process.env.GRAFANA_RESULT,
             test: process.env.TEST_RESULT,
             solidity: process.env.SOLIDITY_RESULT,
             typescript: process.env.TYPESCRIPT_RESULT,
@@ -308,6 +327,7 @@ jobs:
 
           const badges = {
             'lint.json': JSON.stringify(statusBadge('lint', results.lint)),
+            'grafana.json': JSON.stringify(statusBadge('grafana', results.grafana)),
             'test.json': JSON.stringify(statusBadge('tests', results.test)),
             'solidity.json': JSON.stringify(statusBadge('solidity', results.solidity)),
             'typescript.json': JSON.stringify(statusBadge('subgraph', results.typescript)),
@@ -327,6 +347,7 @@ jobs:
           NODE
         env:
           LINT_RESULT: ${{ needs.lint.result }}
+          GRAFANA_RESULT: ${{ needs.grafana.result }}
           TEST_RESULT: ${{ needs.test.result }}
           SOLIDITY_RESULT: ${{ needs.solidity.result }}
           TYPESCRIPT_RESULT: ${{ needs.typescript.result }}

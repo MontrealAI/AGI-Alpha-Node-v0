@@ -2,6 +2,7 @@
 <!-- markdownlint-disable MD013 -->
 
 Import `observability/grafana/dcutr_dashboard.json` into Grafana to visualize the hole punching control loop end-to-end.
+Validate it locally with `grafana dashboards lint observability/grafana/dcutr_dashboard.json` (the repo ships `npm run lint:grafana` for convenience).
 
 > Mermaid fences here match GitHub’s renderer, so the topology sketch below renders cleanly on GitHub Pages and in previews.
 
@@ -9,14 +10,12 @@ Import `observability/grafana/dcutr_dashboard.json` into Grafana to visualize th
 
 ## Panel guide
 
-1. **Punch Success %** — live gauge sourced from `dcutr_punch_success_rate{region,asn,transport,relay_id}`; slice by geography and transport to spot hotspots.
-2. **Attempts vs Success vs Failure** — per-5m rate comparison of attempts, successes, and failures to isolate regressions or blocked transports.
-3. **Time to Direct p50/p95** — quantiles over `dcutr_time_to_direct_seconds_bucket` to catch coordination jitter by relay or AS.
-4. **Path Quality (RTT & Loss)** — gauges keyed by `relay_id` and `asn` for jitter/loss anomalies after a successful punch.
-5. **Relay vs Direct Data** — bytes per second over relay vs direct paths to highlight cost regressions or underperforming direct paths.
-6. **Relay Fallback vs Offload** — rate of sessions sticking to relays or offloading; drill down by `region` and `transport` to validate policy flips.
-7. **Heatmap: Success by Region × AS** — correlates geography with provider behavior to detect asymmetric NAT pockets.
-8. **Incidents rail** — top failing relays/regions in the last 24h and 7d to anchor incident response.
+1. **Punch Success Rate** — `sum(rate(dcutr_punch_success_total[5m])) / sum(rate(dcutr_punch_attempts_total[5m]))` as the north-star KPI.
+2. **Punch Attempts / Success / Failures** — side-by-side rates for attempts, successes, and failures (5m windows) to catch regressions fast.
+3. **Time To Direct (Latency Histogram)** — p95 `histogram_quantile` from `dcutr_time_to_direct_seconds_bucket` to surface coordination jitter.
+4. **Relay Offload** — rate of sessions that successfully vacate the relay to quantify cost and latency wins.
+5. **Direct Path Quality (RTT)** — `avg(dcutr_path_quality_rtt_ms)` to keep direct path latency honest against your SLOs.
+6. **Region × ASN Heatmap** — heatmap over `sum(rate(dcutr_punch_success_total[10m])) by (region, asn)` to catch geography/provider pockets.
 
 Panel wiring hints:
 
