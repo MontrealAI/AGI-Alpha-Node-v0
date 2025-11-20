@@ -1,0 +1,111 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0" },
+    { "type": "panel", "id": "timeseries", "name": "Time series", "version": "10.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "2.51.0" }
+  ],
+  "title": "DCUtR Punch Health (Stub)",
+  "uid": "dcutr-alpha",
+  "version": 1,
+  "time": { "from": "now-6h", "to": "now" },
+  "tags": ["dcutr", "libp2p", "observability"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Punch Success %",
+      "datasource": { "type": "prometheus", "uid": "__PROMETHEUS__" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "dcutr_punch_success_rate",
+          "legendFormat": "success rate"
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "reduceOptions": { "calcs": ["lastNotNull"], "values": false }
+      },
+      "fieldConfig": {
+        "defaults": { "unit": "percentunit", "min": 0, "max": 1 },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Punch Attempts vs Success vs Failure",
+      "datasource": { "type": "prometheus", "uid": "__PROMETHEUS__" },
+      "targets": [
+        { "refId": "A", "expr": "rate(dcutr_punch_attempts_total[5m])", "legendFormat": "attempts" },
+        { "refId": "B", "expr": "rate(dcutr_punch_success_total[5m])", "legendFormat": "success" },
+        { "refId": "C", "expr": "rate(dcutr_punch_failure_total[5m])", "legendFormat": "failure" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 6, "y": 0 }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Time to Direct (p50/p95)",
+      "datasource": { "type": "prometheus", "uid": "__PROMETHEUS__" },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.5, sum by (le) (rate(dcutr_time_to_direct_seconds_bucket[5m])))", "legendFormat": "p50" },
+        { "refId": "B", "expr": "histogram_quantile(0.95, sum by (le) (rate(dcutr_time_to_direct_seconds_bucket[5m])))", "legendFormat": "p95" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 }
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Path Quality (RTT & Loss)",
+      "datasource": { "type": "prometheus", "uid": "__PROMETHEUS__" },
+      "targets": [
+        { "refId": "A", "expr": "dcutr_path_quality_rtt_ms", "legendFormat": "RTT (ms)" },
+        { "refId": "B", "expr": "dcutr_path_quality_loss_rate", "legendFormat": "Loss %" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "none" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Relay vs Direct Data",
+      "datasource": { "type": "prometheus", "uid": "__PROMETHEUS__" },
+      "targets": [
+        { "refId": "A", "expr": "rate(dcutr_relay_data_bytes_total[5m])", "legendFormat": "Relay bytes/s" },
+        { "refId": "B", "expr": "rate(dcutr_direct_data_bytes_total[5m])", "legendFormat": "Direct bytes/s" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "Bps" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Relay Fallback vs Offload",
+      "datasource": { "type": "prometheus", "uid": "__PROMETHEUS__" },
+      "targets": [
+        { "refId": "A", "expr": "rate(dcutr_fallback_relay_total[5m])", "legendFormat": "fallback" },
+        { "refId": "B", "expr": "rate(dcutr_relay_offload_total[5m])", "legendFormat": "offload" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 }
+    }
+  ],
+  "templating": { "list": [] },
+  "annotations": { "list": [] },
+  "links": [
+    {
+      "title": "DCUtR METRICS.md",
+      "url": "https://github.com/MontrealAI/AGI-Alpha-Node-v0/blob/main/observability/docs/METRICS.md",
+      "type": "link"
+    }
+  ]
+}

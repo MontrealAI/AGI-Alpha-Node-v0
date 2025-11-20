@@ -49,6 +49,12 @@
   </a>
   <img src="https://img.shields.io/badge/Owner%20Controls-Total%20Command-9333ea?logo=gnometerminal&logoColor=white" alt="Owner controls" />
   <img src="https://img.shields.io/badge/Metrics-Prometheus%20%7C%20OTel-10b981?logo=prometheus&logoColor=white" alt="Metrics surfaces" />
+  <a href="observability/docs/METRICS.md">
+    <img src="https://img.shields.io/badge/DCUtR%20Metrics-Prometheus%20stub-16a34a?logo=prometheus&logoColor=white" alt="DCUtR Prometheus stub" />
+  </a>
+  <a href="observability/grafana/dcutr_dashboard.json">
+    <img src="https://img.shields.io/badge/Grafana-DCUtR%20Dashboard-ef4444?logo=grafana&logoColor=white" alt="Grafana stub" />
+  </a>
 </p>
 
 **AGI Alpha Node v0** metabolizes heterogeneous agentic labor into verifiable α‑Work Units (α‑WU) and Synthetic Labor Units (SLU), rebalances the Global Synthetic Labor Index (GSLI), exposes audited REST telemetry, and routes the `$AGIALPHA` treasury (token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) under absolute owner command. Every dial can be paused, rerouted, or retuned without redeploying, delivering a production-grade intelligence core built to reshape markets while remaining obedient to the owner’s keys.
@@ -130,6 +136,7 @@ flowchart TD
 | Explore locally | `npm run demo:local` | Spins up the libp2p harness, SQLite spine, telemetry registry, and governance API for cockpit exploration.【F:package.json†L13-L25】 |
 | Full CI wall | `npm run ci:verify` | Executes lint, tests, coverage enforcement, Solidity, subgraph, security, policy, and branch gates exactly like the GitHub workflow.【F:package.json†L26-L52】【F:.github/workflows/ci.yml†L1-L210】 |
 | Abuse harness | `npm run p2p:load-tests` | Replays connection/stream floods and malformed gossip so `/debug/resources` and peer-score gauges prove their worth before shipping.【F:package.json†L53-L60】【F:test/network/loadHarness.observability.test.js†L1-L108】 |
+| DCUtR observability kit | `npx tsx -e "import('./observability/prometheus/metrics_dcutr.ts').then(m=>m.registerDCUtRMetrics());"` | Pre-registers counters/gauges/histograms and primes Grafana panels from `observability/grafana/dcutr_dashboard.json` while keeping default Prometheus exports intact.【F:observability/prometheus/metrics_dcutr.ts†L1-L116】【F:observability/grafana/dcutr_dashboard.json†L1-L153】 |
 | Ship dashboards | `npm run dashboard:build` | Builds the React/Vite cockpit that mirrors the telemetry tiles described below.【F:package.json†L61-L74】 |
 
 ## Mode A treasury (post-quantum, cheap on-chain)
@@ -265,6 +272,30 @@ flowchart LR
 - **Debug surfaces**: `/debug/resources` returns limits, usage, bans, trims; `/debug/network` exposes reachability timelines, churn, dial successes/failures, and transport posture for any time window.【F:src/network/apiServer.js†L1353-L1552】
 - **Prometheus + OTel**: `startMonitoringServer` keeps `/metrics` and OTLP wiring alive; libp2p dial traces and protocol handlers feed latency/volume histograms ready for Grafana overlays.【F:src/telemetry/monitoring.js†L280-L363】【F:src/network/libp2pHostConfig.js†L64-L195】【F:src/network/protocols/metrics.js†L6-L149】
 - **Dashboard parity**: The React/Vite cockpit consumes the same debug endpoints to render transport posture, reachability, resource pressure, and churn tiles with zero bespoke wiring.【F:dashboard/src/views/TelemetryView.jsx†L1-L323】【F:dashboard/src/api/client.js†L31-L56】
+- **DCUtR punch health kit**: `observability/prometheus/metrics_dcutr.ts` defines counters, gauges, histograms, and a `registerDCUtRMetrics` hook plus emitters for punch attempts/success/failure, latency, path quality, fallback/offload, and byte volume. Pair it with `observability/grafana/dcutr_dashboard.json` and the walkthrough in `observability/docs/METRICS.md` + `observability/docs/DASHBOARD.md` to visualize success rate, time-to-direct, path quality, and relay offload without bespoke wiring.【F:observability/prometheus/metrics_dcutr.ts†L1-L116】【F:observability/grafana/dcutr_dashboard.json†L1-L153】【F:observability/docs/METRICS.md†L1-L63】【F:observability/docs/DASHBOARD.md†L1-L44】
+
+```mermaid
+flowchart LR
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  subgraph Punch[DCUtR Punch Lifecycle]
+    Start[onPunchStart]:::lava
+    Success[onPunchSuccess/onPunchFailure]:::lava
+    Quality[onDirectRttMs/onDirectLossRate]:::lava
+    Volume[onRelayBytes/onDirectBytes]:::lava
+  end
+
+  Start --> Registry
+  Success --> Registry
+  Quality --> Registry
+  Volume --> Registry
+
+  Registry[registerDCUtRMetrics\nPrometheus registry + defaults]:::frost --> Scrape[Prometheus scrape]:::frost
+  Scrape --> Grafana[dcutr_dashboard.json\n(p50/p95, success %, offload)]:::neon
+  Grafana --> Operator[Operator cockpit + alerts]:::neon
+```
 
 ## CI wall (always green)
 
@@ -401,5 +432,6 @@ flowchart LR
 - Mode A flow, envelope schema, orchestrator steps: [`docs/treasury-mode-a.md`](docs/treasury-mode-a.md)
 - Network operations (reachability, DoS triage, posture flips): [`docs/network-operations.md`](docs/network-operations.md)
 - Economics & identity background: [`docs/economics.md`](docs/economics.md), [`docs/identity.md`](docs/identity.md), [`docs/manifesto.md`](docs/manifesto.md)
+- DCUtR metrics and dashboard import: [`observability/docs/METRICS.md`](observability/docs/METRICS.md), [`observability/docs/DASHBOARD.md`](observability/docs/DASHBOARD.md)
 
 This repository is engineered as the operator-owned intelligence engine that bends economic gravity without sacrificing control: post-quantum approvals off-chain, inexpensive on-chain execution, omnipresent telemetry, and a CI wall that keeps every surface green before code reaches `main`.
