@@ -21,7 +21,7 @@
   <a href="../docs/manifesto.md">
     <img src="https://img.shields.io/badge/Manifesto-Strategic%20Beacon-1a1a1a.svg?style=flat-square" alt="Manifesto" />
   </a>
-  <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions?query=branch%3Amain">
+  <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml?query=branch%3Amain">
     <img src="https://img.shields.io/badge/Checks-Visible%20on%20GitHub-0b7285.svg?style=flat-square" alt="GitHub Actions Visibility" />
   </a>
   <img src="https://img.shields.io/badge/Branch%20Protection-Enforced-1f2933.svg?style=flat-square" alt="Branch Protection" />
