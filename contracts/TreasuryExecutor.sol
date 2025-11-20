@@ -123,6 +123,7 @@ contract TreasuryExecutor is Ownable {
         if (returndata.length == 0) {
             revert CallFailed();
         }
+        // solhint-disable-next-line no-inline-assembly
         assembly {
             revert(add(returndata, 0x20), mload(returndata))
         }
