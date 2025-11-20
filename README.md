@@ -283,6 +283,7 @@ flowchart LR
 - `.github/workflows/ci.yml` runs lint, tests (backend + dashboard), coverage enforcement, Solidity lint/compile, subgraph build, docker smoke, audit, and then replays `npm run ci:verify` to mirror the local bar.【F:.github/workflows/ci.yml†L1-L210】
 - `.github/required-checks.json` marks every gate as mandatory for PRs and `main`, keeping branch protection aligned with the badges above.【F:.github/required-checks.json†L1-L10】
 - `badges` job on `main` publishes shields from CI outputs so the README badges reflect real outcomes and stay in sync with branch protection names.【F:.github/workflows/ci.yml†L261-L340】【F:.github/required-checks.json†L1-L10】
+- Mermaid fences stay GitHub-native: markdown linting guards the mermaid fences (no custom plugins), and every diagram here matches GitHub Pages rendering so diagrams + badges stay in lockstep across README and docs.【F:package.json†L12-L21】【F:README.md†L101-L179】
 - `npm run ci:verify` bundles all gates locally so contributors see the same wall GitHub enforces.【F:package.json†L19-L46】
 
 **Check map (enforced on PRs + main):**
