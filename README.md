@@ -168,6 +168,31 @@ npm run treasury:execute -- intents/payout.json \
   --chain-id 11155111
 ```
 
+#### On-chain execution spine
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Guardians as Guardians (Dilithium PQ)
+  participant Aggregator as Off-chain Aggregator
+  participant Orchestrator as Orchestrator EOA
+  participant Treasury as TreasuryExecutor.sol
+  participant Target as Target contract / EOA
+
+  Guardians->>Aggregator: CBOR envelopes (digest, pk, signature)
+  Aggregator->>Aggregator: verify envelopes + enforce M-of-N + ledger replay shield
+  Aggregator->>Orchestrator: approved intent + calldata
+  Orchestrator->>Treasury: executeTransaction(to,value,data)
+  Treasury-->>Target: call/value transfer guarded by pause + orchestrator allowlist
+  Treasury-->>Orchestrator: IntentExecuted(logs) + state flip
+  Aggregator-->>Aggregator: ledger persists tx hash + guardian approvals
+```
+
+- **Guardian proofs stay quantum-tough**: Dilithium CBOR envelopes carry the digest, public key, and signature so any verifier can authenticate guardian approvals deterministically.【F:src/treasury/pqEnvelope.ts†L1-L138】
+- **Thresholding with replay armor**: The aggregator binds the digest to chain/contract/function selector, deduplicates envelopes, enforces M-of-N, and records executions in the ledger before broadcasting the on-chain call.【F:scripts/treasury/execute-intent.ts†L1-L149】【F:src/treasury/intentLedger.ts†L1-L90】
+- **Owner supremacy**: The treasury contract lets the owner rotate the orchestrator, pause/unpause, reset intent status, and sweep funds while restricting execution to the authorized orchestrator.【F:contracts/TreasuryExecutor.sol†L1-L129】
+- **Battle-tested circuit**: EthereumJS VM tests cover successful execution, event emission, duplicate blocking with owner reset, orchestrator gating, pause/unpause, and sweeping to owner-chosen recipients.【F:test/treasury/treasuryExecutor.test.ts†L1-L164】
+
 ## Owner controls & token
 
 - `$AGIALPHA` token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals). Owner retains absolute pause, veto, and retuning authority.
