@@ -47,6 +47,8 @@ const options = program.opts<{
   domainVersion: number;
   functionSignature: string;
   ledger: string;
+  logFile: string;
+  webhook?: string;
   dryRun: boolean;
 }>();
 
