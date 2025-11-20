@@ -32,6 +32,12 @@
   </a>
   <img src="https://img.shields.io/badge/Runtime-Node.js%2020.18%2B-43853d?logo=node.js&logoColor=white" alt="Runtime" />
   <img src="https://img.shields.io/badge/Solidity-0.8.26-363636?logo=solidity&logoColor=white" alt="Solidity" />
+  <a href="docs/treasury-mode-a.md">
+    <img src="https://img.shields.io/badge/Mode%20A%20E2E-Guardian%E2%86%92Orchestrator%E2%86%92Treasury-0f766e?logo=gitbook&logoColor=white" alt="Mode A end-to-end" />
+  </a>
+  <a href="docs/runes/guardian.md">
+    <img src="https://img.shields.io/badge/Guardian%20Runbook-Dilithium%20CBOR-14b8a6?logo=readthedocs&logoColor=white" alt="Guardian runbook" />
+  </a>
   <a href="Dockerfile">
     <img src="https://img.shields.io/badge/Docker-Ready-2496ed?logo=docker&logoColor=white" alt="Docker" />
   </a>
@@ -62,6 +68,8 @@
 12. [Runbooks & references](#runbooks--references)
 
 ## System map
+
+> All diagrams use GitHub-native `mermaid` fences validated across this README and `docs/treasury-mode-a.md` so rendering stays first-class on GitHub pages and badges.
 
 ```mermaid
 flowchart TD
