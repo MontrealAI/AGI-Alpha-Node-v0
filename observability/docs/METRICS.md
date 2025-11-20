@@ -5,19 +5,28 @@ This document describes the DCUtR (Direct Connection Upgrade through Relay) metr
 
 ## Metric catalogue
 
+All DCUtR metrics are labeled with:
+
+- `region` — geographic hint (e.g., `us-east`, `eu-west`).
+- `asn` — autonomous system number or provider slug (e.g., `as16509`).
+- `transport` — transport negotiated for the punch attempt (`quic`, `tcp`).
+- `relay_id` — the relay peer ID guiding the rendezvous.
+
 | Metric | Type | Description |
 | --- | --- | --- |
-| `dcutr_punch_attempts_total` | Counter | Total hole punch attempts coordinated over relays. |
-| `dcutr_punch_success_total` | Counter | Successful punches that migrated to direct paths. |
-| `dcutr_punch_failure_total` | Counter | Failed punches that stayed on relays. |
-| `dcutr_punch_success_rate` | Gauge (computed) | Success ratio derived from attempts and successes. |
-| `dcutr_time_to_direct_seconds` | Histogram | Seconds from relay rendezvous to confirmed direct path. |
-| `dcutr_path_quality_rtt_ms` | Gauge | Round-trip time for the selected direct path. |
-| `dcutr_path_quality_loss_rate` | Gauge | Packet loss rate percentage for the direct path. |
-| `dcutr_fallback_relay_total` | Counter | Connections that stayed on relays after a punch attempt. |
-| `dcutr_relay_offload_total` | Counter | Connections that offloaded from relay to direct. |
-| `dcutr_relay_data_bytes_total` | Counter | Bytes transmitted over relays during DCUtR sessions. |
-| `dcutr_direct_data_bytes_total` | Counter | Bytes transmitted over direct paths post-upgrade. |
+| `dcutr_punch_attempts_total{region,asn,transport,relay_id}` | Counter | Total hole punch attempts coordinated over relays. |
+| `dcutr_punch_success_total{region,asn,transport,relay_id}` | Counter | Successful punches that migrated to direct paths. |
+| `dcutr_punch_failure_total{region,asn,transport,relay_id}` | Counter | Failed punches that stayed on relays. |
+| `dcutr_punch_success_rate{region,asn,transport,relay_id}` | Gauge (computed) | Success ratio derived from attempts and successes; calculated per label set during scrape. |
+| `dcutr_time_to_direct_seconds_bucket{region,asn,transport,relay_id}` | Histogram | Seconds from relay rendezvous to confirmed direct path (p50/p95 from buckets). |
+| `dcutr_path_quality_rtt_ms{region,asn,transport,relay_id}` | Gauge | Round-trip time for the selected direct path. |
+| `dcutr_path_quality_loss_rate{region,asn,transport,relay_id}` | Gauge | Packet loss rate percentage for the direct path. |
+| `dcutr_fallback_relay_total{region,asn,transport,relay_id}` | Counter | Connections that stayed on relays after a punch attempt. |
+| `dcutr_relay_offload_total{region,asn,transport,relay_id}` | Counter | Connections that offloaded from relay to direct. |
+| `dcutr_relay_data_bytes_total{region,asn,transport,relay_id}` | Counter | Bytes transmitted over relays during DCUtR sessions. |
+| `dcutr_direct_data_bytes_total{region,asn,transport,relay_id}` | Counter | Bytes transmitted over direct paths post-upgrade. |
+
+Example: `dcutr_punch_success_total{region="us-east",asn="as16509",transport="quic",relay_id="12D3KooW..."} 128`
 
 ## Wiring plan
 
@@ -28,7 +37,7 @@ This document describes the DCUtR (Direct Connection Upgrade through Relay) metr
    registerDCUtRMetrics();
    ```
 
-2. Hook emitters into punch lifecycle signals:
+2. Hook emitters into punch lifecycle signals (labels are optional; omitted labels default to `unknown` for stability):
 
    ```ts
    import {
@@ -44,16 +53,18 @@ This document describes the DCUtR (Direct Connection Upgrade through Relay) metr
      onDirectBytes,
    } from '../observability/prometheus/metrics_dcutr.js';
 
-   onPunchStart();
-   onPunchSuccess();
-   onPunchFailure();
-   onPunchLatency(1.42);
-   onDirectRttMs(32);
-   onDirectLossRate(0.4);
-   onRelayFallback();
-   onRelayOffload();
-   onRelayBytes(2048);
-   onDirectBytes(8192);
+   const labels = { region: 'us-east', asn: 'as16509', transport: 'quic', relay_id: '12D3KooW...' };
+
+   onPunchStart(labels);
+   onPunchSuccess(labels);
+   onPunchFailure(labels);
+   onPunchLatency(1.42, labels);
+   onDirectRttMs(32, labels);
+   onDirectLossRate(0.4, labels);
+   onRelayFallback(labels);
+   onRelayOffload(labels);
+   onRelayBytes(2048, labels);
+   onDirectBytes(8192, labels);
    ```
 
 3. Expose `/metrics` via your existing Prometheus HTTP handler or Node server.
