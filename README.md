@@ -306,6 +306,7 @@ The sprint artifacts live under `observability/` and are wired to render cleanly
 
 - **File map**: Prometheus stub (`observability/prometheus/metrics_dcutr.ts`), Grafana stub (`observability/grafana/dcutr_dashboard.json`), operator notes (`observability/docs/METRICS.md`, `observability/docs/DASHBOARD.md`).【F:observability/prometheus/metrics_dcutr.ts†L1-L116】【F:observability/grafana/dcutr_dashboard.json†L1-L153】【F:observability/docs/METRICS.md†L1-L63】【F:observability/docs/DASHBOARD.md†L1-L44】
 - **Metrics declared**: attempts/success/failure, computed success rate, time-to-direct histogram, RTT + loss gauges, relay fallback/offload counters, relay vs direct byte counters.【F:observability/prometheus/metrics_dcutr.ts†L7-L73】【F:observability/prometheus/metrics_dcutr.ts†L83-L116】
+- **Success-rate guardrail**: `dcutr_punch_success_rate` derives from attempts/successes during collection, pinning zero attempts to `0` to keep Grafana/Prometheus panels stable even under startup jitter.【F:observability/prometheus/metrics_dcutr.ts†L49-L66】
 - **Emitters**: `onPunchStart`, `onPunchSuccess`, `onPunchFailure`, `onPunchLatency`, `onDirectRttMs`, `onDirectLossRate`, `onRelayFallback`, `onRelayOffload`, `onRelayBytes`, `onDirectBytes` (all tested under `test/observability/metrics_dcutr.test.ts`).【F:observability/prometheus/metrics_dcutr.ts†L83-L116】【F:test/observability/metrics_dcutr.test.ts†L1-L95】
 - **Owner-ops quickstart**: register once and expose `/metrics`:
 
