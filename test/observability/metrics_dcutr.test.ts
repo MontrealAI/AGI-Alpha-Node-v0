@@ -67,19 +67,21 @@ describe('DCUtR Prometheus metrics stub', () => {
   });
 
   it('collects punch lifecycle gauges, counters, and histograms', async () => {
-    // Two attempts: one success, one failure.
-    onPunchStart();
-    onPunchSuccess();
-    onPunchStart();
-    onPunchFailure();
+    const labels = { region: 'us-east', asn: 'as16509', transport: 'quic', relay_id: '12D3KooW...' };
 
-    onPunchLatency(2.5);
-    onDirectRttMs(42);
-    onDirectLossRate(0.5);
-    onRelayFallback();
-    onRelayOffload();
-    onRelayBytes(2048);
-    onDirectBytes(4096);
+    // Two attempts: one success, one failure.
+    onPunchStart(labels);
+    onPunchSuccess(labels);
+    onPunchStart(labels);
+    onPunchFailure(labels);
+
+    onPunchLatency(2.5, labels);
+    onDirectRttMs(42, labels);
+    onDirectLossRate(0.5, labels);
+    onRelayFallback(labels);
+    onRelayOffload(labels);
+    onRelayBytes(2048, labels);
+    onDirectBytes(4096, labels);
 
     // Trigger gauge collection for derived success rate.
     await registry.metrics();
@@ -88,7 +90,7 @@ describe('DCUtR Prometheus metrics stub', () => {
       const metric = registry.getSingleMetric(name);
       if (!metric) return 0;
       const { values } = await metric.get();
-      return values?.[0]?.value ?? 0;
+      return values?.find((entry) => entry.labels?.region === 'us-east')?.value ?? 0;
     };
 
     const attemptsValue = await getSingleValue('dcutr_punch_attempts_total');

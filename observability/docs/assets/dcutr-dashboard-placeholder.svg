@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="480" viewBox="0 0 900 480" role="img" aria-label="DCUtR dashboard placeholder">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b1120"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="480" fill="url(#bg)" rx="24"/>
+  <g fill="none" stroke="#22c55e" stroke-width="3" opacity="0.8">
+    <rect x="40" y="40" width="820" height="120" rx="12"/>
+    <rect x="40" y="190" width="400" height="230" rx="12"/>
+    <rect x="460" y="190" width="400" height="230" rx="12"/>
+  </g>
+  <text x="60" y="90" fill="#e2e8f0" font-family="'Inter', 'Segoe UI', sans-serif" font-size="26" font-weight="700">DCUtR Command Deck</text>
+  <text x="60" y="130" fill="#94a3b8" font-family="'Inter', 'Segoe UI', sans-serif" font-size="16">KPI row: punch success, relay offload, time-to-direct</text>
+  <text x="70" y="230" fill="#94a3b8" font-family="'Inter', 'Segoe UI', sans-serif" font-size="16">Heatmaps · transport breakdown · relay hotspots</text>
+  <text x="490" y="230" fill="#94a3b8" font-family="'Inter', 'Segoe UI', sans-serif" font-size="16">Latency trends · fallback rates · incident feed</text>
+  <circle cx="750" cy="100" r="10" fill="#f59e0b"/>
+  <circle cx="780" cy="100" r="10" fill="#22c55e"/>
+  <circle cx="810" cy="100" r="10" fill="#0ea5e9"/>
+  <text x="690" y="105" fill="#cbd5e1" font-family="'Inter', 'Segoe UI', sans-serif" font-size="14">Live</text>
+</svg>
