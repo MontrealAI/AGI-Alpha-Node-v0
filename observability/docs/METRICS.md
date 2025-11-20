@@ -12,9 +12,11 @@ Every metric shares the same cardinality grid so drill-downs stay consistent:
 - `transport` — negotiated transport (`quic` or `tcp`).
 - `relay_id` — relay peer ID coordinating the rendezvous.
 
-## Metric catalogue
+## Metric descriptions
 
-Metric descriptions (all metrics accept `{region,asn,transport,relay_id}`):
+Every counter/gauge/histogram is wired for production slices and shares the common label grid (`region`, `asn`, `transport`, `relay_id`).
+
+Metric catalogue (all metrics accept `{region,asn,transport,relay_id}`):
 
 - **Attempts** (`dcutr_punch_attempts_total`) — punch coordination attempts started via a relay rendezvous.
 - **Success** (`dcutr_punch_success_total`) — attempts that migrated traffic off the relay to a direct path.

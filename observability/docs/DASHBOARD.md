@@ -5,6 +5,8 @@ Import `observability/grafana/dcutr_dashboard.json` into Grafana to visualize th
 
 ![DCUtR dashboard placeholder](./assets/dcutr-dashboard-placeholder.svg)
 
+> Replace the placeholder with a freshly exported Grafana capture after wiring your datasource so GitHub rendering stays in lockstep with the live cockpit.
+
 ## Panel guide
 
 1. **Punch Success %** — live gauge sourced from `dcutr_punch_success_rate{region,asn,transport,relay_id}`; slice by geography and transport to spot hotspots.
