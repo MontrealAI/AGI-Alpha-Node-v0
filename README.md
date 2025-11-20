@@ -38,6 +38,9 @@
   <a href="docs/runes/guardian.md">
     <img src="https://img.shields.io/badge/Guardian%20Runbook-Dilithium%20CBOR-14b8a6?logo=readthedocs&logoColor=white" alt="Guardian runbook" />
   </a>
+  <a href="docs/runes/orchestrator.md">
+    <img src="https://img.shields.io/badge/Orchestrator%20Runbook-Threshold%20Aggregation-22c55e?logo=readthedocs&logoColor=white" alt="Orchestrator runbook" />
+  </a>
   <a href="Dockerfile">
     <img src="https://img.shields.io/badge/Docker-Ready-2496ed?logo=docker&logoColor=white" alt="Docker" />
   </a>

@@ -170,3 +170,9 @@ leaves the orchestrator.
 - `test/treasury/treasuryExecutor.test.ts` deploys the contract inside `@ethereumjs/vm`, proving orchestrator rotation, replay prevention, pause enforcement, and sweep mechanics before anything touches a public chain.【F:test/treasury/treasuryExecutor.test.ts†L1-L178】
 
 When onboarding, deploy `TreasuryExecutor` with your orchestrator address (or default to owner), store the address in `TREASURY_ADDRESS`, and bind every digest via `--contract` + `--chain-id` + `--function-signature` so the off-chain hash always matches the on-chain calldata fingerprint that shows up in `IntentExecuted`.
+
+## End-to-end verification loop
+
+- **Automated circuit test**: `npm test -- test/treasury/modeA.integration.test.ts` spins up an EthereumJS VM, deploys `TreasuryExecutor`, generates two Dilithium guardians, signs a `TreasuryIntentV1`, aggregates M-of-N, executes `executeTransaction`, and asserts `IntentExecuted` + recipient balance changes. No RPC or private keys required; proves the full guardian → orchestrator → treasury chain deterministically.【F:test/treasury/modeA.integration.test.ts†L1-L196】
+- **Manual dry-run**: `npm run treasury:execute -- intents/treasury.json --registry config/guardians.json --envelopes ./envelopes --threshold 2 --chain-id 31337 --ledger ./state/intent-ledger.json --dry-run` loads envelopes, enforces domain/threshold/ledger rules, and prints the calldata digest without broadcasting. Drop `--dry-run` once you see the threshold satisfied and guardians identified.
+- **On-chain parity check**: After broadcasting, tail `logs/treasury-executor.log` or your webhook payloads for the digest + tx hash pair and cross-check it against the on-chain `IntentExecuted` event. If the contract is paused or a digest already ran, the script will refuse to send—owner can unblock with `pause`/`unpause` or `setIntentStatus`.
