@@ -55,6 +55,12 @@
   <a href="observability/grafana/dcutr_dashboard.json">
     <img src="https://img.shields.io/badge/Grafana-DCUtR%20Dashboard-ef4444?logo=grafana&logoColor=white" alt="Grafana stub" />
   </a>
+  <a href="observability/docs/METRICS.md">
+    <img src="https://img.shields.io/badge/Docs-METRICS.md-22d3ee?logo=mdbook&logoColor=white" alt="Metrics docs" />
+  </a>
+  <a href="observability/docs/DASHBOARD.md">
+    <img src="https://img.shields.io/badge/Docs-DASHBOARD.md-fcd34d?logo=grafana&logoColor=0b1120" alt="Dashboard docs" />
+  </a>
 </p>
 
 **AGI Alpha Node v0** metabolizes heterogeneous agentic labor into verifiable α‑Work Units (α‑WU) and Synthetic Labor Units (SLU), rebalances the Global Synthetic Labor Index (GSLI), exposes audited REST telemetry, and routes the `$AGIALPHA` treasury (token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) under absolute owner command. Every dial can be paused, rerouted, or retuned without redeploying, delivering a production-grade intelligence core built to reshape markets while remaining obedient to the owner’s keys.
@@ -251,6 +257,31 @@ flowchart LR
   TreasuryExec -->|call/value| Target[Target contract / EOA]:::lava
   TreasuryExec -->|IntentExecuted log| Ledger[Off-chain IntentLedger]:::frost
 ```
+
+#### Owner command lattice (end-to-end levers)
+
+```mermaid
+flowchart TB
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  Owner[Owner key\n(single authority)]:::lava --> GovCLI[CLI & REST governance verbs]:::neon
+  GovCLI --> Manager[AlphaNodeManager.sol\nidentities · validators · staking]:::frost
+  GovCLI --> TreasuryExec2[TreasuryExecutor.sol\nintent ledger + pause]:::frost
+  GovCLI --> NetOps[Network runtime\nNRM + libp2p posture]:::neon
+  GovCLI --> Observability[Observability\nmetrics + dashboards]:::lava
+
+  Manager --> Slashing[applySlash/setIdentityStatus]:::neon
+  Manager --> Economics[stake/withdraw/mint validation caps]:::neon
+  TreasuryExec2 --> Pauses[pause/unpause · sweep · orchestrator rotation]:::lava
+  NetOps --> Punch[Hole punching \nQUIC-first, TCP fallback]:::frost
+  Observability --> DCUtRDocs[METRICS.md + DASHBOARD.md\nlabels, panels, screenshots]:::frost
+
+  class Owner,GovCLI,Manager,TreasuryExec2,NetOps,Observability,Slashing,Economics,Pauses,Punch,DCUtRDocs neon;
+```
+
+Every control surface above is owner-first: identities, staking limits, orchestrator selection, pause toggles, and observability wiring can all be altered live without redeploying, giving the owner absolute command over transport posture, treasury dispatch, and DCUtR telemetry.
 
 | Verb | Capability | Notes |
 | --- | --- | --- |

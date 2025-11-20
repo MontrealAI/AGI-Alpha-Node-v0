@@ -3,6 +3,8 @@
 
 This document specifies the Direct Connection Upgrade through Relay (DCUtR) telemetry surface exposed by the AGI Alpha Node runtime. It aligns with the DCUtR primer in the README and feeds the Grafana dashboard stub under `observability/grafana/dcutr_dashboard.json`.
 
+**DCUtR at a glance (production heuristics):** peers rendezvous on a relay, exchange hints, punch QUIC/TCP holes in a coordinated window, and migrate traffic to the best direct path. Track success, timing, and offload volume to keep latency and relay spend under control.
+
 ## Labels
 
 Every metric shares the same cardinality grid so drill-downs stay consistent:
