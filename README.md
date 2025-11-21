@@ -101,6 +101,7 @@ This codebase is treated as the operational shell of that high-value intelligenc
 
 > **Fresh state of the stack (at a glance)**
 >
+> - **Phase 6 deliverables pinned**: instrumentation schema + emitters live in `observability/prometheus/metrics_dcutr.js`, the Grafana stub is ready to import at `observability/grafana/dcutr_dashboard.json` with hands-free provisioning via `grafana/provisioning/dashboards/dcutr.yaml`, and every panel/PromQL path is documented in `observability/docs/DASHBOARD.md` + `observability/docs/METRICS.md` so operators import once and run. Lint parity stays wired through `npm run lint:grafana` and the CI badge wall above.
 > - **DCUtR observability sprint completed**: `observability/prometheus/metrics_dcutr.js` implements collectors, emitters, and computed success-rate gauges; `observability/grafana/dcutr_dashboard.json` + `grafana/provisioning/dashboards/dcutr.yaml` provide hands-free dashboard import; `observability/docs/METRICS.md` and `observability/docs/DASHBOARD.md` document every PromQL panel and label so operators and auditors stay aligned.
 > - **CI wall enforced**: `.github/workflows/ci.yml` runs lint, tests, coverage gates, Solidity lint/compile, subgraph builds, Docker smoke, audit, and policy/branch gates; `.github/required-checks.json` keeps them required on PRs/main with badges reflecting live status, matching `npm run ci:verify` locally.
 > - **Owner command intact**: treasury/tokens stay owner-steered (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) with pause + parameter control and ENS-aware orchestration. Compose/Helm paths stay aligned with the repo tree below for predictable deploys.
@@ -117,7 +118,7 @@ flowchart LR
     Runtime[src/**\n(governance, p2p, telemetry)]:::neon
     Contracts[contracts/**\nAlphaNodeManager.sol\nTreasuryExecutor.sol]:::lava
     Observability[observability/**\nPrometheus + Grafana + docs]:::frost
-    Dashboard[dashboards/**\nReact/Vite cockpit]:::frost
+    Dashboard[dashboard/**\nReact/Vite cockpit]:::frost
     Subgraph[subgraph/**\nGraph Protocol manifests]:::neon
     Scripts[scripts/**\nops, lint, harnesses]:::lava
   end
