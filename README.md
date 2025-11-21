@@ -470,7 +470,42 @@ flowchart TB
 
 Every control surface above is owner-first: identities, staking limits, orchestrator selection, pause toggles, and observability wiring can all be altered live without redeploying, giving the owner absolute command over transport posture, treasury dispatch, and DCUtR telemetry.
 
-| Verb | Capability | Notes |
+#### Owner control quickstart (non-technical path)
+
+1. **Mint guardian keys (per signer)**
+
+```bash
+npm run treasury:keygen -- --guardian-id guardian-1 --parameter-set 2 --out ./keys/guardian-1
+```
+
+- Emits Dilithium public/private key pairs plus JSON metadata for each guardian slot; files land under `./keys` with restrictive permissions so the owner can onboard new signers safely.【F:scripts/treasury/keygen.ts†L9-L88】
+
+1. **Sign intents with guardian envelopes**
+
+```bash
+npm run treasury:sign -- ./intents/transfer.json --public-key @keys/guardian-1.pk --private-key @keys/guardian-1.sk \
+  --guardian-id guardian-1 --contract 0xYourTreasury --chain-id 1 --out ./envelopes/guardian-1-transfer.cbor
+```
+
+- Normalizes the intent, binds it to chain/contract/function selector, and emits CBOR/JSON envelopes ready for threshold aggregation; timestamps and guardian IDs are embedded for auditing.【F:scripts/treasury/sign-intent.ts†L13-L138】
+
+1. **Aggregate + execute under owner authority**
+
+```bash
+npm run treasury:execute -- ./intents/transfer.json --envelopes ./envelopes \
+  --treasury 0xa61a3b3a130a9c20768eebf97e21515a6046a1fa --rpc-url $RPC_URL --key $ORCHESTRATOR_KEY \
+  --threshold 2 --registry config/guardians.json --ledger logs/intent-ledger.json
+```
+
+- Collects CBOR envelopes, enforces M-of-N approvals, blocks replays via the ledger, and calls the orchestrator-only `executeTransaction` path while logging both domain-bound and on-chain digests for traceability.【F:scripts/treasury/execute-intent.ts†L1-L203】【F:contracts/TreasuryExecutor.sol†L75-L119】
+
+1. **Hot controls (pause/rotate/sweep)**
+
+- Use `setOrchestrator`, `pause`/`unpause`, `setIntentStatus`, and `sweep` directly on `TreasuryExecutor` to rotate automation keys, halt outbound calls, reset digests, or migrate the vault without redeploying any contracts.【F:contracts/TreasuryExecutor.sol†L26-L119】
+
+> Every lever above is owner-gated. Guardians co-sign intents; the owner (or owner-appointed orchestrator) decides when to broadcast, when to pause, and when to reroute funds.
+
+ | Verb | Capability | Notes |
 | --- | --- | --- |
 | `setOrchestrator(address)` | Rotate the single caller allowed to invoke `executeTransaction`. | Rejects zero address; emits `OrchestratorUpdated` so ops can audit rotations.【F:contracts/TreasuryExecutor.sol†L22-L57】 |
 | `pause()` / `unpause()` | Halt or resume any treasury dispatch. | Enforced before every call; protects value transfers while keeping owner supremacy.【F:contracts/TreasuryExecutor.sol†L59-L73】 |
