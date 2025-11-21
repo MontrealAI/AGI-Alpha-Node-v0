@@ -18,8 +18,8 @@ services:
     ports:
       - '3000:3000'
     volumes:
-      - ./grafana/provisioning:/grafana/provisioning:ro
       - ./observability/grafana:/grafana/dashboards:ro
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
       - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
     depends_on:
       - prom
