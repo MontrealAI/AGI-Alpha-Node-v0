@@ -27,7 +27,7 @@ Panel wiring hints:
 
 1. Navigate to **Dashboards → New → Import** in Grafana.
 2. Upload `observability/grafana/dcutr_dashboard.json` or paste its JSON payload.
-3. Select your Prometheus datasource and save.
+3. Select your Prometheus datasource and save (Docker compose auto-wires this via `grafana/provisioning/dashboards/dcutr.yaml`).【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L6】【F:docker-compose.yml†L1-L25】
 4. Run `grafana dashboards lint observability/grafana/dcutr_dashboard.json` (Grafana 10.3+ CLI) to catch structural issues before shipping.
 5. (Recommended) Wire alert rules for `dcutr_punch_success_rate` and p95 `dcutr_time_to_direct_seconds` to match your SLOs.
 
