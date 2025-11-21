@@ -174,6 +174,17 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
+  grafana-lint:
+    name: Grafana Dashboard Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Lint dashboard JSON via Grafana CLI
+        run: bash scripts/grafana-lint.sh
+
   docker-smoke:
     name: Docker Build & Smoke Test
     runs-on: ubuntu-latest
@@ -208,6 +219,7 @@ jobs:
       - solidity
       - typescript
       - coverage
+      - grafana-lint
       - docker-smoke
     steps:
       - name: Checkout
@@ -270,6 +282,7 @@ jobs:
       - coverage
       - docker-smoke
       - security
+      - grafana-lint
     steps:
       - name: Checkout scripts
         uses: actions/checkout@v4
@@ -287,7 +300,8 @@ jobs:
             solidity: process.env.SOLIDITY_RESULT,
             typescript: process.env.TYPESCRIPT_RESULT,
             docker: process.env.DOCKER_RESULT,
-            security: process.env.SECURITY_RESULT
+            security: process.env.SECURITY_RESULT,
+            grafana: process.env.GRAFANA_RESULT
           };
           const coverageRaw = Number(process.env.COVERAGE ?? '0');
           const coverage = Number.isFinite(coverageRaw) ? coverageRaw : 0;
@@ -313,6 +327,7 @@ jobs:
             'typescript.json': JSON.stringify(statusBadge('subgraph', results.typescript)),
             'docker.json': JSON.stringify(statusBadge('docker', results.docker)),
             'security.json': JSON.stringify(statusBadge('security', results.security)),
+            'grafana.json': JSON.stringify(statusBadge('grafana', results.grafana)),
             'coverage.json': JSON.stringify({
               schemaVersion: 1,
               label: 'coverage',
@@ -332,6 +347,7 @@ jobs:
           TYPESCRIPT_RESULT: ${{ needs.typescript.result }}
           DOCKER_RESULT: ${{ needs['docker-smoke'].result }}
           SECURITY_RESULT: ${{ needs.security.result }}
+          GRAFANA_RESULT: ${{ needs['grafana-lint'].result }}
           COVERAGE: ${{ needs.coverage.outputs.coverage }}
 
       - name: Publish badges
@@ -339,4 +355,4 @@ jobs:
           BADGE_GIST_ID: ${{ secrets.BADGE_GIST_ID }}
           BADGE_GIST_TOKEN: ${{ secrets.BADGE_GIST_TOKEN }}
         run: |
-          node scripts/publish-badges.mjs lint.json test.json solidity.json typescript.json docker.json security.json coverage.json
+          node scripts/publish-badges.mjs lint.json test.json solidity.json typescript.json docker.json security.json grafana.json coverage.json

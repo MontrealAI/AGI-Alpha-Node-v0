@@ -7,6 +7,7 @@
     "Solidity Lint & Compile",
     "Subgraph TypeScript Build",
     "Dependency Security Scan",
+    "Grafana Dashboard Lint",
     "Full CI Verification"
   ]
 }
