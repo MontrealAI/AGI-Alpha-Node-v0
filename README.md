@@ -70,6 +70,9 @@
   <a href="docker-compose.yml">
     <img src="https://img.shields.io/badge/Observability-Docker%20compose%20(prom%2Bgrafana)-2563eb?logo=docker&logoColor=white" alt="Observability compose" />
   </a>
+  <a href=".github/workflows/ci.yml">
+    <img src="https://img.shields.io/badge/CI%20Badge-Visible%20on%20GitHub%20Actions-1d4ed8?logo=githubactions&logoColor=white" alt="CI badge visibility" />
+  </a>
   <a href="scripts/dcutr-harness.ts">
     <img src="https://img.shields.io/badge/DCUtR%20Harness-Synthetic%20emitter-0ea5e9?logo=prometheus&logoColor=white" alt="DCUtR harness" />
   </a>
@@ -235,6 +238,14 @@ flowchart LR
 - **Provisioning locked in**: Grafana auto-imports the DCUtR board through `/grafana/provisioning/dashboards/dcutr.yaml`, so GitHub Pages and local operators see the same panels without manual clicks.【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L6】【F:docker-compose.yml†L1-L25】【F:observability/grafana/dcutr_dashboard.json†L1-L123】
 - **Harness + panel validation**: `npm run observability:dcutr-harness` emits success/failure mixes with RTT and relay/direct byte variance; `docker-compose up prom grafana` surfaces the counters, histograms, and heatmaps, mirroring the automated checks exercised in the Vitest suites.【F:scripts/dcutr-harness.ts†L1-L28】【F:src/observability/dcutrHarness.ts†L1-L92】【F:test/observability/dcutrHarness.test.ts†L1-L42】【F:test/observability/metrics_dcutr.test.ts†L1-L52】
 - **CI visibility**: DCUtR wiring is part of the main CI wall (`npm run ci:verify`), keeping badge status trustworthy and preventing regressions in the punch lifecycle bridge or Grafana JSON.【F:.github/workflows/ci.yml†L1-L210】【F:package.json†L26-L52】
+
+**Phase 4/5 completion checklist:**
+
+- ✅ Metrics are wired to real DCUtR lifecycle events (relay dial, punch start, direct confirmation, fallback, stream migration) with payload normalization and attempt de-duplication so the registry never double-counts attempts.【F:src/observability/dcutrEvents.js†L36-L211】【F:test/observability/dcutrEvents.test.ts†L18-L131】
+- ✅ Grafana provisioning ships in-repo (`/grafana/provisioning/dashboards/dcutr.yaml`) and aligns with the docker-compose volume mounts, keeping dashboards auto-loaded locally and on GitHub Pages renders.【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L6】【F:docker-compose.yml†L1-L20】
+- ✅ Synthetic DCUtR generator emits success/failure mixes, dynamic RTT, and simulated relays/regions/ASNs for panel validation without live traffic.【F:src/observability/dcutrHarness.ts†L1-L92】【F:scripts/dcutr-harness.ts†L1-L28】【F:test/observability/dcutrHarness.test.ts†L1-L42】
+- ✅ Local Prometheus+Grafana stack runs via `docker-compose up prom grafana`, scraping the node’s `/metrics` surface on port `9464` by default.【F:docker-compose.yml†L1-L25】【F:observability/prometheus/prometheus.yml†L1-L10】
+- ✅ Dashboard panels (KPI row, heatmap, histograms) populate immediately when the harness runs, matching the assertions encoded in the Vitest suites for the Prometheus emitters and Grafana JSON linting.【F:observability/grafana/dcutr_dashboard.json†L1-L123】【F:observability/prometheus/metrics_dcutr.js†L1-L221】【F:test/observability/metrics_dcutr.test.ts†L1-L52】【F:scripts/lint-grafana-dashboard.mjs†L1-L62】
 
 ### DCUtR dashboard validation loop
 
