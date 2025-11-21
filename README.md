@@ -412,6 +412,19 @@ The sprint artifacts live under `observability/` and are wired to render cleanly
   - **Datasource**: parameterized `DS_PROMETHEUS` input so imports prompt for your Prometheus instance instead of hard-coding a UID.【F:observability/grafana/dcutr_dashboard.json†L1-L19】【F:observability/grafana/dcutr_dashboard.json†L20-L69】
   - **Lint**: `grafana dashboards lint observability/grafana/dcutr_dashboard.json` (or `npm run lint:grafana`) before shipping to catch structural drift using the same PromQL set you’ll deploy.【F:scripts/lint-grafana-dashboard.mjs†L1-L62】
 
+### DCUtR Grafana panel map (phase 3 stub)
+
+| Panel ID | Title | Type | PromQL target |
+| --- | --- | --- | --- |
+| 1 | Punch Success Rate | `stat` | `sum(rate(dcutr_punch_success_total[5m])) / sum(rate(dcutr_punch_attempts_total[5m]))` |
+| 2 | Punch Attempts / Success / Failures | `timeseries` | `sum(rate(dcutr_punch_attempts_total[5m]))`, `sum(rate(dcutr_punch_success_total[5m]))`, `sum(rate(dcutr_punch_failure_total[5m]))` |
+| 3 | Time To Direct (Latency Histogram) | `timeseries` | `histogram_quantile(0.95, sum(rate(dcutr_time_to_direct_seconds_bucket[5m])) by (le))` |
+| 4 | Relay Offload | `timeseries` | `sum(rate(dcutr_relay_offload_total[5m]))` |
+| 5 | Direct Path Quality (RTT) | `timeseries` | `avg(dcutr_path_quality_rtt_ms)` |
+| 6 | Region × ASN Heatmap | `heatmap` | `sum(rate(dcutr_punch_success_total[10m])) by (region, asn)` |
+
+Each panel uses the same Prometheus datasource binding (`${DS_PROMETHEUS}`) to stay environment-agnostic while retaining unique `id` values for linting and alert rule wiring.【F:observability/grafana/dcutr_dashboard.json†L20-L123】【F:scripts/lint-grafana-dashboard.mjs†L1-L62】 Run `npm run lint:grafana` (wraps `grafana dashboards lint`) to verify structure before export; the badge block up top pulls from the same job to keep README and CI in sync.【F:package.json†L14-L21】【F:.github/workflows/ci.yml†L1-L210】
+
 ```mermaid
 flowchart TB
   classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
