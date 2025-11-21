@@ -46,8 +46,9 @@ export function wireDCUtRMetricBridge(
     }
   };
 
-  const onPunchBegin: Handler = (payload) => {
-    onPunchStart(payload.labels);
+  const onPunchBegin: Handler = (_payload) => {
+    // The synthetic harness already emits relayDialSuccess for every punch attempt,
+    // so avoid double-counting attempts by treating holePunchStart as informational.
   };
 
   const onDirectConfirm: Handler = (payload) => {
