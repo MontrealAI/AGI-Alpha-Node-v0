@@ -1,4 +1,5 @@
 import { describe, it, expect, afterEach, beforeEach } from 'vitest';
+import { EventEmitter } from 'node:events';
 import { setTimeout as delay } from 'node:timers/promises';
 import {
   recordAlphaWorkUnitSegment,
@@ -253,6 +254,37 @@ describe('monitoring telemetry server', () => {
     expect(metrics).toContain('alpha_wu_total{node_label="node-pre",device_class="H100-80GB",sla_profile="SOVEREIGN"} 8');
     expect(metrics).toContain('alpha_wu_per_job{job_id="job-pre"} 8');
     expect(metrics).toContain('alpha_wu_epoch{epoch_id="epoch-pre"} 8');
+  });
+
+  it('bridges DCUtR lifecycle events straight into /metrics', async () => {
+    const dcutrEmitter = new EventEmitter();
+    telemetry = startMonitoringServer({ port: 0, logger: noopLogger, dcutrEventEmitter: dcutrEmitter });
+    await waitForServer(telemetry.server);
+
+    dcutrEmitter.emit('relayDialSuccess', {
+      labels: { region: 'iad', relay_id: 'relay-x', transport: 'quic' },
+      relayBytes: 2048
+    });
+    dcutrEmitter.emit('directPathConfirmed', {
+      labels: { region: 'iad', relay_id: 'relay-x', transport: 'quic' },
+      elapsedSeconds: 0.9,
+      directBytes: 1024
+    });
+
+    const { port } = telemetry.server.address();
+    await delay(5);
+    const response = await fetch(`http://127.0.0.1:${port}/metrics`);
+    const metrics = await response.text();
+
+    expect(metrics).toContain(
+      'dcutr_punch_attempts_total{region="iad",asn="unknown",transport="quic",relay_id="relay-x"} 1'
+    );
+    expect(metrics).toContain(
+      'dcutr_punch_success_total{region="iad",asn="unknown",transport="quic",relay_id="relay-x"} 1'
+    );
+    expect(metrics).toContain(
+      'dcutr_direct_data_bytes_total{region="iad",asn="unknown",transport="quic",relay_id="relay-x"} 1024'
+    );
   });
 
   it('exports peer score metrics when a registry is provided', async () => {
