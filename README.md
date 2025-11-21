@@ -76,6 +76,12 @@
   <a href="grafana/provisioning/dashboards/dcutr.yaml">
     <img src="https://img.shields.io/badge/Grafana%20Provisioning-dcutr.yaml-14b8a6?logo=grafana&logoColor=white" alt="Grafana provisioning" />
   </a>
+  <a href="observability/prometheus/prometheus.yml">
+    <img src="https://img.shields.io/badge/Prometheus-Local%20scrape%20ready-f59e0b?logo=prometheus&logoColor=white" alt="Prometheus scrape" />
+  </a>
+  <a href=".github/workflows/ci.yml">
+    <img src="https://img.shields.io/badge/CI%20Gates-Enforced%20on%20PRs-7c3aed?logo=githubactions&logoColor=white" alt="PR enforced gates" />
+  </a>
 </p>
 
 **AGI Alpha Node v0** metabolizes heterogeneous agentic labor into verifiable α‑Work Units (α‑WU) and Synthetic Labor Units (SLU), rebalances the Global Synthetic Labor Index (GSLI), exposes audited REST telemetry, and routes the `$AGIALPHA` treasury (token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) under absolute owner command. Every dial can be paused, rerouted, or retuned without redeploying, delivering a production-grade intelligence core built to reshape markets while remaining obedient to the owner’s keys.
@@ -86,7 +92,13 @@ The full stack is shaped as a singular intelligence core that can realign market
 
 This codebase is treated as the operational shell of that high-value intelligence engine: everything is wired for determinism (full CI wall + coverage gates), rapid owner retuning (hot-swappable orchestrators, pausable treasuries, replay shields), and observable punch economics (DCUtR dashboards + PromQL linting) so the machine stays deploy-ready and under complete owner command at all times.
 
+## Owner command surface (live retuning)
+
+- Swap orchestrators, pause/unpause flows, sweep funds, or manually toggle intent status directly from `TreasuryExecutor.sol`, keeping every dial under the owner’s key while AGI workstreams run.【F:contracts/TreasuryExecutor.sol†L1-L93】
+- Bind guardian registries, CBOR envelopes, and replay ledgers to the on-chain executor via scripts that mirror CI policy gates, making parameter changes reversible and auditable without redeploys.【F:scripts/treasury/execute-intent.ts†L1-L150】【F:docs/runes/guardian.md†L1-L135】【F:docs/runes/orchestrator.md†L1-L89】
+
 > **Catalyst callout**: AGI Alpha Nodes behave like digital farmers in a cognitive field—yielding `$AGIALPHA` while bridging aspiration to achievement. The token contract lives at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals), and every surface (governance API, CLI, dashboards, treasury controls) keeps the owner in total command so parameters, relays, and treasury routes can be updated live.
+>
 > **DCUtR observability sprint (fresh)**: drop-in Prometheus primitives live at `observability/prometheus/metrics_dcutr.ts`, the paired Grafana stub (UID `dcutr-observability`, title “DCUtR — Hole Punch Performance”) sits in `observability/grafana/dcutr_dashboard.json`, and operator notes land in `observability/docs/METRICS.md` + `observability/docs/DASHBOARD.md` so you can register collectors, emit punch lifecycle events with labeled detail, and validate the JSON via `npm run lint:grafana` (mirrors `grafana dashboards lint`) before publishing panels that mirror the punch-control SLOs without bespoke wiring.【F:observability/prometheus/metrics_dcutr.ts†L1-L221】【F:observability/grafana/dcutr_dashboard.json†L1-L123】【F:observability/docs/METRICS.md†L1-L120】【F:observability/docs/DASHBOARD.md†L1-L120】【F:scripts/lint-grafana-dashboard.mjs†L1-L62】
 > **Owner supremacy callout**: The treasury vault remains entirely owner-steerable: `setOrchestrator` can rebind execution authority in one transaction, `pause` halts dispatches instantly, `setIntentStatus` clears or resurrects digests, and `sweep` drains holdings to any recipient the owner chooses—all without redeploying the contract or disrupting guardian workflows.【F:contracts/TreasuryExecutor.sol†L22-L119】
 
@@ -173,6 +185,8 @@ flowchart TD
 
 ### DCUtR metrics bridge + local dashboard loop
 
+The relay → direct upgrade telemetry now wires real libp2p/DCUtR lifecycle events (relay dial, punch start, direct confirmation, relay fallback, stream migration) straight into Prometheus before Grafana renders the panels. Synthetic generators mimic success/failure mixes with RTT/loss variance so dashboards stay populated even without live traffic.
+
 ```mermaid
 sequenceDiagram
   autonumber
@@ -197,6 +211,12 @@ sequenceDiagram
 2. **Launch Prometheus + Grafana locally**: `docker-compose up prom grafana` (credentials: `admin`/`admin`) auto-loads the DCUtR dashboard JSON, datasources, and provisioning bundle so panels render without manual clicks.【F:docker-compose.yml†L1-L25】【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L6】【F:grafana/provisioning/datasources/prometheus.yaml†L1-L8】【F:observability/grafana/dcutr_dashboard.json†L1-L123】
 3. **Verify panel health**: watch histogram buckets fill (`dcutr_time_to_direct_seconds`), relay/direct bytes counters increment, and fallback heatmaps rise/fall as the harness alternates success/failure under deterministic timers.【F:observability/prometheus/metrics_dcutr.ts†L1-L221】【F:test/observability/dcutrHarness.test.ts†L1-L42】
 4. **Attach to a live libp2p host**: `wireLibp2pDCUtRMetrics(libp2p)` bridges native `hole-punch:*`, `relay:*`, and `stream:migrate` events into the same Prometheus surfaces with deduped attempt tracking so real punch flows and synthetic harness traffic co-exist without double-counting.【F:src/observability/dcutrEvents.ts†L1-L200】【F:test/observability/dcutrEvents.test.ts†L1-L92】
+
+### DCUtR dashboard validation loop
+
+- **Bring up the stack**: `docker-compose up prom grafana` mounts the provisioning bundle (`grafana/provisioning/dashboards/dcutr.yaml`) plus dashboard JSON so Grafana renders without clicks; Prometheus scrapes `host.docker.internal:9464` on 5s cadence by default.【F:docker-compose.yml†L1-L25】【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L6】【F:observability/grafana/dcutr_dashboard.json†L1-L123】【F:observability/prometheus/prometheus.yml†L1-L10】
+- **Exercise metrics**: `npm run observability:dcutr-harness` emits success/failure mixes with RTT, loss, and relay/direct byte variance so heatmaps, histograms, and counters fill in immediately.【F:scripts/dcutr-harness.ts†L1-L28】【F:src/observability/dcutrHarness.ts†L1-L92】
+- **Inspect panels**: verify KPI row, region×ASN heatmap, punch latency histogram buckets, relay offload gauges, and fallback totals populate; confirm stream migration increments relay/direct bytes without double-counting attempts.【F:observability/grafana/dcutr_dashboard.json†L1-L123】【F:src/observability/dcutrEvents.ts†L1-L200】
 
 ## Mode A treasury (post-quantum, cheap on-chain)
 
