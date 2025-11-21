@@ -11,6 +11,9 @@
   <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml?query=branch%3Amain">
     <img src="https://img.shields.io/github/actions/workflow/status/MontrealAI/AGI-Alpha-Node-v0/ci.yml?branch=main&logo=githubactions&logoColor=white&label=CI%20Pipeline" alt="CI status" />
   </a>
+  <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml?query=event%3Apush">
+    <img src="https://img.shields.io/github/actions/workflow/status/MontrealAI/AGI-Alpha-Node-v0/ci.yml?event=push&label=Main%20pushes&logo=githubactions&logoColor=white" alt="CI (pushes)" />
+  </a>
   <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml?query=branch%3Amain">
     <img src="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml/badge.svg?branch=main" alt="Workflow badge" />
   </a>
@@ -21,6 +24,7 @@
     <img src="https://img.shields.io/badge/Required%20Checks-Enforced%20on%20PRs-8b5cf6?logo=github" alt="Required PR checks" />
   </a>
   <img src="https://img.shields.io/badge/Full%20CI-ci:verify-2563eb?logo=githubactions&logoColor=white" alt="Full CI verification" />
+  <img src="https://img.shields.io/badge/Observability-DCUtR%20SLO%20wall-10b981?logo=grafana&logoColor=white" alt="DCUtR observability SLO wall" />
   <img src="https://img.shields.io/badge/Coverage-c8%20gated-22c55e?logo=testinglibrary&logoColor=white" alt="Coverage" />
   <img src="https://img.shields.io/badge/Test%20Matrix-vitest%20%7C%20solc%20%7C%20markdownlint-22c55e?logo=vitest&logoColor=white" alt="Test matrix" />
   <a href="https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa">
@@ -95,6 +99,37 @@ The full stack is shaped as a singular intelligence core that can realign market
 
 This codebase is treated as the operational shell of that high-value intelligence engine: everything is wired for determinism (full CI wall + coverage gates), rapid owner retuning (hot-swappable orchestrators, pausable treasuries, replay shields), and observable punch economics (DCUtR dashboards + PromQL linting) so the machine stays deploy-ready and under complete owner command at all times.
 
+> **Fresh state of the stack (at a glance)**
+>
+> - **DCUtR observability sprint completed**: `observability/prometheus/metrics_dcutr.js` implements collectors, emitters, and computed success-rate gauges; `observability/grafana/dcutr_dashboard.json` + `grafana/provisioning/dashboards/dcutr.yaml` provide hands-free dashboard import; `observability/docs/METRICS.md` and `observability/docs/DASHBOARD.md` document every PromQL panel and label so operators and auditors stay aligned.
+> - **CI wall enforced**: `.github/workflows/ci.yml` runs lint, tests, coverage gates, Solidity lint/compile, subgraph builds, Docker smoke, audit, and policy/branch gates; `.github/required-checks.json` keeps them required on PRs/main with badges reflecting live status, matching `npm run ci:verify` locally.
+> - **Owner command intact**: treasury/tokens stay owner-steered (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) with pause + parameter control and ENS-aware orchestration. Compose/Helm paths stay aligned with the repo tree below for predictable deploys.
+
+## Repository map (live wiring)
+
+```mermaid
+flowchart LR
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  subgraph Codebase
+    Runtime[src/**\n(governance, p2p, telemetry)]:::neon
+    Contracts[contracts/**\nAlphaNodeManager.sol\nTreasuryExecutor.sol]:::lava
+    Observability[observability/**\nPrometheus + Grafana + docs]:::frost
+    Dashboard[dashboards/**\nReact/Vite cockpit]:::frost
+    Subgraph[subgraph/**\nGraph Protocol manifests]:::neon
+    Scripts[scripts/**\nops, lint, harnesses]:::lava
+  end
+
+  Observability --> |metrics_dcutr.js| Runtime
+  Runtime --> |ENS + treasury hooks| Contracts
+  Runtime --> |REST/CLI| Scripts
+  Dashboard --> Runtime
+  Subgraph --> Runtime
+  class Codebase,Runtime,Contracts,Observability,Dashboard,Subgraph,Scripts neon;
+```
+
 ## Owner command surface (live retuning)
 
 - Swap orchestrators, pause/unpause flows, sweep funds, or manually toggle intent status directly from `TreasuryExecutor.sol`, keeping every dial under the owner’s key while AGI workstreams run.【F:contracts/TreasuryExecutor.sol†L1-L93】
@@ -107,6 +142,7 @@ This codebase is treated as the operational shell of that high-value intelligenc
 
 ## Table of contents
 
+0. [Repository map (live wiring)](#repository-map-live-wiring)
 1. [System map](#system-map)
 2. [Core capabilities](#core-capabilities)
 3. [Operator quickstart](#operator-quickstart)
