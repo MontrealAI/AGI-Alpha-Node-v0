@@ -469,7 +469,7 @@ flowchart LR
 
 | GitHub check name | Local command / step | Source |
 | --- | --- | --- |
-| Lint Markdown & Links | `npm run ci:lint` (markdownlint + link-check + policy + branch gate) | 【F:package.json†L14-L34】【F:.github/workflows/ci.yml†L17-L58】 |
+| Lint Markdown & Links | `npm run ci:lint` (markdownlint + link-check + Grafana dashboard lint + policy + branch gate) | 【F:package.json†L14-L34】【F:.github/workflows/ci.yml†L17-L66】 |
 | Unit, Integration & Frontend Tests | `npm run ci:test` (backend + dashboard suites) | 【F:package.json†L26-L28】【F:.github/workflows/ci.yml†L60-L80】 |
 | Solidity Lint & Compile | `npm run ci:solidity` | 【F:package.json†L23-L30】【F:.github/workflows/ci.yml†L82-L103】 |
 | Subgraph TypeScript Build | `npm run ci:ts` | 【F:package.json†L29-L30】【F:.github/workflows/ci.yml†L104-L125】 |

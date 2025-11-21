@@ -47,6 +47,11 @@ jobs:
           CI: true
         run: npm run lint:links
 
+      - name: Lint Grafana dashboards
+        env:
+          CI: true
+        run: npm run lint:grafana
+
       - name: Verify health gate policy
         env:
           CI: true
