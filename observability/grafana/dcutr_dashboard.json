@@ -1,5 +1,13 @@
 {
-  "__inputs": [],
+  "__inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "label": "Prometheus",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
   "__requires": [
     { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "11.2.0" },
     { "type": "panel", "id": "timeseries", "name": "Time series", "version": "11.2.0" },
@@ -19,7 +27,7 @@
       "id": 1,
       "type": "stat",
       "title": "Punch Success Rate",
-      "datasource": { "type": "prometheus", "uid": "__PROMETHEUS__" },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "targets": [
         {
           "refId": "A",
@@ -43,7 +51,7 @@
       "id": 2,
       "type": "timeseries",
       "title": "Punch Attempts / Success / Failures",
-      "datasource": { "type": "prometheus", "uid": "__PROMETHEUS__" },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "targets": [
         { "refId": "A", "expr": "sum(rate(dcutr_punch_attempts_total[5m]))", "legendFormat": "attempts" },
         { "refId": "B", "expr": "sum(rate(dcutr_punch_success_total[5m]))", "legendFormat": "success" },
@@ -56,7 +64,7 @@
       "id": 3,
       "type": "timeseries",
       "title": "Time To Direct (Latency Histogram)",
-      "datasource": { "type": "prometheus", "uid": "__PROMETHEUS__" },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "targets": [
         {
           "refId": "A",
@@ -71,7 +79,7 @@
       "id": 4,
       "type": "timeseries",
       "title": "Relay Offload",
-      "datasource": { "type": "prometheus", "uid": "__PROMETHEUS__" },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "targets": [
         { "refId": "A", "expr": "sum(rate(dcutr_relay_offload_total[5m]))", "legendFormat": "offload rate" }
       ],
@@ -82,7 +90,7 @@
       "id": 5,
       "type": "timeseries",
       "title": "Direct Path Quality (RTT)",
-      "datasource": { "type": "prometheus", "uid": "__PROMETHEUS__" },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "targets": [
         { "refId": "A", "expr": "avg(dcutr_path_quality_rtt_ms)", "legendFormat": "avg rtt (ms)" }
       ],
@@ -93,7 +101,7 @@
       "id": 6,
       "type": "heatmap",
       "title": "Region × ASN Heatmap",
-      "datasource": { "type": "prometheus", "uid": "__PROMETHEUS__" },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "targets": [
         {
           "refId": "A",
