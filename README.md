@@ -384,6 +384,25 @@ flowchart LR
   Grafana --> Operator[Operator cockpit + alerts]:::neon
 ```
 
+```mermaid
+sequenceDiagram
+  autonumber
+  participant A as Peer A (behind NAT)
+  participant Relay as Relay
+  participant B as Peer B (behind NAT)
+  participant Direct as Direct Path
+
+  A->>Relay: Dial via reservation
+  Relay-->>B: Introduce peers
+  A->>B: Coordinate punch window
+  B-->>A: Exchange observed addrs + transports
+  A-->>Direct: Timed punches (QUIC-first, TCP fallback)
+  B-->>Direct: Timed punches (mirrored)
+  Direct-->>A: Direct RTT/quality stream
+  Direct-->>B: Direct RTT/quality stream
+  Relay-->>Relay: Tear down or stay warm as backup
+```
+
 ## DCUtR metrics sprint (drop-in)
 
 The sprint artifacts live under `observability/` and are wired to render cleanly on GitHub (Mermaid + badges) and in Grafana. They align the repo layout with the DCUtR primer above.
@@ -424,6 +443,13 @@ The sprint artifacts live under `observability/` and are wired to render cleanly
 | 6 | Region × ASN Heatmap | `heatmap` | `sum(rate(dcutr_punch_success_total[10m])) by (region, asn)` |
 
 Each panel uses the same Prometheus datasource binding (`${DS_PROMETHEUS}`) to stay environment-agnostic while retaining unique `id` values for linting and alert rule wiring.【F:observability/grafana/dcutr_dashboard.json†L20-L123】【F:scripts/lint-grafana-dashboard.mjs†L1-L62】 Run `npm run lint:grafana` (wraps `grafana dashboards lint`) to verify structure before export; the badge block up top pulls from the same job to keep README and CI in sync.【F:package.json†L14-L21】【F:.github/workflows/ci.yml†L1-L210】
+
+```bash
+# Validate the Grafana JSON stub (Phase 3 dashboard)
+npm run lint:grafana
+# or directly
+grafana dashboards lint observability/grafana/dcutr_dashboard.json
+```
 
 ```mermaid
 flowchart TB
