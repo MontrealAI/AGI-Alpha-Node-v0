@@ -81,25 +81,32 @@ export function wireDCUtRMetricBridge(
 ): () => void {
   registerDCUtRMetrics(registry);
 
-  const inflightAttempts = new Set<string>();
+  const inflightAttempts = new Map<string, number>();
 
-  const registerAttempt = (labels?: DCUtRLabelSet) => {
+  const registerAttempt = (labels?: DCUtRLabelSet, { skipIfInflight = false } = {}) => {
     const key = labelKey(labels);
-    if (!inflightAttempts.has(key)) {
-      onPunchStart(labels);
-      inflightAttempts.add(key);
-    }
+    const current = inflightAttempts.get(key) ?? 0;
+    if (skipIfInflight && current > 0) return;
+
+    const nextCount = current + 1;
+    inflightAttempts.set(key, nextCount);
+    onPunchStart(labels);
   };
 
   const settleAttempt = (labels?: DCUtRLabelSet) => {
     const key = labelKey(labels);
-    if (inflightAttempts.has(key)) {
+    const current = inflightAttempts.get(key);
+
+    if (!current) return;
+
+    if (current <= 1) {
       inflightAttempts.delete(key);
+    } else {
+      inflightAttempts.set(key, current - 1);
     }
   };
 
   const onRelayDial: Handler = (payload) => {
-    registerAttempt(payload.labels);
     if (payload.relayBytes) {
       onRelayBytes(payload.relayBytes, payload.labels);
     }
@@ -110,7 +117,7 @@ export function wireDCUtRMetricBridge(
   };
 
   const onDirectConfirm: Handler = (payload) => {
-    registerAttempt(payload.labels);
+    registerAttempt(payload.labels, { skipIfInflight: true });
     onPunchSuccess(payload.labels);
     onRelayOffload(payload.labels);
     if (typeof payload.elapsedSeconds === 'number') {
@@ -129,7 +136,7 @@ export function wireDCUtRMetricBridge(
   };
 
   const onRelayFallbackHandler: Handler = (payload) => {
-    registerAttempt(payload.labels);
+    registerAttempt(payload.labels, { skipIfInflight: true });
     onPunchFailure(payload.labels);
     onRelayFallback(payload.labels);
     if (typeof payload.relayBytes === 'number') {
