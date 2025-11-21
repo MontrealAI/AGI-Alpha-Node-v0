@@ -11,39 +11,40 @@ import {
   onRelayFallback,
   onRelayOffload,
   registerDCUtRMetrics,
-  type DCUtRLabelSet,
 } from '../../observability/prometheus/metrics_dcutr.js';
-import { register as defaultRegistry, type Registry } from 'prom-client';
+import { register as defaultRegistry } from 'prom-client';
 
-type ListenerDisposer = () => void;
-type EventSource = EventEmitter | EventTarget | { on?: EventEmitter['on']; off?: EventEmitter['off'] };
+/**
+ * @typedef {import('prom-client').Registry} Registry
+ * @typedef {import('../../observability/prometheus/metrics_dcutr.js').DCUtRLabelSet} DCUtRLabelSet
+ * @typedef {object} DCUtREventPayload
+ * @property {DCUtRLabelSet} [labels]
+ * @property {number} [elapsedSeconds]
+ * @property {number} [rttMs]
+ * @property {number} [lossPercent]
+ * @property {number} [relayBytes]
+ * @property {number} [directBytes]
+ *
+ * @typedef {'relayDialSuccess' | 'holePunchStart' | 'directPathConfirmed' | 'relayFallbackActive' | 'streamMigration'} DCUtREventName
+ *
+ * @typedef {EventEmitter | EventTarget | { on?: EventEmitter['on']; off?: EventEmitter['off'] }} EventSource
+ * @typedef {(payload: DCUtREventPayload) => void} Handler
+ * @typedef {() => void} ListenerDisposer
+ */
 
-export type DCUtREventPayload = {
-  labels?: DCUtRLabelSet;
-  elapsedSeconds?: number;
-  rttMs?: number;
-  lossPercent?: number;
-  relayBytes?: number;
-  directBytes?: number;
-};
-
-export type DCUtREventName =
-  | 'relayDialSuccess'
-  | 'holePunchStart'
-  | 'directPathConfirmed'
-  | 'relayFallbackActive'
-  | 'streamMigration';
-
-type Handler = (payload: DCUtREventPayload) => void;
-
-const DEFAULT_LABELS: Required<DCUtRLabelSet> = {
+/** @type {Required<DCUtRLabelSet>} */
+const DEFAULT_LABELS = {
   region: 'unknown',
   asn: 'unknown',
   transport: 'unknown',
   relay_id: 'unknown',
 };
 
-function normalizeLabels(labels?: DCUtRLabelSet): Required<DCUtRLabelSet> {
+/**
+ * @param {DCUtRLabelSet} [labels]
+ * @returns {Required<DCUtRLabelSet>}
+ */
+function normalizeLabels(labels) {
   return {
     region: labels?.region ?? DEFAULT_LABELS.region,
     asn: labels?.asn ?? DEFAULT_LABELS.asn,
@@ -52,22 +53,32 @@ function normalizeLabels(labels?: DCUtRLabelSet): Required<DCUtRLabelSet> {
   };
 }
 
-function labelKey(labels?: DCUtRLabelSet): string {
+/**
+ * @param {DCUtRLabelSet} [labels]
+ * @returns {string}
+ */
+function labelKey(labels) {
   const normalized = normalizeLabels(labels);
   return `${normalized.region}|${normalized.asn}|${normalized.transport}|${normalized.relay_id}`;
 }
 
-function attachListener(source: EventSource | null | undefined, event: string, handler: (...args: any[]) => void): ListenerDisposer {
+/**
+ * @param {EventSource | null | undefined} source
+ * @param {string} event
+ * @param {(...args: any[]) => void} handler
+ * @returns {ListenerDisposer}
+ */
+function attachListener(source, event, handler) {
   if (!source || !event || typeof handler !== 'function') return () => {};
 
-  if ('addEventListener' in (source as EventTarget)) {
-    const target = source as EventTarget;
-    target.addEventListener(event, handler as EventListener);
-    return () => target.removeEventListener?.(event, handler as EventListener);
+  if ('addEventListener' in /** @type {EventTarget} */ (source)) {
+    const target = /** @type {EventTarget} */ (source);
+    target.addEventListener(event, /** @type {EventListener} */ (handler));
+    return () => target.removeEventListener?.(event, /** @type {EventListener} */ (handler));
   }
 
-  if (typeof (source as EventEmitter).on === 'function') {
-    const emitter = source as EventEmitter;
+  if (typeof /** @type {EventEmitter} */ (source).on === 'function') {
+    const emitter = /** @type {EventEmitter} */ (source);
     emitter.on(event, handler);
     return () => (emitter.off ?? emitter.removeListener)?.(event, handler);
   }
@@ -75,15 +86,17 @@ function attachListener(source: EventSource | null | undefined, event: string, h
   return () => {};
 }
 
-export function wireDCUtRMetricBridge(
-  emitter: EventEmitter,
-  registry: Registry = defaultRegistry,
-): () => void {
+/**
+ * @param {EventEmitter} emitter
+ * @param {Registry} [registry]
+ * @returns {() => void}
+ */
+export function wireDCUtRMetricBridge(emitter, registry = defaultRegistry) {
   registerDCUtRMetrics(registry);
 
-  const inflightAttempts = new Map<string, number>();
+  const inflightAttempts = new Map();
 
-  const registerAttempt = (labels?: DCUtRLabelSet, { skipIfInflight = false } = {}) => {
+  const registerAttempt = (labels, { skipIfInflight = false } = {}) => {
     const key = labelKey(labels);
     const current = inflightAttempts.get(key) ?? 0;
 
@@ -94,7 +107,7 @@ export function wireDCUtRMetricBridge(
     onPunchStart(labels);
   };
 
-  const ensureAttemptRegistered = (labels?: DCUtRLabelSet) => {
+  const ensureAttemptRegistered = (labels) => {
     const key = labelKey(labels);
     const current = inflightAttempts.get(key) ?? 0;
 
@@ -103,7 +116,7 @@ export function wireDCUtRMetricBridge(
     }
   };
 
-  const settleAttempt = (labels?: DCUtRLabelSet) => {
+  const settleAttempt = (labels) => {
     const key = labelKey(labels);
     const current = inflightAttempts.get(key);
 
@@ -116,24 +129,27 @@ export function wireDCUtRMetricBridge(
     }
   };
 
-  const onRelayDial: Handler = (payload) => {
+  /** @type {Handler} */
+  const onRelayDial = (payload) => {
     registerAttempt(payload.labels, { skipIfInflight: true });
     if (payload.relayBytes) {
       onRelayBytes(payload.relayBytes, payload.labels);
     }
   };
 
-  const onPunchBegin: Handler = (payload) => {
+  /** @type {Handler} */
+  const onPunchBegin = (payload) => {
     registerAttempt(payload.labels, { skipIfInflight: true });
   };
 
-  const onDirectConfirm: Handler = (payload) => {
+  /** @type {Handler} */
+  const onDirectConfirm = (payload) => {
     ensureAttemptRegistered(payload.labels);
-    onPunchSuccess(payload.labels);
-    onRelayOffload(payload.labels);
     if (typeof payload.elapsedSeconds === 'number') {
       onPunchLatency(payload.elapsedSeconds, payload.labels);
     }
+    onPunchSuccess(payload.labels);
+    onRelayOffload(payload.labels);
     if (typeof payload.rttMs === 'number') {
       onDirectRttMs(payload.rttMs, payload.labels);
     }
@@ -146,7 +162,8 @@ export function wireDCUtRMetricBridge(
     settleAttempt(payload.labels);
   };
 
-  const onRelayFallbackHandler: Handler = (payload) => {
+  /** @type {Handler} */
+  const onRelayFallbackHandler = (payload) => {
     ensureAttemptRegistered(payload.labels);
     onPunchFailure(payload.labels);
     onRelayFallback(payload.labels);
@@ -156,7 +173,8 @@ export function wireDCUtRMetricBridge(
     settleAttempt(payload.labels);
   };
 
-  const onStreamMigrationHandler: Handler = (payload) => {
+  /** @type {Handler} */
+  const onStreamMigrationHandler = (payload) => {
     onRelayOffload(payload.labels);
     if (typeof payload.directBytes === 'number') {
       onDirectBytes(payload.directBytes, payload.labels);
@@ -173,7 +191,8 @@ export function wireDCUtRMetricBridge(
     settleAttempt(payload.labels);
   };
 
-  const listeners: Record<DCUtREventName, Handler> = {
+  /** @type {Record<DCUtREventName, Handler>} */
+  const listeners = {
     relayDialSuccess: onRelayDial,
     holePunchStart: onPunchBegin,
     directPathConfirmed: onDirectConfirm,
@@ -181,20 +200,23 @@ export function wireDCUtRMetricBridge(
     streamMigration: onStreamMigrationHandler,
   };
 
-  (Object.entries(listeners) as Array<[DCUtREventName, Handler]>).forEach(([event, handler]) => {
+  /** @type {Array<[DCUtREventName, Handler]>} */
+  const pairs = Object.entries(listeners);
+  pairs.forEach(([event, handler]) => {
     emitter.on(event, handler);
   });
 
   return () => {
-    (Object.entries(listeners) as Array<[DCUtREventName, Handler]>).forEach(([event, handler]) => {
+    pairs.forEach(([event, handler]) => {
       emitter.off(event, handler);
     });
   };
 }
 
-type Libp2pEventMapping = Partial<Record<DCUtREventName, string[]>>;
+/** @typedef {Partial<Record<DCUtREventName, string[]>>} Libp2pEventMapping */
 
-const DEFAULT_LIBP2P_EVENT_MAPPING: Libp2pEventMapping = {
+/** @type {Libp2pEventMapping} */
+const DEFAULT_LIBP2P_EVENT_MAPPING = {
   relayDialSuccess: ['relay:connect', 'relay:connected'],
   holePunchStart: ['hole-punch:start', 'holepunch:start', 'hole-punch:attempt'],
   directPathConfirmed: ['hole-punch:success', 'hole-punch:end', 'holepunch:success'],
@@ -202,7 +224,8 @@ const DEFAULT_LIBP2P_EVENT_MAPPING: Libp2pEventMapping = {
   streamMigration: ['stream:migrate', 'connection:migrate', 'direct:upgrade'],
 };
 
-const DCUTR_SERVICE_EVENT_MAPPING: Libp2pEventMapping = {
+/** @type {Libp2pEventMapping} */
+const DCUTR_SERVICE_EVENT_MAPPING = {
   relayDialSuccess: ['dcutr:relay:connect', 'dcutr:relay:connected'],
   holePunchStart: ['dcutr:punch:start', 'dcutr:hole-punch:start', 'dcutr:holepunch:start'],
   directPathConfirmed: ['dcutr:punch:success', 'dcutr:hole-punch:success', 'dcutr:direct:upgrade'],
@@ -210,33 +233,35 @@ const DCUTR_SERVICE_EVENT_MAPPING: Libp2pEventMapping = {
   streamMigration: ['dcutr:stream:migrate', 'dcutr:direct:migrate'],
 };
 
-function extractDetail(payload: unknown): DCUtREventPayload {
+/**
+ * @param {unknown} payload
+ * @returns {DCUtREventPayload}
+ */
+function extractDetail(payload) {
   if (!payload || typeof payload !== 'object') {
     return {};
   }
 
-  const maybeDetail = 'detail' in (payload as Record<string, unknown>) ? (payload as any).detail : payload;
+  const maybeDetail = 'detail' in /** @type {Record<string, unknown>} */ (payload)
+    ? /** @type {any} */ (payload).detail
+    : payload;
   if (!maybeDetail || typeof maybeDetail !== 'object') {
     return {};
   }
 
-  const labels: DCUtRLabelSet = {
-    region: (maybeDetail as any).region ?? (maybeDetail as any).regionHint,
-    asn: (maybeDetail as any).asn ?? (maybeDetail as any).asnHint,
-    transport: (maybeDetail as any).transport ?? (maybeDetail as any).netTransport,
-    relay_id:
-      (maybeDetail as any).relay_id ??
-      (maybeDetail as any).relayId ??
-      (maybeDetail as any).relay ??
-      (maybeDetail as any).peerId ??
-      (maybeDetail as any).remotePeer,
+  /** @type {DCUtRLabelSet} */
+  const labels = {
+    region: maybeDetail.region ?? maybeDetail.regionHint,
+    asn: maybeDetail.asn ?? maybeDetail.asnHint,
+    transport: maybeDetail.transport ?? maybeDetail.netTransport,
+    relay_id: maybeDetail.relay_id ?? maybeDetail.relayId ?? maybeDetail.relay ?? maybeDetail.peerId ?? maybeDetail.remotePeer,
   };
 
-  const elapsedSeconds = (maybeDetail as any).elapsedSeconds ?? (maybeDetail as any).durationSeconds;
-  const rttMs = (maybeDetail as any).rttMs ?? (maybeDetail as any).rtt;
-  const lossPercent = (maybeDetail as any).lossPercent ?? (maybeDetail as any).lossRate;
-  const relayBytes = (maybeDetail as any).relayBytes;
-  const directBytes = (maybeDetail as any).directBytes;
+  const elapsedSeconds = maybeDetail.elapsedSeconds ?? maybeDetail.durationSeconds;
+  const rttMs = maybeDetail.rttMs ?? maybeDetail.rtt;
+  const lossPercent = maybeDetail.lossPercent ?? maybeDetail.lossRate;
+  const relayBytes = maybeDetail.relayBytes;
+  const directBytes = maybeDetail.directBytes;
 
   return {
     labels,
@@ -248,17 +273,22 @@ function extractDetail(payload: unknown): DCUtREventPayload {
   };
 }
 
-export function wireLibp2pDCUtRMetrics(
-  libp2p: EventSource,
-  registry: Registry = defaultRegistry,
-  eventMapping: Libp2pEventMapping = DEFAULT_LIBP2P_EVENT_MAPPING,
-): () => void {
+/**
+ * @param {EventSource} libp2p
+ * @param {Registry} [registry]
+ * @param {Libp2pEventMapping} [eventMapping]
+ * @returns {() => void}
+ */
+export function wireLibp2pDCUtRMetrics(libp2p, registry = defaultRegistry, eventMapping = DEFAULT_LIBP2P_EVENT_MAPPING) {
   const bridgeEmitter = new EventEmitter();
   const detachMetricBridge = wireDCUtRMetricBridge(bridgeEmitter, registry);
-  const disposers: ListenerDisposer[] = [];
+  /** @type {ListenerDisposer[]} */
+  const disposers = [];
 
-  const bindMapping = (source: EventSource | null | undefined, mapping: Libp2pEventMapping) => {
-    (Object.entries(mapping) as Array<[DCUtREventName, string[] | undefined]>).forEach(([eventName, aliases]) => {
+  const bindMapping = (source, mapping) => {
+    /** @type {Array<[DCUtREventName, string[] | undefined]>} */
+    const entries = Object.entries(mapping);
+    entries.forEach(([eventName, aliases]) => {
       (aliases ?? []).forEach((alias) => {
         disposers.push(
           attachListener(source, alias, (payload) => {
@@ -271,8 +301,8 @@ export function wireLibp2pDCUtRMetrics(
 
   bindMapping(libp2p, eventMapping);
 
-  const dcutrService = (libp2p as any)?.services?.dcutr ?? (libp2p as any)?.dcutr ?? null;
-  const dcutrEvents = (dcutrService as any)?.events ?? dcutrService;
+  const dcutrService = libp2p?.services?.dcutr ?? libp2p?.dcutr ?? null;
+  const dcutrEvents = dcutrService?.events ?? dcutrService;
   if (dcutrEvents) {
     bindMapping(dcutrEvents, {
       relayDialSuccess: [...(eventMapping.relayDialSuccess ?? []), ...(DCUTR_SERVICE_EVENT_MAPPING.relayDialSuccess ?? [])],

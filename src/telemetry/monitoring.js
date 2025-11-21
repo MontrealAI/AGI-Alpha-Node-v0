@@ -5,6 +5,7 @@ import { resourceFromAttributes } from '@opentelemetry/resources';
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { collectDefaultMetrics, Counter, Gauge, Registry, Summary } from 'prom-client';
+import { wireDCUtRMetricBridge, wireLibp2pDCUtRMetrics } from '../observability/dcutrEvents.js';
 import { createNetworkMetrics } from './networkMetrics.js';
 import { DEFAULT_PEER_SCORE_THRESHOLDS } from '../services/peerScoring.js';
 import { applyPeerScoreSnapshot, createPeerScoreMetrics } from './peerScoreMetrics.js';
@@ -281,7 +282,9 @@ export function startMonitoringServer({
   dialerPolicy = null,
   reachabilityState = null,
   networkMetrics = null,
-  registry: providedRegistry = null
+  registry: providedRegistry = null,
+  dcutrEvents = null,
+  libp2p = null
 } = {}) {
   const { tracer, stop: stopTracer } = getTelemetryTracer({ logger });
   const registry = providedRegistry ?? new Registry();
@@ -308,6 +311,13 @@ export function startMonitoringServer({
     if (latestSnapshot) {
       applySnapshot(latestSnapshot);
     }
+  }
+
+  let detachDCUtRMetrics = null;
+  if (dcutrEvents) {
+    detachDCUtRMetrics = wireDCUtRMetricBridge(dcutrEvents, registry);
+  } else if (libp2p) {
+    detachDCUtRMetrics = wireLibp2pDCUtRMetrics(libp2p, registry);
   }
 
   const stakeGauge = new Gauge({
@@ -593,6 +603,7 @@ export function startMonitoringServer({
     await new Promise((resolve) => server.close(resolve));
     peerScoreUnsubscribe?.();
     networkCollectors.stop?.();
+    detachDCUtRMetrics?.();
     await stopTracer?.();
   };
 
@@ -634,6 +645,7 @@ export function startMonitoringServer({
     peerScoreMetrics,
     peerScoreUnsubscribe,
     networkMetrics: networkCollectors,
+    detachDCUtRMetrics,
     registry,
     stop
   };

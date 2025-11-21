@@ -270,7 +270,9 @@ export async function launchMonitoring({
   enableAlphaWuPerJob = false,
   networkMetrics = null,
   reachabilityState = null,
-  registry = null
+  registry = null,
+  dcutrEvents = null,
+  dcutrLibp2p = null
 }) {
   const telemetry = startMonitoringServer({
     port,
@@ -281,7 +283,9 @@ export async function launchMonitoring({
     dialerPolicy: networkMetrics?.dialerPolicy ?? null,
     reachabilityState,
     networkMetrics: networkMetrics?.collectors ?? networkMetrics,
-    registry
+    registry,
+    dcutrEvents,
+    libp2p: dcutrLibp2p
   });
   if (stakeStatus?.operatorStake) {
     telemetry.stakeGauge.set(Number(stakeStatus.operatorStake));
