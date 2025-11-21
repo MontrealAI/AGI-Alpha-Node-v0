@@ -99,7 +99,8 @@ jobs:
       - name: Run Solidity checks
         env:
           CI: true
-        run: npm run ci:solidity
+        run: |
+          npm run ci:solidity
 
   typescript:
     name: Subgraph TypeScript Build
