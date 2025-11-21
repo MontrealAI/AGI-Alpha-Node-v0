@@ -9,14 +9,12 @@ Import `observability/grafana/dcutr_dashboard.json` into Grafana to visualize th
 
 ## Panel guide
 
-1. **Punch Success %** — live gauge sourced from `dcutr_punch_success_rate{region,asn,transport,relay_id}`; slice by geography and transport to spot hotspots.
-2. **Attempts vs Success vs Failure** — per-5m rate comparison of attempts, successes, and failures to isolate regressions or blocked transports.
-3. **Time to Direct p50/p95** — quantiles over `dcutr_time_to_direct_seconds_bucket` to catch coordination jitter by relay or AS.
-4. **Path Quality (RTT & Loss)** — gauges keyed by `relay_id` and `asn` for jitter/loss anomalies after a successful punch.
-5. **Relay vs Direct Data** — bytes per second over relay vs direct paths to highlight cost regressions or underperforming direct paths.
-6. **Relay Fallback vs Offload** — rate of sessions sticking to relays or offloading; drill down by `region` and `transport` to validate policy flips.
-7. **Heatmap: Success by Region × AS** — correlates geography with provider behavior to detect asymmetric NAT pockets.
-8. **Incidents rail** — top failing relays/regions in the last 24h and 7d to anchor incident response.
+1. **Punch Success Rate** — PromQL: `sum(rate(dcutr_punch_success_total[5m])) / sum(rate(dcutr_punch_attempts_total[5m]))`; primary KPI for the punch loop.
+2. **Punch Attempts / Success / Failures** — PromQL: `sum(rate(dcutr_punch_attempts_total[5m]))`, `sum(rate(dcutr_punch_success_total[5m]))`, `sum(rate(dcutr_punch_failure_total[5m]))`; separates pure transport failures from coordination misses.
+3. **Time To Direct (Latency Histogram)** — PromQL: `histogram_quantile(0.95, sum(rate(dcutr_time_to_direct_seconds_bucket[5m])) by (le))`; track p95 time from relay coordination to direct path establishment.
+4. **Relay Offload** — PromQL: `sum(rate(dcutr_relay_offload_total[5m]))`; confirms sessions are evacuating relays after a landed punch.
+5. **Direct Path Quality (RTT)** — PromQL: `avg(dcutr_path_quality_rtt_ms)`; highlights degradation after the migration to direct paths.
+6. **Region × ASN Heatmap** — PromQL: `sum(rate(dcutr_punch_success_total[10m])) by (region, asn)`; spot geography/provider pockets with suppressed success.
 
 Panel wiring hints:
 
@@ -30,7 +28,8 @@ Panel wiring hints:
 1. Navigate to **Dashboards → New → Import** in Grafana.
 2. Upload `observability/grafana/dcutr_dashboard.json` or paste its JSON payload.
 3. Select your Prometheus datasource and save.
-4. (Recommended) Wire alert rules for `dcutr_punch_success_rate` and p95 `dcutr_time_to_direct_seconds` to match your SLOs.
+4. Run `grafana dashboards lint observability/grafana/dcutr_dashboard.json` (Grafana 10.3+ CLI) to catch structural issues before shipping.
+5. (Recommended) Wire alert rules for `dcutr_punch_success_rate` and p95 `dcutr_time_to_direct_seconds` to match your SLOs.
 
 Screenshot placeholder file: `observability/docs/assets/dcutr-dashboard-placeholder.svg` (replace with your exported Grafana image when ready to ship dashboards to stakeholders).
 
