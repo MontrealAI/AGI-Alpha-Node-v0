@@ -67,6 +67,15 @@
   <a href="observability/docs/DASHBOARD.md">
     <img src="https://img.shields.io/badge/Docs-DASHBOARD.md-fcd34d?logo=grafana&logoColor=0b1120" alt="Dashboard docs" />
   </a>
+  <a href="docker-compose.yml">
+    <img src="https://img.shields.io/badge/Observability-Docker%20compose%20(prom%2Bgrafana)-2563eb?logo=docker&logoColor=white" alt="Observability compose" />
+  </a>
+  <a href="scripts/dcutr-harness.ts">
+    <img src="https://img.shields.io/badge/DCUtR%20Harness-Synthetic%20emitter-0ea5e9?logo=prometheus&logoColor=white" alt="DCUtR harness" />
+  </a>
+  <a href="grafana/provisioning/dashboards/dcutr.yaml">
+    <img src="https://img.shields.io/badge/Grafana%20Provisioning-dcutr.yaml-14b8a6?logo=grafana&logoColor=white" alt="Grafana provisioning" />
+  </a>
 </p>
 
 **AGI Alpha Node v0** metabolizes heterogeneous agentic labor into verifiable α‑Work Units (α‑WU) and Synthetic Labor Units (SLU), rebalances the Global Synthetic Labor Index (GSLI), exposes audited REST telemetry, and routes the `$AGIALPHA` treasury (token: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) under absolute owner command. Every dial can be paused, rerouted, or retuned without redeploying, delivering a production-grade intelligence core built to reshape markets while remaining obedient to the owner’s keys.
@@ -161,6 +170,32 @@ flowchart TD
 | Abuse harness | `npm run p2p:load-tests` | Replays connection/stream floods and malformed gossip so `/debug/resources` and peer-score gauges prove their worth before shipping.【F:package.json†L53-L60】【F:test/network/loadHarness.observability.test.js†L1-L108】 |
 | DCUtR observability kit | `npx tsx -e "import('./observability/prometheus/metrics_dcutr.ts').then(m=>m.registerDCUtRMetrics());"` | Pre-registers counters/gauges/histograms and primes Grafana panels from `observability/grafana/dcutr_dashboard.json` (UID `dcutr-observability`); validate the JSON with `npm run lint:grafana` (mirrors `grafana dashboards lint ...`) before import while keeping default Prometheus exports intact.【F:observability/prometheus/metrics_dcutr.ts†L1-L221】【F:observability/grafana/dcutr_dashboard.json†L1-L123】【F:scripts/lint-grafana-dashboard.mjs†L1-L62】 |
 | Ship dashboards | `npm run dashboard:build` | Builds the React/Vite cockpit that mirrors the telemetry tiles described below.【F:package.json†L61-L74】 |
+
+### DCUtR metrics bridge + local dashboard loop
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Relay as Relay rendezvous
+  participant Node as Alpha Node puncher
+  participant Metrics as Prometheus registry
+  participant Grafana as Grafana deck
+  Relay->>Node: relayDialSuccess (via libp2p)
+  Node-->>Metrics: onPunchStart()
+  Node->>Node: holePunchStart
+  alt punch lands
+    Node-->>Metrics: onPunchLatency + onDirectRttMs + onDirectLossRate
+    Node-->>Metrics: onRelayOffload + onDirectBytes
+  else relay fallback
+    Node-->>Metrics: onPunchFailure + onRelayFallback + onRelayBytes
+  end
+  Metrics-->>Grafana: scrape /metrics (prom job)
+  Grafana-->>Node: dcutr dashboard renders (heatmaps, histograms)
+```
+
+1. **Start the synthetic punch stream**: `npm run observability:dcutr-harness` exposes `/metrics` on port `9464`, binding the real DCUtR metric calls (`relayDialSuccess`, `holePunchStart`, `directPathConfirmed`, `relayFallbackActive`, `streamMigration`) to Prometheus primitives so success/failure, RTT, and fallback bytes populate instantly.【F:scripts/dcutr-harness.ts†L1-L28】【F:src/observability/dcutrEvents.ts†L1-L87】【F:src/observability/dcutrHarness.ts†L1-L92】
+2. **Launch Prometheus + Grafana locally**: `docker-compose up prom grafana` (credentials: `admin`/`admin`) auto-loads the DCUtR dashboard JSON, datasources, and provisioning bundle so panels render without manual clicks.【F:docker-compose.yml†L1-L25】【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L6】【F:grafana/provisioning/datasources/prometheus.yaml†L1-L8】【F:observability/grafana/dcutr_dashboard.json†L1-L123】
+3. **Verify panel health**: watch histogram buckets fill (`dcutr_time_to_direct_seconds`), relay/direct bytes counters increment, and fallback heatmaps rise/fall as the harness alternates success/failure under deterministic timers.【F:observability/prometheus/metrics_dcutr.ts†L1-L221】【F:test/observability/dcutrHarness.test.ts†L1-L42】
 
 ## Mode A treasury (post-quantum, cheap on-chain)
 
