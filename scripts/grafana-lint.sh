@@ -65,9 +65,9 @@ if command -v docker >/dev/null 2>&1; then
     grafana cli dashboards lint /tmp/dcutr_dashboard.json; then
     exit 0
   else
-    echo "[grafana-lint] dockerized Grafana CLI unavailable; falling back to structural lint"
-    DASHBOARD_ABS="${DASHBOARD_ABS}" lint_with_node
-    exit $?
+    status=$?
+    echo "[grafana-lint] Grafana CLI lint (docker) failed with status ${status}" >&2
+    exit ${status}
   fi
 fi
 
@@ -87,7 +87,9 @@ if [[ -n "${GRAFANA_BIN}" && -x "${GRAFANA_BIN}" ]]; then
   if run_grafana_cli "${GRAFANA_BIN}" "${DASHBOARD_ABS}"; then
     exit 0
   else
-    echo "[grafana-lint] downloaded Grafana CLI missing dashboards lint; falling back to structural lint"
+    status=$?
+    echo "[grafana-lint] Grafana CLI lint (downloaded) failed with status ${status}" >&2
+    exit ${status}
   fi
 else
   echo "[grafana-lint] unable to locate grafana binary in ${WORKDIR}; falling back to structural lint"
