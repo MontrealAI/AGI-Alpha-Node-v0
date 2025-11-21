@@ -68,6 +68,23 @@ describe('wireDCUtRMetricBridge', () => {
 
     detach();
   });
+
+  it('counts a relay dial as the first attempt and ignores duplicate punch starts', async () => {
+    const registry = new Registry();
+    registerDCUtRMetrics(registry);
+    const emitter = new EventEmitter();
+    const detach = wireDCUtRMetricBridge(emitter, registry);
+
+    emitter.emit('relayDialSuccess', { labels: { region: 'ams', relay_id: 'relay-c', transport: 'tcp' } });
+    emitter.emit('holePunchStart', { labels: { region: 'ams', relay_id: 'relay-c', transport: 'tcp' } });
+
+    expect(await sumValues(dcutrPunchAttemptsTotal)).toBe(1);
+
+    emitter.emit('relayFallbackActive', { labels: { region: 'ams', relay_id: 'relay-c', transport: 'tcp' } });
+    expect(await sumValues(dcutrPunchFailureTotal)).toBe(1);
+
+    detach();
+  });
 });
 
 describe('wireLibp2pDCUtRMetrics', () => {
