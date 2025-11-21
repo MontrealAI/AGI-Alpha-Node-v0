@@ -112,4 +112,33 @@ describe('wireLibp2pDCUtRMetrics', () => {
 
     detach();
   });
+
+  it('listens to nested DCUtR service event buses without missing attempts', async () => {
+    const registry = new Registry();
+    registerDCUtRMetrics(registry);
+    const libp2p = new FakeEventTarget();
+    const dcutrService = new FakeEventTarget();
+    libp2p.services = { dcutr: { events: dcutrService } };
+    const detach = wireLibp2pDCUtRMetrics(libp2p, registry);
+
+    dcutrService.emit('dcutr:relay:connect', {
+      detail: { relayId: 'relay-svc', transport: 'tcp', region: 'sfo' },
+    });
+    dcutrService.emit('dcutr:punch:start', {
+      detail: { relayId: 'relay-svc', transport: 'tcp', region: 'sfo' },
+    });
+    dcutrService.emit('dcutr:punch:failure', {
+      detail: { relayId: 'relay-svc', transport: 'tcp', region: 'sfo', relayBytes: 1024 },
+    });
+    dcutrService.emit('dcutr:stream:migrate', {
+      detail: { relayId: 'relay-svc', transport: 'tcp', region: 'sfo', relayBytes: 2048 },
+    });
+
+    expect(await sumValues(dcutrPunchAttemptsTotal)).toBe(1);
+    expect(await sumValues(dcutrPunchFailureTotal)).toBe(1);
+    expect(await sumValues(dcutrRelayOffloadTotal)).toBe(1);
+    expect(await sumValues(dcutrRelayDataBytesTotal)).toBe(3072);
+
+    detach();
+  });
 });

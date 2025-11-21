@@ -202,6 +202,14 @@ const DEFAULT_LIBP2P_EVENT_MAPPING: Libp2pEventMapping = {
   streamMigration: ['stream:migrate', 'connection:migrate', 'direct:upgrade'],
 };
 
+const DCUTR_SERVICE_EVENT_MAPPING: Libp2pEventMapping = {
+  relayDialSuccess: ['dcutr:relay:connect', 'dcutr:relay:connected'],
+  holePunchStart: ['dcutr:punch:start', 'dcutr:hole-punch:start', 'dcutr:holepunch:start'],
+  directPathConfirmed: ['dcutr:punch:success', 'dcutr:hole-punch:success', 'dcutr:direct:upgrade'],
+  relayFallbackActive: ['dcutr:punch:failure', 'dcutr:relay:fallback'],
+  streamMigration: ['dcutr:stream:migrate', 'dcutr:direct:migrate'],
+};
+
 function extractDetail(payload: unknown): DCUtREventPayload {
   if (!payload || typeof payload !== 'object') {
     return {};
@@ -249,15 +257,37 @@ export function wireLibp2pDCUtRMetrics(
   const detachMetricBridge = wireDCUtRMetricBridge(bridgeEmitter, registry);
   const disposers: ListenerDisposer[] = [];
 
-  (Object.entries(eventMapping) as Array<[DCUtREventName, string[] | undefined]>).forEach(([eventName, aliases]) => {
-    (aliases ?? []).forEach((alias) => {
-      disposers.push(
-        attachListener(libp2p, alias, (payload) => {
-          bridgeEmitter.emit(eventName, extractDetail(payload));
-        }),
-      );
+  const bindMapping = (source: EventSource | null | undefined, mapping: Libp2pEventMapping) => {
+    (Object.entries(mapping) as Array<[DCUtREventName, string[] | undefined]>).forEach(([eventName, aliases]) => {
+      (aliases ?? []).forEach((alias) => {
+        disposers.push(
+          attachListener(source, alias, (payload) => {
+            bridgeEmitter.emit(eventName, extractDetail(payload));
+          }),
+        );
+      });
     });
-  });
+  };
+
+  bindMapping(libp2p, eventMapping);
+
+  const dcutrService = (libp2p as any)?.services?.dcutr ?? (libp2p as any)?.dcutr ?? null;
+  const dcutrEvents = (dcutrService as any)?.events ?? dcutrService;
+  if (dcutrEvents) {
+    bindMapping(dcutrEvents, {
+      relayDialSuccess: [...(eventMapping.relayDialSuccess ?? []), ...(DCUTR_SERVICE_EVENT_MAPPING.relayDialSuccess ?? [])],
+      holePunchStart: [...(eventMapping.holePunchStart ?? []), ...(DCUTR_SERVICE_EVENT_MAPPING.holePunchStart ?? [])],
+      directPathConfirmed: [
+        ...(eventMapping.directPathConfirmed ?? []),
+        ...(DCUTR_SERVICE_EVENT_MAPPING.directPathConfirmed ?? []),
+      ],
+      relayFallbackActive: [
+        ...(eventMapping.relayFallbackActive ?? []),
+        ...(DCUTR_SERVICE_EVENT_MAPPING.relayFallbackActive ?? []),
+      ],
+      streamMigration: [...(eventMapping.streamMigration ?? []), ...(DCUTR_SERVICE_EVENT_MAPPING.streamMigration ?? [])],
+    });
+  }
 
   return () => {
     detachMetricBridge();
