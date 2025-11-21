@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+scrape_configs:
+  - job_name: 'agi-alpha-node-dcutr'
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - host.docker.internal:9464
+        labels:
+          node: agi-alpha-node

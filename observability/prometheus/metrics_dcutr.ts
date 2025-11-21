@@ -11,7 +11,7 @@ import {
 // These stubs mirror the libp2p puncher lifecycle so operators can wire telemetry
 // before the transport stack is fully live.
 
-type DCUtRLabelSet = {
+export type DCUtRLabelSet = {
   region?: string;
   asn?: string;
   transport?: string;
@@ -142,10 +142,10 @@ const DEFAULT_METRIC_NAMES = new Set([
   'process_resident_memory_bytes',
 ]);
 
-let metricsRegistered = false;
+const registeredRegistries = new WeakSet<Registry>();
 
 export function registerDCUtRMetrics(registry: Registry = defaultRegistry): void {
-  if (metricsRegistered) {
+  if (registeredRegistries.has(registry)) {
     return;
   }
 
@@ -168,7 +168,7 @@ export function registerDCUtRMetrics(registry: Registry = defaultRegistry): void
   registry.registerMetric(dcutrRelayDataBytesTotal);
   registry.registerMetric(dcutrDirectDataBytesTotal);
 
-  metricsRegistered = true;
+  registeredRegistries.add(registry);
 }
 
 export function onPunchStart(labels?: DCUtRLabelSet): void {

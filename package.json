@@ -45,6 +45,7 @@
     "treasury:execute": "tsx scripts/treasury/execute-intent.ts",
     "treasury:sign": "tsx scripts/treasury/sign-intent.ts",
     "treasury:keygen": "tsx scripts/treasury/keygen.ts",
+    "observability:dcutr-harness": "tsx scripts/dcutr-harness.ts",
     "prepare": "node -e \"const { existsSync } = require('node:fs'); const { join } = require('node:path'); const script = join(process.cwd(), 'scripts/prepare-husky.cjs'); if (!existsSync(script)) { console.log('husky prepare script missing; skipping'); process.exit(0); } require(script);\""
   },
   "engines": {
