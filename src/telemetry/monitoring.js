@@ -5,10 +5,12 @@ import { resourceFromAttributes } from '@opentelemetry/resources';
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { collectDefaultMetrics, Counter, Gauge, Registry, Summary } from 'prom-client';
+import { registerDCUtRMetrics } from '../../observability/prometheus/metrics_dcutr.js';
 import { createNetworkMetrics } from './networkMetrics.js';
 import { DEFAULT_PEER_SCORE_THRESHOLDS } from '../services/peerScoring.js';
 import { applyPeerScoreSnapshot, createPeerScoreMetrics } from './peerScoreMetrics.js';
 import { parseOtlpHeaders } from './otelHeaders.js';
+import { wireDCUtRMetricBridge, wireLibp2pDCUtRMetrics } from '../observability/dcutrEvents.js';
 
 const DEFAULT_SERVICE_NAME = process.env.OTEL_SERVICE_NAME || 'agi-alpha-node';
 let cachedTracer = null;
@@ -281,11 +283,25 @@ export function startMonitoringServer({
   dialerPolicy = null,
   reachabilityState = null,
   networkMetrics = null,
-  registry: providedRegistry = null
+  registry: providedRegistry = null,
+  dcutrEventSource = null,
+  dcutrEventEmitter = null,
+  dcutrEventMapping = undefined,
+  enableDCUtRMetrics = true
 } = {}) {
   const { tracer, stop: stopTracer } = getTelemetryTracer({ logger });
   const registry = providedRegistry ?? new Registry();
   collectDefaultMetrics({ register: registry, prefix: 'agi_alpha_node_' });
+
+  let detachDCUtR = null;
+  if (enableDCUtRMetrics) {
+    registerDCUtRMetrics(registry);
+    if (dcutrEventEmitter) {
+      detachDCUtR = wireDCUtRMetricBridge(dcutrEventEmitter, registry);
+    } else if (dcutrEventSource) {
+      detachDCUtR = wireLibp2pDCUtRMetrics(dcutrEventSource, registry, dcutrEventMapping);
+    }
+  }
 
   const networkCollectors =
     networkMetrics ?? createNetworkMetrics({ registry, reachabilityState, logger });
@@ -591,6 +607,7 @@ export function startMonitoringServer({
 
   const stop = async () => {
     await new Promise((resolve) => server.close(resolve));
+    detachDCUtR?.();
     peerScoreUnsubscribe?.();
     networkCollectors.stop?.();
     await stopTracer?.();

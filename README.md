@@ -170,6 +170,7 @@ flowchart TD
 - **Total owner command**: `AlphaNodeManager.sol` and `TreasuryExecutor.sol` centralize pause/unpause, validator rotation, metadata tuning, orchestrator rotation, digest replay protection, and ETH sweep controls so the owner can reshape execution without redeploying.【F:contracts/AlphaNodeManager.sol†L1-L265】【F:contracts/TreasuryExecutor.sol†L1-L113】
 - **Mode A off-chain quorum, cheap on-chain execution**: Guardian signatures stay post-quantum via Dilithium CBOR envelopes; once M-of-N approvals land, the orchestrator dispatches a single `executeTransaction(address,uint256,bytes)` call with replay shielding on-chain.【F:src/treasury/pqEnvelope.ts†L1-L103】【F:scripts/treasury/execute-intent.ts†L1-L150】【F:contracts/TreasuryExecutor.sol†L1-L113】
 - **Telemetry and DoS resilience**: The Network Resource Manager (NRM) and libp2p tracers expose limits, denials, dial outcomes, and peer scoring through `/debug/resources`, `/debug/network`, and `/metrics`, keeping operators in the loop during floods or churn.【F:src/network/resourceManagerConfig.js†L248-L694】【F:src/network/apiServer.js†L1353-L1552】【F:src/telemetry/networkMetrics.js†L24-L231】
+- **DCUtR observability on tap**: `startMonitoringServer` now registers the DCUtR counters/histograms by default and lets operators bridge libp2p or raw emitters via `dcutrEventSource` / `dcutrEventEmitter`, while the Docker Grafana stack auto-provisions dashboards from `/etc/grafana/provisioning` for zero-click visualization.【F:src/telemetry/monitoring.js†L273-L332】【F:docker-compose.yml†L1-L25】【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L6】
 - **CI as a safety wall**: Markdown lint, link checks, Vitest suites (backend + dashboard), Solidity lint/compile, subgraph build, coverage gates, npm audit, and policy/branch gates are enforced locally via `npm run ci:verify` and remotely via GitHub Actions + required checks.【F:package.json†L19-L46】【F:.github/workflows/ci.yml†L1-L210】【F:.github/required-checks.json†L1-L10】
 
 ## Operator quickstart
@@ -208,9 +209,35 @@ sequenceDiagram
 ```
 
 1. **Start the synthetic punch stream**: `npm run observability:dcutr-harness` exposes `/metrics` on port `9464`, binding the real DCUtR metric calls (`relayDialSuccess`, `holePunchStart`, `directPathConfirmed`, `relayFallbackActive`, `streamMigration`) to Prometheus primitives so success/failure, RTT, and fallback bytes populate instantly.【F:scripts/dcutr-harness.ts†L1-L28】【F:src/observability/dcutrEvents.ts†L1-L87】【F:src/observability/dcutrHarness.ts†L1-L92】
-2. **Launch Prometheus + Grafana locally**: `docker-compose up prom grafana` (credentials: `admin`/`admin`) auto-loads the DCUtR dashboard JSON, datasources, and provisioning bundle so panels render without manual clicks.【F:docker-compose.yml†L1-L25】【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L6】【F:grafana/provisioning/datasources/prometheus.yaml†L1-L8】【F:observability/grafana/dcutr_dashboard.json†L1-L123】
-3. **Verify panel health**: watch histogram buckets fill (`dcutr_time_to_direct_seconds`), relay/direct bytes counters increment, and fallback heatmaps rise/fall as the harness alternates success/failure under deterministic timers.【F:observability/prometheus/metrics_dcutr.ts†L1-L221】【F:test/observability/dcutrHarness.test.ts†L1-L42】
-4. **Attach to a live libp2p host**: `wireLibp2pDCUtRMetrics(libp2p)` bridges native `hole-punch:*`, `relay:*`, and `stream:migrate` events into the same Prometheus surfaces with deduped attempt tracking so real punch flows and synthetic harness traffic co-exist without double-counting.【F:src/observability/dcutrEvents.ts†L1-L200】【F:test/observability/dcutrEvents.test.ts†L1-L92】
+2. **Launch Prometheus + Grafana locally**: `docker-compose up prom grafana` (credentials: `admin`/`admin`) auto-loads the DCUtR dashboard JSON, datasources, and provisioning bundle via `/etc/grafana/provisioning` so panels render without manual clicks.【F:docker-compose.yml†L1-L25】【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L6】【F:grafana/provisioning/datasources/prometheus.yaml†L1-L8】【F:observability/grafana/dcutr_dashboard.json†L1-L123】
+3. **Wire live punch telemetry**: pass your libp2p/DCUtR event source into `startMonitoringServer({ dcutrEventSource: libp2p })` or drop a raw `EventEmitter` via `dcutrEventEmitter` and the monitoring server registers the DCUtR counters, histograms, and gauges automatically on `/metrics`. The same bridge is used by the synthetic harness so live and simulated traffic stay deduped inside one registry.【F:src/telemetry/monitoring.js†L273-L332】【F:src/observability/dcutrEvents.ts†L78-L200】
+4. **Verify panel health**: watch histogram buckets fill (`dcutr_time_to_direct_seconds`), relay/direct bytes counters increment, and fallback heatmaps rise/fall as the harness alternates success/failure under deterministic timers.【F:observability/prometheus/metrics_dcutr.ts†L1-L221】【F:test/observability/dcutrHarness.test.ts†L1-L42】
+5. **Attach to a live libp2p host**: `wireLibp2pDCUtRMetrics(libp2p)` bridges native `hole-punch:*`, `relay:*`, and `stream:migrate` events into the same Prometheus surfaces with deduped attempt tracking so real punch flows and synthetic harness traffic co-exist without double-counting.【F:src/observability/dcutrEvents.ts†L1-L200】【F:test/observability/dcutrEvents.test.ts†L1-L92】
+
+```mermaid
+flowchart LR
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  subgraph Events[DCUtR lifecycle]
+    RelayDial[[relayDialSuccess]]:::lava
+    PunchStart[[holePunchStart]]:::lava
+    DirectPath[[directPathConfirmed]]:::lava
+    RelayFallback[[relayFallbackActive]]:::lava
+    Migration[[streamMigration]]:::lava
+  end
+
+  RelayDial --> Bridge
+  PunchStart --> Bridge
+  DirectPath --> Bridge
+  RelayFallback --> Bridge
+  Migration --> Bridge
+
+  Bridge[dcutrEventEmitter / dcutrEventSource\nmonitoring server bridge]:::neon --> Registry[/prom-client registry/]:::frost
+  Registry --> Prom[Prometheus scrape]:::frost
+  Prom --> Grafana[Grafana dcutr_dashboard.json]:::neon
+```
 
 > Relay dials now count as the canonical attempt marker while `holePunchStart` is ignored if the dial already fired—preventing double-counted success-rate math when libp2p emits both—and fallback events still settle attempts so the punch lifecycle always concludes with either success or failure accounting.【F:src/observability/dcutrEvents.ts†L57-L122】【F:test/observability/dcutrEvents.test.ts†L18-L83】
 
