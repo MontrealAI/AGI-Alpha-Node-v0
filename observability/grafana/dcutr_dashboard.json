@@ -1,12 +1,14 @@
 {
   "__inputs": [],
   "__requires": [
-    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0" },
-    { "type": "panel", "id": "timeseries", "name": "Time series", "version": "10.0.0" },
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "11.2.0" },
+    { "type": "panel", "id": "timeseries", "name": "Time series", "version": "11.2.0" },
+    { "type": "panel", "id": "stat", "name": "Stat", "version": "11.2.0" },
+    { "type": "panel", "id": "heatmap", "name": "Heatmap", "version": "11.2.0" },
     { "type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "2.51.0" }
   ],
-  "title": "DCUtR Punch Health (Stub)",
-  "uid": "dcutr-alpha",
+  "title": "DCUtR — Hole Punch Performance",
+  "uid": "dcutr-observability",
   "version": 1,
   "time": { "from": "now-6h", "to": "now" },
   "tags": ["dcutr", "libp2p", "observability"],
@@ -16,12 +18,12 @@
     {
       "id": 1,
       "type": "stat",
-      "title": "Punch Success %",
+      "title": "Punch Success Rate",
       "datasource": { "type": "prometheus", "uid": "__PROMETHEUS__" },
       "targets": [
         {
           "refId": "A",
-          "expr": "dcutr_punch_success_rate",
+          "expr": "sum(rate(dcutr_punch_success_total[5m])) / sum(rate(dcutr_punch_attempts_total[5m]))",
           "legendFormat": "success rate"
         }
       ],
@@ -40,12 +42,12 @@
     {
       "id": 2,
       "type": "timeseries",
-      "title": "Punch Attempts vs Success vs Failure",
+      "title": "Punch Attempts / Success / Failures",
       "datasource": { "type": "prometheus", "uid": "__PROMETHEUS__" },
       "targets": [
-        { "refId": "A", "expr": "rate(dcutr_punch_attempts_total[5m])", "legendFormat": "attempts" },
-        { "refId": "B", "expr": "rate(dcutr_punch_success_total[5m])", "legendFormat": "success" },
-        { "refId": "C", "expr": "rate(dcutr_punch_failure_total[5m])", "legendFormat": "failure" }
+        { "refId": "A", "expr": "sum(rate(dcutr_punch_attempts_total[5m]))", "legendFormat": "attempts" },
+        { "refId": "B", "expr": "sum(rate(dcutr_punch_success_total[5m]))", "legendFormat": "success" },
+        { "refId": "C", "expr": "sum(rate(dcutr_punch_failure_total[5m]))", "legendFormat": "failure" }
       ],
       "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
       "gridPos": { "h": 8, "w": 12, "x": 6, "y": 0 }
@@ -53,11 +55,14 @@
     {
       "id": 3,
       "type": "timeseries",
-      "title": "Time to Direct (p50/p95)",
+      "title": "Time To Direct (Latency Histogram)",
       "datasource": { "type": "prometheus", "uid": "__PROMETHEUS__" },
       "targets": [
-        { "refId": "A", "expr": "histogram_quantile(0.5, sum by (le) (rate(dcutr_time_to_direct_seconds_bucket[5m])))", "legendFormat": "p50" },
-        { "refId": "B", "expr": "histogram_quantile(0.95, sum by (le) (rate(dcutr_time_to_direct_seconds_bucket[5m])))", "legendFormat": "p95" }
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum(rate(dcutr_time_to_direct_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p95"
+        }
       ],
       "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 }
@@ -65,38 +70,46 @@
     {
       "id": 4,
       "type": "timeseries",
-      "title": "Path Quality (RTT & Loss)",
+      "title": "Relay Offload",
       "datasource": { "type": "prometheus", "uid": "__PROMETHEUS__" },
       "targets": [
-        { "refId": "A", "expr": "dcutr_path_quality_rtt_ms", "legendFormat": "RTT (ms)" },
-        { "refId": "B", "expr": "dcutr_path_quality_loss_rate", "legendFormat": "Loss %" }
+        { "refId": "A", "expr": "sum(rate(dcutr_relay_offload_total[5m]))", "legendFormat": "offload rate" }
       ],
-      "fieldConfig": { "defaults": { "unit": "none" }, "overrides": [] },
+      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 }
     },
     {
       "id": 5,
       "type": "timeseries",
-      "title": "Relay vs Direct Data",
+      "title": "Direct Path Quality (RTT)",
       "datasource": { "type": "prometheus", "uid": "__PROMETHEUS__" },
       "targets": [
-        { "refId": "A", "expr": "rate(dcutr_relay_data_bytes_total[5m])", "legendFormat": "Relay bytes/s" },
-        { "refId": "B", "expr": "rate(dcutr_direct_data_bytes_total[5m])", "legendFormat": "Direct bytes/s" }
+        { "refId": "A", "expr": "avg(dcutr_path_quality_rtt_ms)", "legendFormat": "avg rtt (ms)" }
       ],
-      "fieldConfig": { "defaults": { "unit": "Bps" }, "overrides": [] },
+      "fieldConfig": { "defaults": { "unit": "ms" }, "overrides": [] },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 }
     },
     {
       "id": 6,
-      "type": "timeseries",
-      "title": "Relay Fallback vs Offload",
+      "type": "heatmap",
+      "title": "Region × ASN Heatmap",
       "datasource": { "type": "prometheus", "uid": "__PROMETHEUS__" },
       "targets": [
-        { "refId": "A", "expr": "rate(dcutr_fallback_relay_total[5m])", "legendFormat": "fallback" },
-        { "refId": "B", "expr": "rate(dcutr_relay_offload_total[5m])", "legendFormat": "offload" }
+        {
+          "refId": "A",
+          "expr": "sum(rate(dcutr_punch_success_total[10m])) by (region, asn)",
+          "legendFormat": "{{region}} / {{asn}}",
+          "format": "heatmap"
+        }
       ],
+      "options": {
+        "color": { "mode": "scheme", "scheme": "interpolateOranges" },
+        "legend": { "show": true },
+        "tooltip": { "show": true },
+        "yAxis": { "decimals": 0, "unit": "short" }
+      },
       "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 }
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 22 }
     }
   ],
   "templating": { "list": [] },

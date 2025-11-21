@@ -55,6 +55,9 @@
   <a href="observability/grafana/dcutr_dashboard.json">
     <img src="https://img.shields.io/badge/Grafana-DCUtR%20Dashboard-ef4444?logo=grafana&logoColor=white" alt="Grafana stub" />
   </a>
+  <a href="observability/grafana/dcutr_dashboard.json">
+    <img src="https://img.shields.io/badge/Grafana%20CLI-dashboards%20lint-ef4444?logo=grafana&logoColor=0b1120" alt="Grafana lint" />
+  </a>
   <a href="observability/docs/METRICS.md">
     <img src="https://img.shields.io/badge/Docs-METRICS.md-22d3ee?logo=mdbook&logoColor=white" alt="Metrics docs" />
   </a>
@@ -67,8 +70,10 @@
 
 **This node is the wealth engine**: every control surface, metric, and runbook is wired so the owner can tune economics, transport posture, and treasury dispatch in one place while auditors and operators see the same telemetry. The alpha flow is sovereign, survivable, and designed to compound value without conceding a single lever of control to anyone but the owner.
 
+The full stack is shaped as a singular intelligence core that can realign market structures the moment the owner turns a dial—built to deliver unstoppable compounding without surrendering control.
+
 > **Catalyst callout**: AGI Alpha Nodes behave like digital farmers in a cognitive field—yielding `$AGIALPHA` while bridging aspiration to achievement. The token contract lives at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals), and every surface (governance API, CLI, dashboards, treasury controls) keeps the owner in total command so parameters, relays, and treasury routes can be updated live.
-> **DCUtR observability sprint (fresh)**: drop-in Prometheus primitives live at `observability/prometheus/metrics_dcutr.ts`, the paired Grafana stub sits in `observability/grafana/dcutr_dashboard.json`, and operator notes land in `observability/docs/METRICS.md` + `observability/docs/DASHBOARD.md` so you can register collectors, emit punch lifecycle events with labeled detail, and publish dashboards without bespoke wiring.【F:observability/prometheus/metrics_dcutr.ts†L1-L221】【F:observability/grafana/dcutr_dashboard.json†L1-L111】【F:observability/docs/METRICS.md†L1-L93】【F:observability/docs/DASHBOARD.md†L1-L43】
+> **DCUtR observability sprint (fresh)**: drop-in Prometheus primitives live at `observability/prometheus/metrics_dcutr.ts`, the paired Grafana stub (UID `dcutr-observability`, title “DCUtR — Hole Punch Performance”) sits in `observability/grafana/dcutr_dashboard.json`, and operator notes land in `observability/docs/METRICS.md` + `observability/docs/DASHBOARD.md` so you can register collectors, emit punch lifecycle events with labeled detail, lint the dashboard with `grafana dashboards lint observability/grafana/dcutr_dashboard.json`, and publish panels that mirror the punch-control SLOs without bespoke wiring.【F:observability/prometheus/metrics_dcutr.ts†L1-L221】【F:observability/grafana/dcutr_dashboard.json†L1-L123】【F:observability/docs/METRICS.md†L1-L120】【F:observability/docs/DASHBOARD.md†L1-L120】
 > **Owner supremacy callout**: The treasury vault remains entirely owner-steerable: `setOrchestrator` can rebind execution authority in one transaction, `pause` halts dispatches instantly, `setIntentStatus` clears or resurrects digests, and `sweep` drains holdings to any recipient the owner chooses—all without redeploying the contract or disrupting guardian workflows.【F:contracts/TreasuryExecutor.sol†L22-L119】
 
 ## Table of contents
@@ -149,7 +154,7 @@ flowchart TD
 | Explore locally | `npm run demo:local` | Spins up the libp2p harness, SQLite spine, telemetry registry, and governance API for cockpit exploration.【F:package.json†L13-L25】 |
 | Full CI wall | `npm run ci:verify` | Executes lint, tests, coverage enforcement, Solidity, subgraph, security, policy, and branch gates exactly like the GitHub workflow.【F:package.json†L26-L52】【F:.github/workflows/ci.yml†L1-L210】 |
 | Abuse harness | `npm run p2p:load-tests` | Replays connection/stream floods and malformed gossip so `/debug/resources` and peer-score gauges prove their worth before shipping.【F:package.json†L53-L60】【F:test/network/loadHarness.observability.test.js†L1-L108】 |
-| DCUtR observability kit | `npx tsx -e "import('./observability/prometheus/metrics_dcutr.ts').then(m=>m.registerDCUtRMetrics());"` | Pre-registers counters/gauges/histograms and primes Grafana panels from `observability/grafana/dcutr_dashboard.json` while keeping default Prometheus exports intact.【F:observability/prometheus/metrics_dcutr.ts†L1-L221】【F:observability/grafana/dcutr_dashboard.json†L1-L111】 |
+| DCUtR observability kit | `npx tsx -e "import('./observability/prometheus/metrics_dcutr.ts').then(m=>m.registerDCUtRMetrics());"` | Pre-registers counters/gauges/histograms and primes Grafana panels from `observability/grafana/dcutr_dashboard.json` (UID `dcutr-observability`); lint with `grafana dashboards lint observability/grafana/dcutr_dashboard.json` before import while keeping default Prometheus exports intact.【F:observability/prometheus/metrics_dcutr.ts†L1-L221】【F:observability/grafana/dcutr_dashboard.json†L1-L123】 |
 | Ship dashboards | `npm run dashboard:build` | Builds the React/Vite cockpit that mirrors the telemetry tiles described below.【F:package.json†L61-L74】 |
 
 ## Mode A treasury (post-quantum, cheap on-chain)
@@ -312,7 +317,7 @@ Every control surface above is owner-first: identities, staking limits, orchestr
 - **Debug surfaces**: `/debug/resources` returns limits, usage, bans, trims; `/debug/network` exposes reachability timelines, churn, dial successes/failures, and transport posture for any time window.【F:src/network/apiServer.js†L1353-L1552】
 - **Prometheus + OTel**: `startMonitoringServer` keeps `/metrics` and OTLP wiring alive; libp2p dial traces and protocol handlers feed latency/volume histograms ready for Grafana overlays.【F:src/telemetry/monitoring.js†L280-L363】【F:src/network/libp2pHostConfig.js†L64-L195】【F:src/network/protocols/metrics.js†L6-L149】
 - **Dashboard parity**: The React/Vite cockpit consumes the same debug endpoints to render transport posture, reachability, resource pressure, and churn tiles with zero bespoke wiring.【F:dashboard/src/views/TelemetryView.jsx†L1-L323】【F:dashboard/src/api/client.js†L31-L56】
-- **DCUtR punch health kit**: `observability/prometheus/metrics_dcutr.ts` defines counters, gauges, histograms, and a `registerDCUtRMetrics` hook with label-aware emitters (`region`, `asn`, `transport`, `relay_id`) so per-relay success rates stay correlated to topology. Pair it with `observability/grafana/dcutr_dashboard.json` and the walkthrough in `observability/docs/METRICS.md` + `observability/docs/DASHBOARD.md` (with dashboard placeholder) to visualize success rate, time-to-direct, path quality, and relay offload without bespoke wiring.【F:observability/prometheus/metrics_dcutr.ts†L1-L221】【F:observability/grafana/dcutr_dashboard.json†L1-L111】【F:observability/docs/METRICS.md†L1-L93】【F:observability/docs/DASHBOARD.md†L1-L43】
+- **DCUtR punch health kit**: `observability/prometheus/metrics_dcutr.ts` defines counters, gauges, histograms, and a `registerDCUtRMetrics` hook with label-aware emitters (`region`, `asn`, `transport`, `relay_id`) so per-relay success stays correlated to topology. Pair it with `observability/grafana/dcutr_dashboard.json` (UID `dcutr-observability`) and the walkthrough in `observability/docs/METRICS.md` + `observability/docs/DASHBOARD.md` to visualize punch success, attempts/success/failures, p95 time-to-direct, relay offload, RTT quality, and the region×ASN heatmap; lint via `grafana dashboards lint observability/grafana/dcutr_dashboard.json` before importing.【F:observability/prometheus/metrics_dcutr.ts†L1-L221】【F:observability/grafana/dcutr_dashboard.json†L1-L123】【F:observability/docs/METRICS.md†L1-L120】【F:observability/docs/DASHBOARD.md†L1-L120】
 
 ## DCUtR production primer
 
@@ -369,7 +374,7 @@ flowchart LR
 
 The sprint artifacts live under `observability/` and are wired to render cleanly on GitHub (Mermaid + badges) and in Grafana. They align the repo layout with the DCUtR primer above.
 
-- **File map**: Prometheus stub (`observability/prometheus/metrics_dcutr.ts`), Grafana stub (`observability/grafana/dcutr_dashboard.json`), operator notes (`observability/docs/METRICS.md`, `observability/docs/DASHBOARD.md`).【F:observability/prometheus/metrics_dcutr.ts†L1-L221】【F:observability/grafana/dcutr_dashboard.json†L1-L111】【F:observability/docs/METRICS.md†L1-L93】【F:observability/docs/DASHBOARD.md†L1-L43】
+- **File map**: Prometheus stub (`observability/prometheus/metrics_dcutr.ts`), Grafana stub (`observability/grafana/dcutr_dashboard.json`), operator notes (`observability/docs/METRICS.md`, `observability/docs/DASHBOARD.md`).【F:observability/prometheus/metrics_dcutr.ts†L1-L221】【F:observability/grafana/dcutr_dashboard.json†L1-L123】【F:observability/docs/METRICS.md†L1-L120】【F:observability/docs/DASHBOARD.md†L1-L120】
 - **Metrics declared**: attempts/success/failure, computed success rate, time-to-direct histogram, RTT + loss gauges, relay fallback/offload counters, relay vs direct byte counters (all label-aware).【F:observability/prometheus/metrics_dcutr.ts†L45-L105】
 - **Success-rate guardrail**: `dcutr_punch_success_rate` derives from attempts/successes during collection, pinning zero attempts to `0` while respecting each label set to keep Grafana/Prometheus panels stable even under startup jitter.【F:observability/prometheus/metrics_dcutr.ts†L106-L136】
 - **Emitters**: `onPunchStart`, `onPunchSuccess`, `onPunchFailure`, `onPunchLatency`, `onDirectRttMs`, `onDirectLossRate`, `onRelayFallback`, `onRelayOffload`, `onRelayBytes`, `onDirectBytes` (all tested under `test/observability/metrics_dcutr.test.ts`).【F:observability/prometheus/metrics_dcutr.ts†L173-L221】【F:test/observability/metrics_dcutr.test.ts†L1-L123】
@@ -386,7 +391,7 @@ The sprint artifacts live under `observability/` and are wired to render cleanly
   onPunchFailure(labels);
   ```
 
-- **Grafana import**: upload `observability/grafana/dcutr_dashboard.json`, point it at your Prometheus datasource, and you instantly get KPI, heatmap, and offload panels sized for production drill-downs.【F:observability/grafana/dcutr_dashboard.json†L1-L111】
+- **Grafana import**: upload `observability/grafana/dcutr_dashboard.json`, point it at your Prometheus datasource, and you instantly get KPI, heatmap, and offload panels sized for production drill-downs.【F:observability/grafana/dcutr_dashboard.json†L1-L123】
 
 ```mermaid
 flowchart TB
@@ -560,7 +565,7 @@ flowchart LR
 ```
 
 - **METRICS.md** — declares the `region/asn/transport/relay_id` label set, per-metric semantics, and code snippets for registering emitters. It stays in lockstep with `observability/prometheus/metrics_dcutr.ts` so CI and Grafana panels agree.【F:observability/docs/METRICS.md†L1-L99】【F:observability/prometheus/metrics_dcutr.ts†L1-L221】
-- **DASHBOARD.md** — walks through every panel, keeps a screenshot placeholder, and mirrors the README primer so Grafana imports are predictable and mermaid renders cleanly on GitHub.【F:observability/docs/DASHBOARD.md†L1-L43】【F:observability/grafana/dcutr_dashboard.json†L1-L111】
+- **DASHBOARD.md** — walks through every panel, keeps a screenshot placeholder, and mirrors the README primer so Grafana imports are predictable and mermaid renders cleanly on GitHub.【F:observability/docs/DASHBOARD.md†L1-L120】【F:observability/grafana/dcutr_dashboard.json†L1-L123】
 
 
 This repository is engineered as the operator-owned intelligence engine that bends economic gravity without sacrificing control: post-quantum approvals off-chain, inexpensive on-chain execution, omnipresent telemetry, and a CI wall that keeps every surface green before code reaches `main`.
