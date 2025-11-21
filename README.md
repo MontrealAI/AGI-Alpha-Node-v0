@@ -106,6 +106,42 @@ This codebase is treated as the operational shell of that high-value intelligenc
 > - **CI wall enforced**: `.github/workflows/ci.yml` runs lint, tests, coverage gates, Solidity lint/compile, subgraph builds, Docker smoke, audit, and policy/branch gates; `.github/required-checks.json` keeps them required on PRs/main with badges reflecting live status, matching `npm run ci:verify` locally.
 > - **Owner command intact**: treasury/tokens stay owner-steered (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) with pause + parameter control and ENS-aware orchestration. Compose/Helm paths stay aligned with the repo tree below for predictable deploys.
 
+## Phase 6 deliverables (DCUtR control tower)
+
+- **Instrumentation schema** — `observability/prometheus/metrics_dcutr.js` defines the canonical label grid (`region`, `asn`, `transport`, `relay_id`), collectors, emitters, and scrape-time success ratio so every panel and alert consumes the same semantics.【F:observability/prometheus/metrics_dcutr.js†L1-L221】【F:observability/docs/METRICS.md†L1-L120】
+- **Dashboard + provisioning** — Import-ready Grafana stub at `observability/grafana/dcutr_dashboard.json` with hands-free load via `grafana/provisioning/dashboards/dcutr.yaml`; PromQL for each panel is mirrored in `observability/docs/DASHBOARD.md` for auditors.【F:observability/grafana/dcutr_dashboard.json†L1-L123】【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L6】【F:observability/docs/DASHBOARD.md†L1-L120】
+- **Hands-off wiring** — `docker-compose up prom grafana` scrapes `/metrics` and autoloads dashboards; `npm run lint:grafana` guards JSON correctness in CI while `npm run observability:dcutr-harness` keeps panels alive even without live traffic.【F:docker-compose.yml†L1-L25】【F:scripts/lint-grafana-dashboard.mjs†L1-L62】【F:scripts/dcutr-harness.ts†L1-L28】
+- **PromQL receipts** — Every Grafana panel references the same PromQL strings captured in `observability/docs/DASHBOARD.md`, ensuring alert rules and dashboards stay aligned with the emitters and scrape contract.【F:observability/docs/DASHBOARD.md†L1-L120】
+
+```mermaid
+flowchart TB
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  subgraph Metrics[DCUtR instrumentation]
+    Emitters[metrics_dcutr.js\n(onPunch*, onRelay*, gauges)]:::lava
+    Registry[Prometheus registry\ncollectDefaultMetrics + DCUtR]:::frost
+  end
+
+  subgraph Observability[Grafana delivery]
+    Dashboard[dcutr_dashboard.json\nUID dcutr-observability]:::neon
+    Provision[grafana/provisioning/dashboards/dcutr.yaml]:::lava
+  end
+
+  subgraph CI[CI wall]
+    Lint[npm run lint:grafana]:::frost
+    Harness[npm run observability:dcutr-harness]:::lava
+  end
+
+  Emitters --> Registry
+  Registry --> Dashboard
+  Dashboard --> Provision
+  Lint --> Dashboard
+  Harness --> Registry
+  class Metrics,Observability,CI neon;
+```
+
 ## Repository map (live wiring)
 
 ```mermaid
