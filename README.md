@@ -215,6 +215,27 @@ sequenceDiagram
 
 > Relay dials now count as the canonical attempt marker while `holePunchStart` is ignored if the dial already fired—preventing double-counted success-rate math when libp2p emits both—and fallback events still settle attempts so the punch lifecycle always concludes with either success or failure accounting.【F:src/observability/dcutrEvents.js†L57-L122】【F:test/observability/dcutrEvents.test.ts†L18-L83】
 
+#### DCUtR integration receipts (phase 4/5)
+
+```mermaid
+flowchart LR
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  Libp2p[libp2p host\nrelay + DCUtR events]:::neon --> Bridge[wireLibp2pDCUtRMetrics\nrelayDialSuccess · holePunchStart · directPathConfirmed · relayFallbackActive · streamMigration]:::lava
+  Bridge --> Registry[Prometheus registry\nregisterDCUtRMetrics]:::frost
+  Harness[Synthetic generator\nstartSyntheticDCUtRGenerator]:::lava --> Bridge
+  Registry --> Prom[Prometheus scrape\n/metrics]:::neon --> Grafana[Grafana dashboards\nUID dcutr-observability]:::lava
+  Prom --> Panels[KPI row · heatmap · histograms]:::frost
+  class Libp2p,Bridge,Registry,Harness,Prom,Grafana,Panels neon;
+```
+
+- **Event binding finished**: libp2p + nested DCUtR service buses drive the five lifecycle signals straight into Prometheus via `wireLibp2pDCUtRMetrics`, with attempt de-duplication and byte/latency attribution preserved for stream migrations and fallbacks.【F:src/observability/dcutrEvents.js†L1-L211】【F:test/observability/dcutrEvents.test.ts†L18-L131】
+- **Provisioning locked in**: Grafana auto-imports the DCUtR board through `/grafana/provisioning/dashboards/dcutr.yaml`, so GitHub Pages and local operators see the same panels without manual clicks.【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L6】【F:docker-compose.yml†L1-L25】【F:observability/grafana/dcutr_dashboard.json†L1-L123】
+- **Harness + panel validation**: `npm run observability:dcutr-harness` emits success/failure mixes with RTT and relay/direct byte variance; `docker-compose up prom grafana` surfaces the counters, histograms, and heatmaps, mirroring the automated checks exercised in the Vitest suites.【F:scripts/dcutr-harness.ts†L1-L28】【F:src/observability/dcutrHarness.ts†L1-L92】【F:test/observability/dcutrHarness.test.ts†L1-L42】【F:test/observability/metrics_dcutr.test.ts†L1-L52】
+- **CI visibility**: DCUtR wiring is part of the main CI wall (`npm run ci:verify`), keeping badge status trustworthy and preventing regressions in the punch lifecycle bridge or Grafana JSON.【F:.github/workflows/ci.yml†L1-L210】【F:package.json†L26-L52】
+
 ### DCUtR dashboard validation loop
 
 - **Bring up the stack**: `docker-compose up prom grafana` mounts the provisioning bundle (`grafana/provisioning/dashboards/dcutr.yaml`) plus dashboard JSON so Grafana renders without clicks; Prometheus scrapes `host.docker.internal:9464` on 5s cadence by default.【F:docker-compose.yml†L1-L25】【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L6】【F:observability/grafana/dcutr_dashboard.json†L1-L123】【F:observability/prometheus/prometheus.yml†L1-L10】
