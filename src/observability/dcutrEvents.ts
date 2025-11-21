@@ -107,13 +107,14 @@ export function wireDCUtRMetricBridge(
   };
 
   const onRelayDial: Handler = (payload) => {
+    registerAttempt(payload.labels, { skipIfInflight: true });
     if (payload.relayBytes) {
       onRelayBytes(payload.relayBytes, payload.labels);
     }
   };
 
   const onPunchBegin: Handler = (payload) => {
-    registerAttempt(payload.labels);
+    registerAttempt(payload.labels, { skipIfInflight: true });
   };
 
   const onDirectConfirm: Handler = (payload) => {

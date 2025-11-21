@@ -212,6 +212,8 @@ sequenceDiagram
 3. **Verify panel health**: watch histogram buckets fill (`dcutr_time_to_direct_seconds`), relay/direct bytes counters increment, and fallback heatmaps rise/fall as the harness alternates success/failure under deterministic timers.【F:observability/prometheus/metrics_dcutr.ts†L1-L221】【F:test/observability/dcutrHarness.test.ts†L1-L42】
 4. **Attach to a live libp2p host**: `wireLibp2pDCUtRMetrics(libp2p)` bridges native `hole-punch:*`, `relay:*`, and `stream:migrate` events into the same Prometheus surfaces with deduped attempt tracking so real punch flows and synthetic harness traffic co-exist without double-counting.【F:src/observability/dcutrEvents.ts†L1-L200】【F:test/observability/dcutrEvents.test.ts†L1-L92】
 
+> Relay dials now count as the canonical attempt marker while `holePunchStart` is ignored if the dial already fired—preventing double-counted success-rate math when libp2p emits both—and fallback events still settle attempts so the punch lifecycle always concludes with either success or failure accounting.【F:src/observability/dcutrEvents.ts†L57-L122】【F:test/observability/dcutrEvents.test.ts†L18-L83】
+
 ### DCUtR dashboard validation loop
 
 - **Bring up the stack**: `docker-compose up prom grafana` mounts the provisioning bundle (`grafana/provisioning/dashboards/dcutr.yaml`) plus dashboard JSON so Grafana renders without clicks; Prometheus scrapes `host.docker.internal:9464` on 5s cadence by default.【F:docker-compose.yml†L1-L25】【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L6】【F:observability/grafana/dcutr_dashboard.json†L1-L123】【F:observability/prometheus/prometheus.yml†L1-L10】
