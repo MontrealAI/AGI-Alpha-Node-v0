@@ -1,6 +1,7 @@
 {
   "required_status_checks": [
     "Lint Markdown & Links",
+    "Grafana Dashboard Lint",
     "Unit, Integration & Frontend Tests",
     "Coverage Report",
     "Docker Build & Smoke Test",
