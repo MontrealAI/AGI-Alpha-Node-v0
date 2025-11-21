@@ -497,6 +497,11 @@ The sprint artifacts live under `observability/` and are wired to render cleanly
   // later: detachMetrics();
   ```
 
+- **Phase 5 verification loop (local + synthetic)**:
+  1. Launch the synthetic generator with success/failure mix, dynamic RTT, and relay simulation: `npm run observability:dcutr-harness` (emits counters + histograms continuously via `startSyntheticDCUtRGenerator`).【F:scripts/dcutr-harness.ts†L1-L32】【F:src/observability/dcutrHarness.ts†L33-L92】
+  2. Spin up observability stack: `docker-compose up prom grafana` mounts `observability/prometheus/prometheus.yml` and auto-imports the DCUtR dashboard through `grafana/provisioning/dashboards/dcutr.yaml` (`/grafana/dashboards` bind).【F:docker-compose.yml†L1-L25】【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L6】
+  3. Validate panels live: the success/failure/latency series should populate, the heatmap should respect region×ASN bins, and histogram buckets should render (p50/p95) from `dcutr_time_to_direct_seconds_bucket`. Use Grafana’s “Explore” view to cross-check PromQL against `/metrics` scraped from the harness.
+
 - **Grafana import**: upload `observability/grafana/dcutr_dashboard.json`, point it at your Prometheus datasource, and you instantly get KPI, heatmap, and offload panels sized for production drill-downs.【F:observability/grafana/dcutr_dashboard.json†L1-L123】
 - **Phase 3 dashboard layout (stubbed for Grafana 11.x)**:
   - **UID / Title**: `dcutr-observability` · “DCUtR — Hole Punch Performance”.
