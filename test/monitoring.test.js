@@ -1,4 +1,5 @@
 import { describe, it, expect, afterEach, beforeEach } from 'vitest';
+import { EventEmitter } from 'node:events';
 import { setTimeout as delay } from 'node:timers/promises';
 import {
   recordAlphaWorkUnitSegment,
@@ -15,6 +16,13 @@ import {
 } from '../src/telemetry/monitoring.js';
 import { createPeerScoreRegistry } from '../src/services/peerScoring.js';
 import { createReachabilityState } from '../src/network/transportConfig.js';
+import {
+  dcutrDirectDataBytesTotal,
+  dcutrPunchAttemptsTotal,
+  dcutrPunchSuccessTotal,
+  dcutrRelayDataBytesTotal,
+  dcutrRelayOffloadTotal
+} from '../observability/prometheus/metrics_dcutr.js';
 
 const noopLogger = { info: () => {}, warn: () => {}, error: () => {} };
 
@@ -31,6 +39,11 @@ describe('monitoring telemetry server', () => {
 
   beforeEach(() => {
     __resetMonitoringStateForTests();
+    dcutrPunchAttemptsTotal.reset();
+    dcutrPunchSuccessTotal.reset();
+    dcutrRelayOffloadTotal.reset();
+    dcutrRelayDataBytesTotal.reset();
+    dcutrDirectDataBytesTotal.reset();
     telemetry = null;
   });
 
@@ -253,6 +266,35 @@ describe('monitoring telemetry server', () => {
     expect(metrics).toContain('alpha_wu_total{node_label="node-pre",device_class="H100-80GB",sla_profile="SOVEREIGN"} 8');
     expect(metrics).toContain('alpha_wu_per_job{job_id="job-pre"} 8');
     expect(metrics).toContain('alpha_wu_epoch{epoch_id="epoch-pre"} 8');
+  });
+
+  it('bridges DCUtR lifecycle events into the telemetry registry', async () => {
+    const dcutrEmitter = new EventEmitter();
+    telemetry = startMonitoringServer({ port: 0, logger: noopLogger, dcutrEvents: dcutrEmitter });
+    await waitForServer(telemetry.server);
+
+    const labels = { region: 'iad', relay_id: 'relay-x', transport: 'quic' };
+    dcutrEmitter.emit('relayDialSuccess', { labels, relayBytes: 2048 });
+    dcutrEmitter.emit('directPathConfirmed', { labels, elapsedSeconds: 0.42, directBytes: 1024 });
+    dcutrEmitter.emit('streamMigration', { labels, directBytes: 512 });
+
+    const sumValues = async (metric) =>
+      (await metric.get()).values?.reduce((total, sample) => total + Number(sample.value ?? 0), 0) ?? 0;
+
+    expect(await sumValues(dcutrPunchAttemptsTotal)).toBe(1);
+    expect(await sumValues(dcutrPunchSuccessTotal)).toBe(1);
+    expect(await sumValues(dcutrRelayOffloadTotal)).toBe(2);
+    expect(await sumValues(dcutrDirectDataBytesTotal)).toBe(1536);
+    expect(await sumValues(dcutrRelayDataBytesTotal)).toBe(2048);
+
+    const { port } = telemetry.server.address();
+    const response = await fetch(`http://127.0.0.1:${port}/metrics`);
+    const metrics = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(metrics).toContain('dcutr_punch_attempts_total');
+    expect(metrics).toContain('dcutr_punch_success_total');
+    expect(metrics).toContain('dcutr_relay_offload_total');
   });
 
   it('exports peer score metrics when a registry is provided', async () => {

@@ -1,35 +1,30 @@
-import {
-  Counter,
-  Gauge,
-  Histogram,
-  Registry,
-  collectDefaultMetrics,
-  register as defaultRegistry,
-} from 'prom-client';
+import { Counter, Gauge, Histogram, collectDefaultMetrics, register as defaultRegistry } from 'prom-client';
 
-// DCUtR (Direct Connection Upgrade through Relay) metric primitives.
-// These stubs mirror the libp2p puncher lifecycle so operators can wire telemetry
-// before the transport stack is fully live.
+/**
+ * @typedef {object} DCUtRLabelSet
+ * @property {string} [region]
+ * @property {string} [asn]
+ * @property {string} [transport]
+ * @property {string} [relay_id]
+ */
 
-export type DCUtRLabelSet = {
-  region?: string;
-  asn?: string;
-  transport?: string;
-  relay_id?: string;
-};
+/** @typedef {Required<DCUtRLabelSet>} NormalizedLabelSet */
 
-type NormalizedLabelSet = Required<DCUtRLabelSet>;
-
-const DEFAULT_LABELS: NormalizedLabelSet = {
+/** @type {NormalizedLabelSet} */
+const DEFAULT_LABELS = {
   region: 'unknown',
   asn: 'unknown',
   transport: 'unknown',
   relay_id: 'unknown',
 };
 
-const LABEL_NAMES = ['region', 'asn', 'transport', 'relay_id'] as const;
+const LABEL_NAMES = ['region', 'asn', 'transport', 'relay_id'];
 
-function normalizeLabels(labels?: DCUtRLabelSet): NormalizedLabelSet {
+/**
+ * @param {DCUtRLabelSet} [labels]
+ * @returns {NormalizedLabelSet}
+ */
+function normalizeLabels(labels) {
   return {
     region: labels?.region ?? DEFAULT_LABELS.region,
     asn: labels?.asn ?? DEFAULT_LABELS.asn,
@@ -38,7 +33,11 @@ function normalizeLabels(labels?: DCUtRLabelSet): NormalizedLabelSet {
   };
 }
 
-function labelKey(labelSet: NormalizedLabelSet): string {
+/**
+ * @param {NormalizedLabelSet} labelSet
+ * @returns {string}
+ */
+function labelKey(labelSet) {
   return `${labelSet.region}|${labelSet.asn}|${labelSet.transport}|${labelSet.relay_id}`;
 }
 
@@ -111,15 +110,15 @@ export const dcutrPunchSuccessRate = new Gauge({
     const attempts = await dcutrPunchAttemptsTotal.get();
     const successes = await dcutrPunchSuccessTotal.get();
 
-    const attemptMap = new Map<string, { value: number; labels: NormalizedLabelSet }>();
+    const attemptMap = new Map();
     for (const attempt of attempts.values ?? []) {
-      const normalized = normalizeLabels(attempt.labels as DCUtRLabelSet);
+      const normalized = normalizeLabels(attempt.labels);
       attemptMap.set(labelKey(normalized), { value: attempt.value, labels: normalized });
     }
 
-    const successMap = new Map<string, { value: number; labels: NormalizedLabelSet }>();
+    const successMap = new Map();
     for (const success of successes.values ?? []) {
-      const normalized = normalizeLabels(success.labels as DCUtRLabelSet);
+      const normalized = normalizeLabels(success.labels);
       successMap.set(labelKey(normalized), { value: success.value, labels: normalized });
     }
 
@@ -142,9 +141,12 @@ const DEFAULT_METRIC_NAMES = new Set([
   'process_resident_memory_bytes',
 ]);
 
-const registeredRegistries = new WeakSet<Registry>();
+const registeredRegistries = new WeakSet();
 
-export function registerDCUtRMetrics(registry: Registry = defaultRegistry): void {
+/**
+ * @param {Registry} [registry]
+ */
+export function registerDCUtRMetrics(registry = defaultRegistry) {
   if (registeredRegistries.has(registry)) {
     return;
   }
@@ -171,52 +173,89 @@ export function registerDCUtRMetrics(registry: Registry = defaultRegistry): void
   registeredRegistries.add(registry);
 }
 
-export function onPunchStart(labels?: DCUtRLabelSet): void {
+/**
+ * @param {DCUtRLabelSet} [labels]
+ */
+export function onPunchStart(labels) {
   const normalized = normalizeLabels(labels);
   dcutrPunchAttemptsTotal.labels(normalized).inc();
 }
 
-export function onPunchSuccess(labels?: DCUtRLabelSet): void {
+/**
+ * @param {DCUtRLabelSet} [labels]
+ */
+export function onPunchSuccess(labels) {
   const normalized = normalizeLabels(labels);
   dcutrPunchSuccessTotal.labels(normalized).inc();
 }
 
-export function onPunchFailure(labels?: DCUtRLabelSet): void {
+/**
+ * @param {DCUtRLabelSet} [labels]
+ */
+export function onPunchFailure(labels) {
   const normalized = normalizeLabels(labels);
   dcutrPunchFailureTotal.labels(normalized).inc();
 }
 
-export function onPunchLatency(seconds: number, labels?: DCUtRLabelSet): void {
+/**
+ * @param {number} seconds
+ * @param {DCUtRLabelSet} [labels]
+ */
+export function onPunchLatency(seconds, labels) {
   const normalized = normalizeLabels(labels);
   dcutrTimeToDirectSeconds.observe(normalized, seconds);
 }
 
-export function onDirectRttMs(rtt: number, labels?: DCUtRLabelSet): void {
+/**
+ * @param {number} rtt
+ * @param {DCUtRLabelSet} [labels]
+ */
+export function onDirectRttMs(rtt, labels) {
   const normalized = normalizeLabels(labels);
   dcutrPathQualityRttMs.labels(normalized).set(rtt);
 }
 
-export function onDirectLossRate(percent: number, labels?: DCUtRLabelSet): void {
+/**
+ * @param {number} percent
+ * @param {DCUtRLabelSet} [labels]
+ */
+export function onDirectLossRate(percent, labels) {
   const normalized = normalizeLabels(labels);
   dcutrPathQualityLossRate.labels(normalized).set(percent);
 }
 
-export function onRelayFallback(labels?: DCUtRLabelSet): void {
+/**
+ * @param {DCUtRLabelSet} [labels]
+ */
+export function onRelayFallback(labels) {
   const normalized = normalizeLabels(labels);
   dcutrFallbackRelayTotal.labels(normalized).inc();
 }
 
-export function onRelayOffload(labels?: DCUtRLabelSet): void {
+/**
+ * @param {DCUtRLabelSet} [labels]
+ */
+export function onRelayOffload(labels) {
   const normalized = normalizeLabels(labels);
   dcutrRelayOffloadTotal.labels(normalized).inc();
 }
 
-export function onRelayBytes(bytes: number, labels?: DCUtRLabelSet): void {
+/**
+ * @param {number} bytes
+ * @param {DCUtRLabelSet} [labels]
+ */
+export function onRelayBytes(bytes, labels) {
   const normalized = normalizeLabels(labels);
   dcutrRelayDataBytesTotal.labels(normalized).inc(bytes);
 }
 
-export function onDirectBytes(bytes: number, labels?: DCUtRLabelSet): void {
+/**
+ * @param {number} bytes
+ * @param {DCUtRLabelSet} [labels]
+ */
+export function onDirectBytes(bytes, labels) {
   const normalized = normalizeLabels(labels);
   dcutrDirectDataBytesTotal.labels(normalized).inc(bytes);
 }
+
+export { normalizeLabels };
