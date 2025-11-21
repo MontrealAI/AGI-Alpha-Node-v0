@@ -50,10 +50,10 @@
   <img src="https://img.shields.io/badge/Owner%20Controls-Total%20Command-9333ea?logo=gnometerminal&logoColor=white" alt="Owner controls" />
   <img src="https://img.shields.io/badge/Metrics-Prometheus%20%7C%20OTel-10b981?logo=prometheus&logoColor=white" alt="Metrics surfaces" />
   <a href="observability/docs/METRICS.md">
-    <img src="https://img.shields.io/badge/DCUtR%20Metrics-Prometheus%20stub-16a34a?logo=prometheus&logoColor=white" alt="DCUtR Prometheus stub" />
+    <img src="https://img.shields.io/badge/DCUtR%20Metrics-Prometheus%20wired-16a34a?logo=prometheus&logoColor=white" alt="DCUtR Prometheus wiring" />
   </a>
   <a href="observability/grafana/dcutr_dashboard.json">
-    <img src="https://img.shields.io/badge/Grafana-DCUtR%20Dashboard-ef4444?logo=grafana&logoColor=white" alt="Grafana stub" />
+    <img src="https://img.shields.io/badge/Grafana-DCUtR%20Dashboard-ef4444?logo=grafana&logoColor=white" alt="Grafana provisioned panels" />
   </a>
   <a href="observability/grafana/dcutr_dashboard.json">
     <img src="https://img.shields.io/badge/Grafana%20CLI-dashboards%20lint-ef4444?logo=grafana&logoColor=0b1120" alt="Grafana lint" />
@@ -196,6 +196,7 @@ sequenceDiagram
 1. **Start the synthetic punch stream**: `npm run observability:dcutr-harness` exposes `/metrics` on port `9464`, binding the real DCUtR metric calls (`relayDialSuccess`, `holePunchStart`, `directPathConfirmed`, `relayFallbackActive`, `streamMigration`) to Prometheus primitives so success/failure, RTT, and fallback bytes populate instantly.【F:scripts/dcutr-harness.ts†L1-L28】【F:src/observability/dcutrEvents.ts†L1-L87】【F:src/observability/dcutrHarness.ts†L1-L92】
 2. **Launch Prometheus + Grafana locally**: `docker-compose up prom grafana` (credentials: `admin`/`admin`) auto-loads the DCUtR dashboard JSON, datasources, and provisioning bundle so panels render without manual clicks.【F:docker-compose.yml†L1-L25】【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L6】【F:grafana/provisioning/datasources/prometheus.yaml†L1-L8】【F:observability/grafana/dcutr_dashboard.json†L1-L123】
 3. **Verify panel health**: watch histogram buckets fill (`dcutr_time_to_direct_seconds`), relay/direct bytes counters increment, and fallback heatmaps rise/fall as the harness alternates success/failure under deterministic timers.【F:observability/prometheus/metrics_dcutr.ts†L1-L221】【F:test/observability/dcutrHarness.test.ts†L1-L42】
+4. **Attach to a live libp2p host**: `wireLibp2pDCUtRMetrics(libp2p)` bridges native `hole-punch:*`, `relay:*`, and `stream:migrate` events into the same Prometheus surfaces with deduped attempt tracking so real punch flows and synthetic harness traffic co-exist without double-counting.【F:src/observability/dcutrEvents.ts†L1-L200】【F:test/observability/dcutrEvents.test.ts†L1-L92】
 
 ## Mode A treasury (post-quantum, cheap on-chain)
 
@@ -444,8 +445,8 @@ sequenceDiagram
 
 The sprint artifacts live under `observability/` and are wired to render cleanly on GitHub (Mermaid + badges) and in Grafana. They align the repo layout with the DCUtR primer above.
 
-- **File map**: Prometheus stub (`observability/prometheus/metrics_dcutr.ts`), Grafana stub (`observability/grafana/dcutr_dashboard.json`), operator notes (`observability/docs/METRICS.md`, `observability/docs/DASHBOARD.md`).【F:observability/prometheus/metrics_dcutr.ts†L1-L221】【F:observability/grafana/dcutr_dashboard.json†L1-L123】【F:observability/docs/METRICS.md†L1-L120】【F:observability/docs/DASHBOARD.md†L1-L120】
-- **Metrics declared**: attempts/success/failure, computed success rate, time-to-direct histogram, RTT + loss gauges, relay fallback/offload counters, relay vs direct byte counters (all label-aware).【F:observability/prometheus/metrics_dcutr.ts†L45-L105】
+- **File map**: Prometheus wiring (`observability/prometheus/metrics_dcutr.ts`), Grafana dashboard (`observability/grafana/dcutr_dashboard.json`), provisioning bundle (`grafana/provisioning/dashboards/dcutr.yaml`), and operator notes (`observability/docs/METRICS.md`, `observability/docs/DASHBOARD.md`).【F:observability/prometheus/metrics_dcutr.ts†L1-L221】【F:observability/grafana/dcutr_dashboard.json†L1-L123】【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L6】【F:observability/docs/METRICS.md†L1-L120】【F:observability/docs/DASHBOARD.md†L1-L120】
+- **Metrics declared**: attempts/success/failure, computed success rate, time-to-direct histogram, RTT + loss gauges, relay fallback/offload counters, relay vs direct byte counters (all label-aware, deduped across relay + punch start events).【F:observability/prometheus/metrics_dcutr.ts†L45-L105】【F:src/observability/dcutrEvents.ts†L36-L134】
 - **Success-rate guardrail**: `dcutr_punch_success_rate` derives from attempts/successes during collection, pinning zero attempts to `0` while respecting each label set to keep Grafana/Prometheus panels stable even under startup jitter.【F:observability/prometheus/metrics_dcutr.ts†L106-L136】
 - **Emitters**: `onPunchStart`, `onPunchSuccess`, `onPunchFailure`, `onPunchLatency`, `onDirectRttMs`, `onDirectLossRate`, `onRelayFallback`, `onRelayOffload`, `onRelayBytes`, `onDirectBytes` (all tested under `test/observability/metrics_dcutr.test.ts`).【F:observability/prometheus/metrics_dcutr.ts†L173-L221】【F:test/observability/metrics_dcutr.test.ts†L1-L123】
 - **Owner-ops quickstart**: register once and expose `/metrics`:
@@ -459,6 +460,17 @@ The sprint artifacts live under `observability/` and are wired to render cleanly
   onPunchStart(labels);
   onPunchSuccess(labels);
   onPunchFailure(labels);
+  ```
+
+- **Live libp2p binding**: attach the bridge to any libp2p node that emits `hole-punch:*` + `relay:*` signals and keep the harness running alongside without double-counting:
+
+  ```ts
+  import { wireLibp2pDCUtRMetrics } from './src/observability/dcutrEvents.js';
+  import { registerDCUtRMetrics } from './observability/prometheus/metrics_dcutr.js';
+
+  registerDCUtRMetrics();
+  const detachMetrics = wireLibp2pDCUtRMetrics(libp2pInstance);
+  // later: detachMetrics();
   ```
 
 - **Grafana import**: upload `observability/grafana/dcutr_dashboard.json`, point it at your Prometheus datasource, and you instantly get KPI, heatmap, and offload panels sized for production drill-downs.【F:observability/grafana/dcutr_dashboard.json†L1-L123】
@@ -486,6 +498,21 @@ Each panel uses the same Prometheus datasource binding (`${DS_PROMETHEUS}`) to s
 npm run lint:grafana
 # or directly
 grafana dashboards lint observability/grafana/dcutr_dashboard.json
+```
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Libp2p as libp2p host
+  participant Bridge as wireLibp2pDCUtRMetrics
+  participant Metrics as Prometheus registry
+  participant Grafana as DCUtR dashboard
+  Libp2p->>Bridge: relay:connect / hole-punch:start
+  Bridge->>Metrics: registerDCUtRMetrics + emitters
+  Libp2p-->>Bridge: hole-punch:success | hole-punch:failure
+  Bridge-->>Metrics: attempt/success/failure + RTT/loss bytes
+  Metrics-->>Grafana: scrape /metrics (prom job)
+  Grafana-->>Bridge: panels stay live (heatmaps, histograms)
 ```
 
 ```mermaid

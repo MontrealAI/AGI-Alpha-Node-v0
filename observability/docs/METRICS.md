@@ -1,7 +1,7 @@
-# DCUtR Prometheus Metrics Stub
+# DCUtR Prometheus Metrics Bridge
 <!-- markdownlint-disable MD013 -->
 
-This document specifies the Direct Connection Upgrade through Relay (DCUtR) telemetry surface exposed by the AGI Alpha Node runtime. It aligns with the DCUtR primer in the README and feeds the Grafana dashboard stub under `observability/grafana/dcutr_dashboard.json`.
+This document specifies the Direct Connection Upgrade through Relay (DCUtR) telemetry surface exposed by the AGI Alpha Node runtime. It aligns with the DCUtR primer in the README and feeds the Grafana dashboard under `observability/grafana/dcutr_dashboard.json` while the provisioning bundle (`grafana/provisioning/dashboards/dcutr.yaml`) keeps imports hands-free.
 
 **DCUtR at a glance (production heuristics):** peers rendezvous on a relay, exchange hints, punch QUIC/TCP holes in a coordinated window, and migrate traffic to the best direct path. Track success, timing, and offload volume to keep latency and relay spend under control.
 
@@ -63,7 +63,7 @@ Metric descriptions (all metrics accept `{region,asn,transport,relay_id}`):
    registerDCUtRMetrics();
    ```
 
-2. Emit lifecycle events with optional labels (missing labels default to `unknown` to keep scrapes stable):
+2. Emit lifecycle events with optional labels (missing labels default to `unknown` to keep scrapes stable and deduped across `relayDialSuccess` + `holePunchStart`):
 
    ```ts
    import {
@@ -94,7 +94,8 @@ Metric descriptions (all metrics accept `{region,asn,transport,relay_id}`):
    ```
 
 3. Expose `/metrics` through your existing Prometheus HTTP handler.
-4. Import `observability/grafana/dcutr_dashboard.json` into Grafana and bind it to your Prometheus datasource.
+4. Optionally, bridge native libp2p events: `wireLibp2pDCUtRMetrics(libp2p)` listens for `relay:connect`, `hole-punch:*`, and `stream:migrate` signals so production punch flows land in the same registry as the harness without double-counting attempts.【F:src/observability/dcutrEvents.ts†L117-L200】
+5. Import `observability/grafana/dcutr_dashboard.json` into Grafana and bind it to your Prometheus datasource (the provisioning YAML does this automatically in Docker compose).【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L6】【F:docker-compose.yml†L1-L25】
 
 ## Diagram
 
