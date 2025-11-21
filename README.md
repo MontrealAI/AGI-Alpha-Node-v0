@@ -252,6 +252,17 @@ sequenceDiagram
 
 > Owner command envelope: every runtime parameter (pause state, orchestrator selection, validator sets, metadata, emissions, and treasury routes) can be updated live via REST/CLI without redeploying, keeping the platform fully owner-steerable and ready for emergency intervention.
 
+**Owner control matrix (live, runtime-configurable):**
+
+| Lever | Owner action | Impact |
+| --- | --- | --- |
+| Orchestrator rotation | `setOrchestrator(address)` | Redirects the only execution key allowed to call `executeTransaction`, letting the owner swap automation keys in a single transaction.【F:contracts/TreasuryExecutor.sol†L26-L57】 |
+| Treasury halt / resume | `pause()` / `unpause()` | Full stop on outbound calls and value transfers until the owner lifts the pause, keeping the vault obedient during incident response.【F:contracts/TreasuryExecutor.sol†L59-L74】 |
+| Intent replay / resurrection | `setIntentStatus(bytes32,bool)` | Clears or re-sets executed digests to replay or invalidate flows without redeploying the contract.【F:contracts/TreasuryExecutor.sol†L76-L82】 |
+| Treasury drain | `sweep(address payable)` | Ships all ETH to any owner-chosen address instantly for treasury migration or incident drain-downs.【F:contracts/TreasuryExecutor.sol†L88-L98】 |
+| Identity lifecycle | `setIdentityMetadata`, `setIdentityStatus`, `revokeIdentity` | Refreshes metadata, toggles activation, or tears down identities, enforcing owner supremacy over validator and agent registries.【F:contracts/AlphaNodeManager.sol†L46-L156】 |
+| Economics & emissions | `stake`, `withdrawStake`, `recordAlphaWUMint`, `recordAlphaWUValidation`, `recordAlphaWUAcceptance`, `applySlash` | Adjusts escrowed balances, work-unit lifecycle, and slashing—all emit auditable events and remain owner-gated.【F:contracts/AlphaNodeManager.sol†L177-L257】 |
+
 ### Treasury control deck (owner quick reference)
 
 ```mermaid
@@ -395,6 +406,11 @@ The sprint artifacts live under `observability/` and are wired to render cleanly
   ```
 
 - **Grafana import**: upload `observability/grafana/dcutr_dashboard.json`, point it at your Prometheus datasource, and you instantly get KPI, heatmap, and offload panels sized for production drill-downs.【F:observability/grafana/dcutr_dashboard.json†L1-L123】
+- **Phase 3 dashboard layout (stubbed for Grafana 11.x)**:
+  - **UID / Title**: `dcutr-observability` · “DCUtR — Hole Punch Performance”.
+  - **Panels**: success rate, attempts/success/failures, p95 time-to-direct, relay offload, RTT quality, region×ASN heatmap (PromQL exactly mirrors the sprint brief).【F:observability/grafana/dcutr_dashboard.json†L1-L123】
+  - **Datasource**: parameterized `DS_PROMETHEUS` input so imports prompt for your Prometheus instance instead of hard-coding a UID.【F:observability/grafana/dcutr_dashboard.json†L1-L19】【F:observability/grafana/dcutr_dashboard.json†L20-L69】
+  - **Lint**: `grafana dashboards lint observability/grafana/dcutr_dashboard.json` (or `npm run lint:grafana`) before shipping to catch structural drift using the same PromQL set you’ll deploy.【F:scripts/lint-grafana-dashboard.mjs†L1-L62】
 
 ```mermaid
 flowchart TB
@@ -411,6 +427,7 @@ flowchart TB
   PunchLoop --> RegistryF[Prometheus registry\nregisterDCUtRMetrics]:::neon
   RegistryF --> Panels[Grafana panels\np50/p95, success %, offload]:::neon
   Panels --> OwnerOps[Owner cockpit + alerts\n(pause/offload policies)]:::lava
+  OwnerOps --> LintCheck[grafana dashboards lint\n + npm run lint:grafana]:::frost
 ```
 
 ## CI wall (always green)
