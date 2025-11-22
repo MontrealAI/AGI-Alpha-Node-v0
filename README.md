@@ -175,6 +175,26 @@ flowchart TB
 2. **Resource manager pressure smoke:** run `npm run p2p:load-tests` to drive connection/stream denials and confirm `nrm_denials_total` increments alongside `nrm_limits`/`nrm_usage` gauges; thresholds in the Grafana libp2p dashboard should light up in lock‑step with the Prometheus alerts.【F:src/network/resourceManagerConfig.js†L1-L210】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/alerts.yml†L1-L45】
 3. **Alert loop confidence:** open Prometheus on :9090 and check **Status → Rules** to verify `ResourceManagerDenialsWarning/Critical` and `QuicHandshakeLatencyWarning/Critical` states transition when you perturb the harness; Grafana thresholds are pinned to the same PromQL so dashboards and paging stay synchronized.【F:observability/prometheus/alerts.yml†L1-L45】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】
 
+### Resource manager and connection manager quick-tune map
+
+The owner can reshape posture live without redeploying. These levers surface immediately via `/metrics` (limits + usage) and flow through to Grafana thresholds and PromQL alerts.
+
+| Purpose | Env var | Default | Effect |
+| --- | --- | --- | --- |
+| Global connection ceiling | `NRM_MAX_CONNECTIONS` | `1024` | Sets rcmgr total connections; scales via `NRM_SCALE_FACTOR` for burst campaigns. |
+| Global stream ceiling | `NRM_MAX_STREAMS` | `8192` | Caps aggregate stream count; combines with per-peer/per-protocol overrides from JSON/YAML when provided. |
+| Memory guardrail | `NRM_MAX_MEMORY_BYTES` | `536870912` | Hard upper bound for resource manager memory accounting. |
+| File descriptor cap | `NRM_MAX_FDS` | `2048` | Prevents FD exhaustion; mirrors Prometheus usage gauges. |
+| Bandwidth governor | `NRM_MAX_BANDWIDTH_BPS` | `67108864` | Throttles aggregate bandwidth (bytes per second). |
+| Per-IP ceiling | `MAX_CONNS_PER_IP` | `64` | Limits simultaneous peers per IP to blunt abuse without harming legitimate traffic. |
+| Per-ASN ceiling | `MAX_CONNS_PER_ASN` | `256` | Caps concurrent connections per ASN for carrier-level shaping. |
+| Connection pruning start | `CONN_LOW_WATER` | `512` | Connection manager begins trimming when active peers exceed this watermark. |
+| Connection pruning hard stop | `CONN_HIGH_WATER` | `1024` | Forced pruning threshold; must exceed `CONN_LOW_WATER` (validated at boot). |
+| Trim grace window | `CONN_GRACE_PERIOD_SEC` | `120` | Delay before pruning after high-water breach to avoid churn. |
+| Structured overrides | `NRM_LIMITS_JSON` / `NRM_LIMITS_PATH` | _unset_ | Inline JSON or external file for per-protocol/per-peer ceilings (e.g., `/meshsub/1.1.0` burst caps). |
+
+> Rationale: defaults are tuned for medium-density meshes with QUIC-first transport, ensuring benign telemetry and gossip traffic are not over-pruned while still providing strong back-pressure against floods. The connection manager watermarks mirror the resource ceilings so pruning aligns with rcmgr denials, minimizing oscillation under load.【F:src/network/resourceManagerConfig.js†L17-L122】【F:src/network/resourceManagerConfig.js†L126-L174】【F:src/network/resourceManagerConfig.js†L180-L232】
+
 ### Live guardrails map (traffic → resource policy → alerts → badges)
 
 Every layer is wired so owner-tuned limits are visible on dashboards, promoted to alerts, and enforced by CI gate badges. The diagram stays GitHub-renderable and mirrors the current code/config surface.
