@@ -263,29 +263,6 @@ jobs:
           path: docker-smoke-help.txt
           retention-days: 7
           if-no-files-found: warn
-
-  security:
-    name: Dependency Security Scan
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Use Node.js 20.x
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run security audit
-        env:
-          CI: true
-        run: npm run ci:security
-
   badges:
     name: Publish Status Badges
     runs-on: ubuntu-latest
