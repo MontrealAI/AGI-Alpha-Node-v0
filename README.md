@@ -116,6 +116,41 @@ This codebase is treated as the operational shell of that high-value intelligenc
 - **Hands-off wiring** — `docker-compose up prom grafana` scrapes `/metrics` and autoloads dashboards; `npm run lint:grafana` guards JSON correctness in CI while `npm run observability:dcutr-harness` keeps panels alive even without live traffic.【F:docker-compose.yml†L1-L25】【F:scripts/lint-grafana-dashboard.mjs†L1-L62】【F:scripts/dcutr-harness.ts†L1-L28】
 - **PromQL receipts** — Every Grafana panel references the same PromQL strings captured in `observability/docs/DASHBOARD.md`, ensuring alert rules and dashboards stay aligned with the emitters and scrape contract.【F:observability/docs/DASHBOARD.md†L1-L120】
 
+**DCUtR artifact index (drop-in, GitHub-renderable):**
+
+| Asset | Purpose | Where it lands |
+| --- | --- | --- |
+| `observability/prometheus/metrics_dcutr.js` + `.ts` | Canonical collectors + typed shim (label-normalized emitters and scrape-time success rate). | Prometheus `/metrics` surface and libp2p DCUtR hooks.【F:observability/prometheus/metrics_dcutr.js†L1-L221】【F:observability/prometheus/metrics_dcutr.ts†L1-L89】 |
+| `observability/grafana/dcutr_dashboard.json` | Grafana import (UID `dcutr-observability`, six panels aligned to PromQL doc). | Auto-provisioned by Grafana on start.【F:observability/grafana/dcutr_dashboard.json†L1-L123】【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L6】 |
+| `observability/docs/METRICS.md` / `observability/docs/DASHBOARD.md` | Label grid, metric catalog, PromQL strings, screenshots, and playbook overlays. | GitHub-rendered (mermaid verified) operator reference.【F:observability/docs/METRICS.md†L1-L120】【F:observability/docs/DASHBOARD.md†L1-L120】 |
+| `grafana/provisioning/dashboards/dcutr.yaml` + `grafana/provisioning/datasources/prometheus.yaml` | Hands-free Grafana + Prometheus binding for local runs and CI smoke. | Mounted by `docker-compose up prom grafana`.【F:grafana/provisioning/datasources/prometheus.yaml†L1-L8】【F:docker-compose.yml†L1-L25】 |
+| `scripts/lint-grafana-dashboard.mjs` | CLI guard that mirrors `grafana dashboards lint` to keep JSON valid on GitHub Pages and in CI. | Runs in `npm run lint:grafana` and in the Actions pipeline.【F:scripts/lint-grafana-dashboard.mjs†L1-L62】【F:.github/workflows/ci.yml†L30-L64】 |
+| `scripts/dcutr-harness.ts` + `src/observability/dcutrHarness.ts` | Synthetic punch generator to populate panels without live traffic. | `npm run observability:dcutr-harness` (port 9464).【F:scripts/dcutr-harness.ts†L1-L28】【F:src/observability/dcutrHarness.ts†L1-L92】 |
+
+```mermaid
+flowchart LR
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  subgraph Emitters[Emitters & Harness]
+    Harness[scripts/dcutr-harness.ts\nlibp2p hooks]:::lava
+    MetricsJS[metrics_dcutr.js\n+ metrics_dcutr.ts]:::frost
+  end
+
+  subgraph ObservabilityStack[Prometheus ↔ Grafana]
+    Prom[observability/prometheus/prometheus.yml\n/metrics scrape]:::neon
+    Dash[dcutr_dashboard.json\nUID dcutr-observability]:::neon
+    Provision[grafana/provisioning\n(datasource + dashboards)]:::lava
+  end
+
+  Harness --> MetricsJS
+  MetricsJS --> Prom
+  Prom --> Dash
+  Provision --> Dash
+  Dash -->|PromQL refs| Docs[METRICS.md + DASHBOARD.md]:::frost
+```
+
 ```mermaid
 flowchart TB
   classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
