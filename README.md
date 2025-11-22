@@ -23,6 +23,9 @@
   <a href=".github/required-checks.json">
     <img src="https://img.shields.io/badge/Required%20Checks-Enforced%20on%20PRs-8b5cf6?logo=github" alt="Required PR checks" />
   </a>
+  <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml?query=workflow%3A%22Continuous+Integration%22">
+    <img src="https://img.shields.io/github/actions/workflow/status/MontrealAI/AGI-Alpha-Node-v0/ci.yml?branch=main&label=Dependency%20Security%20Scan&logo=npm&logoColor=white" alt="Dependency security scan" />
+  </a>
   <img src="https://img.shields.io/badge/Full%20CI-ci:verify-2563eb?logo=githubactions&logoColor=white" alt="Full CI verification" />
   <img src="https://img.shields.io/badge/Observability-DCUtR%20SLO%20wall-10b981?logo=grafana&logoColor=white" alt="DCUtR observability SLO wall" />
   <img src="https://img.shields.io/badge/Coverage-c8%20gated-22c55e?logo=testinglibrary&logoColor=white" alt="Coverage" />
@@ -103,12 +106,12 @@ This codebase is treated as the operational shell of that high-value intelligenc
 >
 > - **Phase 6 deliverables pinned**: instrumentation schema + emitters live in `observability/prometheus/metrics_dcutr.js`, the Grafana stub is ready to import at `observability/grafana/dcutr_dashboard.json` with hands-free provisioning via `grafana/provisioning/dashboards/dcutr.yaml`, and every panel/PromQL path is documented in `observability/docs/DASHBOARD.md` + `observability/docs/METRICS.md` so operators import once and run. Lint parity stays wired through `npm run lint:grafana` and the CI badge wall above.
 > - **DCUtR observability sprint completed**: `observability/prometheus/metrics_dcutr.js` implements collectors, emitters, and computed success-rate gauges; `observability/grafana/dcutr_dashboard.json` + `grafana/provisioning/dashboards/dcutr.yaml` provide hands-free dashboard import; `observability/docs/METRICS.md` and `observability/docs/DASHBOARD.md` document every PromQL panel and label so operators and auditors stay aligned.
-> - **CI wall enforced**: `.github/workflows/ci.yml` runs lint, tests, coverage gates, Solidity lint/compile, subgraph builds, Docker smoke, audit, and policy/branch gates; `.github/required-checks.json` keeps them required on PRs/main with badges reflecting live status, matching `npm run ci:verify` locally.
+> - **CI wall enforced**: `.github/workflows/ci.yml` runs lint, tests, coverage gates, Solidity lint/compile, subgraph builds, Docker smoke, dependency audit, and policy/branch gates; `.github/required-checks.json` keeps them required on PRs/main (including the dedicated “Dependency Security Scan” job) with badges reflecting live status, matching `npm run ci:verify` locally.
 > - **Owner command intact**: treasury/tokens stay owner-steered (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) with pause + parameter control and ENS-aware orchestration. Compose/Helm paths stay aligned with the repo tree below for predictable deploys.
 
 ## Phase 6 deliverables (DCUtR control tower)
 
-- **Instrumentation schema** — `observability/prometheus/metrics_dcutr.js` defines the canonical label grid (`region`, `asn`, `transport`, `relay_id`), collectors, emitters, and scrape-time success ratio so every panel and alert consumes the same semantics.【F:observability/prometheus/metrics_dcutr.js†L1-L221】【F:observability/docs/METRICS.md†L1-L120】
+- **Instrumentation schema** — `observability/prometheus/metrics_dcutr.js` defines the canonical label grid (`region`, `asn`, `transport`, `relay_id`), collectors, emitters, and scrape-time success ratio so every panel and alert consumes the same semantics. A typed shim at `observability/prometheus/metrics_dcutr.ts` mirrors the emitters/collectors for TS-first runtimes without diverging from the production JS bridge.【F:observability/prometheus/metrics_dcutr.js†L1-L221】【F:observability/prometheus/metrics_dcutr.ts†L1-L89】【F:observability/docs/METRICS.md†L1-L120】
 - **Dashboard + provisioning** — Import-ready Grafana stub at `observability/grafana/dcutr_dashboard.json` with hands-free load via `grafana/provisioning/dashboards/dcutr.yaml`; PromQL for each panel is mirrored in `observability/docs/DASHBOARD.md` for auditors.【F:observability/grafana/dcutr_dashboard.json†L1-L123】【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L6】【F:observability/docs/DASHBOARD.md†L1-L120】
 - **Hands-off wiring** — `docker-compose up prom grafana` scrapes `/metrics` and autoloads dashboards; `npm run lint:grafana` guards JSON correctness in CI while `npm run observability:dcutr-harness` keeps panels alive even without live traffic.【F:docker-compose.yml†L1-L25】【F:scripts/lint-grafana-dashboard.mjs†L1-L62】【F:scripts/dcutr-harness.ts†L1-L28】
 - **PromQL receipts** — Every Grafana panel references the same PromQL strings captured in `observability/docs/DASHBOARD.md`, ensuring alert rules and dashboards stay aligned with the emitters and scrape contract.【F:observability/docs/DASHBOARD.md†L1-L120】
@@ -246,7 +249,7 @@ flowchart TD
 - **Total owner command**: `AlphaNodeManager.sol` and `TreasuryExecutor.sol` centralize pause/unpause, validator rotation, metadata tuning, orchestrator rotation, digest replay protection, and ETH sweep controls so the owner can reshape execution without redeploying.【F:contracts/AlphaNodeManager.sol†L1-L265】【F:contracts/TreasuryExecutor.sol†L1-L113】
 - **Mode A off-chain quorum, cheap on-chain execution**: Guardian signatures stay post-quantum via Dilithium CBOR envelopes; once M-of-N approvals land, the orchestrator dispatches a single `executeTransaction(address,uint256,bytes)` call with replay shielding on-chain.【F:src/treasury/pqEnvelope.ts†L1-L103】【F:scripts/treasury/execute-intent.ts†L1-L150】【F:contracts/TreasuryExecutor.sol†L1-L113】
 - **Telemetry and DoS resilience**: The Network Resource Manager (NRM) and libp2p tracers expose limits, denials, dial outcomes, and peer scoring through `/debug/resources`, `/debug/network`, and `/metrics`, keeping operators in the loop during floods or churn.【F:src/network/resourceManagerConfig.js†L248-L694】【F:src/network/apiServer.js†L1353-L1552】【F:src/telemetry/networkMetrics.js†L24-L231】
-- **CI as a safety wall**: Markdown lint, link checks, Vitest suites (backend + dashboard), Solidity lint/compile, subgraph build, coverage gates, npm audit, and policy/branch gates are enforced locally via `npm run ci:verify` and remotely via GitHub Actions + required checks.【F:package.json†L19-L46】【F:.github/workflows/ci.yml†L1-L210】【F:.github/required-checks.json†L1-L10】
+- **CI as a safety wall**: Markdown lint, link checks, Vitest suites (backend + dashboard), Solidity lint/compile, subgraph build, coverage gates, npm audit, and policy/branch gates are enforced locally via `npm run ci:verify` and remotely via GitHub Actions + required checks.【F:package.json†L19-L46】【F:.github/workflows/ci.yml†L1-L260】【F:.github/required-checks.json†L1-L10】
 
 ## Operator quickstart
 
@@ -254,9 +257,9 @@ flowchart TD
 | --- | --- | --- |
 | Install deps | `npm ci` | Locks the Node.js 20.18+ toolchain, Vitest, Solidity, and dashboard build chain.【F:package.json†L1-L74】 |
 | Explore locally | `npm run demo:local` | Spins up the libp2p harness, SQLite spine, telemetry registry, and governance API for cockpit exploration.【F:package.json†L13-L25】 |
-| Full CI wall | `npm run ci:verify` | Executes lint, tests, coverage enforcement, Solidity, subgraph, security, policy, and branch gates exactly like the GitHub workflow.【F:package.json†L26-L52】【F:.github/workflows/ci.yml†L1-L210】 |
+| Full CI wall | `npm run ci:verify` | Executes lint, tests, coverage enforcement, Solidity, subgraph, security, policy, and branch gates exactly like the GitHub workflow.【F:package.json†L26-L52】【F:.github/workflows/ci.yml†L1-L260】 |
 | Abuse harness | `npm run p2p:load-tests` | Replays connection/stream floods and malformed gossip so `/debug/resources` and peer-score gauges prove their worth before shipping.【F:package.json†L53-L60】【F:test/network/loadHarness.observability.test.js†L1-L108】 |
-| DCUtR observability kit | `npx tsx -e "import('./observability/prometheus/metrics_dcutr.js').then(m=>m.registerDCUtRMetrics());"` | Pre-registers counters/gauges/histograms and primes Grafana panels from `observability/grafana/dcutr_dashboard.json` (UID `dcutr-observability`); validate the JSON with `npm run lint:grafana` (mirrors `grafana dashboards lint ...`) before import while keeping default Prometheus exports intact.【F:observability/prometheus/metrics_dcutr.js†L1-L221】【F:observability/grafana/dcutr_dashboard.json†L1-L123】【F:scripts/lint-grafana-dashboard.mjs†L1-L62】 |
+| DCUtR observability kit | `npx tsx -e "import('./observability/prometheus/metrics_dcutr.js').then(m=>m.registerDCUtRMetrics());"` | Pre-registers counters/gauges/histograms and primes Grafana panels from `observability/grafana/dcutr_dashboard.json` (UID `dcutr-observability`); TypeScript runtimes can import `observability/prometheus/metrics_dcutr.ts` for typed emitters while sharing the same registry. Validate the JSON with `npm run lint:grafana` (mirrors `grafana dashboards lint ...`) before import while keeping default Prometheus exports intact.【F:observability/prometheus/metrics_dcutr.js†L1-L221】【F:observability/prometheus/metrics_dcutr.ts†L1-L89】【F:observability/grafana/dcutr_dashboard.json†L1-L123】【F:scripts/lint-grafana-dashboard.mjs†L1-L62】 |
 | Ship dashboards | `npm run dashboard:build` | Builds the React/Vite cockpit that mirrors the telemetry tiles described below.【F:package.json†L61-L74】 |
 
 ### DCUtR metrics bridge + local dashboard loop
@@ -310,7 +313,7 @@ flowchart LR
 - **Event binding finished**: libp2p + nested DCUtR service buses drive the five lifecycle signals straight into Prometheus via `wireLibp2pDCUtRMetrics`, with attempt de-duplication and byte/latency attribution preserved for stream migrations and fallbacks.【F:src/observability/dcutrEvents.js†L1-L211】【F:test/observability/dcutrEvents.test.ts†L18-L131】
 - **Provisioning locked in**: Grafana auto-imports the DCUtR board through `/grafana/provisioning/dashboards/dcutr.yaml`, so GitHub Pages and local operators see the same panels without manual clicks.【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L6】【F:docker-compose.yml†L1-L25】【F:observability/grafana/dcutr_dashboard.json†L1-L123】
 - **Harness + panel validation**: `npm run observability:dcutr-harness` emits success/failure mixes with RTT and relay/direct byte variance; `docker-compose up prom grafana` surfaces the counters, histograms, and heatmaps, mirroring the automated checks exercised in the Vitest suites.【F:scripts/dcutr-harness.ts†L1-L28】【F:src/observability/dcutrHarness.ts†L1-L92】【F:test/observability/dcutrHarness.test.ts†L1-L42】【F:test/observability/metrics_dcutr.test.ts†L1-L52】
-- **CI visibility**: DCUtR wiring is part of the main CI wall (`npm run ci:verify`), keeping badge status trustworthy and preventing regressions in the punch lifecycle bridge or Grafana JSON.【F:.github/workflows/ci.yml†L1-L210】【F:package.json†L26-L52】
+- **CI visibility**: DCUtR wiring is part of the main CI wall (`npm run ci:verify`), keeping badge status trustworthy and preventing regressions in the punch lifecycle bridge or Grafana JSON.【F:.github/workflows/ci.yml†L1-L260】【F:package.json†L26-L52】
 
 **Phase 4/5 completion checklist:**
 
@@ -625,7 +628,7 @@ The sprint artifacts live under `observability/` and are wired to render cleanly
 | 5 | Direct Path Quality (RTT) | `timeseries` | `avg(dcutr_path_quality_rtt_ms)` |
 | 6 | Region × ASN Heatmap | `heatmap` | `sum(rate(dcutr_punch_success_total[10m])) by (region, asn)` |
 
-Each panel uses the same Prometheus datasource binding (`${DS_PROMETHEUS}`) to stay environment-agnostic while retaining unique `id` values for linting and alert rule wiring.【F:observability/grafana/dcutr_dashboard.json†L20-L123】【F:scripts/lint-grafana-dashboard.mjs†L1-L62】 Run `npm run lint:grafana` (wraps `grafana dashboards lint`) to verify structure before export; the badge block up top pulls from the same job to keep README and CI in sync.【F:package.json†L14-L21】【F:.github/workflows/ci.yml†L1-L210】
+Each panel uses the same Prometheus datasource binding (`${DS_PROMETHEUS}`) to stay environment-agnostic while retaining unique `id` values for linting and alert rule wiring.【F:observability/grafana/dcutr_dashboard.json†L20-L123】【F:scripts/lint-grafana-dashboard.mjs†L1-L62】 Run `npm run lint:grafana` (wraps `grafana dashboards lint`) to verify structure before export; the badge block up top pulls from the same job to keep README and CI in sync.【F:package.json†L14-L21】【F:.github/workflows/ci.yml†L1-L260】
 
 ```bash
 # Validate the Grafana JSON stub (Phase 3 dashboard)
@@ -684,23 +687,23 @@ flowchart LR
   Verify[Full CI Verification\nnpm run ci:verify]:::gate --> Badges[Required Checks on PRs/main]:::gate
 ```
 
-- `.github/workflows/ci.yml` runs lint, tests (backend + dashboard), coverage enforcement, Solidity lint/compile, subgraph build, docker smoke, audit, and then replays `npm run ci:verify` to mirror the local bar.【F:.github/workflows/ci.yml†L1-L210】
+- `.github/workflows/ci.yml` runs lint, tests (backend + dashboard), coverage enforcement, Solidity lint/compile, subgraph build, docker smoke, dependency audit, and then replays `npm run ci:verify` to mirror the local bar.【F:.github/workflows/ci.yml†L1-L260】
 - `.github/required-checks.json` marks every gate as mandatory for PRs and `main`, keeping branch protection aligned with the badges above.【F:.github/required-checks.json†L1-L10】
-- `badges` job on `main` publishes shields from CI outputs so the README badges reflect real outcomes and stay in sync with branch protection names.【F:.github/workflows/ci.yml†L261-L340】【F:.github/required-checks.json†L1-L10】
+- Badges are wired directly to the CI workflow outputs (including the dedicated dependency scan) so README status mirrors enforced branch checks without hidden jobs.【F:.github/workflows/ci.yml†L1-L260】【F:.github/required-checks.json†L1-L10】
 - `npm run ci:verify` bundles all gates locally so contributors see the same wall GitHub enforces.【F:package.json†L19-L46】
 
 **Check map (enforced on PRs + main):**
 
 | GitHub check name | Local command / step | Source |
 | --- | --- | --- |
-| Lint Markdown & Links | `npm run ci:lint` (markdownlint + link-check + Grafana dashboard lint + policy + branch gate) | 【F:package.json†L14-L34】【F:.github/workflows/ci.yml†L17-L66】 |
-| Unit, Integration & Frontend Tests | `npm run ci:test` (backend + dashboard suites) | 【F:package.json†L26-L28】【F:.github/workflows/ci.yml†L60-L80】 |
-| Solidity Lint & Compile | `npm run ci:solidity` | 【F:package.json†L23-L30】【F:.github/workflows/ci.yml†L82-L103】 |
-| Subgraph TypeScript Build | `npm run ci:ts` | 【F:package.json†L29-L30】【F:.github/workflows/ci.yml†L104-L125】 |
-| Coverage Report | `npm run coverage` + c8 gates | 【F:package.json†L21-L22】【F:.github/workflows/ci.yml†L126-L176】 |
-| Docker Build & Smoke Test | `docker build` + runtime `--help` smoke | 【F:.github/workflows/ci.yml†L177-L199】 |
-| Dependency Security Scan | `npm run ci:security` | 【F:package.json†L31-L32】【F:.github/workflows/ci.yml†L239-L259】 |
-| Full CI Verification | `npm run ci:verify` | 【F:package.json†L26-L34】【F:.github/workflows/ci.yml†L201-L236】 |
+| Lint Markdown & Links | `npm run ci:lint` (markdownlint + link-check + Grafana dashboard lint + policy + branch gate) | 【F:package.json†L14-L34】【F:.github/workflows/ci.yml†L18-L64】 |
+| Unit, Integration & Frontend Tests | `npm run ci:test` (backend + dashboard suites) | 【F:package.json†L26-L28】【F:.github/workflows/ci.yml†L65-L86】 |
+| Solidity Lint & Compile | `npm run ci:solidity` | 【F:package.json†L23-L30】【F:.github/workflows/ci.yml†L87-L108】 |
+| Subgraph TypeScript Build | `npm run ci:ts` | 【F:package.json†L29-L30】【F:.github/workflows/ci.yml†L109-L136】 |
+| Coverage Report | `npm run coverage` + c8 gates | 【F:package.json†L21-L22】【F:.github/workflows/ci.yml†L153-L203】 |
+| Docker Build & Smoke Test | `docker build` + runtime `--help` smoke | 【F:.github/workflows/ci.yml†L204-L226】 |
+| Dependency Security Scan | `npm run ci:security` | 【F:package.json†L31-L32】【F:.github/workflows/ci.yml†L137-L151】 |
+| Full CI Verification | `npm run ci:verify` | 【F:package.json†L26-L34】【F:.github/workflows/ci.yml†L228-L257】 |
 
 **Branch protection quickstart:**
 
@@ -714,7 +717,7 @@ gh api \
 ```
 
 - Keep badges green locally with `npm run ci:verify` before opening a PR; GitHub enforces the same matrix using the required ch
-ecks payload above.【F:.github/workflows/ci.yml†L1-L210】【F:.github/required-checks.json†L1-L10】
+ecks payload above.【F:.github/workflows/ci.yml†L1-L260】【F:.github/required-checks.json†L1-L10】
 
 ## API surfaces
 
@@ -794,7 +797,7 @@ flowchart LR
 - `npm test -- test/treasury/intentLedger.test.ts` — confirms persistence + replay shielding for executed digests.【F:test/treasury/intentLedger.test.ts†L1-L41】
 - Mode A manual smoke: `npm run treasury:execute -- --help` drives envelope verification + ethers dispatch against a local Anvil/Hardhat treasury using CBOR signatures emitted by `npm run treasury:sign`; see the guardian runbook for envelope prep.【F:scripts/treasury/execute-intent.ts†L1-L203】【F:scripts/treasury/sign-intent.ts†L1-L169】【F:docs/runes/guardian.md†L1-L120】
 - `npm test -- test/observability/metrics_dcutr.test.ts` — validates the DCUtR Prometheus stub (registration, punch lifecycle emitters, success-rate gauge, latency histogram) so dashboards stay trustworthy.【F:test/observability/metrics_dcutr.test.ts†L1-L123】【F:observability/prometheus/metrics_dcutr.js†L1-L221】
-- `npm run ci:verify` — full badge-backed CI wall (lint, tests, coverage, Solidity, subgraph, audit, policy, branch gates).【F:package.json†L19-L46】【F:.github/workflows/ci.yml†L1-L210】
+- `npm run ci:verify` — full badge-backed CI wall (lint, tests, coverage, Solidity, subgraph, audit, policy, branch gates).【F:package.json†L19-L46】【F:.github/workflows/ci.yml†L1-L260】
 
 ## Runbooks & references
 
