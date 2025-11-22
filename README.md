@@ -187,6 +187,17 @@ flowchart TB
 - **Metrics surfaced** — libp2p now exports QUIC handshake histograms, Yamux live-stream gauges/resets, and `nrm_usage`/`nrm_limits` gauges to pair with `nrm_denials_total`, keeping per-ip/per-asn/per-protocol posture visible without extra probes.【F:src/telemetry/networkMetrics.js†L24-L210】【F:src/network/libp2pHostConfig.js†L1-L230】【F:src/network/resourceManagerConfig.js†L1-L210】
 - **Owner-tunable ceilings** — `buildResourceManagerConfig` now honors `NRM_MAX_CONNECTIONS/STREAMS/MEMORY_BYTES/FDS/BANDWIDTH_BPS` and publishes the active limits + live usage so operators can dial watermarks without redeploying; gauges land on `/metrics` instantly.【F:src/network/resourceManagerConfig.js†L1-L150】【F:src/telemetry/networkMetrics.js†L146-L210】
 - **Operator quickstart** — `docker-compose up prom grafana` autoloads datasource + dashboards, with panel thresholds pinned to the same values as the PromQL alerts (e.g., QUIC p95 > 500 ms, `nrm_denials_total` spike rate > 5/10m) so the colors you see in Grafana match what Alertmanager will page on.【F:docker-compose.yml†L1-L25】【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L6】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/alerts.yml†L1-L19】
+- **Alert receipts (PromQL inlined)** — the alert wall is GitHub-visible and matches the dashboard thresholds so you can cross-check behavior before deploying. The rules live in `observability/prometheus/alerts.yml` and are evaluated automatically by Prometheus when you run compose:
+
+  ```promql
+  # Resource manager denials stay above 5/sec for 10 minutes (per limit_type)
+  sum(rate(nrm_denials_total[10m])) by (limit_type) > 5
+
+  # QUIC handshake p95 breaches 500 ms for 5 minutes
+  histogram_quantile(0.95, sum(rate(net_quic_handshake_latency_ms_bucket[5m])) by (le, direction)) > 500
+  ```
+
+  Use Prometheus’ “Alerts” tab to confirm the rules are `firing`/`pending` while Grafana paints the same thresholds (1/s warning, 5/s paging for denials; 350 ms warning, 500 ms paging for QUIC p95) so visuals and paging stay in lockstep.【F:observability/prometheus/alerts.yml†L1-L19】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/prometheus.yml†L1-L12】
 
 > **Libp2p cockpit quickstart (always-green view):**
 >
@@ -200,6 +211,37 @@ flowchart TB
 - **QUIC handshake p95:** warning at `350ms`, critical at `500ms`, identical to the `QuicHandshakeLatencyHigh` alert so stat tiles and alerts stay aligned.
 - **Yamux streams/resets:** saturation lines at 50/100 active streams and 5/10 resets per second with right-axis overrides to separate the rates from stream counts.
 - **Owner overrides:** `NRM_MAX_*` env vars reconfigure live ceilings, and values instantly reflect in `/metrics` via `nrm_limits`/`nrm_usage`, keeping dashboards truthful after retunes.
+
+```mermaid
+flowchart LR
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  subgraph Alerts[Alert wall]
+    NrmRule[ResourceManagerDenialsSustained\n>5/s for 10m]:::lava
+    QuicRule[QuicHandshakeLatencyHigh\np95 > 500ms for 5m]:::frost
+  end
+
+  subgraph PromStack[Prometheus stack]
+    PromRules[/observability/prometheus/alerts.yml/]:::neon
+    PromCfg[/observability/prometheus/prometheus.yml/]:::neon
+  end
+
+  subgraph Grafana[Grafana cockpit]
+    Libp2pDash[libp2p_unified_dashboard.json\n(thresholded panels)]:::lava
+    Thresholds[Warning/Critical lines\n(1/s|5/s, 350/500ms)]:::frost
+  end
+
+  Metrics((/metrics)):::neon
+
+  Metrics --> PromCfg
+  PromCfg --> PromRules
+  PromRules --> Alerts
+  PromCfg --> Grafana
+  Grafana --> Thresholds
+  class Alerts,PromStack,Grafana,Metrics neon;
+```
 
 ```mermaid
 flowchart LR
