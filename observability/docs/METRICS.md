@@ -53,8 +53,8 @@ The libp2p layer emits network health signals alongside DCUtR. Labels remain min
 
 | Metric | Type | Description |
 | --- | --- | --- |
-| `agi_alpha_node_net_connection_latency_ms{transport,direction}` | Histogram | Dial/accept latency by transport/direction (QUIC/TCP/relay). |
-| `net_quic_handshake_latency_ms{direction}` | Histogram | QUIC handshake completion latency; feeds p95 alert + dashboard stat. |
+| `net_connection_latency_ms{transport,direction}` | Histogram | Dial/accept + handshake latency by transport/direction (QUIC/TCP/relay); QUIC p95 alert derives from `transport="quic"`. |
+| `net_quic_handshake_latency_ms{direction}` | Histogram | Dedicated QUIC handshake completion latency (kept for deep dives alongside the primary connection histogram). |
 | `yamux_streams_active{direction}` | Gauge | Live Yamux streams split by direction; surfaces multiplexor saturation. |
 | `yamux_stream_resets_total{protocol}` | Counter | Stream resets grouped by negotiated protocol to catch churn/regressions. |
 | `nrm_denials_total{limit_type,protocol}` | Counter | Resource-manager denials with limit_type (per_ip/per_asn/per_protocol/streams/banlist). |

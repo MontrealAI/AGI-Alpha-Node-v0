@@ -24,7 +24,11 @@ groups:
             Resource manager denials by limit type have breached paging thresholds for ten minutes.
             Inspect limit_type and protocol labels to determine whether IP/ASN caps or per-protocol ceilings are too strict or under attack.
       - alert: QuicHandshakeLatencyWarning
-        expr: histogram_quantile(0.95, sum(rate(net_quic_handshake_latency_ms_bucket[5m])) by (le, direction)) > 350
+        expr: >-
+          histogram_quantile(
+            0.95,
+            sum by (le, direction)(rate(net_connection_latency_ms_bucket{transport="quic"}[5m]))
+          ) > 350
         for: 5m
         labels:
           severity: warning
@@ -34,7 +38,11 @@ groups:
           description: |
             QUIC handshake p95 is above 350ms for at least five minutes. Investigate transport posture, relay usage, or network interference.
       - alert: QuicHandshakeLatencyCritical
-        expr: histogram_quantile(0.95, sum(rate(net_quic_handshake_latency_ms_bucket[5m])) by (le, direction)) > 500
+        expr: >-
+          histogram_quantile(
+            0.95,
+            sum by (le, direction)(rate(net_connection_latency_ms_bucket{transport="quic"}[5m]))
+          ) > 500
         for: 5m
         labels:
           severity: critical
