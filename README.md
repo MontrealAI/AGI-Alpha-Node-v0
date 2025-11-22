@@ -140,6 +140,19 @@ This codebase is treated as the operational shell of that high-value intelligenc
 - **Retune network posture live** — Export `NRM_MAX_CONNECTIONS/STREAMS/MEMORY_BYTES/FDS/BANDWIDTH_BPS`, `CONN_LOW_WATER`, and `CONN_HIGH_WATER` before boot to realign rcmgr and connection-manager watermarks; inject per-protocol/per-peer overrides via `NRM_LIMITS_JSON` or `NRM_LIMITS_PATH` when you need bespoke ceilings. Gauges (`nrm_limits`, `nrm_usage`) reflect the new posture instantly.【F:src/network/resourceManagerConfig.js†L17-L122】【F:src/network/resourceManagerConfig.js†L180-L232】
 - **Verify the outcome visually** — Run `npm run lint:md && npm run lint:grafana` to ensure every mermaid and dashboard panel renders on GitHub Pages, then `docker-compose up prom grafana` to see the thresholds and alerts light up with the new limits before resuming production traffic.【F:package.json†L13-L47】【F:docker-compose.yml†L1-L25】
 
+### Owner control matrix (one-transaction authority)
+
+| Control | How to exercise | Effect | Audit trail |
+| --- | --- | --- | --- |
+| Pause/resume runtime | `pause()` / `unpause()` | Halts or resumes staking + validator flows, preserving funds and identities. | `Paused`/`Unpaused` events emit with caller. 【F:contracts/AlphaNodeManager.sol†L34-L92】 |
+| Validator gating | `setValidator(address,bool)` | Activates or deactivates validators instantly without redeploying. | `ValidatorUpdated` event includes validator + status. 【F:contracts/AlphaNodeManager.sol†L94-L122】 |
+| ENS identity routing | `registerIdentity`, `updateIdentityController`, `setIdentityStatus`, `revokeIdentity` | Reassigns controllers, toggles active status, or revokes identities for the AGI jobs platform. | Every mutation emits explicit events so dashboards/logs stay synchronized. 【F:contracts/AlphaNodeManager.sol†L102-L156】【F:contracts/AlphaNodeManager.sol†L158-L176】 |
+| Treasury movement | `withdrawStake(recipient, amount)` | Owner-controlled withdrawal of staked balances to any recipient address. | `StakeWithdrawn` includes amount + recipient. 【F:contracts/AlphaNodeManager.sol†L189-L200】 |
+| Resource envelope | `NRM_*` env vars + `NRM_LIMITS_JSON/PATH` | Live-tune rcmgr/global/per-protocol ceilings, IP/ASN caps, and watermarks (derived when unset). | `nrm_limits`, `nrm_usage`, and `banlist_*` metrics surface the active posture for Grafana/Prometheus. 【F:src/network/resourceManagerConfig.js†L17-L210】【F:src/telemetry/networkMetrics.js†L146-L210】 |
+| Connection trimming | `CONN_LOW_WATER` / `CONN_HIGH_WATER` / `CONN_GRACE_PERIOD_SEC` | Adjust when the connection manager begins/ends peer pruning to match the tuned ceilings. | Watermarks validated at boot and mirrored in gauges; pruning behavior observable via metrics. 【F:src/network/resourceManagerConfig.js†L180-L232】 |
+
+> **Intent:** the contract and runtime are structured so the owner can reshape validator/identity/treasury policy or network posture with single transactions or environment flips, while Prometheus/Grafana keep every change observable for postmortems and branch-protection gates keep CI badges enforceable.
+
 ```mermaid
 %%{init: { 'theme': 'dark', 'themeVariables': { 'primaryColor': '#0f172a', 'primaryTextColor': '#e2e8f0', 'lineColor': '#22c55e', 'secondaryColor': '#111827' } }}%%
 flowchart LR
