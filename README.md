@@ -224,6 +224,8 @@ flowchart TB
 > 2) Bring up `docker-compose up prom grafana` and open Prometheus ➜ Alerts to confirm both `ResourceManagerDenialsWarning/Critical` and `QuicHandshakeLatencyWarning/Critical` reach `Inactive` ➜ `Pending` ➜ `Firing` when you nudge thresholds via the harness or env var overrides.【F:docker-compose.yml†L1-L21】【F:observability/prometheus/alerts.yml†L1-L45】
 > 3) Keep branch protections aligned with `.github/required-checks.json` so every badge that reads “Required Checks” maps to an enforced gate on PRs and `main`—no silent regressions sneak through CI.【F:.github/required-checks.json†L1-L10】【F:.github/workflows/ci.yml†L1-L260】
 
+**Mermaid render assurance:** The README’s mermaid canvases and Grafana JSON stay GitHub-page friendly by linting both Markdown fences and dashboards inside CI; if anything drifts, `npm run lint:md && npm run lint:grafana` will flag it before publish, keeping every diagram visible on GitHub Pages without manual tweaks.【F:package.json†L13-L47】【F:scripts/lint-grafana-dashboard.mjs†L1-L62】
+
 ```mermaid
 flowchart LR
   classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
