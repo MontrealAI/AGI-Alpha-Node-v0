@@ -37,8 +37,8 @@ Screenshot placeholder file: `observability/docs/assets/dcutr-dashboard-placehol
 
 `observability/grafana/libp2p_unified_dashboard.json` auto-provisions with Docker compose and groups the libp2p subsystems that operators triage most frequently:
 
-1. **NRM denials (rate by limit_type)** — PromQL: `sum(rate(nrm_denials_total[5m])) by (limit_type)`; thresholds at 1/5 events per second flag early banlist/per-ip/per-asn clamp downs.
-2. **QUIC handshake p95** — PromQL: `histogram_quantile(0.95, sum(rate(net_quic_handshake_latency_ms_bucket[5m])) by (le))`; warning at 350ms, critical at 500ms.
+1. **NRM denials (rate by limit_type)** — PromQL: `sum(rate(nrm_denials_total[10m])) by (limit_type)`; thresholds at 1/5 events per second flag early banlist/per-ip/per-asn clamp downs.
+2. **QUIC handshake p95** — PromQL: `histogram_quantile(0.95, sum(rate(net_quic_handshake_latency_ms_bucket[5m])) by (le, direction))`; warning at 350ms, critical at 500ms.
 3. **Yamux streams + resets** — PromQL: `sum(yamux_streams_active) by (direction)` plus `sum(rate(yamux_stream_resets_total[5m]))`; highlights multiplexor pressure and reset storms.
 
 These panels ship with color-coded thresholds so operators can spot regressions without drilling into PromQL. The provisioning bundle in `grafana/provisioning/dashboards` loads both DCUtR and libp2p dashboards automatically.

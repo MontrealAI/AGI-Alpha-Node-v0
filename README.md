@@ -120,7 +120,7 @@ This codebase is treated as the operational shell of that high-value intelligenc
 
 - **Runtime control plane** — Owner retains absolute authority to pause, retune, or resequence the treasury, orchestrators, or network posture without redeploying. Libp2p resource ceilings, connection manager watermarks, and banlists are live-editable via environment and published to `/metrics` (`nrm_limits`, `nrm_usage`, `banlist_*`).【F:src/network/resourceManagerConfig.js†L1-L150】【F:src/telemetry/networkMetrics.js†L146-L210】
 - **Synthetic labor yield** — `$AGIALPHA` (contract `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) is the default yield surface; orchestration scripts and dashboards assume that address and decimals so treasury math, observability, and client UX stay coherent.【F:README.md†L90-L105】
-- **Observability autopilot** — Prometheus scrapes `/metrics`, loads alert rules from `observability/prometheus/alerts.yml`, and Grafana auto-imports both DCUtR and libp2p dashboards from `observability/grafana` through `grafana/provisioning/dashboards/dcutr.yaml`. Threshold colors match PromQL alerting so cockpit visuals equal paging posture.【F:docker-compose.yml†L1-L25】【F:observability/prometheus/prometheus.yml†L1-L12】【F:observability/prometheus/alerts.yml†L1-L19】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】
+- **Observability autopilot** — Prometheus scrapes `/metrics`, loads alert rules from `observability/prometheus/alerts.yml`, and Grafana auto-imports both DCUtR and libp2p dashboards from `observability/grafana` through `grafana/provisioning/dashboards/dcutr.yaml`. Threshold colors match PromQL alerting (NRM warning ≥1/s, critical ≥5/s; QUIC p95 warning ≥350 ms, critical ≥500 ms) so cockpit visuals equal paging posture.【F:docker-compose.yml†L1-L25】【F:observability/prometheus/prometheus.yml†L1-L12】【F:observability/prometheus/alerts.yml†L1-L45】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】
 - **Compliance wall** — CI pins Node 20.18+, runs lint/test/coverage/solidity/subgraph/security gates, builds Docker smoke, and aggregates into `ci:verify`. `.github/required-checks.json` is the template for branch protection—apply it to PRs/main to guarantee the same green wall visible via badges is enforced server-side.【F:.github/workflows/ci.yml†L1-L260】【F:.github/required-checks.json†L1-L10】
 
 ```mermaid
@@ -183,39 +183,45 @@ flowchart TB
 ### Libp2p observability sprint (NRM + QUIC + Yamux)
 
 - **Unified cockpit** — `observability/grafana/libp2p_unified_dashboard.json` ships stacked NRM denials by limit type, p95 QUIC handshake latency, and Yamux active streams/reset rates with baked-in warning/critical thresholds to keep greenfield nodes as observable as DCUtR.【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】
-- **Prometheus alerts wired** — `observability/prometheus/alerts.yml` raises sustained NRM denials (per limit_type) and QUIC handshake p95 drift; the compose bundle mounts it automatically so Alertmanager can fan out signals.【F:observability/prometheus/alerts.yml†L1-L19】【F:observability/prometheus/prometheus.yml†L1-L12】【F:docker-compose.yml†L1-L18】
+- **Prometheus alerts wired** — `observability/prometheus/alerts.yml` raises dual-threshold NRM denials (warning ≥1/s over 5m, critical ≥5/s over 10m) and QUIC handshake p95 drift (warning ≥350ms, critical ≥500ms over 5m); the compose bundle mounts it automatically so Alertmanager can fan out signals.【F:observability/prometheus/alerts.yml†L1-L45】【F:observability/prometheus/prometheus.yml†L1-L12】【F:docker-compose.yml†L1-L18】
 - **Metrics surfaced** — libp2p now exports QUIC handshake histograms, Yamux live-stream gauges/resets, and `nrm_usage`/`nrm_limits` gauges to pair with `nrm_denials_total`, keeping per-ip/per-asn/per-protocol posture visible without extra probes.【F:src/telemetry/networkMetrics.js†L24-L210】【F:src/network/libp2pHostConfig.js†L1-L230】【F:src/network/resourceManagerConfig.js†L1-L210】
 - **Owner-tunable ceilings** — `buildResourceManagerConfig` now honors `NRM_MAX_CONNECTIONS/STREAMS/MEMORY_BYTES/FDS/BANDWIDTH_BPS` and publishes the active limits + live usage so operators can dial watermarks without redeploying; gauges land on `/metrics` instantly.【F:src/network/resourceManagerConfig.js†L1-L150】【F:src/telemetry/networkMetrics.js†L146-L210】
-- **Operator quickstart** — `docker-compose up prom grafana` autoloads datasource + dashboards, with panel thresholds pinned to the same values as the PromQL alerts (e.g., QUIC p95 > 500 ms, `nrm_denials_total` spike rate > 5/10m) so the colors you see in Grafana match what Alertmanager will page on.【F:docker-compose.yml†L1-L25】【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L6】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/alerts.yml†L1-L19】
+- **Operator quickstart** — `docker-compose up prom grafana` autoloads datasource + dashboards, with panel thresholds pinned to the same values as the PromQL alerts (e.g., QUIC p95 warning ≥350 ms/critical ≥500 ms, `nrm_denials_total` warning ≥1/s/critical ≥5/s) so the colors you see in Grafana match what Alertmanager will page on.【F:docker-compose.yml†L1-L25】【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L6】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/alerts.yml†L1-L45】
 - **Alert receipts (PromQL inlined)** — the alert wall is GitHub-visible and matches the dashboard thresholds so you can cross-check behavior before deploying. The rules live in `observability/prometheus/alerts.yml` and are evaluated automatically by Prometheus when you run compose:
 
   ```promql
-  # Resource manager denials stay above 5/sec for 10 minutes (per limit_type)
+  # Resource manager denials warning above 1/sec for 5 minutes (per limit_type)
+  sum(rate(nrm_denials_total[5m])) by (limit_type) > 1
+
+  # Resource manager denials paging above 5/sec for 10 minutes (per limit_type)
   sum(rate(nrm_denials_total[10m])) by (limit_type) > 5
 
-  # QUIC handshake p95 breaches 500 ms for 5 minutes
+  # QUIC handshake p95 warning above 350 ms for 5 minutes
+  histogram_quantile(0.95, sum(rate(net_quic_handshake_latency_ms_bucket[5m])) by (le, direction)) > 350
+
+  # QUIC handshake p95 paging above 500 ms for 5 minutes
   histogram_quantile(0.95, sum(rate(net_quic_handshake_latency_ms_bucket[5m])) by (le, direction)) > 500
   ```
 
-  Use Prometheus’ “Alerts” tab to confirm the rules are `firing`/`pending` while Grafana paints the same thresholds (1/s warning, 5/s paging for denials; 350 ms warning, 500 ms paging for QUIC p95) so visuals and paging stay in lockstep.【F:observability/prometheus/alerts.yml†L1-L19】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/prometheus.yml†L1-L12】
+  Use Prometheus’ “Alerts” tab to confirm the rules are `firing`/`pending` while Grafana paints the same thresholds (1/s warning, 5/s paging for denials; 350 ms warning, 500 ms paging for QUIC p95) so visuals and paging stay in lockstep.【F:observability/prometheus/alerts.yml†L1-L45】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/prometheus.yml†L1-L12】
 
 > **Libp2p cockpit quickstart (always-green view):**
 >
-> 1. **Run the stack:** `docker-compose up prom grafana` mounts `observability/grafana/libp2p_unified_dashboard.json` and `observability/prometheus/alerts.yml` automatically so every panel and alert is live without manual imports.【F:docker-compose.yml†L1-L25】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/alerts.yml†L1-L19】
-> 2. **Verify surfaces:** watch `nrm_denials_total` (per limit type), `net_quic_handshake_latency_ms` (p95), and Yamux stream gauges reset lines turn amber/red when thresholds breach, mirroring the PromQL alert values to keep dashboards and paging in sync.【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/alerts.yml†L1-L19】
+> 1. **Run the stack:** `docker-compose up prom grafana` mounts `observability/grafana/libp2p_unified_dashboard.json` and `observability/prometheus/alerts.yml` automatically so every panel and alert is live without manual imports.【F:docker-compose.yml†L1-L25】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/alerts.yml†L1-L45】
+> 2. **Verify surfaces:** watch `nrm_denials_total` (per limit type), `net_quic_handshake_latency_ms` (p95), and Yamux stream gauges reset lines turn amber/red when thresholds breach, mirroring the PromQL alert values to keep dashboards and paging in sync.【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/alerts.yml†L1-L45】
 > 3. **Tune live:** adjust env vars consumed by `buildResourceManagerConfig` (connections, streams, memory, FDs, bandwidth) and confirm the new ceilings surface immediately in `nrm_limits`/`nrm_usage` without redeploying the node.【F:src/network/resourceManagerConfig.js†L1-L150】【F:src/telemetry/networkMetrics.js†L146-L210】
 
 ### Libp2p cockpit thresholds (operator cheat-sheet)
 
-- **Resource Manager denials:** warning above `1/s`, critical above `5/s` per `limit_type`, surfaced in Grafana and mirrored by `ResourceManagerDenialsSustained` so colors == paging.
-- **QUIC handshake p95:** warning at `350ms`, critical at `500ms`, identical to the `QuicHandshakeLatencyHigh` alert so stat tiles and alerts stay aligned.
+- **Resource Manager denials:** warning above `1/s`, critical above `5/s` per `limit_type`, surfaced in Grafana and mirrored by `ResourceManagerDenialsWarning`/`ResourceManagerDenialsCritical` so colors == paging.
+- **QUIC handshake p95:** warning at `350ms`, critical at `500ms`, identical to the `QuicHandshakeLatencyWarning`/`QuicHandshakeLatencyCritical` alerts so stat tiles and alerts stay aligned.
 - **Yamux streams/resets:** saturation lines at 50/100 active streams and 5/10 resets per second with right-axis overrides to separate the rates from stream counts.
 - **Owner overrides:** `NRM_MAX_*` env vars reconfigure live ceilings, and values instantly reflect in `/metrics` via `nrm_limits`/`nrm_usage`, keeping dashboards truthful after retunes.
 
 > **Always-green verification loop:**
 >
 > 1) Run `npm run lint:grafana` locally (or let CI do it) to ensure dashboards and mermaid blocks stay GitHub-renderable before publishing.【F:package.json†L15-L47】【F:scripts/lint-grafana-dashboard.mjs†L1-L62】
-> 2) Bring up `docker-compose up prom grafana` and open Prometheus ➜ Alerts to confirm both `ResourceManagerDenialsSustained` and `QuicHandshakeLatencyHigh` reach `Inactive` ➜ `Pending` ➜ `Firing` when you nudge thresholds via the harness or env var overrides.【F:docker-compose.yml†L1-L21】【F:observability/prometheus/alerts.yml†L1-L19】
+> 2) Bring up `docker-compose up prom grafana` and open Prometheus ➜ Alerts to confirm both `ResourceManagerDenialsWarning/Critical` and `QuicHandshakeLatencyWarning/Critical` reach `Inactive` ➜ `Pending` ➜ `Firing` when you nudge thresholds via the harness or env var overrides.【F:docker-compose.yml†L1-L21】【F:observability/prometheus/alerts.yml†L1-L45】
 > 3) Keep branch protections aligned with `.github/required-checks.json` so every badge that reads “Required Checks” maps to an enforced gate on PRs and `main`—no silent regressions sneak through CI.【F:.github/required-checks.json†L1-L10】【F:.github/workflows/ci.yml†L1-L260】
 
 ```mermaid
@@ -260,8 +266,10 @@ flowchart LR
   classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
 
   subgraph Alerts[Alert wall]
-    NrmRule[ResourceManagerDenialsSustained\n>5/s for 10m]:::lava
-    QuicRule[QuicHandshakeLatencyHigh\np95 > 500ms for 5m]:::frost
+    NrmRuleWarn[ResourceManagerDenialsWarning\n>1/s for 5m]:::lava
+    NrmRuleCrit[ResourceManagerDenialsCritical\n>5/s for 10m]:::lava
+    QuicRuleWarn[QuicHandshakeLatencyWarning\np95 > 350ms for 5m]:::frost
+    QuicRuleCrit[QuicHandshakeLatencyCritical\np95 > 500ms for 5m]:::frost
   end
 
   subgraph PromStack[Prometheus stack]
@@ -730,8 +738,8 @@ Every control surface above is owner-first: identities, staking limits, orchestr
 - **Dashboard parity**: The React/Vite cockpit consumes the same debug endpoints to render transport posture, reachability, resource pressure, and churn tiles with zero bespoke wiring.【F:dashboard/src/views/TelemetryView.jsx†L1-L323】【F:dashboard/src/api/client.js†L31-L56】
 - **DCUtR punch health kit**: `observability/prometheus/metrics_dcutr.js` defines counters, gauges, histograms, and a `registerDCUtRMetrics` hook with label-aware emitters (`region`, `asn`, `transport`, `relay_id`) so per-relay success stays correlated to topology. Pair it with `observability/grafana/dcutr_dashboard.json` (UID `dcutr-observability`) and the walkthrough in `observability/docs/METRICS.md` + `observability/docs/DASHBOARD.md` to visualize punch success, attempts/success/failures, p95 time-to-direct, relay offload, RTT quality, and the region×ASN heatmap; lint via `grafana dashboards lint observability/grafana/dcutr_dashboard.json` before importing.【F:observability/prometheus/metrics_dcutr.js†L1-L221】【F:observability/grafana/dcutr_dashboard.json†L1-L123】【F:observability/docs/METRICS.md†L1-L120】【F:observability/docs/DASHBOARD.md†L1-L120】
 - **One-click DCUtR binding on /metrics**: `startMonitoringServer({ dcutrEvents, libp2p })` now binds relay dial, punch start, direct confirmations, relay fallbacks, and stream migrations to Prometheus in the same registry that powers the node’s `/metrics` endpoint, so Grafana panels stay live even when you feed the bridge a raw EventEmitter instead of the synthetic harness.【F:src/telemetry/monitoring.js†L273-L360】【F:test/monitoring.test.js†L62-L108】
-- **Libp2p cockpit + alert mirrors**: The unified Grafana deck (`observability/grafana/libp2p_unified_dashboard.json`) auto-loads with the same provisioning bundle as DCUtR, rendering NRM denials by limit type, p95 QUIC handshake latency, and Yamux stream pressure with inline warning/critical thresholds. Prometheus consumes `observability/prometheus/alerts.yml` for matching alerting (sustained `nrm_denials_total` and QUIC handshake drift) while `grafana/provisioning/dashboards/dcutr.yaml` pins read-only imports so every `docker-compose up prom grafana` run boots with dashboards and rule files mounted from the repo.【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/alerts.yml†L1-L19】【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L7】【F:docker-compose.yml†L1-L25】
-- **Threshold harmony**: Alert rules track the same limits as the Grafana palettes—NRM denials >5/s over 10m per limit_type and QUIC p95 >500 ms per direction—so colors, paging, and `/metrics` all agree. Yamux reset storms are highlighted at ≥5/s with right-axis scaling while stream saturation inherits 50/100 watermarks to match the resource manager ceilings.【F:observability/prometheus/alerts.yml†L1-L19】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】
+- **Libp2p cockpit + alert mirrors**: The unified Grafana deck (`observability/grafana/libp2p_unified_dashboard.json`) auto-loads with the same provisioning bundle as DCUtR, rendering NRM denials by limit type, p95 QUIC handshake latency, and Yamux stream pressure with inline warning/critical thresholds. Prometheus consumes `observability/prometheus/alerts.yml` for matching alerting (warning `nrm_denials_total` >1/s over 5m, paging >5/s over 10m; QUIC p95 warnings at 350 ms, paging at 500 ms) while `grafana/provisioning/dashboards/dcutr.yaml` pins read-only imports so every `docker-compose up prom grafana` run boots with dashboards and rule files mounted from the repo.【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/alerts.yml†L1-L45】【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L7】【F:docker-compose.yml†L1-L25】
+- **Threshold harmony**: Alert rules track the same limits as the Grafana palettes—NRM denials warning >1/s (5m) and paging >5/s (10m) per limit_type, QUIC p95 warning >350 ms and paging >500 ms per direction—so colors, paging, and `/metrics` all agree. Yamux reset storms are highlighted at ≥5/s with right-axis scaling while stream saturation inherits 50/100 watermarks to match the resource manager ceilings.【F:observability/prometheus/alerts.yml†L1-L45】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】
 
 ```mermaid
 flowchart LR
