@@ -726,6 +726,7 @@ flowchart LR
 - `.github/required-checks.json` marks every gate as mandatory for PRs and `main`, keeping branch protection aligned with the badges above.【F:.github/required-checks.json†L1-L10】
 - Badges are wired directly to the CI workflow outputs (including the dedicated dependency scan) so README status mirrors enforced branch checks without hidden jobs.【F:.github/workflows/ci.yml†L1-L260】【F:.github/required-checks.json†L1-L10】
 - `npm run ci:verify` bundles all gates locally so contributors see the same wall GitHub enforces.【F:package.json†L19-L46】
+- Mermaid diagrams and Grafana JSON are linted (`npm run lint:md`, `npm run lint:grafana`) to keep GitHub rendering lossless—including mermaid blocks in this README and the DCUtR dashboard preview—so operators never chase formatting drift.【F:package.json†L13-L21】【F:scripts/lint-grafana-dashboard.mjs†L1-L62】
 
 **Check map (enforced on PRs + main):**
 
