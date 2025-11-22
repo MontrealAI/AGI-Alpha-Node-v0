@@ -38,7 +38,7 @@ Screenshot placeholder file: `observability/docs/assets/dcutr-dashboard-placehol
 `observability/grafana/libp2p_unified_dashboard.json` auto-provisions with Docker compose and groups the libp2p subsystems that operators triage most frequently:
 
 1. **NRM denials (rate by limit_type)** — PromQL: `sum(rate(nrm_denials_total[10m])) by (limit_type)`; thresholds at 1/5 events per second flag early banlist/per-ip/per-asn clamp downs.
-2. **QUIC handshake p95** — PromQL: `histogram_quantile(0.95, sum(rate(net_quic_handshake_latency_ms_bucket[5m])) by (le, direction))`; warning at 350ms, critical at 500ms.
+2. **QUIC handshake p95** — PromQL: `histogram_quantile(0.95, sum by (le, direction)(rate(net_connection_latency_ms_bucket{transport="quic"}[5m])))`; warning at 350ms, critical at 500ms.
 3. **Yamux streams + resets** — PromQL: `sum(yamux_streams_active) by (direction)` plus `sum(rate(yamux_stream_resets_total[5m]))`; highlights multiplexor pressure and reset storms.
 
 These panels ship with color-coded thresholds so operators can spot regressions without drilling into PromQL. The provisioning bundle in `grafana/provisioning/dashboards` loads both DCUtR and libp2p dashboards automatically.
@@ -50,7 +50,7 @@ flowchart LR
   classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
 
   NRM[nrm_denials_total]:::lava --> Dashboard[libp2p_unified_dashboard.json]:::neon
-  Quic[net_quic_handshake_latency_ms]:::frost --> Dashboard
+  Quic[net_connection_latency_ms{transport="quic"}]:::frost --> Dashboard
   Yamux[yamux_streams_active + resets]:::lava --> Dashboard
   Dashboard --> Alerts[Prometheus rules\nobservability/prometheus/alerts.yml]:::frost
 ```

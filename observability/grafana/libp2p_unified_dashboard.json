@@ -160,7 +160,7 @@
             "uid": "Prometheus"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(net_quic_handshake_latency_ms_bucket[5m])) by (le, direction))",
+          "expr": "histogram_quantile(0.95, sum by (le, direction)(rate(net_connection_latency_ms_bucket{transport=\"quic\"}[5m])))",
           "legendFormat": "p95",
           "range": true,
           "refId": "A"

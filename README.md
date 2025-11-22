@@ -197,10 +197,10 @@ flowchart TB
   sum(rate(nrm_denials_total[10m])) by (limit_type) > 5
 
   # QUIC handshake p95 warning above 350 ms for 5 minutes
-  histogram_quantile(0.95, sum(rate(net_quic_handshake_latency_ms_bucket[5m])) by (le, direction)) > 350
+  histogram_quantile(0.95, sum by (le, direction)(rate(net_connection_latency_ms_bucket{transport="quic"}[5m]))) > 350
 
   # QUIC handshake p95 paging above 500 ms for 5 minutes
-  histogram_quantile(0.95, sum(rate(net_quic_handshake_latency_ms_bucket[5m])) by (le, direction)) > 500
+  histogram_quantile(0.95, sum by (le, direction)(rate(net_connection_latency_ms_bucket{transport="quic"}[5m]))) > 500
   ```
 
   Use Prometheus’ “Alerts” tab to confirm the rules are `firing`/`pending` while Grafana paints the same thresholds (1/s warning, 5/s paging for denials; 350 ms warning, 500 ms paging for QUIC p95) so visuals and paging stay in lockstep.【F:observability/prometheus/alerts.yml†L1-L45】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/prometheus.yml†L1-L12】
@@ -208,7 +208,7 @@ flowchart TB
 > **Libp2p cockpit quickstart (always-green view):**
 >
 > 1. **Run the stack:** `docker-compose up prom grafana` mounts `observability/grafana/libp2p_unified_dashboard.json` and `observability/prometheus/alerts.yml` automatically so every panel and alert is live without manual imports.【F:docker-compose.yml†L1-L25】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/alerts.yml†L1-L45】
-> 2. **Verify surfaces:** watch `nrm_denials_total` (per limit type), `net_quic_handshake_latency_ms` (p95), and Yamux stream gauges reset lines turn amber/red when thresholds breach, mirroring the PromQL alert values to keep dashboards and paging in sync.【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/alerts.yml†L1-L45】
+> 2. **Verify surfaces:** watch `nrm_denials_total` (per limit type), `net_connection_latency_ms{transport="quic"}` (p95), and Yamux stream gauges reset lines turn amber/red when thresholds breach, mirroring the PromQL alert values to keep dashboards and paging in sync.【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/alerts.yml†L1-L45】
 > 3. **Tune live:** adjust env vars consumed by `buildResourceManagerConfig` (connections, streams, memory, FDs, bandwidth) and confirm the new ceilings surface immediately in `nrm_limits`/`nrm_usage` without redeploying the node.【F:src/network/resourceManagerConfig.js†L1-L150】【F:src/telemetry/networkMetrics.js†L146-L210】
 
 ### Libp2p cockpit thresholds (operator cheat-sheet)
@@ -300,7 +300,7 @@ flowchart LR
 
   subgraph Telemetry[Libp2p telemetry]
     Denials[nrm_denials_total\n(limit_type + protocol)]:::lava
-    Quic[net_quic_handshake_latency_ms\n(p95 histogram)]:::frost
+    Quic[net_connection_latency_ms{transport="quic"}\n(p95 histogram)]:::frost
     Yamux[yamux_streams_active\n yamux_stream_resets_total]:::neon
   end
 
@@ -318,7 +318,7 @@ flowchart LR
 
   subgraph Metrics[libp2p metrics]
     Denials[nrm_denials_total\n+ nrm_usage / nrm_limits]:::lava
-    Quic[net_quic_handshake_latency_ms]:::frost
+    Quic[net_connection_latency_ms{transport="quic"}]:::frost
     Yamux[yamux_streams_active\n yamux_stream_resets_total]:::neon
   end
 
@@ -749,7 +749,7 @@ flowchart LR
 
   subgraph Metrics[/libp2p metrics/]
     Denials[nrm_denials_total\n10m rate by limit_type]:::lava
-    Quic[net_quic_handshake_latency_ms\np95 by direction]:::frost
+    Quic[net_connection_latency_ms{transport="quic"}\np95 by direction]:::frost
     Yamux[yamux_streams_active + resets\nalerts at ≥5/s]:::lava
   end
 

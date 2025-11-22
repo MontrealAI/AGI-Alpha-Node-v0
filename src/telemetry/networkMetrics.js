@@ -159,7 +159,7 @@ export function createNetworkMetrics({
   ['ip', 'peer', 'asn'].forEach((type) => banlistEntries.set({ type }, 0));
 
   const connectionLatency = new Histogram({
-    name: 'agi_alpha_node_net_connection_latency_ms',
+    name: 'net_connection_latency_ms',
     help: 'Observed connection latency in milliseconds grouped by transport and direction',
     labelNames: ['transport', 'direction'],
     buckets: [5, 10, 25, 50, 100, 250, 500, 1_000, 2_500, 5_000, 10_000],
