@@ -236,8 +236,10 @@ The owner can reshape posture live without redeploying. These levers surface imm
 | Per-ASN ceiling | `MAX_CONNS_PER_ASN` | `256` | Caps concurrent connections per ASN for carrier-level shaping. |
 | Connection pruning start | `CONN_LOW_WATER` | `512` | Connection manager begins trimming when active peers exceed this watermark. |
 | Connection pruning hard stop | `CONN_HIGH_WATER` | `1024` | Forced pruning threshold; must exceed `CONN_LOW_WATER` (validated at boot). |
-| Trim grace window | `CONN_GRACE_PERIOD_SEC` | `120` | Delay before pruning after high-water breach to avoid churn. |
+| Dial policy scale | `NRM_SCALE_FACTOR` | `1` | Uniformly scales global ceilings up/down (e.g., `0.5` for cost-saving windows, `2` for launch events). |
 | Structured overrides | `NRM_LIMITS_JSON` / `NRM_LIMITS_PATH` | _unset_ | Inline JSON or external file for per-protocol/per-peer ceilings (e.g., `/meshsub/1.1.0` burst caps). |
+| Banlists | `NRM_BANNED_PEERS` / `NRM_BANNED_IPS` / `NRM_BANNED_ASNS` | _empty_ | Owner-operated deny lists reflected in `banlist_*` metrics for auditability. |
+| Trim grace window | `CONN_GRACE_PERIOD_SEC` | `120` | Delay before pruning after high-water breach to avoid churn. |
 
 > Rationale: defaults are tuned for medium-density meshes with QUIC-first transport, ensuring benign telemetry and gossip traffic are not over-pruned while still providing strong back-pressure against floods. The connection manager watermarks mirror the resource ceilings so pruning aligns with rcmgr denials, minimizing oscillation under load.【F:src/network/resourceManagerConfig.js†L17-L122】【F:src/network/resourceManagerConfig.js†L126-L174】【F:src/network/resourceManagerConfig.js†L180-L232】
 
@@ -258,6 +260,28 @@ flowchart LR
   Metrics --> Grafana[Unified libp2p dashboard\nthreshold bands + panels]:::neon
   Alerts --> CI[Badges + Required checks\n(ci.yml, required-checks.json)]:::frost
   Grafana --> CI
+```
+
+#### Policy rationale & load validation
+
+- **Why these limits work:** defaults mirror the libp2p workload profile exercised in `npm run p2p:load-tests`, keeping honest swarms inside guardrails while IP/ASN caps and per-protocol grids blunt abusive floods. Adaptive watermarks follow `maxConnections` automatically so trimming begins at ~50% headroom and pages before saturation hits.【F:src/network/resourceManagerConfig.js†L42-L126】【F:config/rcmgr-limits.sample.json†L1-L20】【F:test/network/resourceManagerConfig.test.js†L1-L117】
+- **Owner proofs:** every override (env, JSON, YAML) is echoed to `/metrics` via `nrm_limits`/`nrm_usage` and banlist gauges, and the libp2p Grafana dashboard overlays the same thresholds as the Prometheus alert rules so visual state equals paging state.【F:src/telemetry/networkMetrics.js†L146-L210】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/alerts.yml†L1-L45】
+- **CI/PR enforcement:** `.github/required-checks.json` keeps lint/tests/coverage/Solidity/subgraph/security/policy/branch gates mandatory so the badge wall above matches enforced protections on PRs and `main`.【F:.github/required-checks.json†L1-L10】【F:.github/workflows/ci.yml†L1-L137】
+
+```mermaid
+%%{init: { 'theme': 'dark', 'themeVariables': { 'primaryColor': '#0b1120', 'primaryTextColor': '#e2e8f0', 'lineColor': '#22c55e', 'secondaryColor': '#111827' } }}%%
+flowchart LR
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#111827,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  Limits[Limits JSON/YAML + env\n(NRM_*, CONN_* , banlists)]:::lava --> Synth[buildResourceManagerConfig\n(scale + adaptive watermarks)]:::neon
+  Synth --> Gauges[nrm_limits + nrm_usage + banlist_*]:::frost
+  Gauges --> Alerts[PromQL alerts.yml\n(rcmgr denials + QUIC p95)]:::lava
+  Gauges --> Panels[Grafana libp2p unified\nthreshold overlays]:::neon
+  Alerts --> CIWall[Required checks + badges\n(ci.yml, required-checks.json)]:::frost
+  Panels --> Operator[Owner cockpit\n(test harness + docker-compose)]:::neon
+  Operator --> Limits
 ```
 
 - **Owner-tunable ceilings:** Environment variables such as `NRM_MAX_CONNECTIONS`, `NRM_MAX_STREAMS`, `CONN_LOW_WATER`, and `CONN_HIGH_WATER` reshape rcmgr and connection-manager watermarks; overrides can be injected via JSON/YAML for per-protocol/per-peer tuning. All changes emit `nrm_limits` gauges for live confirmation.【F:src/network/resourceManagerConfig.js†L31-L116】【F:src/network/resourceManagerConfig.js†L118-L218】
