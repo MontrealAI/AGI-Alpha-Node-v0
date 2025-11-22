@@ -63,6 +63,13 @@ Metric descriptions (all metrics accept `{region,asn,transport,relay_id}`):
    registerDCUtRMetrics();
    ```
 
+   TypeScript runtimes can import the typed shim to keep emitter signatures aligned without diverging from the production JS bridge:
+
+   ```ts
+   import { registerDCUtRMetrics } from '../observability/prometheus/metrics_dcutr.ts';
+   registerDCUtRMetrics();
+   ```
+
 2. Emit lifecycle events with optional labels (missing labels default to `unknown` to keep scrapes stable and deduped across `relayDialSuccess` + `holePunchStart`):
 
    ```ts
