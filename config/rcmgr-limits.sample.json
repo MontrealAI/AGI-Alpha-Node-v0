@@ -1,0 +1,20 @@
+{
+  "global": {
+    "maxConnections": 2048,
+    "maxStreams": 16384,
+    "maxMemoryBytes": 1073741824,
+    "maxFds": 4096,
+    "maxBandwidthBps": 134217728
+  },
+  "perProtocol": {
+    "/meshsub/1.1.0": { "maxConnections": 512, "maxStreams": 4096 },
+    "/ipfs/id/1.0.0": { "maxConnections": 256, "maxStreams": 2048 },
+    "/ipfs/bitswap/1.2.0": { "maxConnections": 256, "maxStreams": 2048 },
+    "agi/control/1.0.0": { "maxConnections": 128, "maxStreams": 512 },
+    "agi/index/1.0.0": { "maxConnections": 128, "maxStreams": 512 }
+  },
+  "perPeer": {
+    "default": { "maxConnections": 32, "maxStreams": 256 }
+  },
+  "perIp": { "maxConnections": 96 }
+}

@@ -92,6 +92,25 @@ function buildLimitSet({ scaleFactor, config }) {
   );
 }
 
+function buildWatermarks({ limitSet, config }) {
+  const fallbackLow = Math.max(256, Math.floor(limitSet.maxConnections * 0.5));
+  const explicitLow = coerceFiniteNumber(config.CONN_LOW_WATER, undefined);
+  const lowWater = explicitLow ?? fallbackLow;
+
+  const fallbackHigh = Math.max(
+    lowWater + Math.max(64, Math.floor(limitSet.maxConnections * 0.1)),
+    Math.floor(limitSet.maxConnections * 0.85)
+  );
+  const explicitHigh = coerceFiniteNumber(config.CONN_HIGH_WATER, undefined);
+  const highWater = explicitHigh ?? fallbackHigh;
+
+  const gracePeriodSeconds = coerceFiniteNumber(config.CONN_GRACE_PERIOD_SEC, 120);
+
+  validateWatermarks({ lowWater, highWater });
+
+  return { lowWater, highWater, gracePeriodSeconds };
+}
+
 function validateWatermarks({ lowWater, highWater }) {
   if (highWater <= lowWater) {
     throw new Error('Connection manager high_water must be greater than low_water');
@@ -111,13 +130,7 @@ export function buildResourceManagerConfig({ config = {}, logger: baseLogger } =
   const perProtocol = advancedOverrides?.perProtocol ?? {};
   const perPeer = advancedOverrides?.perPeer ?? {};
 
-  const connectionManager = {
-    lowWater: coerceFiniteNumber(config.CONN_LOW_WATER, 512),
-    highWater: coerceFiniteNumber(config.CONN_HIGH_WATER, 1_024),
-    gracePeriodSeconds: coerceFiniteNumber(config.CONN_GRACE_PERIOD_SEC, 120)
-  };
-
-  validateWatermarks(connectionManager);
+  const connectionManager = buildWatermarks({ limitSet: mergedGlobal, config });
 
   const ipLimiter = {
     maxConnsPerIp: coerceFiniteNumber(config.MAX_CONNS_PER_IP, 64),
