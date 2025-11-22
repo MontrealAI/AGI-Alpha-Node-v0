@@ -2,8 +2,8 @@ groups:
   - name: libp2p-nrm
     rules:
       - alert: ResourceManagerDenialsSustained
-        expr: rate(nrm_denials_total[10m]) > 5
-        for: 5m
+        expr: sum(rate(nrm_denials_total[10m])) by (limit_type) > 5
+        for: 10m
         labels:
           severity: warning
           team: agi-alpha
@@ -13,7 +13,7 @@ groups:
             Resource manager denials by limit type have exceeded safe thresholds for five minutes.
             Inspect limit_type and protocol labels to determine whether IP/ASN caps or per-protocol ceilings are too strict or under attack.
       - alert: QuicHandshakeLatencyHigh
-        expr: histogram_quantile(0.95, sum(rate(net_quic_handshake_latency_ms_bucket[5m])) by (le)) > 500
+        expr: histogram_quantile(0.95, sum(rate(net_quic_handshake_latency_ms_bucket[5m])) by (le, direction)) > 500
         for: 5m
         labels:
           severity: warning

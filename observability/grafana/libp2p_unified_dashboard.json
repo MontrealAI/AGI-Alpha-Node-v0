@@ -26,7 +26,7 @@
         "type": "prometheus",
         "uid": "Prometheus"
       },
-      "description": "Resource manager denials split by limit_type to spotlight per-ip/per-asn/per-protocol pressure.",
+      "description": "Resource manager denials split by limit_type (10m rate); lines mark early warning (1/s) and paging (5/s) thresholds to mirror alerts.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -36,7 +36,10 @@
             "drawStyle": "line",
             "lineInterpolation": "smooth",
             "lineWidth": 2,
-            "spanNulls": true
+            "spanNulls": true,
+            "thresholdsStyle": {
+              "mode": "line"
+            }
           },
           "thresholds": {
             "mode": "absolute",
@@ -85,7 +88,7 @@
             "uid": "Prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(nrm_denials_total[5m])) by (limit_type)",
+          "expr": "sum(rate(nrm_denials_total[10m])) by (limit_type)",
           "legendFormat": "{{limit_type}}",
           "range": true,
           "refId": "A"
@@ -100,13 +103,14 @@
         "type": "prometheus",
         "uid": "Prometheus"
       },
-      "description": "p95 QUIC handshake latency; thresholds highlight drift beyond target budget (ms).",
+      "description": "p95 QUIC handshake latency; warning at 350ms, critical at 500ms to match the Prometheus alert budget (per direction).",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "thresholds"
           },
           "mappings": [],
+          "unit": "ms",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -123,8 +127,7 @@
                 "value": 500
               }
             ]
-          },
-          "unit": "ms"
+          }
         },
         "overrides": []
       },
@@ -157,7 +160,7 @@
             "uid": "Prometheus"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(net_quic_handshake_latency_ms_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(net_quic_handshake_latency_ms_bucket[5m])) by (le, direction))",
           "legendFormat": "p95",
           "range": true,
           "refId": "A"
@@ -171,7 +174,7 @@
         "type": "prometheus",
         "uid": "Prometheus"
       },
-      "description": "Live Yamux streams and reset rates. Threshold lines flag sustained resets or saturation.",
+      "description": "Live Yamux streams and reset rates. Threshold lines flag saturation (streams) and reset storms (>=5/s).",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -181,7 +184,10 @@
             "drawStyle": "line",
             "lineInterpolation": "smooth",
             "lineWidth": 2,
-            "spanNulls": true
+            "spanNulls": true,
+            "thresholdsStyle": {
+              "mode": "line"
+            }
           },
           "thresholds": {
             "mode": "absolute",
@@ -201,7 +207,40 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "reset rate"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 5
+                    },
+                    {
+                      "color": "red",
+                      "value": 10
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 10,
