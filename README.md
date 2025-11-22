@@ -65,6 +65,12 @@
   <a href="observability/grafana/dcutr_dashboard.json">
     <img src="https://img.shields.io/badge/Grafana%20CLI-dashboards%20lint-ef4444?logo=grafana&logoColor=0b1120" alt="Grafana lint" />
   </a>
+  <a href="observability/grafana/libp2p_unified_dashboard.json">
+    <img src="https://img.shields.io/badge/Grafana-Libp2p%20Unified%20Dashboard-f97316?logo=grafana&logoColor=white" alt="Libp2p observability" />
+  </a>
+  <a href="observability/prometheus/alerts.yml">
+    <img src="https://img.shields.io/badge/Prometheus-Alerts%20wired-ed8936?logo=prometheus&logoColor=white" alt="Prometheus alerts" />
+  </a>
   <a href="scripts/lint-grafana-dashboard.mjs">
     <img src="https://img.shields.io/badge/Dashboard%20Lint-npm%20run%20lint:grafana-f97316?logo=grafana&logoColor=0b1120" alt="Grafana lint script" />
   </a>
@@ -127,6 +133,30 @@ This codebase is treated as the operational shell of that high-value intelligenc
 | `grafana/provisioning/dashboards/dcutr.yaml` + `grafana/provisioning/datasources/prometheus.yaml` | Hands-free Grafana + Prometheus binding for local runs and CI smoke. | Mounted by `docker-compose up prom grafana`.【F:grafana/provisioning/datasources/prometheus.yaml†L1-L8】【F:docker-compose.yml†L1-L25】 |
 | `scripts/lint-grafana-dashboard.mjs` | CLI guard that mirrors `grafana dashboards lint` to keep JSON valid on GitHub Pages and in CI. | Runs in `npm run lint:grafana` and in the Actions pipeline.【F:scripts/lint-grafana-dashboard.mjs†L1-L62】【F:.github/workflows/ci.yml†L30-L64】 |
 | `scripts/dcutr-harness.ts` + `src/observability/dcutrHarness.ts` | Synthetic punch generator to populate panels without live traffic. | `npm run observability:dcutr-harness` (port 9464).【F:scripts/dcutr-harness.ts†L1-L28】【F:src/observability/dcutrHarness.ts†L1-L92】 |
+
+### Libp2p observability sprint (NRM + QUIC + Yamux)
+
+- **Unified cockpit** — `observability/grafana/libp2p_unified_dashboard.json` ships stacked NRM denials by limit type, p95 QUIC handshake latency, and Yamux active streams/reset rates with baked-in warning/critical thresholds to keep greenfield nodes as observable as DCUtR.【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】
+- **Prometheus alerts wired** — `observability/prometheus/alerts.yml` raises sustained NRM denials (per limit_type) and QUIC handshake p95 drift; the compose bundle mounts it automatically so Alertmanager can fan out signals.【F:observability/prometheus/alerts.yml†L1-L19】【F:observability/prometheus/prometheus.yml†L1-L12】【F:docker-compose.yml†L1-L18】
+- **Metrics surfaced** — libp2p now exports QUIC handshake histograms, Yamux live-stream gauges/resets, and `nrm_usage`/`nrm_limits` gauges to pair with `nrm_denials_total`, keeping per-ip/per-asn/per-protocol posture visible without extra probes.【F:src/telemetry/networkMetrics.js†L24-L210】【F:src/network/libp2pHostConfig.js†L1-L230】【F:src/network/resourceManagerConfig.js†L1-L210】
+- **Owner-tunable ceilings** — `buildResourceManagerConfig` now honors `NRM_MAX_CONNECTIONS/STREAMS/MEMORY_BYTES/FDS/BANDWIDTH_BPS` and publishes the active limits + live usage so operators can dial watermarks without redeploying; gauges land on `/metrics` instantly.【F:src/network/resourceManagerConfig.js†L1-L150】【F:src/telemetry/networkMetrics.js†L146-L210】
+
+```mermaid
+flowchart LR
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  subgraph Metrics[libp2p metrics]
+    Denials[nrm_denials_total\n+ nrm_usage / nrm_limits]:::lava
+    Quic[net_quic_handshake_latency_ms]:::frost
+    Yamux[yamux_streams_active\n yamux_stream_resets_total]:::neon
+  end
+
+  Metrics --> Prom[/Prometheus scrape + alerts/]
+  Prom --> Grafana[libp2p_unified_dashboard.json]:::lava
+  Prom --> Alerting[alerts.yml\n(rcmgr + QUIC p95)]:::frost
+```
 
 ```mermaid
 flowchart LR
@@ -783,8 +813,9 @@ Additional entry points: `npm run p2p:simulate` (1k+ virtual peers), `npm run da
 1. **Install & hydrate**: `npm ci && npm run db:migrate && npm run db:seed` to prime the SQLite spine and dashboards.
 2. **Boot**: `npm start` (or `npm run dashboard:preview`) to expose `/health`, `/metrics`, `/debug/resources`, and governance surfaces on port 3000.
 3. **Observe**: `curl -s localhost:3000/metrics | head` to confirm NRM/ban/trim counters; `curl -s localhost:3000/debug/resources` for per-protocol ceilings/bans; `curl -s localhost:3000/debug/network?window=15` for reachability, churn, and dial health.
-4. **Govern**: Use authenticated `POST/DELETE /governance/bans` or `node src/index.js governance:*` to pause/unpause, rotate validators, or retune emissions without redeploying.
-5. **Harden**: Enforce branch protection with `.github/required-checks.json` and mirror CI locally via `npm run ci:verify` before opening PRs.
+4. **Dashboards + alerts**: `docker-compose up prom grafana` to auto-load Prometheus (with `observability/prometheus/alerts.yml`) and Grafana dashboards (`dcutr_dashboard.json` + `libp2p_unified_dashboard.json`); confirm alert rules via the Prometheus UI and thresholds via Grafana color shifts.
+5. **Govern**: Use authenticated `POST/DELETE /governance/bans` or `node src/index.js governance:*` to pause/unpause, rotate validators, or retune emissions without redeploying.
+6. **Harden**: Enforce branch protection with `.github/required-checks.json` and mirror CI locally via `npm run ci:verify` before opening PRs.
 
 ```mermaid
 sequenceDiagram

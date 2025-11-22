@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import pino from 'pino';
 import { DialerPolicy } from './dialerPolicy.js';
+import { publishResourceManagerLimits, publishResourceManagerUsage } from '../telemetry/networkMetrics.js';
 
 const logger = pino({ level: 'info', name: 'resource-manager-config' });
 
@@ -77,13 +78,13 @@ function scaleLimit(value, scaleFactor) {
   return scaled > 0 ? scaled : value;
 }
 
-function buildLimitSet({ scaleFactor }) {
+function buildLimitSet({ scaleFactor, config }) {
   const base = {
-    maxConnections: 1_024,
-    maxStreams: 8_192,
-    maxMemoryBytes: 512 * 1024 * 1024,
-    maxFds: 2_048,
-    maxBandwidthBps: 64 * 1024 * 1024
+    maxConnections: coerceFiniteNumber(config?.NRM_MAX_CONNECTIONS, 1_024),
+    maxStreams: coerceFiniteNumber(config?.NRM_MAX_STREAMS, 8_192),
+    maxMemoryBytes: coerceFiniteNumber(config?.NRM_MAX_MEMORY_BYTES, 512 * 1024 * 1024),
+    maxFds: coerceFiniteNumber(config?.NRM_MAX_FDS, 2_048),
+    maxBandwidthBps: coerceFiniteNumber(config?.NRM_MAX_BANDWIDTH_BPS, 64 * 1024 * 1024)
   };
 
   return Object.fromEntries(
@@ -105,7 +106,7 @@ export function buildResourceManagerConfig({ config = {}, logger: baseLogger } =
     overridesPath: config.NRM_LIMITS_PATH
   });
 
-  const limitSet = buildLimitSet({ scaleFactor });
+  const limitSet = buildLimitSet({ scaleFactor, config });
   const mergedGlobal = { ...limitSet, ...(advancedOverrides?.global ?? {}) };
   const perProtocol = advancedOverrides?.perProtocol ?? {};
   const perPeer = advancedOverrides?.perPeer ?? {};
@@ -191,6 +192,8 @@ export class ResourceManager {
     this.directionCounts = { inbound: 0, outbound: 0 };
     this.dialerPolicy = null;
     this.updateBanMetrics();
+    this.publishLimitMetrics();
+    this.publishUsageMetrics();
   }
 
   attachDialerPolicy(policyConfig) {
@@ -398,6 +401,7 @@ export class ResourceManager {
     this.connections.set(protocolKey, protocolCount + 1);
     const normalizedDirection = direction === 'outbound' ? 'outbound' : 'inbound';
     this.directionCounts[normalizedDirection] = (this.directionCounts[normalizedDirection] ?? 0) + 1;
+    this.publishUsageMetrics();
     return { accepted: true };
   }
 
@@ -414,6 +418,7 @@ export class ResourceManager {
     const normalizedDirection = direction === 'outbound' ? 'outbound' : 'inbound';
     const existing = this.directionCounts[normalizedDirection] ?? 0;
     this.directionCounts[normalizedDirection] = existing > 0 ? existing - 1 : 0;
+    this.publishUsageMetrics();
   }
 
   requestStream({ peerId, protocol, ip, asn } = {}) {
@@ -474,6 +479,7 @@ export class ResourceManager {
     }
 
     this.streamProtocols.set(protocolKey, protocolCount + 1);
+    this.publishUsageMetrics();
     return { accepted: true };
   }
 
@@ -484,6 +490,24 @@ export class ResourceManager {
     if (protocol) {
       this.decrementMap(this.streamProtocols, protocol);
     }
+    this.publishUsageMetrics();
+  }
+
+  publishLimitMetrics() {
+    publishResourceManagerLimits(this.metricSinks, this.limits);
+  }
+
+  publishUsageMetrics() {
+    const usage = {
+      connections: this.currentConnections(),
+      streams: this.currentStreams(),
+      inbound: this.directionCounts.inbound ?? 0,
+      outbound: this.directionCounts.outbound ?? 0,
+      ipConns: this.ipConns.size,
+      asnConns: this.asnConns.size,
+      memoryBytes: typeof process?.memoryUsage === 'function' ? process.memoryUsage().rss : undefined
+    };
+    publishResourceManagerUsage(this.metricSinks, usage);
   }
 
   metrics() {

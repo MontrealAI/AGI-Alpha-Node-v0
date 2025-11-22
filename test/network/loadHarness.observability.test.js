@@ -63,6 +63,9 @@ describe('p2p load harness observability', () => {
     const metricsJson = await registry.getMetricsAsJSON();
     const nrmMetric = metricsJson.find((metric) => metric.name === 'nrm_denials_total');
     expect(nrmMetric?.values?.some((entry) => entry.value > 0)).toBe(true);
+
+    const usageMetric = metricsJson.find((metric) => metric.name === 'nrm_usage');
+    expect(usageMetric?.values?.some((entry) => entry.labels?.resource === 'connections_total')).toBe(true);
   });
 
   it('projects malformed gossip penalties into peer score and trim metrics', async () => {

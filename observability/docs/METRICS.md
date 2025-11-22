@@ -41,6 +41,26 @@ Metric descriptions (all metrics accept `{region,asn,transport,relay_id}`):
 | `dcutr_relay_data_bytes_total{region,asn,transport,relay_id}` | Counter | Bytes transmitted over relays during DCUtR sessions. |
 | `dcutr_direct_data_bytes_total{region,asn,transport,relay_id}` | Counter | Bytes transmitted over direct paths after upgrade. |
 
+## Libp2p network health metrics
+
+The libp2p layer emits network health signals alongside DCUtR. Labels remain minimal to keep scrape cardinality predictable:
+
+- `transport` — transport chosen for the dial (`quic`, `tcp`, `relay`).
+- `direction` — `in` or `out` for connection/stream orientation.
+- `limit_type` — resource manager dimension that triggered a denial (`per_ip`, `per_asn`, `per_protocol`, `streams`, etc.).
+- `protocol` — protocol negotiated on the stream (for Yamux reset/denial context).
+- `resource` — resource family for gauges (`connections_total`, `connections_inbound`, `streams_total`, `ip_buckets`, `asn_buckets`, `memory_bytes`).
+
+| Metric | Type | Description |
+| --- | --- | --- |
+| `agi_alpha_node_net_connection_latency_ms{transport,direction}` | Histogram | Dial/accept latency by transport/direction (QUIC/TCP/relay). |
+| `net_quic_handshake_latency_ms{direction}` | Histogram | QUIC handshake completion latency; feeds p95 alert + dashboard stat. |
+| `yamux_streams_active{direction}` | Gauge | Live Yamux streams split by direction; surfaces multiplexor saturation. |
+| `yamux_stream_resets_total{protocol}` | Counter | Stream resets grouped by negotiated protocol to catch churn/regressions. |
+| `nrm_denials_total{limit_type,protocol}` | Counter | Resource-manager denials with limit_type (per_ip/per_asn/per_protocol/streams/banlist). |
+| `nrm_usage{resource}` | Gauge | Current usage snapshot for connections (total/inbound/outbound), streams, IP/ASN buckets, and RSS memory. |
+| `nrm_limits{resource}` | Gauge | Configured ceilings mirroring the resource-manager plan (connections/streams/memory/fds/bandwidth/IP/ASN). |
+
 ### Examples
 
 - Prompt-aligned sample: `dcutr_punch_success_total{region="us-east",transport="quic"} 128`

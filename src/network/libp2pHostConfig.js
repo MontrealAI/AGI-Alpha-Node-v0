@@ -13,7 +13,11 @@ import {
 import {
   recordConnectionClose,
   recordConnectionLatency,
-  recordConnectionOpen
+  recordConnectionOpen,
+  recordQuicHandshakeLatency,
+  recordYamuxStreamClose,
+  recordYamuxStreamOpen,
+  recordYamuxStreamReset
 } from '../telemetry/networkMetrics.js';
 import { getTelemetryTracer } from '../telemetry/monitoring.js';
 
@@ -144,6 +148,9 @@ export function createTransportTracer({ plan, logger: baseLogger, metrics = null
       if (success === true) {
         metrics?.dialSuccesses?.inc?.({ transport });
         metrics?.netDialSuccessTotal?.inc?.({ transport });
+        if (transport === 'quic' && latencyMs !== undefined) {
+          recordQuicHandshakeLatency(metrics, { direction, latencyMs });
+        }
       } else if (success === false) {
         const reason = normalizeDialFailureReason(resolveDialFailureReason(detail));
         metrics?.dialFailures?.inc?.({ transport });
@@ -196,6 +203,39 @@ export function createTransportTracer({ plan, logger: baseLogger, metrics = null
 
   traceTransport.bindTo = (libp2p) => {
     const disposers = [];
+
+    const resolveStreamProtocol = (detail) =>
+      detail?.protocol ?? detail?.stream?.protocol ?? detail?.stream?.protocols?.[0] ?? detail?.stat?.protocol;
+
+    const resolveStreamDirection = (detail) =>
+      detail?.direction ?? detail?.stat?.direction ?? detail?.connection?.stat?.direction ?? DEFAULT_DIRECTION;
+
+    const isYamuxConnection = (detail) => {
+      const muxer =
+        detail?.connection?.stat?.multiplexer ??
+        detail?.connection?.stat?.muxer ??
+        detail?.stat?.multiplexer ??
+        detail?.stat?.muxer;
+      return typeof muxer === 'string' ? muxer.toLowerCase().includes('yamux') : false;
+    };
+
+    const recordStreamOpen = (detail) => {
+      if (!isYamuxConnection(detail)) return;
+      const direction = resolveStreamDirection(detail);
+      recordYamuxStreamOpen(metrics, { direction });
+    };
+
+    const recordStreamClose = (detail) => {
+      if (!isYamuxConnection(detail)) return;
+      const direction = resolveStreamDirection(detail);
+      recordYamuxStreamClose(metrics, { direction });
+    };
+
+    const recordStreamReset = (detail) => {
+      if (!isYamuxConnection(detail)) return;
+      recordYamuxStreamReset(metrics, { protocol: resolveStreamProtocol(detail) });
+      recordStreamClose(detail);
+    };
 
     const recordStart = (detail) => {
       const peerId = extractPeerId(detail);
@@ -285,6 +325,9 @@ export function createTransportTracer({ plan, logger: baseLogger, metrics = null
     disposers.push(attachListener(libp2p, 'dial:failure', ({ detail }) => recordResult(detail, false)));
     disposers.push(attachListener(libp2p, 'connection:open', ({ detail }) => recordInbound(detail)));
     disposers.push(attachListener(libp2p, 'connection:close', ({ detail }) => recordClose(detail)));
+    disposers.push(attachListener(libp2p, 'stream:open', ({ detail }) => recordStreamOpen(detail)));
+    disposers.push(attachListener(libp2p, 'stream:close', ({ detail }) => recordStreamClose(detail)));
+    disposers.push(attachListener(libp2p, 'stream:reset', ({ detail }) => recordStreamReset(detail)));
 
     return () => disposers.forEach((dispose) => dispose());
   };
