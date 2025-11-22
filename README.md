@@ -26,6 +26,9 @@
   <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml?query=workflow%3A%22Continuous+Integration%22">
     <img src="https://img.shields.io/github/actions/workflow/status/MontrealAI/AGI-Alpha-Node-v0/ci.yml?branch=main&label=Dependency%20Security%20Scan&logo=npm&logoColor=white" alt="Dependency security scan" />
   </a>
+  <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml?query=branch%3Amain">
+    <img src="https://img.shields.io/github/actions/workflow/status/MontrealAI/AGI-Alpha-Node-v0/ci.yml?branch=main&label=CI%20Enforced%20on%20PRs&logo=githubactions&logoColor=white" alt="CI enforced on PRs" />
+  </a>
   <img src="https://img.shields.io/badge/Full%20CI-ci:verify-2563eb?logo=githubactions&logoColor=white" alt="Full CI verification" />
   <img src="https://img.shields.io/badge/Observability-DCUtR%20SLO%20wall-10b981?logo=grafana&logoColor=white" alt="DCUtR observability SLO wall" />
   <img src="https://img.shields.io/badge/Coverage-c8%20gated-22c55e?logo=testinglibrary&logoColor=white" alt="Coverage" />
@@ -239,6 +242,24 @@ flowchart TB
 1. **Metrics surface sanity:** `curl -s localhost:9464/metrics | grep -E 'net_connection_latency_ms|net_quic_handshake_latency_ms|yamux_streams_active'` should immediately show QUIC handshake buckets, transport‑tagged latencies, and Yamux gauges populated by the libp2p host hooks.【F:src/telemetry/networkMetrics.js†L24-L210】【F:src/network/libp2pHostConfig.js†L1-L230】
 2. **Resource manager pressure smoke:** run `npm run p2p:load-tests` to drive connection/stream denials and confirm `nrm_denials_total` increments alongside `nrm_limits`/`nrm_usage` gauges; thresholds in the Grafana libp2p dashboard should light up in lock‑step with the Prometheus alerts.【F:src/network/resourceManagerConfig.js†L1-L210】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/alerts.yml†L1-L45】
 3. **Alert loop confidence:** open Prometheus on :9090 and check **Status → Rules** to verify `ResourceManagerDenialsWarning/Critical` and `QuicHandshakeLatencyWarning/Critical` states transition when you perturb the harness; Grafana thresholds are pinned to the same PromQL so dashboards and paging stay synchronized.【F:observability/prometheus/alerts.yml†L1-L45】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】
+
+#### CI enforcement drill (PR + main protection)
+
+1. **Mirror the wall locally:** run `npm run ci:verify` before pushing to guarantee the same checks that badge the README will go green in CI (markdown, Grafana JSON linting, vitest suites, solidity, subgraph, audit, branch gate).【F:package.json†L13-L47】
+2. **Apply branch protection:** use `.github/required-checks.json` when configuring the repository’s branch protection for `main` so GitHub enforces the same gates shown in the badges (CI, security, coverage, smoke).【F:.github/required-checks.json†L1-L10】
+3. **Visibility check:** confirm the GitHub Actions UI shows all checks required on PRs; the “CI Enforced on PRs” badge above pulls from the main branch workflow status so failures are immediately visible without opening logs.【F:README.md†L15-L49】
+
+```mermaid
+%%{init: { 'theme': 'dark', 'themeVariables': { 'primaryColor': '#0b1120', 'primaryTextColor': '#e2e8f0', 'lineColor': '#22c55e', 'secondaryColor': '#111827' } }}%%
+flowchart LR
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  Local[Local ci:verify\n(all gates)]:::lava --> PR[Pull Request\n(required checks)]:::neon
+  PR --> Main[main branch\nprotected + badges]:::frost
+  Main --> Ops[Operators see badges\n+ dashboards stay green]:::neon
+```
 
 ### Resource posture quick-tune grid (owner dial map)
 
