@@ -1,24 +1,45 @@
 groups:
   - name: libp2p-nrm
     rules:
-      - alert: ResourceManagerDenialsSustained
-        expr: sum(rate(nrm_denials_total[10m])) by (limit_type) > 5
-        for: 10m
+      - alert: ResourceManagerDenialsWarning
+        expr: sum(rate(nrm_denials_total[5m])) by (limit_type) > 1
+        for: 5m
         labels:
           severity: warning
           team: agi-alpha
         annotations:
-          summary: "Resource manager denials are sustained"
+          summary: "Resource manager denials elevated"
           description: |
-            Resource manager denials by limit type have exceeded safe thresholds for five minutes.
+            Resource manager denials by limit type have exceeded early-warning thresholds for five minutes.
             Inspect limit_type and protocol labels to determine whether IP/ASN caps or per-protocol ceilings are too strict or under attack.
-      - alert: QuicHandshakeLatencyHigh
-        expr: histogram_quantile(0.95, sum(rate(net_quic_handshake_latency_ms_bucket[5m])) by (le, direction)) > 500
+      - alert: ResourceManagerDenialsCritical
+        expr: sum(rate(nrm_denials_total[10m])) by (limit_type) > 5
+        for: 10m
+        labels:
+          severity: critical
+          team: agi-alpha
+        annotations:
+          summary: "Resource manager denials sustained at page level"
+          description: |
+            Resource manager denials by limit type have breached paging thresholds for ten minutes.
+            Inspect limit_type and protocol labels to determine whether IP/ASN caps or per-protocol ceilings are too strict or under attack.
+      - alert: QuicHandshakeLatencyWarning
+        expr: histogram_quantile(0.95, sum(rate(net_quic_handshake_latency_ms_bucket[5m])) by (le, direction)) > 350
         for: 5m
         labels:
           severity: warning
           team: agi-alpha
         annotations:
           summary: "QUIC handshake latency p95 elevated"
+          description: |
+            QUIC handshake p95 is above 350ms for at least five minutes. Investigate transport posture, relay usage, or network interference.
+      - alert: QuicHandshakeLatencyCritical
+        expr: histogram_quantile(0.95, sum(rate(net_quic_handshake_latency_ms_bucket[5m])) by (le, direction)) > 500
+        for: 5m
+        labels:
+          severity: critical
+          team: agi-alpha
+        annotations:
+          summary: "QUIC handshake latency p95 critical"
           description: |
             QUIC handshake p95 is above 500ms for at least five minutes. Investigate transport posture, relay usage, or network interference.
