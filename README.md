@@ -116,6 +116,52 @@ This codebase is treated as the operational shell of that high-value intelligenc
 > - **Owner command intact**: treasury/tokens stay owner-steered (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) with pause + parameter control and ENS-aware orchestration. Compose/Helm paths stay aligned with the repo tree below for predictable deploys.
 > - **Render + badge integrity**: `npm run lint:md` (mermaid-aware markdown lint) and `npm run lint:grafana` protect GitHub rendering of every diagram (README, docs, dashboards) while the CI badges tie directly to the required checks to keep visibility accurate on PRs and `main`. Run `npm run ci:verify` before pushing to mirror the full badge set locally.【F:package.json†L13-L46】【F:.github/workflows/ci.yml†L1-L260】【F:.github/required-checks.json†L1-L10】
 
+## Executive cockpit (current generation)
+
+- **Runtime control plane** — Owner retains absolute authority to pause, retune, or resequence the treasury, orchestrators, or network posture without redeploying. Libp2p resource ceilings, connection manager watermarks, and banlists are live-editable via environment and published to `/metrics` (`nrm_limits`, `nrm_usage`, `banlist_*`).【F:src/network/resourceManagerConfig.js†L1-L150】【F:src/telemetry/networkMetrics.js†L146-L210】
+- **Synthetic labor yield** — `$AGIALPHA` (contract `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) is the default yield surface; orchestration scripts and dashboards assume that address and decimals so treasury math, observability, and client UX stay coherent.【F:README.md†L90-L105】
+- **Observability autopilot** — Prometheus scrapes `/metrics`, loads alert rules from `observability/prometheus/alerts.yml`, and Grafana auto-imports both DCUtR and libp2p dashboards from `observability/grafana` through `grafana/provisioning/dashboards/dcutr.yaml`. Threshold colors match PromQL alerting so cockpit visuals equal paging posture.【F:docker-compose.yml†L1-L25】【F:observability/prometheus/prometheus.yml†L1-L12】【F:observability/prometheus/alerts.yml†L1-L19】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】
+- **Compliance wall** — CI pins Node 20.18+, runs lint/test/coverage/solidity/subgraph/security gates, builds Docker smoke, and aggregates into `ci:verify`. `.github/required-checks.json` is the template for branch protection—apply it to PRs/main to guarantee the same green wall visible via badges is enforced server-side.【F:.github/workflows/ci.yml†L1-L260】【F:.github/required-checks.json†L1-L10】
+
+```mermaid
+%%{init: { 'theme': 'dark', 'themeVariables': { 'primaryColor': '#0b1120', 'primaryTextColor': '#e2e8f0', 'lineColor': '#22c55e' } }}%%
+flowchart TB
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  subgraph Owner[Owner command]
+    Pausable[Treasury + orchestrators\n(paused/resumed by owner)]:::lava
+    Limits[Resource Manager limits\n(env + overrides)]:::neon
+  end
+
+  subgraph Metrics[Telemetry plane]
+    MetricsSurf[/observability/prometheus/prometheus.yml\n/metrics scrape/]:::frost
+    Alerts[/observability/prometheus/alerts.yml\n(rcmgr + QUIC)]:::lava
+    Dashboards[observability/grafana/*.json\n(auto-provisioned)]:::neon
+  end
+
+  subgraph CI[CI enforcement]
+    CIWall[ci.yml jobs\n(lint|tests|coverage|solidity|subgraph|docker|security)]:::frost
+    BranchGate[.github/required-checks.json\nPR protection template]:::lava
+  end
+
+  Pausable --> MetricsSurf
+  Limits --> MetricsSurf
+  MetricsSurf --> Alerts
+  MetricsSurf --> Dashboards
+  CIWall --> BranchGate
+  Dashboards -->|Badges + docs| BranchGate
+```
+
+## Operator field guide (fast start, non‑technical friendly)
+
+1. **Clone & install:** `npm ci` (Node 20.18+). All dashboards/markdown linting and observability JSON validation ship with the repo; no extra plugins required.【F:package.json†L13-L46】
+2. **Launch observability:** `docker-compose up prom grafana` brings up Prometheus on :9090 and Grafana on :3000 with both DCUtR and libp2p dashboards already provisioned. Default Grafana admin password is `admin`. Metrics scrape points at `host.docker.internal:9464` by default (adjust targets in `observability/prometheus/prometheus.yml`).【F:docker-compose.yml†L1-L25】【F:observability/prometheus/prometheus.yml†L1-L12】
+3. **Exercise the panels:** `npm run observability:dcutr-harness` emits synthetic punches/handshakes to keep panels and alerts hot even without live traffic. Watch thresholds flip from green→amber→red as rates/latencies cross the baked-in limits.【F:scripts/dcutr-harness.ts†L1-L28】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】
+4. **Retune limits live:** export `NRM_MAX_CONNECTIONS`, `NRM_MAX_STREAMS`, `NRM_MAX_MEMORY_BYTES`, `NRM_MAX_FDS`, or `NRM_MAX_BANDWIDTH_BPS` before starting the node to reshape ceilings; values surface immediately via `nrm_limits` gauges and affect alert thresholds/visuals without redeploying.【F:src/network/resourceManagerConfig.js†L1-L150】【F:src/telemetry/networkMetrics.js†L146-L210】
+5. **Keep CI green:** run `npm run ci:verify` locally to mirror the GitHub Actions wall, then push/PR. Required checks are declared in `.github/required-checks.json`; mirror them in branch protection so badges match enforcement. The Docker smoke step (`Docker Build & Smoke Test`) verifies container entrypoints and runtime help text before promotion.【F:package.json†L13-L46】【F:.github/workflows/ci.yml†L1-L260】【F:.github/required-checks.json†L1-L10】
+
 ## Phase 6 deliverables (DCUtR control tower)
 
 - **Instrumentation schema** — `observability/prometheus/metrics_dcutr.js` defines the canonical label grid (`region`, `asn`, `transport`, `relay_id`), collectors, emitters, and scrape-time success ratio so every panel and alert consumes the same semantics. A typed shim at `observability/prometheus/metrics_dcutr.ts` mirrors the emitters/collectors for TS-first runtimes without diverging from the production JS bridge.【F:observability/prometheus/metrics_dcutr.js†L1-L221】【F:observability/prometheus/metrics_dcutr.ts†L1-L89】【F:observability/docs/METRICS.md†L1-L120】
