@@ -175,6 +175,29 @@ flowchart TB
 2. **Resource manager pressure smoke:** run `npm run p2p:load-tests` to drive connection/stream denials and confirm `nrm_denials_total` increments alongside `nrm_limits`/`nrm_usage` gauges; thresholds in the Grafana libp2p dashboard should light up in lock‑step with the Prometheus alerts.【F:src/network/resourceManagerConfig.js†L1-L210】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/alerts.yml†L1-L45】
 3. **Alert loop confidence:** open Prometheus on :9090 and check **Status → Rules** to verify `ResourceManagerDenialsWarning/Critical` and `QuicHandshakeLatencyWarning/Critical` states transition when you perturb the harness; Grafana thresholds are pinned to the same PromQL so dashboards and paging stay synchronized.【F:observability/prometheus/alerts.yml†L1-L45】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】
 
+### Live guardrails map (traffic → resource policy → alerts → badges)
+
+Every layer is wired so owner-tuned limits are visible on dashboards, promoted to alerts, and enforced by CI gate badges. The diagram stays GitHub-renderable and mirrors the current code/config surface.
+
+```mermaid
+%%{init: { 'theme': 'forest', 'themeVariables': { 'primaryColor': '#0f172a', 'primaryTextColor': '#e2e8f0', 'lineColor': '#22c55e', 'secondaryColor': '#111827', 'edgeLabelBackground': '#0b1120' } }}%%
+flowchart LR
+  classDef neon fill:#0f172a,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#111827,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  Traffic[Inbound/Outbound mesh + QUIC handshakes]:::neon --> RCMGR[Resource Manager\nconnection/stream/memory/FDS/bandwidth caps\n+ conn mgr watermarks]:::lava
+  RCMGR --> Metrics[/Prometheus metrics: nrm_denials_total, nrm_limits, nrm_usage, net_connection_latency_ms, net_quic_handshake_latency_ms, yamux_* gauges/]:::frost
+  Metrics --> Alerts[[PromQL alerts\n(rcmgr denials + QUIC p95)]]:::lava
+  Metrics --> Grafana[Unified libp2p dashboard\nthreshold bands + panels]:::neon
+  Alerts --> CI[Badges + Required checks\n(ci.yml, required-checks.json)]:::frost
+  Grafana --> CI
+```
+
+- **Owner-tunable ceilings:** Environment variables such as `NRM_MAX_CONNECTIONS`, `NRM_MAX_STREAMS`, `CONN_LOW_WATER`, and `CONN_HIGH_WATER` reshape rcmgr and connection-manager watermarks; overrides can be injected via JSON/YAML for per-protocol/per-peer tuning. All changes emit `nrm_limits` gauges for live confirmation.【F:src/network/resourceManagerConfig.js†L31-L116】【F:src/network/resourceManagerConfig.js†L118-L218】
+- **Metrics to panels:** QUIC and TCP connection latency buckets plus handshake histograms, Yamux stream gauges/resets, and per-protocol bytes/messages are exported via `/metrics`, powering the unified Grafana dashboard shipping in the repo.【F:src/telemetry/networkMetrics.js†L12-L210】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】
+- **Alerts + provisioning:** Prometheus consumes `observability/prometheus/alerts.yml` (mounted by `docker-compose.yml`) so warning/critical bands match the dashboard thresholds and bubble into CI badges/branch protection alongside the required checks template.【F:observability/prometheus/alerts.yml†L1-L45】【F:docker-compose.yml†L1-L25】【F:.github/required-checks.json†L1-L10】
+
 ### Owner command surface (full-control levers)
 
 - **Pause/Resume:** `pause()` and `unpause()` let the owner freeze or re-open staking and validation flows instantly, keeping production safety rails one transaction away.【F:contracts/AlphaNodeManager.sol†L78-L92】
