@@ -117,6 +117,31 @@ The full stack is shaped as a singular intelligence core that can realign market
 
 This codebase is treated as the operational shell of that high-value intelligence engine: everything is wired for determinism (full CI wall + coverage gates), rapid owner retuning (hot-swappable orchestrators, pausable treasuries, replay shields), and observable punch economics (DCUtR dashboards + PromQL linting) so the machine stays deploy-ready and under complete owner command at all times.
 
+## System atlas (live layout)
+
+- **Runtime + governance core** — `src/` houses the libp2p host, governance API, and telemetry bindings; `contracts/AlphaNodeManager.sol` anchors the `$AGIALPHA` (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) authority plane so the owner can pause, unpause, rotate controllers, gate validators, and withdraw stake on demand.【F:src/index.js†L1-L40】【F:contracts/AlphaNodeManager.sol†L1-L200】
+- **Observability stack** — Prometheus scrapes `/metrics` using `observability/prometheus/prometheus.yml`, ingests alert rules from `observability/prometheus/alerts.yml`, and drives Grafana dashboards provisioned by `grafana/provisioning/dashboards/{dcutr,libp2p}.yaml` that load JSON panels from `observability/grafana/*.json`. Alertmanager defaults live at `observability/alertmanager/alertmanager.yml` for local routing.【F:observability/prometheus/prometheus.yml†L1-L12】【F:observability/prometheus/alerts.yml†L1-L45】【F:grafana/provisioning/dashboards/libp2p.yaml†L1-L11】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/alertmanager/alertmanager.yml†L1-L10】
+- **Container + deployment tracks** — `docker-compose.yml` boots prom/grafana/alertmanager with dashboards + rules mounted; `Dockerfile` builds the runtime container; `deploy/helm/agi-alpha-node` mirrors the same wiring for clusters. Scripts under `scripts/` include linting and observability harnesses that CI exercises for badge integrity.【F:docker-compose.yml†L1-L38】【F:Dockerfile†L1-L28】【F:deploy/helm/agi-alpha-node/values.yaml†L1-L153】【F:scripts/lint-grafana-dashboard.mjs†L1-L128】【F:scripts/dcutr-harness.ts†L1-L28】
+- **CI enforcement wall** — `.github/workflows/ci.yml` fans out lint/test/coverage/solidity/subgraph/docker/security jobs; `.github/required-checks.json` is the template to enforce these checks on `main` and all PRs so the badges above always reflect blocking gates. Local `npm run ci:verify` mirrors the full wall.【F:.github/workflows/ci.yml†L1-L260】【F:.github/required-checks.json†L1-L10】【F:package.json†L13-L47】
+
+```mermaid
+%%{init: { 'theme': 'dark', 'themeVariables': { 'primaryColor': '#0b1120', 'primaryTextColor': '#e2e8f0', 'lineColor': '#22c55e', 'secondaryColor': '#0ea5e9' } }}%%
+flowchart LR
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0f172a,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  Owner[Owner keys\n(AlphaNodeManager)]:::lava --> Runtime[src/ + contracts/\nlibp2p host + treasury]:::neon
+  Runtime --> MetricsPlane[/observability/prometheus/prometheus.yml\n/metrics scrape/]:::frost
+  Runtime --> DashData[/observability/grafana/*.json\nprovisioned dashboards/]:::neon
+  MetricsPlane --> Alerts[/observability/prometheus/alerts.yml\nAlertmanager routing/]:::lava
+  Alerts --> Grafana[Grafana\nthreshold-colored panels]:::frost
+  DashData --> Grafana
+  Grafana --> Operator[Operator & auditor cockpit\n(CI badges + mermaid verified)]:::neon
+  MetricsPlane --> CI[ci.yml jobs + required-checks.json\nci:verify parity]:::frost
+  CI --> Operator
+```
+
 > **Fresh state of the stack (at a glance)**
 >
 > - **Phase 6 deliverables pinned**: instrumentation schema + emitters live in `observability/prometheus/metrics_dcutr.js`, the Grafana stub is ready to import at `observability/grafana/dcutr_dashboard.json` with hands-free provisioning via `grafana/provisioning/dashboards/dcutr.yaml`, and every panel/PromQL path is documented in `observability/docs/DASHBOARD.md` + `observability/docs/METRICS.md` so operators import once and run. Lint parity stays wired through `npm run lint:grafana` and the CI badge wall above.
