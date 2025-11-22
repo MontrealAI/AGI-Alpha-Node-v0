@@ -194,6 +194,31 @@ flowchart TB
 > 2. **Verify surfaces:** watch `nrm_denials_total` (per limit type), `net_quic_handshake_latency_ms` (p95), and Yamux stream gauges reset lines turn amber/red when thresholds breach, mirroring the PromQL alert values to keep dashboards and paging in sync.【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/alerts.yml†L1-L19】
 > 3. **Tune live:** adjust env vars consumed by `buildResourceManagerConfig` (connections, streams, memory, FDs, bandwidth) and confirm the new ceilings surface immediately in `nrm_limits`/`nrm_usage` without redeploying the node.【F:src/network/resourceManagerConfig.js†L1-L150】【F:src/telemetry/networkMetrics.js†L146-L210】
 
+### Libp2p cockpit thresholds (operator cheat-sheet)
+
+- **Resource Manager denials:** warning above `1/s`, critical above `5/s` per `limit_type`, surfaced in Grafana and mirrored by `ResourceManagerDenialsSustained` so colors == paging.
+- **QUIC handshake p95:** warning at `350ms`, critical at `500ms`, identical to the `QuicHandshakeLatencyHigh` alert so stat tiles and alerts stay aligned.
+- **Yamux streams/resets:** saturation lines at 50/100 active streams and 5/10 resets per second with right-axis overrides to separate the rates from stream counts.
+- **Owner overrides:** `NRM_MAX_*` env vars reconfigure live ceilings, and values instantly reflect in `/metrics` via `nrm_limits`/`nrm_usage`, keeping dashboards truthful after retunes.
+
+```mermaid
+flowchart LR
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  subgraph Telemetry[Libp2p telemetry]
+    Denials[nrm_denials_total\n(limit_type + protocol)]:::lava
+    Quic[net_quic_handshake_latency_ms\n(p95 histogram)]:::frost
+    Yamux[yamux_streams_active\n yamux_stream_resets_total]:::neon
+  end
+
+  Telemetry --> Prom[Prometheus scrape\n/metrics + alerts.yml]:::frost
+  Prom --> Grafana[libp2p_unified_dashboard.json\n(thresholded panels)]:::lava
+  Prom --> Alerts[Alertmanager fanout\n(denials + QUIC p95)]:::neon
+  class Telemetry,Prom,Grafana,Alerts neon;
+```
+
 ```mermaid
 flowchart LR
   classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
