@@ -80,6 +80,9 @@
   <a href="observability/docs/DASHBOARD.md">
     <img src="https://img.shields.io/badge/Docs-DASHBOARD.md-fcd34d?logo=grafana&logoColor=0b1120" alt="Dashboard docs" />
   </a>
+  <a href="observability/docs/RCMGR.md">
+    <img src="https://img.shields.io/badge/Docs-RCMGR%20limits-ec4899?logo=libp2p&logoColor=white" alt="Resource manager policy doc" />
+  </a>
   <a href="docker-compose.yml">
     <img src="https://img.shields.io/badge/Observability-Docker%20compose%20(prom%2Bgrafana)-2563eb?logo=docker&logoColor=white" alt="Observability compose" />
   </a>
@@ -188,7 +191,8 @@ flowchart TB
 2. **Launch observability:** `docker-compose up prom grafana` brings up Prometheus on :9090 and Grafana on :3000 with both DCUtR and libp2p dashboards already provisioned. Default Grafana admin password is `admin`. Metrics scrape points at `host.docker.internal:9464` by default (adjust targets in `observability/prometheus/prometheus.yml`).【F:docker-compose.yml†L1-L25】【F:observability/prometheus/prometheus.yml†L1-L12】
 3. **Exercise the panels:** `npm run observability:dcutr-harness` emits synthetic punches/handshakes to keep panels and alerts hot even without live traffic. Watch thresholds flip from green→amber→red as rates/latencies cross the baked-in limits.【F:scripts/dcutr-harness.ts†L1-L28】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】
 4. **Retune limits live:** export `NRM_MAX_CONNECTIONS`, `NRM_MAX_STREAMS`, `NRM_MAX_MEMORY_BYTES`, `NRM_MAX_FDS`, or `NRM_MAX_BANDWIDTH_BPS` before starting the node to reshape ceilings; values surface immediately via `nrm_limits` gauges and affect alert thresholds/visuals without redeploying.【F:src/network/resourceManagerConfig.js†L1-L150】【F:src/telemetry/networkMetrics.js†L146-L210】
-5. **Keep CI green:** run `npm run ci:verify` locally to mirror the GitHub Actions wall, then push/PR. Required checks are declared in `.github/required-checks.json`; mirror them in branch protection so badges match enforcement. The Docker smoke step (`Docker Build & Smoke Test`) verifies container entrypoints and runtime help text before promotion.【F:package.json†L13-L46】【F:.github/workflows/ci.yml†L1-L260】【F:.github/required-checks.json†L1-L10】
+5. **Use adaptive watermarks + templates:** when you omit `CONN_LOW_WATER`/`CONN_HIGH_WATER` the connection manager now derives watermarks from `maxConnections` (≈50%/≈85% with a safety delta) so pruning tracks the ceiling automatically. Copy `config/rcmgr-limits.sample.json` to your own limits file and point `NRM_LIMITS_PATH` at it to enforce bespoke global/per-protocol ceilings while keeping dashboards/alerts aligned.【F:src/network/resourceManagerConfig.js†L1-L120】【F:config/rcmgr-limits.sample.json†L1-L20】【F:observability/docs/RCMGR.md†L1-L32】
+6. **Keep CI green:** run `npm run ci:verify` locally to mirror the GitHub Actions wall, then push/PR. Required checks are declared in `.github/required-checks.json`; mirror them in branch protection so badges match enforcement. The Docker smoke step (`Docker Build & Smoke Test`) verifies container entrypoints and runtime help text before promotion.【F:package.json†L13-L46】【F:.github/workflows/ci.yml†L1-L260】【F:.github/required-checks.json†L1-L10】
 
 ### Zero‑doubt observability validation (3 quick probes)
 
