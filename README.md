@@ -162,6 +162,13 @@ flowchart TB
 4. **Retune limits live:** export `NRM_MAX_CONNECTIONS`, `NRM_MAX_STREAMS`, `NRM_MAX_MEMORY_BYTES`, `NRM_MAX_FDS`, or `NRM_MAX_BANDWIDTH_BPS` before starting the node to reshape ceilings; values surface immediately via `nrm_limits` gauges and affect alert thresholds/visuals without redeploying.【F:src/network/resourceManagerConfig.js†L1-L150】【F:src/telemetry/networkMetrics.js†L146-L210】
 5. **Keep CI green:** run `npm run ci:verify` locally to mirror the GitHub Actions wall, then push/PR. Required checks are declared in `.github/required-checks.json`; mirror them in branch protection so badges match enforcement. The Docker smoke step (`Docker Build & Smoke Test`) verifies container entrypoints and runtime help text before promotion.【F:package.json†L13-L46】【F:.github/workflows/ci.yml†L1-L260】【F:.github/required-checks.json†L1-L10】
 
+### Owner command surface (full-control levers)
+
+- **Pause/Resume:** `pause()` and `unpause()` let the owner freeze or re-open staking and validation flows instantly, keeping production safety rails one transaction away.【F:contracts/AlphaNodeManager.sol†L78-L92】
+- **Identity/validator book:** Register/update/revoke ENS-controlled identities, toggle validator eligibility, and query controllers directly from the on-chain registry so operational trust zones can be tightened without redeploys.【F:contracts/AlphaNodeManager.sol†L94-L175】
+- **Treasury motions:** Owner-only withdrawals plus Alpha Work Unit mint/acceptance controls give explicit command over emissions and payouts while preserving validator gating and stake accounting.【F:contracts/AlphaNodeManager.sol†L189-L239】
+- **Canonical token guardrails:** The manager enforces the `$AGIALPHA` address (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) as the staking asset, preventing silent token swaps and keeping balances coherent across the job market.【F:contracts/AlphaNodeManager.sol†L44-L69】
+
 ## Phase 6 deliverables (DCUtR control tower)
 
 - **Instrumentation schema** — `observability/prometheus/metrics_dcutr.js` defines the canonical label grid (`region`, `asn`, `transport`, `relay_id`), collectors, emitters, and scrape-time success ratio so every panel and alert consumes the same semantics. A typed shim at `observability/prometheus/metrics_dcutr.ts` mirrors the emitters/collectors for TS-first runtimes without diverging from the production JS bridge.【F:observability/prometheus/metrics_dcutr.js†L1-L221】【F:observability/prometheus/metrics_dcutr.ts†L1-L89】【F:observability/docs/METRICS.md†L1-L120】
