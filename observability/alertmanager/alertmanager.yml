@@ -1,0 +1,9 @@
+route:
+  receiver: devnull
+  group_by: ['alertname', 'severity']
+  group_wait: 10s
+  group_interval: 30s
+  repeat_interval: 4h
+
+receivers:
+  - name: devnull

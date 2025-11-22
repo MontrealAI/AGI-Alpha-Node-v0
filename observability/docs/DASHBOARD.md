@@ -27,9 +27,10 @@ Panel wiring hints:
 
 1. Navigate to **Dashboards → New → Import** in Grafana.
 2. Upload `observability/grafana/dcutr_dashboard.json` or paste its JSON payload.
-3. Select your Prometheus datasource and save (Docker compose auto-wires this via `grafana/provisioning/dashboards/dcutr.yaml`).【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L6】【F:docker-compose.yml†L1-L25】
-4. Run `grafana dashboards lint observability/grafana/dcutr_dashboard.json` (Grafana 10.3+ CLI) to catch structural issues before shipping.
-5. (Recommended) Wire alert rules for `dcutr_punch_success_rate` and p95 `dcutr_time_to_direct_seconds` to match your SLOs.
+3. Select your Prometheus datasource and save (Docker compose auto-wires this via `grafana/provisioning/dashboards/dcutr.yaml` and `grafana/provisioning/dashboards/libp2p.yaml`).【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L6】【F:grafana/provisioning/dashboards/libp2p.yaml†L1-L9】【F:docker-compose.yml†L1-L38】
+4. Run `docker-compose up -d prom grafana alertmanager` to verify provisioning end-to-end, then open Grafana → Dashboards → Manage to see both DCUtR and Libp2p Unified dashboards loaded automatically.【F:docker-compose.yml†L1-L38】
+5. Run `grafana dashboards lint observability/grafana/dcutr_dashboard.json` (Grafana 10.3+ CLI) to catch structural issues before shipping.
+6. (Recommended) Wire alert rules for `dcutr_punch_success_rate` and p95 `dcutr_time_to_direct_seconds` to match your SLOs.
 
 Screenshot placeholder file: `observability/docs/assets/dcutr-dashboard-placeholder.svg` (replace with your exported Grafana image when ready to ship dashboards to stakeholders).
 
