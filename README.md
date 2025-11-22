@@ -623,6 +623,25 @@ Every control surface above is owner-first: identities, staking limits, orchestr
 - **DCUtR punch health kit**: `observability/prometheus/metrics_dcutr.js` defines counters, gauges, histograms, and a `registerDCUtRMetrics` hook with label-aware emitters (`region`, `asn`, `transport`, `relay_id`) so per-relay success stays correlated to topology. Pair it with `observability/grafana/dcutr_dashboard.json` (UID `dcutr-observability`) and the walkthrough in `observability/docs/METRICS.md` + `observability/docs/DASHBOARD.md` to visualize punch success, attempts/success/failures, p95 time-to-direct, relay offload, RTT quality, and the region×ASN heatmap; lint via `grafana dashboards lint observability/grafana/dcutr_dashboard.json` before importing.【F:observability/prometheus/metrics_dcutr.js†L1-L221】【F:observability/grafana/dcutr_dashboard.json†L1-L123】【F:observability/docs/METRICS.md†L1-L120】【F:observability/docs/DASHBOARD.md†L1-L120】
 - **One-click DCUtR binding on /metrics**: `startMonitoringServer({ dcutrEvents, libp2p })` now binds relay dial, punch start, direct confirmations, relay fallbacks, and stream migrations to Prometheus in the same registry that powers the node’s `/metrics` endpoint, so Grafana panels stay live even when you feed the bridge a raw EventEmitter instead of the synthetic harness.【F:src/telemetry/monitoring.js†L273-L360】【F:test/monitoring.test.js†L62-L108】
 - **Libp2p cockpit + alert mirrors**: The unified Grafana deck (`observability/grafana/libp2p_unified_dashboard.json`) auto-loads with the same provisioning bundle as DCUtR, rendering NRM denials by limit type, p95 QUIC handshake latency, and Yamux stream pressure with inline warning/critical thresholds. Prometheus consumes `observability/prometheus/alerts.yml` for matching alerting (sustained `nrm_denials_total` and QUIC handshake drift) while `grafana/provisioning/dashboards/dcutr.yaml` pins read-only imports so every `docker-compose up prom grafana` run boots with dashboards and rule files mounted from the repo.【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/alerts.yml†L1-L19】【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L7】【F:docker-compose.yml†L1-L25】
+- **Threshold harmony**: Alert rules track the same limits as the Grafana palettes—NRM denials >5/s over 10m per limit_type and QUIC p95 >500 ms per direction—so colors, paging, and `/metrics` all agree. Yamux reset storms are highlighted at ≥5/s with right-axis scaling while stream saturation inherits 50/100 watermarks to match the resource manager ceilings.【F:observability/prometheus/alerts.yml†L1-L19】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】
+
+```mermaid
+flowchart LR
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  subgraph Metrics[/libp2p metrics/]
+    Denials[nrm_denials_total\n10m rate by limit_type]:::lava
+    Quic[net_quic_handshake_latency_ms\np95 by direction]:::frost
+    Yamux[yamux_streams_active + resets\nalerts at ≥5/s]:::lava
+  end
+
+  Metrics --> Prom[Prometheus scrape\n+ alerts.yml]:::frost
+  Prom --> Grafana[Grafana dashboards\nlibp2p_unified_dashboard.json]:::neon
+  Prom --> Pager[Alertmanager fanout\nthreshold-aligned]:::lava
+  Grafana --> CI[CI wall badges + required-checks.json]:::neon
+```
 
 ## DCUtR production primer
 
