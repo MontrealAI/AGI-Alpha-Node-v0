@@ -181,6 +181,7 @@ flowchart TB
 - **Identity/validator book:** Register/update/revoke ENS-controlled identities, toggle validator eligibility, and query controllers directly from the on-chain registry so operational trust zones can be tightened without redeploys.【F:contracts/AlphaNodeManager.sol†L94-L175】
 - **Treasury motions:** Owner-only withdrawals plus Alpha Work Unit mint/acceptance controls give explicit command over emissions and payouts while preserving validator gating and stake accounting.【F:contracts/AlphaNodeManager.sol†L189-L239】
 - **Canonical token guardrails:** The manager enforces the `$AGIALPHA` address (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) as the staking asset, preventing silent token swaps and keeping balances coherent across the job market.【F:contracts/AlphaNodeManager.sol†L44-L69】
+- **Network guardrails tuning:** Owners can reshape resource-manager ceilings (connections/streams/memory/FDS/bandwidth), banlists, and connection-manager watermarks live via environment variables or JSON/YAML overrides so pruning and denials align with production reality without redeploying.【F:src/network/resourceManagerConfig.js†L1-L142】
 
 ## Phase 6 deliverables (DCUtR control tower)
 
