@@ -130,6 +130,26 @@ This codebase is treated as the operational shell of that high-value intelligenc
 - **Observability autopilot** — Prometheus scrapes `/metrics`, loads alert rules from `observability/prometheus/alerts.yml`, and Grafana auto-imports both DCUtR and libp2p dashboards from `observability/grafana` through `grafana/provisioning/dashboards/dcutr.yaml`. Threshold colors match PromQL alerting (NRM warning ≥1/s, critical ≥5/s; QUIC p95 warning ≥350 ms, critical ≥500 ms) so cockpit visuals equal paging posture.【F:docker-compose.yml†L1-L25】【F:observability/prometheus/prometheus.yml†L1-L12】【F:observability/prometheus/alerts.yml†L1-L45】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】
 - **Compliance wall** — CI pins Node 20.18+, runs lint/test/coverage/solidity/subgraph/security gates, builds Docker smoke, and aggregates into `ci:verify`. `.github/required-checks.json` is the template for branch protection—apply it to PRs/main to guarantee the same green wall visible via badges is enforced server-side.【F:.github/workflows/ci.yml†L1-L260】【F:.github/required-checks.json†L1-L10】
 
+### Owner override recipe (pause → retune → resume)
+
+- **Pause + retarget** — Freeze flows with `pause()`, update validator eligibility (`setValidator`), rotate ENS controllers (`updateIdentityController`), or swap active/inactive identities (`setIdentityStatus`), then reopen with `unpause()`. Every change is owner-only and emit events for auditors.【F:contracts/AlphaNodeManager.sol†L34-L122】【F:contracts/AlphaNodeManager.sol†L124-L175】
+- **Retune network posture live** — Export `NRM_MAX_CONNECTIONS/STREAMS/MEMORY_BYTES/FDS/BANDWIDTH_BPS`, `CONN_LOW_WATER`, and `CONN_HIGH_WATER` before boot to realign rcmgr and connection-manager watermarks; inject per-protocol/per-peer overrides via `NRM_LIMITS_JSON` or `NRM_LIMITS_PATH` when you need bespoke ceilings. Gauges (`nrm_limits`, `nrm_usage`) reflect the new posture instantly.【F:src/network/resourceManagerConfig.js†L17-L122】【F:src/network/resourceManagerConfig.js†L180-L232】
+- **Verify the outcome visually** — Run `npm run lint:md && npm run lint:grafana` to ensure every mermaid and dashboard panel renders on GitHub Pages, then `docker-compose up prom grafana` to see the thresholds and alerts light up with the new limits before resuming production traffic.【F:package.json†L13-L47】【F:docker-compose.yml†L1-L25】
+
+```mermaid
+%%{init: { 'theme': 'dark', 'themeVariables': { 'primaryColor': '#0f172a', 'primaryTextColor': '#e2e8f0', 'lineColor': '#22c55e', 'secondaryColor': '#111827' } }}%%
+flowchart LR
+  classDef neon fill:#0f172a,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#111827,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  Pause[Owner pause/unpause]:::lava --> Tune[Retune validators + ENS + limits]:::neon
+  Tune --> MetricsSurf[/nrm_limits + nrm_usage + alerts/]
+  MetricsSurf --> Dash[Grafana + Prometheus rules]:::frost
+  Dash --> Resume[Resume production posture]:::lava
+  Resume --> Pause
+```
+
 ```mermaid
 %%{init: { 'theme': 'dark', 'themeVariables': { 'primaryColor': '#0b1120', 'primaryTextColor': '#e2e8f0', 'lineColor': '#22c55e' } }}%%
 flowchart TB
