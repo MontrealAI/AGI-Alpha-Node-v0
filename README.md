@@ -169,6 +169,12 @@ flowchart TB
 4. **Retune limits live:** export `NRM_MAX_CONNECTIONS`, `NRM_MAX_STREAMS`, `NRM_MAX_MEMORY_BYTES`, `NRM_MAX_FDS`, or `NRM_MAX_BANDWIDTH_BPS` before starting the node to reshape ceilings; values surface immediately via `nrm_limits` gauges and affect alert thresholds/visuals without redeploying.【F:src/network/resourceManagerConfig.js†L1-L150】【F:src/telemetry/networkMetrics.js†L146-L210】
 5. **Keep CI green:** run `npm run ci:verify` locally to mirror the GitHub Actions wall, then push/PR. Required checks are declared in `.github/required-checks.json`; mirror them in branch protection so badges match enforcement. The Docker smoke step (`Docker Build & Smoke Test`) verifies container entrypoints and runtime help text before promotion.【F:package.json†L13-L46】【F:.github/workflows/ci.yml†L1-L260】【F:.github/required-checks.json†L1-L10】
 
+### Zero‑doubt observability validation (3 quick probes)
+
+1. **Metrics surface sanity:** `curl -s localhost:9464/metrics | grep -E 'net_connection_latency_ms|net_quic_handshake_latency_ms|yamux_streams_active'` should immediately show QUIC handshake buckets, transport‑tagged latencies, and Yamux gauges populated by the libp2p host hooks.【F:src/telemetry/networkMetrics.js†L24-L210】【F:src/network/libp2pHostConfig.js†L1-L230】
+2. **Resource manager pressure smoke:** run `npm run p2p:load-tests` to drive connection/stream denials and confirm `nrm_denials_total` increments alongside `nrm_limits`/`nrm_usage` gauges; thresholds in the Grafana libp2p dashboard should light up in lock‑step with the Prometheus alerts.【F:src/network/resourceManagerConfig.js†L1-L210】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/alerts.yml†L1-L45】
+3. **Alert loop confidence:** open Prometheus on :9090 and check **Status → Rules** to verify `ResourceManagerDenialsWarning/Critical` and `QuicHandshakeLatencyWarning/Critical` states transition when you perturb the harness; Grafana thresholds are pinned to the same PromQL so dashboards and paging stay synchronized.【F:observability/prometheus/alerts.yml†L1-L45】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】
+
 ### Owner command surface (full-control levers)
 
 - **Pause/Resume:** `pause()` and `unpause()` let the owner freeze or re-open staking and validation flows instantly, keeping production safety rails one transaction away.【F:contracts/AlphaNodeManager.sol†L78-L92】
