@@ -39,7 +39,7 @@ Screenshot placeholder file: `observability/docs/assets/dcutr-dashboard-placehol
 
 1. **NRM denials (rate by limit_type)** — PromQL: `sum(rate(nrm_denials_total[10m])) by (limit_type)`; thresholds at 1/5 events per second flag early banlist/per-ip/per-asn clamp downs.
 2. **QUIC handshake p95** — PromQL: `histogram_quantile(0.95, sum by (le, direction)(rate(net_connection_latency_ms_bucket{transport="quic"}[5m])))`; warning at 350ms, critical at 500ms.
-3. **Yamux streams + resets** — PromQL: `sum(yamux_streams_active) by (direction)` plus `sum(rate(yamux_stream_resets_total[5m]))`; highlights multiplexor pressure and reset storms.
+3. **Yamux streams + resets** — PromQL: `sum(yamux_streams_active) by (direction)` plus `sum(rate(yamux_stream_resets_total[5m]))`; highlights multiplexor pressure and reset storms with inline thresholds (50/100 live streams left-axis, 5/10 reset rate right-axis) to mirror the resource-manager ceilings and dashboards.
 
 These panels ship with color-coded thresholds so operators can spot regressions without drilling into PromQL. The provisioning bundle in `grafana/provisioning/dashboards` loads both DCUtR and libp2p dashboards automatically.
 
