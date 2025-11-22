@@ -68,8 +68,14 @@
   <a href="observability/grafana/libp2p_unified_dashboard.json">
     <img src="https://img.shields.io/badge/Grafana-Libp2p%20Unified%20Dashboard-f97316?logo=grafana&logoColor=white" alt="Libp2p observability" />
   </a>
+  <a href="grafana/provisioning/dashboards/libp2p.yaml">
+    <img src="https://img.shields.io/badge/Grafana%20Provisioning-libp2p.yaml-0ea5e9?logo=grafana&logoColor=white" alt="Grafana libp2p provisioning" />
+  </a>
   <a href="observability/prometheus/alerts.yml">
     <img src="https://img.shields.io/badge/Prometheus-Alerts%20wired-ed8936?logo=prometheus&logoColor=white" alt="Prometheus alerts" />
+  </a>
+  <a href="observability/alertmanager/alertmanager.yml">
+    <img src="https://img.shields.io/badge/Alertmanager-Ready-9333ea?logo=prometheus&logoColor=white" alt="Alertmanager config" />
   </a>
   <a href="scripts/lint-grafana-dashboard.mjs">
     <img src="https://img.shields.io/badge/Dashboard%20Lint-npm%20run%20lint:grafana-f97316?logo=grafana&logoColor=0b1120" alt="Grafana lint script" />
@@ -125,6 +131,7 @@ This codebase is treated as the operational shell of that high-value intelligenc
 - **Transport timing is fingerprinted end-to-end:** QUIC dials start a stopwatch in the libp2p host config and post both the transport-labelled `net_connection_latency_ms{transport="quic"}` and the dedicated `net_quic_handshake_latency_ms` buckets so Grafana panels, PromQL alerts, and `/metrics` agree on handshake performance.【F:src/network/libp2pHostConfig.js†L132-L200】【F:src/telemetry/networkMetrics.js†L146-L210】
 - **Yamux and Resource Manager saturation is exported live:** stream opens/closes feed `yamux_streams_active`, resets hit `yamux_stream_resets_total`, and resource-manager denials increment `nrm_denials_total` with limit types while gauges expose `nrm_usage` + `nrm_limits` for connections/streams/memory/fds/bandwidth and per-IP/ASN buckets; env overrides (`NRM_MAX_*`) propagate straight into the gauges and limits JSON without restarts.【F:src/telemetry/networkMetrics.js†L166-L210】【F:src/network/resourceManagerConfig.js†L1-L210】
 - **Dashboards, alerts, and scrape targets are pre-wired:** the libp2p unified Grafana dashboard and Prometheus alert rules land via compose provisioning, keeping QUIC p95 and NRM denials thresholds aligned with the running rules and the `/metrics` scrape configuration for localhost or remote nodes.【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/alerts.yml†L1-L45】【F:observability/prometheus/prometheus.yml†L1-L12】【F:docker-compose.yml†L1-L25】
+- **Alert routing and compose bring-up are one command:** Docker Compose now stands up Prometheus, Alertmanager, and Grafana with host-gateway wiring for Linux, pre-mounted dashboards (including the libp2p provider file), and alert delivery through Alertmanager—`docker-compose up prom grafana alertmanager` is a full-stack boot with visible alerts and dashboards on first load.【F:docker-compose.yml†L1-L38】【F:grafana/provisioning/dashboards/libp2p.yaml†L1-L9】【F:observability/prometheus/prometheus.yml†L1-L12】【F:observability/alertmanager/alertmanager.yml†L1-L10】
 - **Owner retains absolute command:** the on-chain manager hardcodes `$AGIALPHA` (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals), lets the owner pause/unpause flows, rotate ENS-controlled identities/controllers, gate validators, and withdraw staking funds directly—ensuring every economic or identity lever is one owner transaction away.【F:contracts/AlphaNodeManager.sol†L24-L122】
 
 ## Executive cockpit (current generation)
@@ -140,10 +147,30 @@ This codebase is treated as the operational shell of that high-value intelligenc
 - **Retune network posture live** — Export `NRM_MAX_CONNECTIONS/STREAMS/MEMORY_BYTES/FDS/BANDWIDTH_BPS`, `CONN_LOW_WATER`, and `CONN_HIGH_WATER` before boot to realign rcmgr and connection-manager watermarks; inject per-protocol/per-peer overrides via `NRM_LIMITS_JSON` or `NRM_LIMITS_PATH` when you need bespoke ceilings. Gauges (`nrm_limits`, `nrm_usage`) reflect the new posture instantly.【F:src/network/resourceManagerConfig.js†L17-L122】【F:src/network/resourceManagerConfig.js†L180-L232】
 - **Verify the outcome visually** — Run `npm run lint:md && npm run lint:grafana` to ensure every mermaid and dashboard panel renders on GitHub Pages, then `docker-compose up prom grafana` to see the thresholds and alerts light up with the new limits before resuming production traffic.【F:package.json†L13-L47】【F:docker-compose.yml†L1-L25】
 
+### Observability ignition (Docker Compose autopilot)
+
+1. **Boot everything at once:** `docker-compose up -d prom grafana alertmanager` brings Prometheus, Alertmanager, and Grafana online with dashboards pre-provisioned (DCUtR + libp2p), alerts loaded, and host-gateway resolution for Linux baked in.【F:docker-compose.yml†L1-L38】【F:grafana/provisioning/dashboards/libp2p.yaml†L1-L9】
+2. **Check ingestion:** open <http://localhost:9090/targets> to verify the `agi-alpha-node-dcutr` job is `UP`; if you are on Linux, the compose `extra_hosts` entry pins `host.docker.internal` to the Docker gateway so `/metrics` resolves without manual tweaks.【F:docker-compose.yml†L1-L20】【F:observability/prometheus/prometheus.yml†L1-L12】
+3. **See dashboards instantly:** open <http://localhost:3000> (admin/admin) and find “Libp2p Unified Observability” plus “DCUtR” under Dashboards → Manage. Threshold colors mirror the Prometheus alert rules for NRM denials and QUIC p95, and the provisioning bundle keeps them immutable for repeatable debugging.【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:grafana/provisioning/dashboards/libp2p.yaml†L1-L9】
+4. **Alert fire drill:** Prometheus forwards any rule hits to Alertmanager (<http://localhost:9093>); use the Prometheus UI “Alerts” tab or Grafana’s Alerting → Alerts to confirm activations while you simulate load (e.g., crank up `net_connection_latency_ms{transport="quic"}` via the load harness).【F:observability/prometheus/alerts.yml†L1-L45】【F:observability/alertmanager/alertmanager.yml†L1-L10】
+
+```mermaid
+%%{init: { 'theme': 'dark', 'themeVariables': { 'primaryColor': '#0f172a', 'primaryTextColor': '#e2e8f0', 'lineColor': '#22c55e', 'secondaryColor': '#111827' } }}%%
+flowchart LR
+  classDef neon fill:#0f172a,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#111827,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  Metrics[/host.docker.internal:9464\n/metrics scrape/]:::frost --> Prom[Prometheus\nalerts.yml + rules]:::neon
+  Prom --> Alertmgr[Alertmanager\nalertmanager.yml]:::lava
+  Prom --> Grafana[Grafana\nprovisioned dashboards]:::neon
+  Grafana --> Ops[Operators\nthreshold-aware panels]:::frost
+  Alertmgr --> Ops
+```
+
 ### Owner control matrix (one-transaction authority)
 
 | Control | How to exercise | Effect | Audit trail |
-| --- | --- | --- | --- |
 | Pause/resume runtime | `pause()` / `unpause()` | Halts or resumes staking + validator flows, preserving funds and identities. | `Paused`/`Unpaused` events emit with caller. 【F:contracts/AlphaNodeManager.sol†L34-L92】 |
 | Validator gating | `setValidator(address,bool)` | Activates or deactivates validators instantly without redeploying. | `ValidatorUpdated` event includes validator + status. 【F:contracts/AlphaNodeManager.sol†L94-L122】 |
 | ENS identity routing | `registerIdentity`, `updateIdentityController`, `setIdentityStatus`, `revokeIdentity` | Reassigns controllers, toggles active status, or revokes identities for the AGI jobs platform. | Every mutation emits explicit events so dashboards/logs stay synchronized. 【F:contracts/AlphaNodeManager.sol†L102-L156】【F:contracts/AlphaNodeManager.sol†L158-L176】 |

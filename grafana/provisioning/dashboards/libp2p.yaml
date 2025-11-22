@@ -1,0 +1,11 @@
+apiVersion: 1
+providers:
+  - name: Libp2p Unified Observability
+    type: file
+    options:
+      path: /grafana/dashboards
+      foldersFromFilesStructure: true
+      includeFilter: "libp2p_unified_dashboard.json"
+    allowUiUpdates: false
+    disableDeletion: true
+    updateIntervalSeconds: 30

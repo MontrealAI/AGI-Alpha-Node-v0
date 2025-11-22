@@ -10,7 +10,23 @@ services:
     volumes:
       - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./observability/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    depends_on:
+      - alertmanager
     restart: unless-stopped
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: dcutr-alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+    ports:
+      - '9093:9093'
+    volumes:
+      - ./observability/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    restart: unless-stopped
+
   grafana:
     image: grafana/grafana:11.2.0
     container_name: dcutr-grafana
@@ -24,5 +40,6 @@ services:
       - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
     depends_on:
       - prom
+      - alertmanager
     restart: unless-stopped
 volumes: {}
