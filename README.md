@@ -142,6 +142,12 @@ This codebase is treated as the operational shell of that high-value intelligenc
 - **Owner-tunable ceilings** — `buildResourceManagerConfig` now honors `NRM_MAX_CONNECTIONS/STREAMS/MEMORY_BYTES/FDS/BANDWIDTH_BPS` and publishes the active limits + live usage so operators can dial watermarks without redeploying; gauges land on `/metrics` instantly.【F:src/network/resourceManagerConfig.js†L1-L150】【F:src/telemetry/networkMetrics.js†L146-L210】
 - **Operator quickstart** — `docker-compose up prom grafana` autoloads datasource + dashboards, with panel thresholds pinned to the same values as the PromQL alerts (e.g., QUIC p95 > 500 ms, `nrm_denials_total` spike rate > 5/10m) so the colors you see in Grafana match what Alertmanager will page on.【F:docker-compose.yml†L1-L25】【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L6】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/alerts.yml†L1-L19】
 
+> **Libp2p cockpit quickstart (always-green view):**
+>
+> 1. **Run the stack:** `docker-compose up prom grafana` mounts `observability/grafana/libp2p_unified_dashboard.json` and `observability/prometheus/alerts.yml` automatically so every panel and alert is live without manual imports.【F:docker-compose.yml†L1-L25】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/alerts.yml†L1-L19】
+> 2. **Verify surfaces:** watch `nrm_denials_total` (per limit type), `net_quic_handshake_latency_ms` (p95), and Yamux stream gauges reset lines turn amber/red when thresholds breach, mirroring the PromQL alert values to keep dashboards and paging in sync.【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/alerts.yml†L1-L19】
+> 3. **Tune live:** adjust env vars consumed by `buildResourceManagerConfig` (connections, streams, memory, FDs, bandwidth) and confirm the new ceilings surface immediately in `nrm_limits`/`nrm_usage` without redeploying the node.【F:src/network/resourceManagerConfig.js†L1-L150】【F:src/telemetry/networkMetrics.js†L146-L210】
+
 ```mermaid
 flowchart LR
   classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
