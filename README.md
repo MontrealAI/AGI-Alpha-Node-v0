@@ -203,7 +203,51 @@ flowchart TB
   histogram_quantile(0.95, sum by (le, direction)(rate(net_connection_latency_ms_bucket{transport="quic"}[5m]))) > 500
   ```
 
-  Use Prometheus’ “Alerts” tab to confirm the rules are `firing`/`pending` while Grafana paints the same thresholds (1/s warning, 5/s paging for denials; 350 ms warning, 500 ms paging for QUIC p95) so visuals and paging stay in lockstep.【F:observability/prometheus/alerts.yml†L1-L45】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/prometheus.yml†L1-L12】
+   Use Prometheus’ “Alerts” tab to confirm the rules are `firing`/`pending` while Grafana paints the same thresholds (1/s warning, 5/s paging for denials; 350 ms warning, 500 ms paging for QUIC p95) so visuals and paging stay in lockstep.【F:observability/prometheus/alerts.yml†L1-L45】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/prometheus.yml†L1-L12】
+
+#### Instrumentation receipts (QUIC handshake + Yamux + NRM)
+
+- **QUIC handshake timers are first-class:** outbound dials capture start time on `dial:start` and observe `net_quic_handshake_latency_ms`/`net_connection_latency_ms{transport="quic"}` on success, guaranteeing transport-labeled latency histograms surface on `/metrics` and dashboards/alerts share the same source of truth.【F:src/network/libp2pHostConfig.js†L132-L200】【F:src/telemetry/networkMetrics.js†L114-L210】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】
+- **Yamux saturation is observable:** stream `open/close/reset` events update `yamux_streams_active` gauges (by direction) and `yamux_stream_resets_total` counters while stream-cap denials increment `nrm_denials_total{limit_type="streams"}` so gauges and denials stay correlated in Grafana and PromQL alerts.【F:src/network/libp2pHostConfig.js†L200-L286】【F:src/telemetry/networkMetrics.js†L166-L210】【F:src/network/resourceManagerConfig.js†L248-L420】
+- **Resource Manager usage vs. ceilings stays exported:** active `nrm_limits` + `nrm_usage` gauges reflect env-tuned ceilings (connections/streams/memory/fd/bandwidth) and live counts (global, per-ip/asn buckets) so operators can detect pressure before alerts trigger.【F:src/network/resourceManagerConfig.js†L1-L210】【F:src/telemetry/networkMetrics.js†L146-L210】
+- **Dashboards + alerts mirror the emitters:** the libp2p unified dashboard pins thresholds that match the Prometheus alert rules (1/s & 5/s denials, 350/500ms QUIC p95) so Grafana colors match Alertmanager paging without manual recalibration.【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/alerts.yml†L1-L45】
+
+```mermaid
+flowchart LR
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  subgraph Dials[QUIC handshake path]
+    DialStart[dial:start\nstart timer]:::frost
+    Handshake[conn_success\nrecord latency]:::neon
+  end
+
+  subgraph Streams[Yamux stream path]
+    Open[stream:open\n+ yamux_streams_active]:::neon
+    Reset[stream:reset\n+ yamux_stream_resets_total]:::lava
+    LimitHit[nrm_denials_total{limit_type="streams"}]:::lava
+  end
+
+  subgraph Metrics[Prometheus surface]
+    Hist[net_quic_handshake_latency_ms\nnet_connection_latency_ms{transport="quic"}]:::frost
+    Gauges[yamux_streams_active\n nrm_usage / nrm_limits]:::neon
+    Alerts[nrm_denials_total\n(alert rules)]:::lava
+  end
+
+  subgraph Dashboards[Grafana + Alerts]
+    Panel[libp2p unified dashboard\n(p95 + denials + streams)]:::frost
+    AlertWall[alerts.yml\n(rcmgr + QUIC)]:::lava
+  end
+
+  DialStart --> Handshake --> Hist
+  Open --> Gauges
+  Reset --> Gauges
+  LimitHit --> Alerts
+  Gauges --> Panel
+  Hist --> Panel
+  Alerts --> AlertWall
+```
 
 > **Libp2p cockpit quickstart (always-green view):**
 >
