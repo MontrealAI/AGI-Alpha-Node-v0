@@ -29,6 +29,7 @@ export function createNetworkMetrics({
 } = {}) {
   const registers = buildRegisters(registry);
   const liveConnections = { in: 0, out: 0 };
+  const liveYamuxStreams = { in: 0, out: 0 };
 
   const reachabilityStateGauge = new Gauge({
     name: 'net_reachability_state',
@@ -118,6 +119,20 @@ export function createNetworkMetrics({
     registers
   });
 
+  const nrmUsage = new Gauge({
+    name: 'nrm_usage',
+    help: 'Resource manager usage by resource class',
+    labelNames: ['resource'],
+    registers
+  });
+
+  const nrmLimits = new Gauge({
+    name: 'nrm_limits',
+    help: 'Configured resource manager limits by resource class',
+    labelNames: ['resource'],
+    registers
+  });
+
   const connmanagerTrimsTotal = new Counter({
     name: 'connmanager_trims_total',
     help: 'Connection manager peer trims grouped by reason',
@@ -151,6 +166,14 @@ export function createNetworkMetrics({
     registers
   });
 
+  const quicHandshakeLatency = new Histogram({
+    name: 'net_quic_handshake_latency_ms',
+    help: 'QUIC handshake completion latency in milliseconds grouped by direction',
+    labelNames: ['direction'],
+    buckets: [5, 10, 25, 50, 100, 250, 500, 1_000, 2_500, 5_000, 10_000],
+    registers
+  });
+
   const protocolLatency = new Histogram({
     name: 'net_protocol_latency_ms',
     help: 'Observed protocol latency in milliseconds grouped by protocol and direction',
@@ -172,6 +195,24 @@ export function createNetworkMetrics({
     labelNames: ['direction', 'protocol'],
     registers
   });
+
+  const yamuxStreamsActive = new Gauge({
+    name: 'yamux_streams_active',
+    help: 'Live Yamux streams grouped by direction',
+    labelNames: ['direction'],
+    registers
+  });
+
+  const yamuxStreamResetsTotal = new Counter({
+    name: 'yamux_stream_resets_total',
+    help: 'Yamux stream resets grouped by protocol',
+    labelNames: ['protocol'],
+    registers
+  });
+
+  ['in', 'out'].forEach((direction) =>
+    yamuxStreamsActive.set({ direction }, liveYamuxStreams[direction] ?? 0)
+  );
 
   updateReachabilityMetric({ reachabilityState: reachabilityStateGauge }, 'unknown');
 
@@ -222,11 +263,17 @@ export function createNetworkMetrics({
     protocolLatency,
     protocolBytesTotal,
     protocolMsgsTotal,
+    quicHandshakeLatency,
+    yamuxStreamsActive,
+    yamuxStreamResetsTotal,
     nrmDenialsTotal,
+    nrmUsage,
+    nrmLimits,
     connmanagerTrimsTotal,
     banlistEntries,
     banlistChangesTotal,
     liveConnections,
+    liveYamuxStreams,
     stop: () => bindings.forEach((unbind) => unbind?.())
   };
 }
@@ -237,6 +284,15 @@ export function recordConnectionLatency(metrics, { transport, direction = 'out',
   }
   const boundedLatency = latencyMs < 0 ? 0 : latencyMs;
   metrics.connectionLatency.observe({ transport, direction }, boundedLatency);
+}
+
+export function recordQuicHandshakeLatency(metrics, { direction = DEFAULT_DIRECTION, latencyMs }) {
+  if (!metrics?.quicHandshakeLatency || latencyMs === undefined || latencyMs === null) {
+    return;
+  }
+  const normalizedDirection = normalizeDirection(direction);
+  const boundedLatency = latencyMs < 0 ? 0 : latencyMs;
+  metrics.quicHandshakeLatency.observe({ direction: normalizedDirection }, boundedLatency);
 }
 
 export function recordProtocolLatency(metrics, { protocol, direction = DEFAULT_DIRECTION, latencyMs }) {
@@ -273,6 +329,31 @@ export function recordProtocolTraffic(
     const boundedMessages = messages < 0 ? 0 : messages;
     metrics.protocolMsgsTotal.inc({ direction: normalizedDirection, protocol: normalizedProtocol }, boundedMessages);
   }
+}
+
+export function recordYamuxStreamOpen(metrics, { direction = DEFAULT_DIRECTION } = {}) {
+  if (!metrics?.yamuxStreamsActive || !metrics?.liveYamuxStreams) return;
+  const normalizedDirection = normalizeDirection(direction);
+  metrics.liveYamuxStreams[normalizedDirection] = Math.max(
+    0,
+    (metrics.liveYamuxStreams[normalizedDirection] ?? 0) + 1
+  );
+  metrics.yamuxStreamsActive.set({ direction: normalizedDirection }, metrics.liveYamuxStreams[normalizedDirection]);
+}
+
+export function recordYamuxStreamClose(metrics, { direction = DEFAULT_DIRECTION } = {}) {
+  if (!metrics?.yamuxStreamsActive || !metrics?.liveYamuxStreams) return;
+  const normalizedDirection = normalizeDirection(direction);
+  metrics.liveYamuxStreams[normalizedDirection] = Math.max(
+    0,
+    (metrics.liveYamuxStreams[normalizedDirection] ?? 0) - 1
+  );
+  metrics.yamuxStreamsActive.set({ direction: normalizedDirection }, metrics.liveYamuxStreams[normalizedDirection]);
+}
+
+export function recordYamuxStreamReset(metrics, { protocol } = {}) {
+  const normalizedProtocol = normalizeProtocol(protocol);
+  metrics?.yamuxStreamResetsTotal?.inc?.({ protocol: normalizedProtocol });
 }
 
 function normalizeDirection(direction) {
@@ -341,6 +422,36 @@ export function updateReachabilityMetric(metrics, state = 'unknown') {
   const normalizedState = String(state ?? 'unknown').toLowerCase();
   const code = REACHABILITY_CODES[normalizedState] ?? REACHABILITY_CODES.unknown;
   metrics.reachabilityState.set(code);
+}
+
+export function publishResourceManagerLimits(metrics, limits = {}) {
+  if (!metrics?.nrmLimits) return;
+  const entries = [
+    ['connections', limits.global?.maxConnections],
+    ['streams', limits.global?.maxStreams],
+    ['memory_bytes', limits.global?.maxMemoryBytes],
+    ['fds', limits.global?.maxFds],
+    ['bandwidth_bps', limits.global?.maxBandwidthBps],
+    ['per_ip', limits.ipLimiter?.maxConnsPerIp],
+    ['per_asn', limits.ipLimiter?.maxConnsPerAsn]
+  ];
+  entries
+    .filter(([, value]) => Number.isFinite(value))
+    .forEach(([resource, value]) => metrics.nrmLimits.set({ resource }, value));
+}
+
+export function publishResourceManagerUsage(metrics, usage = {}) {
+  if (!metrics?.nrmUsage) return;
+  const safeSet = (resource, value) => metrics.nrmUsage.set({ resource }, Math.max(0, value ?? 0));
+  safeSet('connections_total', usage.connections);
+  safeSet('connections_inbound', usage.inbound);
+  safeSet('connections_outbound', usage.outbound);
+  safeSet('streams_total', usage.streams);
+  safeSet('ip_buckets', usage.ipConns ?? 0);
+  safeSet('asn_buckets', usage.asnConns ?? 0);
+  if (Number.isFinite(usage.memoryBytes)) {
+    safeSet('memory_bytes', usage.memoryBytes);
+  }
 }
 
 export function recordAutonatProbe(metrics, { success = true } = {}) {

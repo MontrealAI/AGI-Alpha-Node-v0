@@ -1,0 +1,24 @@
+groups:
+  - name: libp2p-nrm
+    rules:
+      - alert: ResourceManagerDenialsSustained
+        expr: rate(nrm_denials_total[10m]) > 5
+        for: 5m
+        labels:
+          severity: warning
+          team: agi-alpha
+        annotations:
+          summary: "Resource manager denials are sustained"
+          description: |
+            Resource manager denials by limit type have exceeded safe thresholds for five minutes.
+            Inspect limit_type and protocol labels to determine whether IP/ASN caps or per-protocol ceilings are too strict or under attack.
+      - alert: QuicHandshakeLatencyHigh
+        expr: histogram_quantile(0.95, sum(rate(net_quic_handshake_latency_ms_bucket[5m])) by (le)) > 500
+        for: 5m
+        labels:
+          severity: warning
+          team: agi-alpha
+        annotations:
+          summary: "QUIC handshake latency p95 elevated"
+          description: |
+            QUIC handshake p95 is above 500ms for at least five minutes. Investigate transport posture, relay usage, or network interference.

@@ -13,7 +13,7 @@
     "demo:local": "node scripts/local_cluster.mjs",
     "lint:md": "cross-env MARKDOWNLINTCLI2_FORMATTER=markdownlint-cli2-formatter-pretty markdownlint-cli2 \"**/*.md\" \"!**/node_modules/**\"",
     "lint:links": "markdown-link-check -c .markdown-link-check.json README.md docs/README.md docs/manifesto.md docs/economics.md docs/identity.md --quiet",
-    "lint:grafana": "node scripts/lint-grafana-dashboard.mjs observability/grafana/dcutr_dashboard.json",
+    "lint:grafana": "node scripts/lint-grafana-dashboard.mjs observability/grafana/dcutr_dashboard.json observability/grafana/libp2p_unified_dashboard.json",
     "lint": "npm run lint:md && npm run lint:links && npm run lint:grafana",
     "test": "vitest run --passWithNoTests=false",
     "test:frontend": "vitest run --config dashboard/vitest.config.js --passWithNoTests=false",

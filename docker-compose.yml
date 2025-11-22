@@ -9,6 +9,7 @@ services:
       - '9090:9090'
     volumes:
       - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./observability/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
     restart: unless-stopped
   grafana:
     image: grafana/grafana:11.2.0

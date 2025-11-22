@@ -48,6 +48,28 @@ describe('resourceManagerConfig', () => {
       })
     ).toThrow('high_water');
   });
+
+  it('honors explicit NRM ceilings and surfaces gauges', async () => {
+    const registry = new Registry();
+    const metrics = createNetworkMetrics({ registry });
+    const config = buildResourceManagerConfig({
+      config: {
+        NRM_MAX_CONNECTIONS: 200,
+        NRM_MAX_STREAMS: 400,
+        NRM_MAX_MEMORY_BYTES: 1024,
+        NRM_MAX_FDS: 64,
+        NRM_MAX_BANDWIDTH_BPS: 123456
+      }
+    });
+    const manager = new ResourceManager({ limits: config, metrics });
+    expect(manager.limits.global.maxConnections).toBe(200);
+    expect(manager.limits.global.maxStreams).toBe(400);
+
+    const metricsJson = await registry.getMetricsAsJSON();
+    const limitsGauge = metricsJson.find((metric) => metric.name === 'nrm_limits');
+    const connectionLimit = limitsGauge?.values?.find((entry) => entry.labels.resource === 'connections');
+    expect(connectionLimit?.value).toBe(200);
+  });
 });
 
 describe('ResourceManager guards', () => {

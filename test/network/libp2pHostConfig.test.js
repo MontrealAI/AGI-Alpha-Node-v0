@@ -141,7 +141,11 @@ describe('libp2pHostConfig', () => {
       connectionsClose: { inc: vi.fn() },
       connectionsLive: { set: vi.fn() },
       liveConnections: { in: 0, out: 0 },
-      connectionLatency: { observe: vi.fn() }
+      connectionLatency: { observe: vi.fn() },
+      quicHandshakeLatency: { observe: vi.fn() },
+      yamuxStreamsActive: { set: vi.fn() },
+      yamuxStreamResetsTotal: { inc: vi.fn() },
+      liveYamuxStreams: { in: 0, out: 0 }
     };
     const events = [];
     const tracer = createTransportTracer({
@@ -178,6 +182,19 @@ describe('libp2pHostConfig', () => {
       direction: 'in'
     });
 
+    fakeLibp2p.dispatchEvent('stream:open', {
+      connection: { stat: { direction: 'out', multiplexer: 'yamux' } },
+      stream: { protocol: 'chat/1.0.0' }
+    });
+    fakeLibp2p.dispatchEvent('stream:reset', {
+      connection: { stat: { direction: 'out', multiplexer: 'yamux' } },
+      stream: { protocol: 'chat/1.0.0' }
+    });
+    fakeLibp2p.dispatchEvent('stream:close', {
+      connection: { stat: { direction: 'out', multiplexer: 'yamux' } },
+      stream: { protocol: 'chat/1.0.0' }
+    });
+
     unbind();
 
     expect(metrics.dialAttempts.inc).toHaveBeenCalledTimes(2);
@@ -189,6 +206,9 @@ describe('libp2pHostConfig', () => {
     expect(metrics.connectionsOpen.inc).toHaveBeenCalledTimes(2);
     expect(metrics.connectionsClose.inc).toHaveBeenCalledWith({ direction: 'in', reason: 'timeout' });
     expect(metrics.connectionsLive.set).toHaveBeenCalled();
+    expect(metrics.quicHandshakeLatency.observe).toHaveBeenCalled();
+    expect(metrics.yamuxStreamsActive.set).toHaveBeenCalledWith({ direction: 'out' }, expect.any(Number));
+    expect(metrics.yamuxStreamResetsTotal.inc).toHaveBeenCalledWith({ protocol: 'chat/1.0.0' });
     expect(events.map((event) => event.message)).toEqual([
       'conn_open',
       'conn_success',

@@ -26,29 +26,40 @@ function validatePanel(panel, index, idSet) {
 }
 
 async function main() {
-  const [filePath = 'observability/grafana/dcutr_dashboard.json'] = process.argv.slice(2);
-  try {
-    const raw = await readFile(filePath, 'utf8');
-    let parsed;
+  const fileArgs = process.argv.slice(2);
+  const filePaths =
+    fileArgs.length > 0
+      ? fileArgs
+      : [
+          'observability/grafana/dcutr_dashboard.json',
+          'observability/grafana/libp2p_unified_dashboard.json'
+        ];
+
+  for (const filePath of filePaths) {
     try {
-      parsed = JSON.parse(raw);
+      const raw = await readFile(filePath, 'utf8');
+      let parsed;
+      try {
+        parsed = JSON.parse(raw);
+      } catch (error) {
+        fail(`invalid JSON in ${filePath}: ${(error instanceof Error ? error.message : 'unknown parse error')}`);
+        continue;
+      }
+
+      ensure(parsed && typeof parsed === 'object', `dashboard root must be an object (${filePath})`);
+      ensure(typeof parsed.uid === 'string' && parsed.uid.length > 0, `dashboard uid missing (${filePath})`);
+      ensure(typeof parsed.title === 'string' && parsed.title.length > 0, `dashboard title missing (${filePath})`);
+      ensure(Array.isArray(parsed.panels) && parsed.panels.length > 0, `dashboard panels missing (${filePath})`);
+
+      const ids = new Set();
+      parsed.panels.forEach((panel, index) => validatePanel(panel, index, ids));
+
+      if (!process.exitCode) {
+        console.log(`grafana dashboards lint ${basename(filePath)}: ok (${parsed.panels.length} panels)`);
+      }
     } catch (error) {
-      fail(`invalid JSON: ${(error instanceof Error ? error.message : 'unknown parse error')}`);
-      return;
+      fail(error instanceof Error ? error.message : 'unknown error');
     }
-
-    ensure(parsed && typeof parsed === 'object', 'dashboard root must be an object');
-    ensure(typeof parsed.uid === 'string' && parsed.uid.length > 0, 'dashboard uid missing');
-    ensure(typeof parsed.title === 'string' && parsed.title.length > 0, 'dashboard title missing');
-    ensure(Array.isArray(parsed.panels) && parsed.panels.length > 0, 'dashboard panels missing');
-
-    const ids = new Set();
-    parsed.panels.forEach((panel, index) => validatePanel(panel, index, ids));
-
-    if (process.exitCode) return;
-    console.log(`grafana dashboards lint ${basename(filePath)}: ok (${parsed.panels.length} panels)`);
-  } catch (error) {
-    fail(error instanceof Error ? error.message : 'unknown error');
   }
 }
 
