@@ -200,6 +200,18 @@ flowchart TB
 2. **Resource manager pressure smoke:** run `npm run p2p:load-tests` to drive connection/stream denials and confirm `nrm_denials_total` increments alongside `nrm_limits`/`nrm_usage` gauges; thresholds in the Grafana libp2p dashboard should light up in lock‑step with the Prometheus alerts.【F:src/network/resourceManagerConfig.js†L1-L210】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/alerts.yml†L1-L45】
 3. **Alert loop confidence:** open Prometheus on :9090 and check **Status → Rules** to verify `ResourceManagerDenialsWarning/Critical` and `QuicHandshakeLatencyWarning/Critical` states transition when you perturb the harness; Grafana thresholds are pinned to the same PromQL so dashboards and paging stay synchronized.【F:observability/prometheus/alerts.yml†L1-L45】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】
 
+### Resource posture quick-tune grid (owner dial map)
+
+| Dial | Environment flag | Default ceiling | Where it surfaces |
+| --- | --- | --- | --- |
+| Connections | `NRM_MAX_CONNECTIONS` | 1,024 | `nrm_limits{limit_type="connections"}` + `nrm_usage` gauges; watermarks derive adaptive low/high when unset.【F:src/network/resourceManagerConfig.js†L17-L122】【F:observability/docs/RCMGR.md†L1-L32】 |
+| Streams | `NRM_MAX_STREAMS` | 8,192 | Gauge pairs + Grafana thresholds (warn ≥1/s denials, crit ≥5/s).【F:src/network/resourceManagerConfig.js†L90-L150】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】 |
+| Memory | `NRM_MAX_MEMORY_BYTES` | 512 MiB | Prometheus usage/limit gauges; alerts fire on sustained denials by limit type.【F:src/network/resourceManagerConfig.js†L60-L90】【F:observability/prometheus/alerts.yml†L1-L45】 |
+| File descriptors | `NRM_MAX_FDS` | 2,048 | Surfaces in gauges and connection-manager pruning behavior.【F:src/network/resourceManagerConfig.js†L17-L122】 |
+| Bandwidth | `NRM_MAX_BANDWIDTH_BPS` | 64 MiB/s | Available to override during high-throughput bursts; reflected in dashboards.【F:src/network/resourceManagerConfig.js†L17-L90】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】 |
+| Adaptive pruning | `CONN_LOW_WATER` / `CONN_HIGH_WATER` | Derived from connections ceiling (≈50%/≈85%) | Auto-aligns pruning with ceilings; override only for bespoke envelope testing.【F:src/network/resourceManagerConfig.js†L180-L232】【F:observability/docs/RCMGR.md†L1-L32】 |
+| Per-protocol overrides | `NRM_LIMITS_JSON` / `NRM_LIMITS_PATH` | Template in `config/rcmgr-limits.sample.json` | Safely clamp or extend specific protocols/peers; dashboards/alerts mirror the overrides live.【F:config/rcmgr-limits.sample.json†L1-L20】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】 |
+
 ### Unified libp2p observability wall (panels + alerts + owner controls)
 
 - **Libp2p cockpit in one pane:** the `observability/grafana/libp2p_unified_dashboard.json` packs rcmgr denials (`nrm_denials_total` with limit/protocol labels), QUIC handshake latency (p95 from `net_connection_latency_ms{transport="quic"}`), and Yamux stream gauges into a single page, pre-provisioned through `grafana/provisioning/dashboards/dcutr.yaml`. Threshold bands mirror PromQL alerts so red/amber bars line up with paging.【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L33】
