@@ -335,6 +335,21 @@ flowchart LR
 
 **Mermaid render assurance:** The README’s mermaid canvases and Grafana JSON stay GitHub-page friendly by linting both Markdown fences and dashboards inside CI; if anything drifts, `npm run lint:md && npm run lint:grafana` will flag it before publish, keeping every diagram visible on GitHub Pages without manual tweaks.【F:package.json†L13-L47】【F:scripts/lint-grafana-dashboard.mjs†L1-L62】
 
+### CI wall (badge ↔ workflow ↔ local command)
+
+| Required check label | Workflow job | Local parity command |
+| --- | --- | --- |
+| Lint Markdown & Links | `lint` | `npm run lint:md && npm run lint:links && npm run lint:grafana` |
+| Unit, Integration & Frontend Tests | `test` | `npm run ci:test` |
+| Coverage Report | `coverage` | `npm run coverage` |
+| Docker Build & Smoke Test | `docker` | `npm run ci:branch && npm run ci:policy` (invoked automatically by CI Docker job) |
+| Solidity Lint & Compile | `solidity` | `npm run ci:solidity` |
+| Subgraph TypeScript Build | `typescript` | `npm run ci:ts` |
+| Dependency Security Scan | `security` | `npm run ci:security` |
+| Full CI Verification | `verify` | `npm run ci:verify` |
+
+Badges at the top of this README point at the same workflow runs, and `.github/required-checks.json` mirrors the labels above so branch protection can enforce the exact green wall seen on GitHub Actions.【F:.github/workflows/ci.yml†L1-L260】【F:.github/required-checks.json†L1-L10】
+
 ```mermaid
 flowchart LR
   classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
