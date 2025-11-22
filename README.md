@@ -212,6 +212,47 @@ flowchart TB
 - **Yamux streams/resets:** saturation lines at 50/100 active streams and 5/10 resets per second with right-axis overrides to separate the rates from stream counts.
 - **Owner overrides:** `NRM_MAX_*` env vars reconfigure live ceilings, and values instantly reflect in `/metrics` via `nrm_limits`/`nrm_usage`, keeping dashboards truthful after retunes.
 
+> **Always-green verification loop:**
+>
+> 1) Run `npm run lint:grafana` locally (or let CI do it) to ensure dashboards and mermaid blocks stay GitHub-renderable before publishing.【F:package.json†L15-L47】【F:scripts/lint-grafana-dashboard.mjs†L1-L62】
+> 2) Bring up `docker-compose up prom grafana` and open Prometheus ➜ Alerts to confirm both `ResourceManagerDenialsSustained` and `QuicHandshakeLatencyHigh` reach `Inactive` ➜ `Pending` ➜ `Firing` when you nudge thresholds via the harness or env var overrides.【F:docker-compose.yml†L1-L21】【F:observability/prometheus/alerts.yml†L1-L19】
+> 3) Keep branch protections aligned with `.github/required-checks.json` so every badge that reads “Required Checks” maps to an enforced gate on PRs and `main`—no silent regressions sneak through CI.【F:.github/required-checks.json†L1-L10】【F:.github/workflows/ci.yml†L1-L260】
+
+```mermaid
+flowchart LR
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  subgraph CI[CI wall]
+    LintMD[Lint markdown + links]:::lava
+    LintDash[lint:grafana\n(mermaid-safe)]:::frost
+    Tests[Vitest + solc + coverage]:::neon
+  end
+
+  subgraph Observability[Prometheus ↔ Grafana]
+    Alerts[/alerts.yml\n(rcmgr + QUIC)]:::lava
+    Dash[libp2p_unified_dashboard.json]:::frost
+    Compose[docker-compose up prom grafana]:::neon
+  end
+
+  subgraph Owner[Owner controls]
+    Limits[NRM_MAX_* envs]:::lava
+    Harness[observability:dcutr-harness]:::frost
+  end
+
+  LintMD --> Dash
+  LintDash --> Dash
+  Tests --> Alerts
+  Compose --> Alerts
+  Compose --> Dash
+  Limits --> Alerts
+  Limits --> Dash
+  Harness --> Alerts
+  Harness --> Dash
+  class CI,Observability,Owner neon;
+```
+
 ```mermaid
 flowchart LR
   classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
