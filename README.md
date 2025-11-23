@@ -134,9 +134,9 @@ flowchart TD
   classDef ember fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
   classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
 
-  Owner[Owner keys\n$AGIALPHA authority]:::neon --> Manager[AlphaNodeManager\npause | validators | stake]:::ember
+  Owner[Owner keys\n$AGIALPHA authority]:::neon --> Manager[AlphaNodeManager\npause + validators + stake]:::ember
   Owner --> Treasury[TreasuryExecutor\nintent-ledger\nowner sweep]:::ember
-  Manager --> Metrics[/metrics\nNRM | Yamux | QUIC | DCUtR]:::frost
+  Manager --> Metrics[/metrics\nNRM · Yamux · QUIC · DCUtR]:::frost
   Metrics --> Dashboards[Grafana + Prometheus\nprovisioned JSON + alerts]:::neon
   Dashboards --> CI[CI badges + branch gates\n`.github/workflows/ci.yml`]:::frost
   CI --> Protection[Branch protection\nrequired checks enforced]:::ember
@@ -186,7 +186,7 @@ flowchart LR
   classDef pulse fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
   classDef violet fill:#111827,stroke:#9333ea,stroke-width:2px,color:#ede9fe;
 
-  Metrics[/AGI Alpha Node\n`/metrics`\n(nrm_limits | yamux | quic)]:::neon --> Prom[(Prometheus\n`prometheus.yml` + `alerts.yml`)]:::pulse
+  Metrics[/AGI Alpha Node\n`/metrics`\n(nrm_limits · yamux · quic)]:::neon --> Prom[(Prometheus\n`prometheus.yml` + `alerts.yml`)]:::pulse
   Prom --> Alert[Alertmanager\npre-wired routes]:::violet
   Prom --> Graf[Grafana\nlibp2p + DCUtR dashboards]:::pulse
   Graf --> Owner[Owner console\nthreshed tiles + runbooks]:::neon
@@ -399,7 +399,7 @@ flowchart TB
   end
 
   subgraph CI[CI enforcement]
-    CIWall[ci.yml jobs\n(lint|tests|coverage|solidity|subgraph|docker|security)]:::frost
+    CIWall[ci.yml jobs\n(lint · tests · coverage · solidity · subgraph · docker · security)]:::frost
     BranchGate[.github/required-checks.json\nPR protection template]:::lava
   end
 
@@ -713,7 +713,7 @@ flowchart LR
 
   subgraph Grafana[Grafana cockpit]
     Libp2pDash[libp2p_unified_dashboard.json\n(thresholded panels)]:::lava
-    Thresholds[Warning/Critical lines\n(1/s|5/s, 350/500ms)]:::frost
+    Thresholds[Warning/Critical lines\n(1/s → 5/s, 350/500ms)]:::frost
   end
 
   Metrics((/metrics)):::neon
