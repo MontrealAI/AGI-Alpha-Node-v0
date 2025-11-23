@@ -20,6 +20,8 @@
   <a href="docs/deployment/branch-protection.md#enforce-required-checks">
     <img src="https://img.shields.io/badge/PRs-enforced%20status%20wall-22c55e?logo=github" alt="PR enforcement" />
   </a>
+  <img src="https://img.shields.io/badge/Coverage-gated%20%E2%89%A585%25-22c55e?logo=codecov" alt="Coverage gate" />
+  <img src="https://img.shields.io/badge/Security-high%20severity%20blocked-f43f5e?logo=npm" alt="Security gate" />
   <a href="https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa">
     <img src="https://img.shields.io/badge/$AGIALPHA-0xa61a...a1fa-ec4899?logo=ethereum&logoColor=white" alt="$AGIALPHA" />
   </a>
@@ -32,6 +34,8 @@
 </p>
 
 AGI Alpha Node v0 is the owner-controlled intelligence engine that braids on-chain authority, libp2p runtime governance, and a fully provisioned observability wall. Every surface is tuned so the owner can pause, retune, or redirect the platform in a single transaction while the CI wall keeps the repository deployment-ready. The node is designed to act as the decisive intelligence substrate for high-stakes orchestration while keeping owner override levers visible, auditable, and safe to trigger. The canonical token contract is anchored at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals) so treasury, staking, and governance always remain under explicit owner command.
+
+The repository is curated as a production cockpit: mermaid diagrams lint for GitHub parity, coverage is gated at 85%+, dependency security is enforced on every PR, and branch protection mirrors the exact checks documented below so the CI badge is always green and visible.
 
 ---
 
@@ -52,7 +56,7 @@ AGI Alpha Node v0 is the owner-controlled intelligence engine that braids on-cha
 ## System map
 
 ```mermaid
-%%{init: { 'theme': 'forest', 'themeVariables': { 'primaryColor': '#0f172a', 'primaryTextColor': '#e2e8f0', 'lineColor': '#22c55e', 'secondaryColor': '#9333ea', 'tertiaryColor': '#0ea5e9' } }}%%
+%%{init: { "theme": "forest", "themeVariables": { "primaryColor": "#0f172a", "primaryTextColor": "#e2e8f0", "lineColor": "#22c55e", "secondaryColor": "#9333ea", "tertiaryColor": "#0ea5e9" } }}%%
 flowchart LR
   classDef neon fill:#0f172a,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
   classDef ember fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
@@ -71,7 +75,7 @@ flowchart LR
 ```
 
 ```mermaid
-%%{init: { 'theme': 'forest', 'themeVariables': { 'primaryColor': '#0b1120', 'primaryTextColor': '#e2e8f0', 'lineColor': '#22c55e', 'secondaryColor': '#f97316', 'tertiaryColor': '#38bdf8' } }}%%
+%%{init: { "theme": "forest", "themeVariables": { "primaryColor": "#0b1120", "primaryTextColor": "#e2e8f0", "lineColor": "#22c55e", "secondaryColor": "#f97316", "tertiaryColor": "#38bdf8" } }}%%
 flowchart TD
   classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
   classDef ember fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
@@ -114,7 +118,7 @@ $AGIALPHA is pinned to contract address `0xa61a3b3a130a9c20768eebf97e21515a6046a
 Source: [`contracts/AlphaNodeManager.sol`](contracts/AlphaNodeManager.sol)
 
 ```mermaid
-%%{init: { 'theme': 'forest', 'themeVariables': { 'primaryColor': '#0b1120', 'primaryTextColor': '#e2e8f0', 'lineColor': '#22d3ee', 'secondaryColor': '#f97316', 'tertiaryColor': '#9333ea' } }}%%
+%%{init: { "theme": "forest", "themeVariables": { "primaryColor": "#0b1120", "primaryTextColor": "#e2e8f0", "lineColor": "#22d3ee", "secondaryColor": "#f97316", "tertiaryColor": "#9333ea" } }}%%
 flowchart TD
   classDef neon fill:#0b1120,stroke:#22d3ee,stroke-width:2px,color:#e2e8f0;
   classDef ember fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
@@ -137,7 +141,7 @@ flowchart TD
 - Docker Compose starts Prometheus, Grafana, and Alertmanager with wired dashboards (`libp2p_unified_dashboard.json`, `dcutr_dashboard.json`) and alert rules (`alerts.yml`) on first load. Sources: [`docker-compose.yml`](docker-compose.yml), [`observability/prometheus/alerts.yml`](observability/prometheus/alerts.yml), [`grafana/provisioning/dashboards/libp2p.yaml`](grafana/provisioning/dashboards/libp2p.yaml).
 
 ```mermaid
-%%{init: { 'theme': 'forest', 'themeVariables': { 'primaryColor': '#0f172a', 'primaryTextColor': '#e2e8f0', 'lineColor': '#22c55e', 'secondaryColor': '#0ea5e9', 'tertiaryColor': '#f97316' } }}%%
+%%{init: { "theme": "forest", "themeVariables": { "primaryColor": "#0f172a", "primaryTextColor": "#e2e8f0", "lineColor": "#22c55e", "secondaryColor": "#0ea5e9", "tertiaryColor": "#f97316" } }}%%
 flowchart LR
   classDef neon fill:#0f172a,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
   classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
@@ -173,7 +177,7 @@ The CI wall is the single source of truth for merging. Every gate is required on
 | Full CI Verification | Aggregated enforcement matching `ci:verify`. |
 
 ```mermaid
-%%{init: { 'theme': 'forest', 'themeVariables': { 'primaryColor': '#0f172a', 'primaryTextColor': '#e2e8f0', 'lineColor': '#22d3ee', 'secondaryColor': '#9333ea', 'tertiaryColor': '#f97316' } }}%%
+%%{init: { "theme": "forest", "themeVariables": { "primaryColor": "#0f172a", "primaryTextColor": "#e2e8f0", "lineColor": "#22d3ee", "secondaryColor": "#9333ea", "tertiaryColor": "#f97316" } }}%%
 flowchart TD
   classDef neon fill:#0f172a,stroke:#22d3ee,stroke-width:2px,color:#e2e8f0;
   classDef ember fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
@@ -217,7 +221,7 @@ The canonical `$AGIALPHA` deployment at `0xa61a3b3a130a9c20768eebf97e21515a6046a
 | Canonical token guardrail | Constructor enforces `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` | Rejects non-canonical token bindings to prevent drift from `$AGIALPHA`. | Deployment logs and Solidity checks validate the binding; CI solidity gate re-runs the constraint. |
 
 ```mermaid
-%%{init: { 'theme': 'forest', 'themeVariables': { 'primaryColor': '#0f172a', 'primaryTextColor': '#e2e8f0', 'lineColor': '#f97316', 'secondaryColor': '#22c55e', 'tertiaryColor': '#38bdf8' } }}%%
+%%{init: { "theme": "forest", "themeVariables": { "primaryColor": "#0f172a", "primaryTextColor": "#e2e8f0", "lineColor": "#f97316", "secondaryColor": "#22c55e", "tertiaryColor": "#38bdf8" } }}%%
 flowchart LR
   classDef neon fill:#0f172a,stroke:#f97316,stroke-width:2px,color:#ffeedd;
   classDef ember fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
@@ -272,3 +276,5 @@ flowchart LR
 - DCUtR metrics and dashboard import: [`observability/docs/METRICS.md`](observability/docs/METRICS.md), [`observability/docs/DASHBOARD.md`](observability/docs/DASHBOARD.md)
 
 AGI Alpha Node v0 is engineered so the owner can reshape validator, identity, treasury, and network posture instantly while the telemetry wall and CI gates keep every change observable, reproducible, and green.
+
+Every control in this repository is wired so the owner can steer the platform like a singular intelligence core: pausing live flows, rewriting validator/identity maps, sweeping stake, and pivoting runtime posture with the same confidence shown by the green CI badge. The result is a cockpit that delivers outsized leverage to the owner while keeping every move accountable and visible to operators, auditors, and automated guardians.
