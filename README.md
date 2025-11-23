@@ -182,6 +182,19 @@ flowchart LR
 5. **Simulate pressure to see alerts fire:** drive network load with `npm run p2p:load-tests` or the DCUtR emitter (`npm run observability:dcutr-harness`) to push `nrm_denials_total` and QUIC handshake buckets; watch Prometheus “Alerts” and Grafana panels flip through warning/critical bands, confirming mermaid-rendered README diagrams match live tiles.【F:package.json†L47-L50】【F:scripts/dcutr-harness.ts†L1-L28】【F:observability/prometheus/alerts.yml†L1-L45】
 6. **Enforce badges on PRs:** apply the `.github/required-checks.json` array to GitHub branch protection so the CI badge wall reflects blocking gates on `main` and every PR—keeping “fully green” the default state and preventing merges when any lint/test/coverage/security step regresses.【F:.github/required-checks.json†L1-L10】【F:.github/workflows/ci.yml†L1-L260】
 
+### Branch-protection recipe (keeps CI green by default)
+
+| Status check (GitHub) | Source job | Purpose |
+| --- | --- | --- |
+| Lint Markdown & Links | `lint-md-links` | Guards README/docs/mermaid rendering + link health so GitHub and Pages always render diagrams correctly.【F:.github/workflows/ci.yml†L10-L69】 |
+| Unit, Integration & Frontend Tests | `tests` | Keeps node/runtime/front-end surfaces stable with vitest parity to local `npm run test && npm run test:frontend`.【F:.github/workflows/ci.yml†L71-L132】 |
+| Coverage Report | `coverage` | Enforces ≥85/80 line/branch coverage for telemetry + networking paths, matching `npm run coverage`.【F:.github/workflows/ci.yml†L134-L169】【F:package.json†L23-L38】 |
+| Docker Build & Smoke Test | `docker` | Builds the runtime image and exercises the entrypoint/help to prove container deployability before release.【F:.github/workflows/ci.yml†L171-L207】 |
+| Solidity Lint & Compile | `solidity` | Runs solhint + solc to protect the `$AGIALPHA` control plane and ensure owner controls stay uncompromised.【F:.github/workflows/ci.yml†L209-L232】 |
+| Subgraph TypeScript Build | `subgraph` | Compiles/generates the subgraph so observability + indexing remain compatible with on-chain state.【F:.github/workflows/ci.yml†L234-L251】 |
+| Dependency Security Scan | `security` | Blocks merges on high severity advisories to keep the operator cockpit hardened.【F:.github/workflows/ci.yml†L253-L260】 |
+| Full CI Verification | branch protection aggregate | Mirrors `npm run ci:verify` locally; enable this as a required check in GitHub’s “Branch protection rules” UI using `.github/required-checks.json` as the authoritative list.【F:.github/required-checks.json†L1-L10】【F:package.json†L23-L47】 |
+
 ### Owner controls + metric surfaces (fast map)
 
 - **Total owner command:** `contracts/AlphaNodeManager.sol` exposes pause/unpause, validator activation, ENS identity rotation, stake withdrawal, and identity gating through owner-only entrypoints—keeping treasury, validator set, and operational posture under a single keyholder.【F:contracts/AlphaNodeManager.sol†L1-L132】
