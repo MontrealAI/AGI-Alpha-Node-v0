@@ -25,7 +25,7 @@
   </a>
 </p>
 
-AGI Alpha Node v0 is the owner-controlled intelligence engine that braids on-chain authority, libp2p runtime governance, and a fully provisioned observability wall. Every surface is tuned so the owner can pause, retune, or redirect the platform in a single transaction while the CI wall keeps the repository deployment-ready.
+AGI Alpha Node v0 is the owner-controlled intelligence engine that braids on-chain authority, libp2p runtime governance, and a fully provisioned observability wall. Every surface is tuned so the owner can pause, retune, or redirect the platform in a single transaction while the CI wall keeps the repository deployment-ready. The node is designed to act as the decisive intelligence substrate for high-stakes orchestration while keeping owner override levers visible, auditable, and safe to trigger.
 
 ---
 
@@ -38,6 +38,7 @@ AGI Alpha Node v0 is the owner-controlled intelligence engine that braids on-cha
 - [CI and branch protection](#ci-and-branch-protection)
 - [Quick start](#quick-start)
 - [Testing and validation](#testing-and-validation)
+- [Operational guarantees](#operational-guarantees)
 - [Runbooks and references](#runbooks-and-references)
 
 ## System map
@@ -63,11 +64,14 @@ flowchart LR
 
 ## What lives here
 
-- **Runtime:** [`src/`](src/) — libp2p host, governance API (`/governance/*`), metrics exporters, and resource manager wiring aligned to the observability stack.
-- **On-chain authority:** [`contracts/`](contracts/) — `$AGIALPHA` control plane with owner-only pause/unpause, validator gating, ENS identity routing, and staking commands.
+- **Runtime:** [`src/`](src/) — libp2p host, governance API (`/governance/*`), metrics exporters, resource manager wiring, and persistence tooling tuned to the observability stack.
+- **On-chain authority:** [`contracts/`](contracts/) — `$AGIALPHA` control plane with owner-only pause/unpause, validator gating, ENS identity routing, staking commands, and canonical token enforcement at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals).
 - **Treasury/orchestration:** [`scripts/treasury/`](scripts/treasury/) + [`contracts/TreasuryExecutor.sol`](contracts/TreasuryExecutor.sol) — intent collection, Dilithium envelope handling, and owner override sweeps.
 - **Observability:** [`observability/`](observability/) + [`grafana/provisioning/`](grafana/provisioning/) + [`docker-compose.yml`](docker-compose.yml) — Prometheus scrape config, alert rules, Grafana dashboards, and Alertmanager routes provisioned on first boot.
 - **Dashboard app:** [`dashboard/`](dashboard/) — Vite/React cockpit for runtime status and operator workflows.
+- **Indexing:** [`subgraph/`](subgraph/) — build + codegen for the indexing layer that tracks on-chain authority and emits type-safe bindings.
+- **Deploy + ops:** [`deploy/`](deploy/), [`config/`](config/), and [`scripts/`](scripts/) — first-boot configuration, branch/health gate scripts, Docker and P2P simulators, database migrations, and CI helpers.
+- **Runbooks + proofs:** [`docs/`](docs/) and [`observability/docs/`](observability/docs/) — operational runbooks, threat modeling, economics/identity references, and telemetry dashboards.
 - **CI enforcement:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) + [`.github/required-checks.json`](.github/required-checks.json) — single-source list of required checks mirrored by local `npm run ci:verify`.
 
 ## Smart contract control surface
@@ -79,6 +83,7 @@ $AGIALPHA is pinned to contract address `0xa61a3b3a130a9c20768eebf97e21515a6046a
 - **Identity routing:** `registerIdentity`, `updateIdentityController`, `setIdentityStatus`, `revokeIdentity` keep ENS-bound controllers aligned with the active operator set.
 - **Stake custody:** `withdrawStake(recipient, amount)` lets the owner move staked balances.
 - **Token safety:** the constructor refuses non-canonical token addresses unless the canonical `$AGIALPHA` is provided.
+- **Runtime override:** owner-controlled pausing, validator toggles, identity rotation, and stake withdrawal are designed to be exercised live while telemetry + CI keep changes observable.
 
 Source: [`contracts/AlphaNodeManager.sol`](contracts/AlphaNodeManager.sol)
 
@@ -126,6 +131,7 @@ The CI wall is the single source of truth for merging. Every gate is required on
 - **Workflow:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) fans out linting, tests, coverage, Solidity checks, subgraph build, Docker smoke, and security audit before the aggregate `verify` stage.
 - **Required checks:** [`.github/required-checks.json`](.github/required-checks.json) lists the exact status checks to enforce in GitHub branch protection (recommended: apply to `main` and all PRs).
 - **Local parity:** `npm run ci:verify` executes the same gates so contributors can keep the badge wall green before opening a PR.
+- **Branch rule recipe:** Settings → Branches → Add rule for `main` → Require a pull request before merging → Require status checks to pass using [`.github/required-checks.json`](.github/required-checks.json) → Require conversation resolution. This keeps CI visible and enforced on every PR.
 
 | Status check | Purpose |
 | --- | --- |
@@ -168,6 +174,7 @@ flowchart TD
 3. **Bring up observability:** `docker-compose up -d prom grafana alertmanager` — Prometheus at `:9090`, Grafana at `:3000` (admin/admin), Alertmanager at `:9093` with dashboards and alerts pre-provisioned.
 4. **Explore metrics:** visit `http://localhost:9090/targets` to confirm the scrape job is `UP`; dashboards load automatically under Grafana → Manage.
 5. **Exercise governance:** call the owner-only functions on `AlphaNodeManager` to pause/unpause, gate validators, rotate ENS controllers, or withdraw stake; metrics and dashboards reflect changes immediately.
+6. **Keep docs + mermaids crisp:** `npm run lint:md` and `npm run lint:links` verify README/docs rendering (including mermaid diagrams) exactly as GitHub displays them.
 
 ## Testing and validation
 
@@ -180,6 +187,14 @@ flowchart TD
 - `npm run ci:ts` — build/codegen for the subgraph.
 - `npm run ci:security` — high-severity dependency audit.
 - `npm run ci:verify` — the full wall before pushing.
+
+## Operational guarantees
+
+- **Owner sovereignty:** every critical parameter (pausing, validator roster, identity controllers, stake custody) is owner-triggered and mirrored in telemetry so overrides are safe to execute in production.
+- **Canonical token binding:** `AlphaNodeManager` locks to `$AGIALPHA` at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals) to prevent drift.
+- **Observability-first:** `/metrics`, Prometheus, Grafana dashboards, and Alertmanager routes are prewired; linting ensures dashboards render on GitHub and in Grafana identically.
+- **CI-as-gatekeeper:** workflow + required checks enforce lint, tests, coverage, Solidity checks, Docker smoke, subgraph build, security audit, and final verification. PRs cannot merge without a green wall.
+- **Non-technical deployability:** `docker-compose up` brings the telemetry wall online, and `npm run ci:verify` mirrors the GitHub workflow so contributors can reproduce the green state locally.
 
 ## Runbooks and references
 
