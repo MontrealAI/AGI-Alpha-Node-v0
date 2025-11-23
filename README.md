@@ -11,6 +11,9 @@
   <a href="https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/workflows/ci.yml?query=branch%3Amain">
     <img src="https://img.shields.io/github/actions/workflow/status/MontrealAI/AGI-Alpha-Node-v0/ci.yml?branch=main&logo=githubactions&logoColor=white&label=CI" alt="CI status" />
   </a>
+  <a href="docs/deployment/branch-protection.md#shieldsio-badge-publishing">
+    <img src="https://img.shields.io/badge/CI-badges%20auto-published-0ea5e9?logo=github" alt="Badge publishing" />
+  </a>
   <a href=".github/required-checks.json">
     <img src="https://img.shields.io/badge/Branch%20Protection-required%20checks-16a34a?logo=github" alt="Branch protection" />
   </a>
@@ -25,7 +28,7 @@
   </a>
 </p>
 
-AGI Alpha Node v0 is the owner-controlled intelligence engine that braids on-chain authority, libp2p runtime governance, and a fully provisioned observability wall. Every surface is tuned so the owner can pause, retune, or redirect the platform in a single transaction while the CI wall keeps the repository deployment-ready. The node is designed to act as the decisive intelligence substrate for high-stakes orchestration while keeping owner override levers visible, auditable, and safe to trigger.
+AGI Alpha Node v0 is the owner-controlled intelligence engine that braids on-chain authority, libp2p runtime governance, and a fully provisioned observability wall. Every surface is tuned so the owner can pause, retune, or redirect the platform in a single transaction while the CI wall keeps the repository deployment-ready. The node is designed to act as the decisive intelligence substrate for high-stakes orchestration while keeping owner override levers visible, auditable, and safe to trigger. The canonical token contract is anchored at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals) so treasury, staking, and governance always remain under explicit owner command.
 
 ---
 
@@ -36,6 +39,7 @@ AGI Alpha Node v0 is the owner-controlled intelligence engine that braids on-cha
 - [Smart contract control surface](#smart-contract-control-surface)
 - [Runtime + observability autopilot](#runtime--observability-autopilot)
 - [CI and branch protection](#ci-and-branch-protection)
+- [Owner control quick reference](#owner-control-quick-reference)
 - [Quick start](#quick-start)
 - [Testing and validation](#testing-and-validation)
 - [Operational guarantees](#operational-guarantees)
@@ -62,6 +66,21 @@ flowchart LR
   Protection --> Owner
 ```
 
+```mermaid
+%%{init: { 'theme': 'forest', 'themeVariables': { 'primaryColor': '#0b1120', 'primaryTextColor': '#e2e8f0', 'lineColor': '#22c55e', 'secondaryColor': '#f97316', 'tertiaryColor': '#38bdf8' } }}%%
+flowchart TD
+  classDef neon fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef ember fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#38bdf8,stroke-width:2px,color:#e0f2fe;
+
+  Bootstrap[One-command bootstrap\n`docker-compose up` + `npm run ci:verify`]:::neon --> RuntimePlane[Runtime plane\nlibp2p host + governance API]:::ember
+  Bootstrap --> Telemetry[Telemetry plane\nPrometheus, Grafana, Alertmanager]:::frost
+  Bootstrap --> Contracts[$AGIALPHA on-chain plane\nowner authority + ENS routing]:::ember
+  RuntimePlane --> Operators[Owner & operators\nCLI + dashboard]:::neon
+  Telemetry --> Operators
+  Contracts --> Operators
+```
+
 ## What lives here
 
 - **Runtime:** [`src/`](src/) — libp2p host, governance API (`/governance/*`), metrics exporters, resource manager wiring, and persistence tooling tuned to the observability stack.
@@ -74,6 +93,8 @@ flowchart LR
 - **Runbooks + proofs:** [`docs/`](docs/) and [`observability/docs/`](observability/docs/) — operational runbooks, threat modeling, economics/identity references, and telemetry dashboards.
 - **CI enforcement:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) + [`.github/required-checks.json`](.github/required-checks.json) — single-source list of required checks mirrored by local `npm run ci:verify`.
 
+> Tip: if you publish the badges gist from [`docs/deployment/branch-protection.md`](docs/deployment/branch-protection.md#shieldsio-badge-publishing), you can drop endpoint badges for lint, tests, solidity, subgraph, security, docker, and coverage directly into this README without changing the workflow wiring.
+
 ## Smart contract control surface
 
 $AGIALPHA is pinned to contract address `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals). The owner holds every critical lever and can retarget the platform without redeploying.
@@ -84,6 +105,7 @@ $AGIALPHA is pinned to contract address `0xa61a3b3a130a9c20768eebf97e21515a6046a
 - **Stake custody:** `withdrawStake(recipient, amount)` lets the owner move staked balances.
 - **Token safety:** the constructor refuses non-canonical token addresses unless the canonical `$AGIALPHA` is provided.
 - **Runtime override:** owner-controlled pausing, validator toggles, identity rotation, and stake withdrawal are designed to be exercised live while telemetry + CI keep changes observable.
+- **Validation + slashing:** `recordAlphaWUValidation`, `recordAlphaWUAcceptance`, and `applySlash` keep validator output accountable while preserving owner authority to accept, reject, or penalize work.
 
 Source: [`contracts/AlphaNodeManager.sol`](contracts/AlphaNodeManager.sol)
 
@@ -132,6 +154,7 @@ The CI wall is the single source of truth for merging. Every gate is required on
 - **Required checks:** [`.github/required-checks.json`](.github/required-checks.json) lists the exact status checks to enforce in GitHub branch protection (recommended: apply to `main` and all PRs).
 - **Local parity:** `npm run ci:verify` executes the same gates so contributors can keep the badge wall green before opening a PR.
 - **Branch rule recipe:** Settings → Branches → Add rule for `main` → Require a pull request before merging → Require status checks to pass using [`.github/required-checks.json`](.github/required-checks.json) → Require conversation resolution. This keeps CI visible and enforced on every PR.
+- **Badge publishing:** wire `BADGE_GIST_ID` and `BADGE_GIST_TOKEN` (see [`docs/deployment/branch-protection.md`](docs/deployment/branch-protection.md#shieldsio-badge-publishing)) so the `badges` job can auto-push Shields endpoint JSON for lint, tests, solidity, subgraph, docker, security, and coverage.
 
 | Status check | Purpose |
 | --- | --- |
@@ -167,14 +190,40 @@ flowchart TD
   Verify --> BranchProtection[Required checks\n(branch protection)]:::neon
 ```
 
+## Owner control quick reference
+
+The owner retains complete control over runtime, treasury, validators, and identity anchors while keeping telemetry and CI in lockstep.
+
+- **Runtime switches:** pause/unpause gates (`pause`, `unpause`) and validator roster updates (`setValidator`).
+- **Identity + ENS:** register, rotate, suspend, or revoke ENS-linked controllers (`registerIdentity`, `updateIdentityController`, `setIdentityStatus`, `revokeIdentity`).
+- **Staking flows:** custody adjustments (`withdrawStake`), on-chain staking (`stake`), and validator validation/acceptance hooks (`recordAlphaWUValidation`, `recordAlphaWUAcceptance`, `applySlash`).
+- **Auditability:** every change emits events that the subgraph indexes so dashboards and alerts stay synchronized.
+
+```mermaid
+%%{init: { 'theme': 'forest', 'themeVariables': { 'primaryColor': '#0f172a', 'primaryTextColor': '#e2e8f0', 'lineColor': '#f97316', 'secondaryColor': '#22c55e', 'tertiaryColor': '#38bdf8' } }}%%
+flowchart LR
+  classDef neon fill:#0f172a,stroke:#f97316,stroke-width:2px,color:#ffeedd;
+  classDef ember fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef frost fill:#0b1120,stroke:#38bdf8,stroke-width:2px,color:#e0f2fe;
+
+  OwnerKeys[Owner keys\n(on-chain authority)]:::neon --> RuntimeSwitches[Pause / Unpause\nValidator roster]:::ember
+  OwnerKeys --> IdentitySwitches[ENS controller rotation\nregister / update / revoke]:::ember
+  OwnerKeys --> TreasurySwitches[Stake custody\nwithdrawals + slashing]:::ember
+  RuntimeSwitches --> Events[Events + metrics]:::frost
+  IdentitySwitches --> Events
+  TreasurySwitches --> Events
+  Events --> Indexer[Subgraph indexer\nfeeds dashboards + alerts]:::frost
+```
+
 ## Quick start
 
 1. **Install dependencies:** `npm ci` (Node.js 20.18+).
-2. **Run the CI wall locally:** `npm run ci:verify` — mirrors the workflow and keeps required checks green.
+2. **Run the CI wall locally:** `npm run ci:verify` — mirrors the workflow and keeps required checks green (matches [`.github/required-checks.json`](.github/required-checks.json)).
 3. **Bring up observability:** `docker-compose up -d prom grafana alertmanager` — Prometheus at `:9090`, Grafana at `:3000` (admin/admin), Alertmanager at `:9093` with dashboards and alerts pre-provisioned.
 4. **Explore metrics:** visit `http://localhost:9090/targets` to confirm the scrape job is `UP`; dashboards load automatically under Grafana → Manage.
 5. **Exercise governance:** call the owner-only functions on `AlphaNodeManager` to pause/unpause, gate validators, rotate ENS controllers, or withdraw stake; metrics and dashboards reflect changes immediately.
 6. **Keep docs + mermaids crisp:** `npm run lint:md` and `npm run lint:links` verify README/docs rendering (including mermaid diagrams) exactly as GitHub displays them.
+7. **Publish shields (optional):** add `BADGE_GIST_ID` + `BADGE_GIST_TOKEN` secrets, then let the `badges` job publish Shields endpoints you can embed here for a permanent “all green” wall.
 
 ## Testing and validation
 
