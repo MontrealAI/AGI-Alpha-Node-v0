@@ -124,6 +124,31 @@ This codebase is treated as the operational shell of that high-value intelligenc
 - **Container + deployment tracks** — `docker-compose.yml` boots prom/grafana/alertmanager with dashboards + rules mounted; `Dockerfile` builds the runtime container; `deploy/helm/agi-alpha-node` mirrors the same wiring for clusters. Scripts under `scripts/` include linting and observability harnesses that CI exercises for badge integrity.【F:docker-compose.yml†L1-L38】【F:Dockerfile†L1-L28】【F:deploy/helm/agi-alpha-node/values.yaml†L1-L153】【F:scripts/lint-grafana-dashboard.mjs†L1-L128】【F:scripts/dcutr-harness.ts†L1-L28】
 - **CI enforcement wall** — `.github/workflows/ci.yml` fans out lint/test/coverage/solidity/subgraph/docker/security jobs; `.github/required-checks.json` is the template to enforce these checks on `main` and all PRs so the badges above always reflect blocking gates. Local `npm run ci:verify` mirrors the full wall.【F:.github/workflows/ci.yml†L1-L260】【F:.github/required-checks.json†L1-L10】【F:package.json†L13-L47】
 
+
+### Unified libp2p cockpit (auto-provisioned)
+
+- **Dashboards provisioned by default:** `grafana/provisioning/dashboards/libp2p.yaml` and `grafana/provisioning/dashboards/dcutr.yaml` mount into the Grafana container so both the unified libp2p and DCUtR boards light up on first boot with UI edits disabled for drift-free reviews.【F:grafana/provisioning/dashboards/libp2p.yaml†L1-L9】【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L8】
+- **Prometheus rules live-mounted:** `observability/prometheus/alerts.yml` ships with QUIC p95 and resource-manager denial alerts. Compose mounts it under `/etc/prometheus/alerts.yml` and `observability/prometheus/prometheus.yml` references it so the rules are active immediately, mirrored by the Grafana thresholds.【F:docker-compose.yml†L1-L33】【F:observability/prometheus/prometheus.yml†L1-L12】【F:observability/prometheus/alerts.yml†L1-L45】
+- **Alertmanager wired in:** Alert routing is on by default through the `alertmanager` service; Prometheus is prepointed at it so every rule hit is visible in the Alertmanager UI even before you configure receivers. This matches the Grafana panels’ severity color bands for instant validation.【F:docker-compose.yml†L12-L25】【F:observability/alertmanager/alertmanager.yml†L1-L10】
+
+```mermaid
+%%{init: { 'theme': 'base', 'themeVariables': { 'primaryColor': '#020617', 'primaryTextColor': '#e2e8f0', 'secondaryColor': '#1e293b', 'lineColor': '#22d3ee', 'tertiaryColor': '#0f172a' } }}%%
+graph TD
+  subgraph Host[host.docker.internal]
+    M["AGI Alpha Node\n/metrics"]
+  end
+  subgraph Observability Stack
+    P[Prometheus\n/prometheus.yml + alerts.yml]
+    A[Alertmanager\nalertmanager.yml]
+    G[Grafana\nlibp2p + DCUtR dashboards]
+  end
+  M -->|scrape| P
+  P -->|alerts| A
+  P -->|datasource| G
+  G -->|threshold-matched panels| Ops[Operators]
+  A -->|routes| Ops
+```
+
 ```mermaid
 %%{init: { 'theme': 'dark', 'themeVariables': { 'primaryColor': '#0b1120', 'primaryTextColor': '#e2e8f0', 'lineColor': '#22c55e', 'secondaryColor': '#0ea5e9' } }}%%
 flowchart LR
