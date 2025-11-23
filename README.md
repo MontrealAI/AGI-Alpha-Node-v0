@@ -120,6 +120,35 @@ The full stack is shaped as a singular intelligence core that can realign market
 
 This codebase is treated as the operational shell of that high-value intelligence engine: everything is wired for determinism (full CI wall + coverage gates), rapid owner retuning (hot-swappable orchestrators, pausable treasuries, replay shields), and observable punch economics (DCUtR dashboards + PromQL linting) so the machine stays deploy-ready and under complete owner command at all times.
 
+## Control tower overview (owner-first)
+
+- **Owner retains every lever:** The `$AGIALPHA`-anchored `AlphaNodeManager` contract lets the owner pause/unpause, rotate validators, and move stake while maintaining ENS-bound identity controls, keeping every production dial within a single key holder’s reach.【F:contracts/AlphaNodeManager.sol†L17-L122】
+- **Treasury remains recoverable and pausable:** `TreasuryExecutor.sol` keeps execution scoped to an orchestrator-approved intent path, exposes pause/unpause toggles, and supports owner sweeps—mirroring the runtime’s ability to halt or retarget flows instantly.【F:contracts/TreasuryExecutor.sol†L1-L113】【F:scripts/treasury/execute-intent.ts†L1-L150】
+- **Runtime + dashboards are synchronized:** `/metrics` exports libp2p resource-manager posture, Yamux stream health, QUIC handshake histograms, and DCUtR counters, all mirrored into Grafana via provisioning bundles so on-chain levers and operational optics stay aligned.【F:src/telemetry/networkMetrics.js†L24-L210】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/grafana/dcutr_dashboard.json†L1-L123】
+- **Branch protection is codified:** `.github/required-checks.json` names the exact CI gates enforced on PRs and `main`, matching the workflow fan-out and keeping the badge wall truthful.【F:.github/required-checks.json†L1-L10】【F:.github/workflows/ci.yml†L1-L260】
+
+```mermaid
+%%{init: { 'theme': 'forest', 'themeVariables': { 'primaryColor': '#0f172a', 'primaryTextColor': '#e2e8f0', 'lineColor': '#22c55e', 'secondaryColor': '#0ea5e9', 'tertiaryColor': '#f97316' } }}%%
+flowchart TD
+  classDef neon fill:#0f172a,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef ember fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  Owner[Owner keys\n$AGIALPHA authority]:::neon --> Manager[AlphaNodeManager\npause | validators | stake]:::ember
+  Owner --> Treasury[TreasuryExecutor\nintent-ledger\nowner sweep]:::ember
+  Manager --> Metrics[/metrics\nNRM | Yamux | QUIC | DCUtR]:::frost
+  Metrics --> Dashboards[Grafana + Prometheus\nprovisioned JSON + alerts]:::neon
+  Dashboards --> CI[CI badges + branch gates\n`.github/workflows/ci.yml`]:::frost
+  CI --> Protection[Branch protection\nrequired checks enforced]:::ember
+  Protection --> Owner
+```
+
+## CI enforcement wall (always-on)
+
+- **Replica of production gates:** The CI workflow fans out linting, tests, coverage, Solidity/TypeScript builds, Docker smoke, and dependency audits; the aggregate `verify` job mirrors `npm run ci:verify` for deterministic green walls locally and in GitHub Actions.【F:.github/workflows/ci.yml†L1-L260】【F:package.json†L19-L52】
+- **Required checks stay explicit:** Keep `.github/required-checks.json` synchronized with branch protection so PRs cannot merge when any gate regresses; badges at the top of this README mirror those checks for immediate visibility.【F:.github/required-checks.json†L1-L10】【F:README.md†L10-L82】
+- **Rendering stays deterministic:** `npm run lint:md` and `npm run lint:grafana` validate mermaid fences and dashboard JSON so GitHub and Pages render diagrams without drift; `npm run lint:links` prevents broken anchors across the README and docs set.【F:package.json†L19-L36】【F:scripts/lint-grafana-dashboard.mjs†L1-L62】
+
 ## Rapid start (compose + CI mirror)
 
 - **One-shot observability bring-up:** `docker-compose up -d prom grafana alertmanager` mounts the Prometheus config + alert rules and the Grafana provisioning bundle so libp2p and DCUtR dashboards are live on first load (Prom :9090, Grafana :3000, Alertmanager :9093).【F:docker-compose.yml†L1-L38】【F:observability/prometheus/prometheus.yml†L1-L12】【F:observability/prometheus/alerts.yml†L1-L45】【F:grafana/provisioning/dashboards/libp2p.yaml†L1-L9】
