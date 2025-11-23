@@ -133,6 +133,12 @@ This codebase is treated as the operational shell of that high-value intelligenc
 5. **Simulate pressure to see alerts fire:** drive network load with `npm run p2p:load-tests` or the DCUtR emitter (`npm run observability:dcutr-harness`) to push `nrm_denials_total` and QUIC handshake buckets; watch Prometheus “Alerts” and Grafana panels flip through warning/critical bands, confirming mermaid-rendered README diagrams match live tiles.【F:package.json†L47-L50】【F:scripts/dcutr-harness.ts†L1-L28】【F:observability/prometheus/alerts.yml†L1-L45】
 6. **Enforce badges on PRs:** apply the `.github/required-checks.json` array to GitHub branch protection so the CI badge wall reflects blocking gates on `main` and every PR—keeping “fully green” the default state and preventing merges when any lint/test/coverage/security step regresses.【F:.github/required-checks.json†L1-L10】【F:.github/workflows/ci.yml†L1-L260】
 
+### Owner controls + metric surfaces (fast map)
+
+- **Total owner command:** `contracts/AlphaNodeManager.sol` exposes pause/unpause, validator activation, ENS identity rotation, stake withdrawal, and identity gating through owner-only entrypoints—keeping treasury, validator set, and operational posture under a single keyholder.【F:contracts/AlphaNodeManager.sol†L1-L132】
+- **Network pressure visibility:** `src/telemetry/networkMetrics.js` emits resource-manager denials, Yamux stream gauges, QUIC handshake histograms, and dial success/failure counters so Prometheus and Grafana panels reflect the same pressure profile as the live node.【F:src/telemetry/networkMetrics.js†L60-L210】【F:observability/prometheus/prometheus.yml†L1-L12】
+- **Mermaid-safe documentation:** all diagrams use fenced ```mermaid blocks with theme init headers verified against GitHub’s renderer; linting via `npm run lint:md` keeps them display-ready for the project page and Pages exports.【F:README.md†L112-L157】【F:package.json†L19-L36】
+
 ```mermaid
 %%{init: { 'theme': 'forest', 'themeVariables': { 'primaryColor': '#0f172a', 'primaryTextColor': '#e2e8f0', 'lineColor': '#22d3ee', 'secondaryColor': '#111827', 'edgeLabelBackground': '#0b1120' } }}%%
 flowchart LR
