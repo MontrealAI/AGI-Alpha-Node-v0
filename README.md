@@ -118,6 +118,7 @@ $AGIALPHA is pinned to contract address `0xa61a3b3a130a9c20768eebf97e21515a6046a
 - **Token safety:** the constructor refuses non-canonical token addresses unless the canonical `$AGIALPHA` is provided.
 - **Runtime override:** owner-controlled pausing, validator toggles, identity rotation, and stake withdrawal are designed to be exercised live while telemetry + CI keep changes observable.
 - **Validation + slashing:** `recordAlphaWUValidation`, `recordAlphaWUAcceptance`, and `applySlash` keep validator output accountable while preserving owner authority to accept, reject, or penalize work.
+- **Parameter oversight:** the same owner key that binds `$AGIALPHA` can pause/unpause, rotate ENS controllers, gate validators, sweep staked balances, and drive slashing/acceptance hooks at any moment, keeping all runtime and treasury levers under direct owner custody with matching events for dashboards and subgraph consumers.
 
 Source: [`contracts/AlphaNodeManager.sol`](contracts/AlphaNodeManager.sol)
 
@@ -219,6 +220,9 @@ flowchart TD
 - **Mermaid parity:** `npm run lint:md` and `npm run lint:links` validate diagram fences and anchors exactly as GitHub parses them so every flowchart above stays visible on repository pages. Use `npx @mermaid-js/mermaid-cli` locally if you want PNG/SVG spot checks, but the lint gate is authoritative for PRs.
 - **Badge fidelity:** the CI badge at the top of this README points to [`ci.yml`](.github/workflows/ci.yml) on `main`; if a required check fails, the badge turns red and branch protection blocks merges. The optional `badges` job publishes Shields endpoints using the same job names so you can embed granular status badges without editing workflow code.
 - **Branch rules:** apply [`.github/required-checks.json`](.github/required-checks.json) to `main` and enable “Require branches to be up to date” + “Require conversation resolution.” This keeps the Full CI Verification wall, individual gates, and the aggregated verify step visible to reviewers and enforced on every PR.
+- **Enforcement sanity check:** After applying the branch rule, push a test PR to confirm GitHub blocks merging until every required check turns green and the workflow badge above reflects the latest run.
+- **Badge publishing:** wire `BADGE_GIST_ID` and `BADGE_GIST_TOKEN` (see [`docs/deployment/branch-protection.md`](docs/deployment/branch-protection.md#shieldsio-badge-publishing)) so the `badges` job can auto-push Shields endpoint JSON for lint, tests, solidity, subgraph, docker, security, and coverage.
+- **Mermaid parity recipe:** `npm run lint:md` already validates diagram fences exactly as GitHub renders them; for a pixel-for-pixel check run `npx @mermaid-js/mermaid-cli -i README.md -o /tmp/readme.svg --scale 1.2` before pushing. This keeps every flowchart above identical in GitHub’s renderer and in docs exports.
 
 ## Owner control quick reference
 
