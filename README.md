@@ -119,6 +119,26 @@ This codebase is treated as the operational shell of that high-value intelligenc
 
 ## Operability snapshot (auto-provisioned cockpit)
 
+> Unified observability autopilot (compose-ready)
+
+- **Zero-click dashboards:** `docker-compose up prom grafana alertmanager` mounts the libp2p + DCUtR dashboards and Prometheus alert rules so the cockpit is live on first page load—no manual imports or rule toggles required.【F:docker-compose.yml†L1-L38】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/prometheus/alerts.yml†L1-L45】
+- **Alert symmetry:** Warning/critical palettes in Grafana mirror PromQL alert bands for resource-manager denials and QUIC p95 latency, keeping visual thresholds, Prometheus firings, and Alertmanager routes aligned.【F:observability/grafana/libp2p_unified_dashboard.json†L35-L96】【F:observability/prometheus/alerts.yml†L1-L45】
+- **Owner-fast triage:** The `/metrics` surface exposes `nrm_usage`, `nrm_limits`, Yamux stream gauges, QUIC handshake histograms, and dial outcomes so operators and auditors view the same pressure map before retuning limits or pausing flows.【F:src/telemetry/networkMetrics.js†L146-L210】【F:src/network/resourceManagerConfig.js†L17-L122】
+
+```mermaid
+%%{init: { 'theme': 'forest', 'themeVariables': { 'primaryColor': '#0f172a', 'primaryTextColor': '#e2e8f0', 'lineColor': '#22d3ee', 'secondaryColor': '#0ea5e9', 'tertiaryColor': '#9333ea' } }}%%
+flowchart LR
+  classDef neon fill:#0f172a,stroke:#22d3ee,stroke-width:2px,color:#e2e8f0;
+  classDef pulse fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef violet fill:#111827,stroke:#9333ea,stroke-width:2px,color:#ede9fe;
+
+  Metrics[/AGI Alpha Node\n`/metrics`\n(nrm_limits | yamux | quic)]:::neon --> Prom[(Prometheus\n`prometheus.yml` + `alerts.yml`)]:::pulse
+  Prom --> Alert[Alertmanager\npre-wired routes]:::violet
+  Prom --> Graf[Grafana\nlibp2p + DCUtR dashboards]:::pulse
+  Graf --> Owner[Owner console\nthreshed tiles + runbooks]:::neon
+  Alert --> Owner
+```
+
 - **Dashboards always on:** Grafana auto-imports the libp2p unified and DCUtR boards via `grafana/provisioning/dashboards/*.yaml`, reading JSON from `observability/grafana/` so the GitHub-rendered previews match the live panels without drift.【F:grafana/provisioning/dashboards/libp2p.yaml†L1-L9】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】
 - **Alerts already wired:** Prometheus loads `observability/prometheus/alerts.yml` and streams hits to Alertmanager; thresholds in Grafana mirror those PromQL rules for QUIC p95 and rcmgr denials so operators see the same warning/critical posture everywhere.【F:observability/prometheus/alerts.yml†L1-L45】【F:observability/prometheus/prometheus.yml†L1-L12】
 - **Owner command surfaces stay verifiable:** `nrm_limits`/`nrm_usage`, Yamux stream gauges, QUIC handshake latency, and `$AGIALPHA` treasury controls surface through `/metrics`, dashboards, and CI badges—keeping contract authority, network posture, and observability in lockstep.【F:src/telemetry/networkMetrics.js†L146-L210】【F:contracts/AlphaNodeManager.sol†L24-L122】
