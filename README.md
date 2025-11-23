@@ -117,6 +117,32 @@ The full stack is shaped as a singular intelligence core that can realign market
 
 This codebase is treated as the operational shell of that high-value intelligence engine: everything is wired for determinism (full CI wall + coverage gates), rapid owner retuning (hot-swappable orchestrators, pausable treasuries, replay shields), and observable punch economics (DCUtR dashboards + PromQL linting) so the machine stays deploy-ready and under complete owner command at all times.
 
+## Launch + validation checklist (green wall + dashboards)
+
+1. **Install + wire dependencies:** `npm ci` (Node 20.18+). Scripts and lint gates live in `package.json`, matching the CI wall so local runs mirror GitHub enforcement.【F:package.json†L13-L47】
+2. **Mirror the CI enforcement wall locally:** run `npm run ci:verify` before pushing; it fans out lint/tests/coverage/Solidity/subgraph/security/branch-policy stages exactly as `.github/workflows/ci.yml` enforces and as `.github/required-checks.json` expects for branch protection.【F:package.json†L23-L47】【F:.github/workflows/ci.yml†L1-L260】【F:.github/required-checks.json†L1-L10】
+3. **Boot the observability stack:** `docker-compose up -d prom grafana alertmanager` mounts `observability/prometheus/prometheus.yml`, `observability/prometheus/alerts.yml`, and the Grafana provisioning bundle so targets, alerts, and dashboards are live on first load (Prom :9090, Grafana :3000, Alertmanager :9093).【F:docker-compose.yml†L1-L38】【F:observability/prometheus/prometheus.yml†L1-L12】【F:observability/prometheus/alerts.yml†L1-L45】【F:grafana/provisioning/dashboards/libp2p.yaml†L1-L9】
+4. **Verify ingestion & dashboards:** open <http://localhost:9090/targets> to confirm the scrape job is `UP`; Grafana auto-imports the libp2p unified + DCUtR dashboards from `observability/grafana/*.json` with thresholds pre-colored to match Prometheus rules (NRM denials 1/5 rps, QUIC p95 350/500 ms).【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L8】
+5. **Simulate pressure to see alerts fire:** drive network load with `npm run p2p:load-tests` or the DCUtR emitter (`npm run observability:dcutr-harness`) to push `nrm_denials_total` and QUIC handshake buckets; watch Prometheus “Alerts” and Grafana panels flip through warning/critical bands, confirming mermaid-rendered README diagrams match live tiles.【F:package.json†L47-L50】【F:scripts/dcutr-harness.ts†L1-L28】【F:observability/prometheus/alerts.yml†L1-L45】
+6. **Enforce badges on PRs:** apply the `.github/required-checks.json` array to GitHub branch protection so the CI badge wall reflects blocking gates on `main` and every PR—keeping “fully green” the default state and preventing merges when any lint/test/coverage/security step regresses.【F:.github/required-checks.json†L1-L10】【F:.github/workflows/ci.yml†L1-L260】
+
+```mermaid
+%%{init: { 'theme': 'forest', 'themeVariables': { 'primaryColor': '#0f172a', 'primaryTextColor': '#e2e8f0', 'lineColor': '#22d3ee', 'secondaryColor': '#111827', 'edgeLabelBackground': '#0b1120' } }}%%
+flowchart LR
+  classDef neon fill:#0f172a,stroke:#22d3ee,stroke-width:2px,color:#e2e8f0;
+  classDef lava fill:#111827,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#22c55e,stroke-width:2px,color:#e0f2fe;
+
+  Dev[Local dev / CI mirror\n`npm run ci:verify`]:::neon --> CIWall[GitHub CI wall\nworkflow jobs + badges]:::lava
+  CIWall --> Branch[Branch protection\nrequired-checks.json]:::frost
+  Node[AGI Alpha Node\n/metrics export]:::neon --> Prom[Prometheus\nalerts.yml loaded]:::lava
+  Prom --> Grafana[Grafana\nauto-provisioned dashboards]:::frost
+  Prom --> Alertmanager[Alertmanager\nready routes]:::lava
+  Grafana --> Operator[Owner / operator cockpit\nthreshold-colored tiles]:::neon
+  Alertmanager --> Operator
+  Operator -->|retune env + contracts| Node
+```
+
 ## System atlas (live layout)
 
 - **Runtime + governance core** — `src/` houses the libp2p host, governance API, and telemetry bindings; `contracts/AlphaNodeManager.sol` anchors the `$AGIALPHA` (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) authority plane so the owner can pause, unpause, rotate controllers, gate validators, and withdraw stake on demand.【F:src/index.js†L1-L40】【F:contracts/AlphaNodeManager.sol†L1-L200】
