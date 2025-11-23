@@ -41,6 +41,8 @@ The repository is curated as a production cockpit: mermaid diagrams lint for Git
 
 Mermaid diagrams, badges, and CI gate names have been aligned so GitHub renders everything identically to local previews. The README, docs, dashboards, and workflow job names are kept in lockstep to make enforcement transparent: the required checks, badge endpoints, and `npm run ci:verify` output all share the same strings, so a green wall locally means a green wall on PRs and `main`.
 
+If you need to exercise owner authority live, every control surface (pause/unpause, validator gating, ENS routing, stake sweeps, treasury orchestration) remains callable without downtime; the CI and telemetry walls are structured to keep those interventions reproducible, observable, and recoverable.
+
 ---
 
 ## Table of contents
@@ -106,6 +108,18 @@ flowchart TD
 - **CI enforcement:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) + [`.github/required-checks.json`](.github/required-checks.json) — single-source list of required checks mirrored by local `npm run ci:verify`.
 
 > Tip: if you publish the badges gist from [`docs/deployment/branch-protection.md`](docs/deployment/branch-protection.md#shieldsio-badge-publishing), you can drop endpoint badges for lint, tests, solidity, subgraph, security, docker, and coverage directly into this README without changing the workflow wiring.
+
+### Component manifest (owner-facing map)
+
+| Surface | Path | Purpose | Owner leverage |
+| --- | --- | --- | --- |
+| Runtime entry + CLI | [`src/index.js`](src/index.js) | Boots the libp2p host, governance API, and metrics exporters. | Configure via env, pause/resume flows, or rotate peers without redeploying.
+| Governance contracts | [`contracts/AlphaNodeManager.sol`](contracts/AlphaNodeManager.sol) | Owner-only levers for pausing, validator gating, ENS routing, staking custody, and validation hooks anchored to `$AGIALPHA`. | Execute `pause`, `setValidator`, `registerIdentity`, `withdrawStake`, or slashing functions directly.
+| Treasury execution | [`contracts/TreasuryExecutor.sol`](contracts/TreasuryExecutor.sol) + [`scripts/treasury/`](scripts/treasury/) | Intent ingestion, Dilithium envelope handling, and owner-driven sweeps. | Run `treasury:execute`/`treasury:sign` to redirect funds or enforce payouts under owner control.
+| Networking safeguards | [`src/network/resourceManagerConfig.js`](src/network/resourceManagerConfig.js), [`src/network/libp2pHostConfig.js`](src/network/libp2pHostConfig.js) | Resource ceilings, connection trimming, QUIC/TCP posture, and dial policies emitted to metrics. | Override `NRM_*`/`CONN_*` to retune limits live; monitor `/metrics` for compliance.
+| Observability wall | [`observability/prometheus/alerts.yml`](observability/prometheus/alerts.yml), [`grafana/provisioning/dashboards/libp2p.yaml`](grafana/provisioning/dashboards/libp2p.yaml), [`observability/grafana/`](observability/grafana/) | Prewired alerts, dashboards, and scrape configs rendered identically in GitHub and Grafana. | Pause, gate validators, or rotate ENS controllers and watch the dashboards confirm the state change.
+| CI guardrails | [`.github/workflows/ci.yml`](.github/workflows/ci.yml), [`.github/required-checks.json`](.github/required-checks.json), [`scripts/verify-health-gate.mjs`](scripts/verify-health-gate.mjs), [`scripts/verify-branch-gate.mjs`](scripts/verify-branch-gate.mjs) | Mirrors `npm run ci:verify` for lint, tests, coverage, Solidity, subgraph, security, Docker smoke, and policy gates. | Enforce required checks on `main`/PRs; verify locally before exercising owner overrides.
+| Branch protection recipe | [`docs/deployment/branch-protection.md`](docs/deployment/branch-protection.md) | One-to-one mapping between workflow job names, badges, and GitHub branch rules. | Apply the rule to keep every owner action gated by a green CI wall.
 
 ## Smart contract control surface
 
