@@ -186,10 +186,10 @@ flowchart LR
 
 | Status check (GitHub) | Source job | Purpose |
 | --- | --- | --- |
-| Lint Markdown & Links | `lint-md-links` | Guards README/docs/mermaid rendering + link health so GitHub and Pages always render diagrams correctly.【F:.github/workflows/ci.yml†L10-L69】 |
-| Unit, Integration & Frontend Tests | `tests` | Keeps node/runtime/front-end surfaces stable with vitest parity to local `npm run test && npm run test:frontend`.【F:.github/workflows/ci.yml†L71-L132】 |
+| Lint Markdown & Links | `lint` | Guards README/docs/mermaid rendering + link health so GitHub and Pages always render diagrams correctly.【F:.github/workflows/ci.yml†L10-L69】 |
+| Unit, Integration & Frontend Tests | `test` | Keeps node/runtime/front-end surfaces stable with vitest parity to local `npm run test && npm run test:frontend`.【F:.github/workflows/ci.yml†L71-L132】 |
 | Coverage Report | `coverage` | Enforces ≥85/80 line/branch coverage for telemetry + networking paths, matching `npm run coverage`.【F:.github/workflows/ci.yml†L134-L169】【F:package.json†L23-L38】 |
-| Docker Build & Smoke Test | `docker` | Builds the runtime image and exercises the entrypoint/help to prove container deployability before release.【F:.github/workflows/ci.yml†L171-L207】 |
+| Docker Build & Smoke Test | `docker-smoke` | Builds the runtime image and exercises the entrypoint/help to prove container deployability before release.【F:.github/workflows/ci.yml†L171-L207】 |
 | Solidity Lint & Compile | `solidity` | Runs solhint + solc to protect the `$AGIALPHA` control plane and ensure owner controls stay uncompromised.【F:.github/workflows/ci.yml†L209-L232】 |
 | Subgraph TypeScript Build | `subgraph` | Compiles/generates the subgraph so observability + indexing remain compatible with on-chain state.【F:.github/workflows/ci.yml†L234-L251】 |
 | Dependency Security Scan | `security` | Blocks merges on high severity advisories to keep the operator cockpit hardened.【F:.github/workflows/ci.yml†L253-L260】 |
