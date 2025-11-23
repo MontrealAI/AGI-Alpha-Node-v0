@@ -37,6 +37,8 @@ AGI Alpha Node v0 is the owner-controlled intelligence engine that braids on-cha
 
 The repository is curated as a production cockpit: mermaid diagrams lint for GitHub parity, coverage is gated at 85%+, dependency security is enforced on every PR, and branch protection mirrors the exact checks documented below so the CI badge is always green and visible.
 
+Mermaid diagrams, badges, and CI gate names have been aligned so GitHub renders everything identically to local previews. The README, docs, dashboards, and workflow job names are kept in lockstep to make enforcement transparent: the required checks, badge endpoints, and `npm run ci:verify` output all share the same strings, so a green wall locally means a green wall on PRs and `main`.
+
 ---
 
 ## Table of contents
@@ -165,6 +167,17 @@ The CI wall is the single source of truth for merging. Every gate is required on
 - **Enforcement sanity check:** After applying the branch rule, push a test PR to confirm GitHub blocks merging until every required check turns green and the workflow badge above reflects the latest run.
 - **Badge publishing:** wire `BADGE_GIST_ID` and `BADGE_GIST_TOKEN` (see [`docs/deployment/branch-protection.md`](docs/deployment/branch-protection.md#shieldsio-badge-publishing)) so the `badges` job can auto-push Shields endpoint JSON for lint, tests, solidity, subgraph, docker, security, and coverage.
 
+| Status check | Job ID | Local command | Badge endpoint key |
+| --- | --- | --- | --- |
+| Lint Markdown & Links | `lint` | `npm run lint:md && npm run lint:links && npm run lint:grafana` | `lint.json` |
+| Unit, Integration & Frontend Tests | `test` | `npm run ci:test` | `test.json` |
+| Coverage Report | `coverage` | `npm run coverage` | `coverage.json` |
+| Docker Build & Smoke Test | `docker-smoke` | `docker build ... && docker run ... --help` | `docker.json` |
+| Solidity Lint & Compile | `solidity` | `npm run ci:solidity` | `solidity.json` |
+| Subgraph TypeScript Build | `typescript` | `npm run ci:ts` | `typescript.json` |
+| Dependency Security Scan | `security` | `npm run ci:security` | `security.json` |
+| Full CI Verification | `verify` | `npm run ci:verify` | Aggregates all of the above |
+
 | Status check | Purpose |
 | --- | --- |
 | Lint Markdown & Links | Keeps README/docs, mermaid fences, and links renderable. |
@@ -207,6 +220,7 @@ The owner retains complete control over runtime, treasury, validators, and ident
 - **Identity + ENS:** register, rotate, suspend, or revoke ENS-linked controllers (`registerIdentity`, `updateIdentityController`, `setIdentityStatus`, `revokeIdentity`).
 - **Staking flows:** custody adjustments (`withdrawStake`), on-chain staking (`stake`), and validator validation/acceptance hooks (`recordAlphaWUValidation`, `recordAlphaWUAcceptance`, `applySlash`).
 - **Auditability:** every change emits events that the subgraph indexes so dashboards and alerts stay synchronized.
+- **Operator experience:** all owner functions are callable as live overrides—pause, retune validator eligibility, swap ENS controllers, or redirect funds—without redeploying contracts or touching runtime binaries.
 
 ## Owner function matrix
 
@@ -265,6 +279,7 @@ flowchart LR
 - **Observability-first:** `/metrics`, Prometheus, Grafana dashboards, and Alertmanager routes are prewired; linting ensures dashboards render on GitHub and in Grafana identically.
 - **CI-as-gatekeeper:** workflow + required checks enforce lint, tests, coverage, Solidity checks, Docker smoke, subgraph build, security audit, and final verification. PRs cannot merge without a green wall.
 - **Non-technical deployability:** `docker-compose up` brings the telemetry wall online, and `npm run ci:verify` mirrors the GitHub workflow so contributors can reproduce the green state locally.
+- **Owner-tuned runtime:** pausing, validator changes, ENS controller swaps, staking withdrawals, and validation hooks are all callable by the contract owner at any time to reshape the platform for new workloads or mitigations without downtime.
 
 ## Runbooks and references
 
