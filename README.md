@@ -120,6 +120,35 @@ The full stack is shaped as a singular intelligence core that can realign market
 
 This codebase is treated as the operational shell of that high-value intelligence engine: everything is wired for determinism (full CI wall + coverage gates), rapid owner retuning (hot-swappable orchestrators, pausable treasuries, replay shields), and observable punch economics (DCUtR dashboards + PromQL linting) so the machine stays deploy-ready and under complete owner command at all times.
 
+## Navigation and freshness locks (read first)
+
+- **Source-of-truth map:**
+  - Runtime: [`src/`](src/) — libp2p host, governance API, telemetry emitters, and resource-manager envelope tuning.
+  - On-chain authority: [`contracts/`](contracts/) — `$AGIALPHA` (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) control plane with pause/validator/identity/stake authority locked to the owner key.【F:contracts/AlphaNodeManager.sol†L17-L200】
+  - Observability: [`observability/`](observability/) + [`grafana/provisioning/`](grafana/provisioning/) + [`docker-compose.yml`](docker-compose.yml) — Prometheus scrape + alerts, Grafana dashboards, and Alertmanager routes, all auto-mounted for first-boot visibility.【F:observability/prometheus/prometheus.yml†L1-L12】【F:observability/prometheus/alerts.yml†L1-L45】【F:grafana/provisioning/dashboards/libp2p.yaml†L1-L9】
+  - CI / enforcement: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) + [`.github/required-checks.json`](.github/required-checks.json) — badge-backed jobs required on PRs and `main` with local parity via `npm run ci:verify`.【F:.github/workflows/ci.yml†L1-L260】【F:.github/required-checks.json†L1-L10】【F:package.json†L19-L47】
+  - Dashboards + docs: [`observability/grafana/*.json`](observability/grafana/) + [`observability/docs`](observability/docs) — GitHub-renderable previews and panel/runbook references kept in sync by lint gates.【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:observability/docs/DASHBOARD.md†L1-L120】
+
+- **Mermaid render guarantees:** every fenced ` ```mermaid` block in this README ships with theme init headers compatible with GitHub’s renderer; `npm run lint:md && npm run lint:grafana` validates diagram syntax alongside dashboard JSON so GitHub and Pages stay pixel-perfect.【F:package.json†L13-L36】【F:scripts/lint-grafana-dashboard.mjs†L1-L62】
+- **CI truthfulness:** badges above mirror the CI workflow fan-out and the branch protection template; run `npm run ci:verify` before opening PRs to see the identical gate wall locally and keep the badge stack green by default.【F:.github/workflows/ci.yml†L1-L260】【F:package.json†L19-L47】
+
+```mermaid
+%%{init: { 'theme': 'forest', 'themeVariables': { 'primaryColor': '#0f172a', 'primaryTextColor': '#e2e8f0', 'lineColor': '#22c55e', 'secondaryColor': '#9333ea', 'tertiaryColor': '#f97316' } }}%%
+flowchart LR
+  classDef neon fill:#0f172a,stroke:#22c55e,stroke-width:2px,color:#e2e8f0;
+  classDef ember fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef amethyst fill:#0b1120,stroke:#9333ea,stroke-width:2px,color:#ede9fe;
+
+  Codebase[Repo surface<br/>src · contracts · observability · dashboard]:::neon --> CIWall[CI wall<br/>ci.yml + required-checks.json]:::ember
+  CIWall --> Badges[Badges<br/>README status + gist]:::amethyst
+  Codebase --> Runtime[/metrics export<br/>p2p host + telemetry]:::amethyst
+  Codebase --> Contracts[$AGIALPHA control plane<br/>owner pause/validators/stake]:::ember
+  Runtime --> Dashboards[Grafana + Prometheus<br/>provisioned JSON + alerts]:::neon
+  Dashboards --> Owner[Owner & operators<br/>single-command cockpit]:::amethyst
+  Owner --> Contracts
+  Owner --> Runtime
+```
+
 ## Control tower overview (owner-first)
 
 - **Owner retains every lever:** The `$AGIALPHA`-anchored `AlphaNodeManager` contract lets the owner pause/unpause, rotate validators, and move stake while maintaining ENS-bound identity controls, keeping every production dial within a single key holder’s reach.【F:contracts/AlphaNodeManager.sol†L17-L122】
