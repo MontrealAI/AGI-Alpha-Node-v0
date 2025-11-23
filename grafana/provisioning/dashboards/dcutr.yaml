@@ -4,5 +4,7 @@ providers:
     type: file
     options:
       path: /grafana/dashboards
+      foldersFromFilesStructure: true
+      includeFilter: "dcutr_dashboard.json"
     allowUiUpdates: false
     disableDeletion: true
