@@ -43,10 +43,20 @@ Mermaid diagrams, badges, and CI gate names have been aligned so GitHub renders 
 
 If you need to exercise owner authority live, every control surface (pause/unpause, validator gating, ENS routing, stake sweeps, treasury orchestration) remains callable without downtime; the CI and telemetry walls are structured to keep those interventions reproducible, observable, and recoverable. Required checks stay enforced on PRs and `main` so the badge board above reflects the same gates GitHub blocks on.
 
+## Operational promises at a glance
+
+- Owner retains the right to update every meaningful parameter: pausing, validator rosters, ENS/identity routing, stake custody, and telemetry thresholds all stay under the same signer that anchors `$AGIALPHA`.
+- CI is treated as a defensive shield wall: every gate is required, badge-visible, and mapped one-to-one to branch protection.
+- Mermaid fidelity is validated by automation, with lint parity to GitHub’s renderer and command recipes for manual SVG/PNG previews.
+- Documentation is wired to the repository layout (runtime, contracts, dashboard, subgraph, observability) so operators land on the exact file needed to act immediately.
+
+Every subsystem is tuned to operate like the market-shifting machine strategists describe, yet it remains constrained by the owner’s key, telemetry wall, and enforced CI so that every override is deliberate and recoverable.
+
 ---
 
 ## Table of contents
 
+- [Operational promises at a glance](#operational-promises-at-a-glance)
 - [System map](#system-map)
 - [What lives here](#what-lives-here)
 - [Smart contract control surface](#smart-contract-control-surface)
@@ -104,6 +114,10 @@ flowchart TD
 | Treasury execution | [`contracts/TreasuryExecutor.sol`](contracts/TreasuryExecutor.sol) + [`scripts/treasury/`](scripts/treasury/) | Intent ingestion, Dilithium envelope handling, and owner-driven sweeps. | Run `treasury:execute`/`treasury:sign` to redirect funds or enforce payouts under owner control. |
 | Networking safeguards | [`src/network/resourceManagerConfig.js`](src/network/resourceManagerConfig.js), [`src/network/libp2pHostConfig.js`](src/network/libp2pHostConfig.js) | Resource ceilings, connection trimming, QUIC/TCP posture, and dial policies emitted to metrics. | Override `NRM_*`/`CONN_*` to retune limits live; monitor `/metrics` for compliance. |
 | Observability wall | [`observability/prometheus/alerts.yml`](observability/prometheus/alerts.yml), [`grafana/provisioning/dashboards/libp2p.yaml`](grafana/provisioning/dashboards/libp2p.yaml), [`observability/grafana/`](observability/grafana/) | Prewired alerts, dashboards, and scrape configs rendered identically in GitHub and Grafana. | Pause, gate validators, or rotate ENS controllers and watch the dashboards confirm the state change. |
+| Dashboard plane | [`dashboard/`](dashboard/) + [`dashboard/src`](dashboard/src) | Operator UI built with React/Vite plus Vitest suites for frontend integrity. | Validate visuals via `npm run test:frontend` and ship dashboards that mirror Grafana signals. |
+| Indexing + subgraph | [`subgraph/`](subgraph/) | Graph Protocol manifest, codegen, and build scripts keyed to the on-chain contracts. | Keep data consumers aligned by running `npm run ci:ts` before merges; regenerate types when ABI shifts. |
+| Docs + runbooks | [`docs/`](docs/) | Detailed operations, economics, identity, and deployment guides synchronized with this README. | Jump directly to the correct protocol/runbook without hunting paths. |
+| Observability field notes | [`observability/docs/`](observability/docs/) | Metrics glossary, dashboard import instructions, and alert references. | Cross-check Grafana tiles with the glossary while executing owner overrides. |
 | CI guardrails | [`.github/workflows/ci.yml`](.github/workflows/ci.yml), [`.github/required-checks.json`](.github/required-checks.json), [`scripts/verify-health-gate.mjs`](scripts/verify-health-gate.mjs), [`scripts/verify-branch-gate.mjs`](scripts/verify-branch-gate.mjs) | Mirrors `npm run ci:verify` for lint, tests, coverage, Solidity, subgraph, security, Docker smoke, and policy gates. | Enforce required checks on `main`/PRs; verify locally before exercising owner overrides. |
 | Branch protection recipe | [`docs/deployment/branch-protection.md`](docs/deployment/branch-protection.md) | One-to-one mapping between workflow job names, badges, and GitHub branch rules. | Apply the rule to keep every owner action gated by a green CI wall. |
 
@@ -221,6 +235,8 @@ flowchart TD
 - **Badge fidelity:** the CI badge at the top of this README points to [`ci.yml`](.github/workflows/ci.yml) on `main`; if a required check fails, the badge turns red and branch protection blocks merges. The optional `badges` job publishes Shields endpoints using the same job names so you can embed granular status badges without editing workflow code.
 - **Branch rules:** apply [`.github/required-checks.json`](.github/required-checks.json) to `main` and enable “Require branches to be up to date” + “Require conversation resolution.” This keeps the Full CI Verification wall, individual gates, and the aggregated verify step visible to reviewers and enforced on every PR.
 - **Mermaid parity recipe:** `npm run lint:md` already validates diagram fences exactly as GitHub renders them; for a pixel-for-pixel check run `npx @mermaid-js/mermaid-cli -i README.md -o /tmp/readme.svg --scale 1.2` before pushing. This keeps every flowchart above identical in GitHub’s renderer and in docs exports.
+- **GitHub enforcement receipts:** after applying branch rules, confirm the shield wall with `gh api repos/MontrealAI/AGI-Alpha-Node-v0/branches/main/protection | jq .required_status_checks.contexts` and capture the output as evidence in your operations log.
+- **Mermaid GitHub preview:** to double-check GitHub rendering before opening a PR, run `npx @mermaid-js/mermaid-cli -i README.md -o /tmp/readme.svg --scale 1.2 && file /tmp/readme.svg` or open the SVG locally; parity with `npm run lint:md` ensures the diagrams stay visible on repository pages.
 
 ## Owner control quick reference
 
