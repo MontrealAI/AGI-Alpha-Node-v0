@@ -71,7 +71,7 @@
   <a href="grafana/provisioning/dashboards/libp2p.yaml">
     <img src="https://img.shields.io/badge/Grafana%20Provisioning-libp2p.yaml-0ea5e9?logo=grafana&logoColor=white" alt="Grafana libp2p provisioning" />
   </a>
-  <a href="observability/prometheus/alerts.yml">
+ <a href="observability/prometheus/alerts.yml">
     <img src="https://img.shields.io/badge/Prometheus-Alerts%20wired-ed8936?logo=prometheus&logoColor=white" alt="Prometheus alerts" />
   </a>
   <a href="observability/alertmanager/alertmanager.yml">
@@ -79,6 +79,9 @@
   </a>
   <a href="scripts/lint-grafana-dashboard.mjs">
     <img src="https://img.shields.io/badge/Dashboard%20Lint-npm%20run%20lint:grafana-f97316?logo=grafana&logoColor=0b1120" alt="Grafana lint script" />
+  </a>
+  <a href=".github/workflows/ci.yml">
+    <img src="https://img.shields.io/badge/CI%20Enforced-branch%20protection%20ready-16a34a?logo=githubactions&logoColor=white" alt="Branch protection ready" />
   </a>
   <a href="observability/docs/METRICS.md">
     <img src="https://img.shields.io/badge/Docs-METRICS.md-22d3ee?logo=mdbook&logoColor=white" alt="Metrics docs" />
@@ -177,10 +180,11 @@ flowchart LR
 
 1. **Install + wire dependencies:** `npm ci` (Node 20.18+). Scripts and lint gates live in `package.json`, matching the CI wall so local runs mirror GitHub enforcement.【F:package.json†L13-L47】
 2. **Mirror the CI enforcement wall locally:** run `npm run ci:verify` before pushing; it fans out lint/tests/coverage/Solidity/subgraph/security/branch-policy stages exactly as `.github/workflows/ci.yml` enforces and as `.github/required-checks.json` expects for branch protection.【F:package.json†L23-L47】【F:.github/workflows/ci.yml†L1-L260】【F:.github/required-checks.json†L1-L10】
-3. **Boot the observability stack:** `docker-compose up -d prom grafana alertmanager` mounts `observability/prometheus/prometheus.yml`, `observability/prometheus/alerts.yml`, and the Grafana provisioning bundle so targets, alerts, and dashboards are live on first load (Prom :9090, Grafana :3000, Alertmanager :9093).【F:docker-compose.yml†L1-L38】【F:observability/prometheus/prometheus.yml†L1-L12】【F:observability/prometheus/alerts.yml†L1-L45】【F:grafana/provisioning/dashboards/libp2p.yaml†L1-L9】
-4. **Verify ingestion & dashboards:** open <http://localhost:9090/targets> to confirm the scrape job is `UP`; Grafana auto-imports the libp2p unified + DCUtR dashboards from `observability/grafana/*.json` with thresholds pre-colored to match Prometheus rules (NRM denials 1/5 rps, QUIC p95 350/500 ms).【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L8】
-5. **Simulate pressure to see alerts fire:** drive network load with `npm run p2p:load-tests` or the DCUtR emitter (`npm run observability:dcutr-harness`) to push `nrm_denials_total` and QUIC handshake buckets; watch Prometheus “Alerts” and Grafana panels flip through warning/critical bands, confirming mermaid-rendered README diagrams match live tiles.【F:package.json†L47-L50】【F:scripts/dcutr-harness.ts†L1-L28】【F:observability/prometheus/alerts.yml†L1-L45】
-6. **Enforce badges on PRs:** apply the `.github/required-checks.json` array to GitHub branch protection so the CI badge wall reflects blocking gates on `main` and every PR—keeping “fully green” the default state and preventing merges when any lint/test/coverage/security step regresses.【F:.github/required-checks.json†L1-L10】【F:.github/workflows/ci.yml†L1-L260】
+3. **Validate Markdown + mermaid renderability:** `npm run lint:md` and `npm run lint:grafana` keep README diagrams, fenced mermaid blocks, and dashboards GitHub-renderable so badges and panels stay vivid both in Actions logs and on Pages previews.【F:package.json†L19-L36】【F:scripts/lint-grafana-dashboard.mjs†L1-L62】
+4. **Boot the observability stack:** `docker-compose up -d prom grafana alertmanager` mounts `observability/prometheus/prometheus.yml`, `observability/prometheus/alerts.yml`, and the Grafana provisioning bundle so targets, alerts, and dashboards are live on first load (Prom :9090, Grafana :3000, Alertmanager :9093).【F:docker-compose.yml†L1-L38】【F:observability/prometheus/prometheus.yml†L1-L12】【F:observability/prometheus/alerts.yml†L1-L45】【F:grafana/provisioning/dashboards/libp2p.yaml†L1-L9】
+5. **Verify ingestion & dashboards:** open <http://localhost:9090/targets> to confirm the scrape job is `UP`; Grafana auto-imports the libp2p unified + DCUtR dashboards from `observability/grafana/*.json` with thresholds pre-colored to match Prometheus rules (NRM denials 1/5 rps, QUIC p95 350/500 ms).【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】【F:grafana/provisioning/dashboards/dcutr.yaml†L1-L8】
+6. **Simulate pressure to see alerts fire:** drive network load with `npm run p2p:load-tests` or the DCUtR emitter (`npm run observability:dcutr-harness`) to push `nrm_denials_total` and QUIC handshake buckets; watch Prometheus “Alerts” and Grafana panels flip through warning/critical bands, confirming mermaid-rendered README diagrams match live tiles.【F:package.json†L47-L50】【F:scripts/dcutr-harness.ts†L1-L28】【F:observability/prometheus/alerts.yml†L1-L45】
+7. **Enforce badges on PRs:** apply the `.github/required-checks.json` array to GitHub branch protection so the CI badge wall reflects blocking gates on `main` and every PR—keeping “fully green” the default state and preventing merges when any lint/test/coverage/security step regresses.【F:.github/required-checks.json†L1-L10】【F:.github/workflows/ci.yml†L1-L260】
 
 ### Branch-protection recipe (keeps CI green by default)
 
