@@ -117,6 +117,13 @@ The full stack is shaped as a singular intelligence core that can realign market
 
 This codebase is treated as the operational shell of that high-value intelligence engine: everything is wired for determinism (full CI wall + coverage gates), rapid owner retuning (hot-swappable orchestrators, pausable treasuries, replay shields), and observable punch economics (DCUtR dashboards + PromQL linting) so the machine stays deploy-ready and under complete owner command at all times.
 
+## Operability snapshot (auto-provisioned cockpit)
+
+- **Dashboards always on:** Grafana auto-imports the libp2p unified and DCUtR boards via `grafana/provisioning/dashboards/*.yaml`, reading JSON from `observability/grafana/` so the GitHub-rendered previews match the live panels without drift.【F:grafana/provisioning/dashboards/libp2p.yaml†L1-L9】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】
+- **Alerts already wired:** Prometheus loads `observability/prometheus/alerts.yml` and streams hits to Alertmanager; thresholds in Grafana mirror those PromQL rules for QUIC p95 and rcmgr denials so operators see the same warning/critical posture everywhere.【F:observability/prometheus/alerts.yml†L1-L45】【F:observability/prometheus/prometheus.yml†L1-L12】
+- **Owner command surfaces stay verifiable:** `nrm_limits`/`nrm_usage`, Yamux stream gauges, QUIC handshake latency, and `$AGIALPHA` treasury controls surface through `/metrics`, dashboards, and CI badges—keeping contract authority, network posture, and observability in lockstep.【F:src/telemetry/networkMetrics.js†L146-L210】【F:contracts/AlphaNodeManager.sol†L24-L122】
+- **CI wall visible and enforced:** The badge stack at the top reflects `.github/workflows/ci.yml` + `.github/required-checks.json`; running `npm run ci:verify` locally mirrors every gate before PRs hit branch protection.【F:.github/workflows/ci.yml†L1-L260】【F:.github/required-checks.json†L1-L10】【F:package.json†L23-L47】
+
 ## Launch + validation checklist (green wall + dashboards)
 
 1. **Install + wire dependencies:** `npm ci` (Node 20.18+). Scripts and lint gates live in `package.json`, matching the CI wall so local runs mirror GitHub enforcement.【F:package.json†L13-L47】
