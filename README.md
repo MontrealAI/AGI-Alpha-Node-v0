@@ -17,6 +17,9 @@
   <a href=".github/required-checks.json">
     <img src="https://img.shields.io/badge/Branch%20Protection-required%20checks-16a34a?logo=github" alt="Branch protection" />
   </a>
+  <a href="docs/deployment/branch-protection.md#enforce-required-checks">
+    <img src="https://img.shields.io/badge/PRs-enforced%20status%20wall-22c55e?logo=github" alt="PR enforcement" />
+  </a>
   <a href="https://etherscan.io/address/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa">
     <img src="https://img.shields.io/badge/$AGIALPHA-0xa61a...a1fa-ec4899?logo=ethereum&logoColor=white" alt="$AGIALPHA" />
   </a>
@@ -40,6 +43,7 @@ AGI Alpha Node v0 is the owner-controlled intelligence engine that braids on-cha
 - [Runtime + observability autopilot](#runtime--observability-autopilot)
 - [CI and branch protection](#ci-and-branch-protection)
 - [Owner control quick reference](#owner-control-quick-reference)
+- [Owner function matrix](#owner-function-matrix)
 - [Quick start](#quick-start)
 - [Testing and validation](#testing-and-validation)
 - [Operational guarantees](#operational-guarantees)
@@ -154,6 +158,7 @@ The CI wall is the single source of truth for merging. Every gate is required on
 - **Required checks:** [`.github/required-checks.json`](.github/required-checks.json) lists the exact status checks to enforce in GitHub branch protection (recommended: apply to `main` and all PRs).
 - **Local parity:** `npm run ci:verify` executes the same gates so contributors can keep the badge wall green before opening a PR.
 - **Branch rule recipe:** Settings → Branches → Add rule for `main` → Require a pull request before merging → Require status checks to pass using [`.github/required-checks.json`](.github/required-checks.json) → Require conversation resolution. This keeps CI visible and enforced on every PR.
+- **Enforcement sanity check:** After applying the branch rule, push a test PR to confirm GitHub blocks merging until every required check turns green and the workflow badge above reflects the latest run.
 - **Badge publishing:** wire `BADGE_GIST_ID` and `BADGE_GIST_TOKEN` (see [`docs/deployment/branch-protection.md`](docs/deployment/branch-protection.md#shieldsio-badge-publishing)) so the `badges` job can auto-push Shields endpoint JSON for lint, tests, solidity, subgraph, docker, security, and coverage.
 
 | Status check | Purpose |
@@ -198,6 +203,18 @@ The owner retains complete control over runtime, treasury, validators, and ident
 - **Identity + ENS:** register, rotate, suspend, or revoke ENS-linked controllers (`registerIdentity`, `updateIdentityController`, `setIdentityStatus`, `revokeIdentity`).
 - **Staking flows:** custody adjustments (`withdrawStake`), on-chain staking (`stake`), and validator validation/acceptance hooks (`recordAlphaWUValidation`, `recordAlphaWUAcceptance`, `applySlash`).
 - **Auditability:** every change emits events that the subgraph indexes so dashboards and alerts stay synchronized.
+
+## Owner function matrix
+
+The canonical `$AGIALPHA` deployment at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals) keeps the owner at the center of every production lever.
+
+| Capability | Function(s) | Effect | Telemetry + audit hooks |
+| --- | --- | --- | --- |
+| Halt or resume live flows | `pause`, `unpause` | Pauses or resumes staking, validator work units, and treasury orchestrations in a single owner transaction. | Emits pause/unpause events; surfaces in `/metrics`, Grafana tiles, and the subgraph. |
+| Validator roster control | `setValidator` | Adds or removes eligible validators instantly. | Validator roster changes appear in events, subgraph bindings, and the dashboard roster view. |
+| Identity/ENS routing | `registerIdentity`, `updateIdentityController`, `setIdentityStatus`, `revokeIdentity` | Aligns ENS controllers with active operators; supports rotation and emergency revocation. | ENS + identity events propagate to the indexer and Grafana alerts. |
+| Treasury and stake custody | `withdrawStake`, `applySlash`, `recordAlphaWUValidation`, `recordAlphaWUAcceptance` | Moves staked balances, accepts/rejects work units, and applies slashing with owner authority. | Emits ledger and validation events that the subgraph, Prometheus, and dashboard ingest. |
+| Canonical token guardrail | Constructor enforces `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` | Rejects non-canonical token bindings to prevent drift from `$AGIALPHA`. | Deployment logs and Solidity checks validate the binding; CI solidity gate re-runs the constraint. |
 
 ```mermaid
 %%{init: { 'theme': 'forest', 'themeVariables': { 'primaryColor': '#0f172a', 'primaryTextColor': '#e2e8f0', 'lineColor': '#f97316', 'secondaryColor': '#22c55e', 'tertiaryColor': '#38bdf8' } }}%%
