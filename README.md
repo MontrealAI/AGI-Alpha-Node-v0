@@ -117,6 +117,28 @@ The full stack is shaped as a singular intelligence core that can realign market
 
 This codebase is treated as the operational shell of that high-value intelligence engine: everything is wired for determinism (full CI wall + coverage gates), rapid owner retuning (hot-swappable orchestrators, pausable treasuries, replay shields), and observable punch economics (DCUtR dashboards + PromQL linting) so the machine stays deploy-ready and under complete owner command at all times.
 
+## Rapid start (compose + CI mirror)
+
+- **One-shot observability bring-up:** `docker-compose up -d prom grafana alertmanager` mounts the Prometheus config + alert rules and the Grafana provisioning bundle so libp2p and DCUtR dashboards are live on first load (Prom :9090, Grafana :3000, Alertmanager :9093).【F:docker-compose.yml†L1-L38】【F:observability/prometheus/prometheus.yml†L1-L12】【F:observability/prometheus/alerts.yml†L1-L45】【F:grafana/provisioning/dashboards/libp2p.yaml†L1-L9】
+- **CI parity at your fingertips:** `npm run ci:verify` locally executes the same lint/test/coverage/Solidity/subgraph/security/branch gates enforced in `.github/workflows/ci.yml` and surfaced as required checks via `.github/required-checks.json`, keeping the badge wall truthful and PRs green by default.【F:package.json†L23-L47】【F:.github/workflows/ci.yml†L1-L260】【F:.github/required-checks.json†L1-L10】
+- **Owner override surface stays live:** `$AGIALPHA` (0xa61a3b3a130a9c20768eebf97e21515a6046a1fa, 18 decimals) is hardwired into the on-chain manager so the owner can pause/unpause, rotate ENS controllers, and move stake with a single transaction while operators watch `/metrics` and dashboards update in real time.【F:contracts/AlphaNodeManager.sol†L19-L122】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】
+
+```mermaid
+%%{init: { 'theme': 'forest', 'themeVariables': { 'primaryColor': '#0f172a', 'primaryTextColor': '#e2e8f0', 'lineColor': '#22d3ee', 'secondaryColor': '#0ea5e9', 'tertiaryColor': '#f97316' } }}%%
+flowchart LR
+  classDef neon fill:#0f172a,stroke:#22d3ee,stroke-width:2px,color:#e2e8f0;
+  classDef ember fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
+  classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
+
+  Dev["Local + CI runners\n`npm run ci:verify`"]:::neon --> Gate[Required checks\n`.github/required-checks.json`]:::ember
+  Gate --> Badge[Badges\nGitHub Actions status]:::frost
+  Node["AGI Alpha Node\n/metrics export"]:::neon --> Prom[Prometheus\nalerts.yml loaded]:::ember
+  Prom --> Graf[Grafana\nlibp2p + DCUtR dashboards]:::frost
+  Prom --> AM[Alertmanager\nlocal routes]:::ember
+  Graf --> Owner[Owner + operators\nthreshed panels]:::neon
+  AM --> Owner
+```
+
 ## Operability snapshot (auto-provisioned cockpit)
 
 > Unified observability autopilot (compose-ready)
