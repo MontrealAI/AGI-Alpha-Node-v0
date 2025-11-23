@@ -144,6 +144,13 @@ flowchart LR
 - **Owner command surfaces stay verifiable:** `nrm_limits`/`nrm_usage`, Yamux stream gauges, QUIC handshake latency, and `$AGIALPHA` treasury controls surface through `/metrics`, dashboards, and CI badges—keeping contract authority, network posture, and observability in lockstep.【F:src/telemetry/networkMetrics.js†L146-L210】【F:contracts/AlphaNodeManager.sol†L24-L122】
 - **CI wall visible and enforced:** The badge stack at the top reflects `.github/workflows/ci.yml` + `.github/required-checks.json`; running `npm run ci:verify` locally mirrors every gate before PRs hit branch protection.【F:.github/workflows/ci.yml†L1-L260】【F:.github/required-checks.json†L1-L10】【F:package.json†L23-L47】
 
+### Observability sprint acceptance (libp2p cockpit)
+
+- **Provisioned from git, no drift:** `grafana/provisioning/dashboards/libp2p.yaml` points Grafana at the libp2p JSON dashboard so the new unified cockpit loads on first boot and stays immutable for reviewers.【F:grafana/provisioning/dashboards/libp2p.yaml†L1-L9】【F:observability/grafana/libp2p_unified_dashboard.json†L1-L219】
+- **Alerts live with the scrape config:** Prometheus now loads `/etc/prometheus/prometheus.yml` plus `/etc/prometheus/alerts.yml` (mounted by Compose) so QUIC p95 and resource-manager denials evaluate immediately and feed Alertmanager without extra switches.【F:observability/prometheus/prometheus.yml†L1-L12】【F:observability/prometheus/alerts.yml†L1-L45】【F:docker-compose.yml†L1-L25】
+- **Threshold tiles = PromQL rules:** Grafana’s warning/critical bands on the QUIC and rcmgr panels mirror the PromQL thresholds, ensuring the visual state on the README/GitHub page matches the live alert wall.【F:observability/grafana/libp2p_unified_dashboard.json†L29-L96】【F:observability/prometheus/alerts.yml†L1-L45】
+- **Mermaid/render lint baked in:** `npm run lint:grafana` validates the dashboards and Markdown fences so GitHub renders every mermaid block and Grafana panel preview consistently during CI and local checks.【F:package.json†L19-L36】【F:scripts/lint-grafana-dashboard.mjs†L1-L62】
+
 ## Launch + validation checklist (green wall + dashboards)
 
 1. **Install + wire dependencies:** `npm ci` (Node 20.18+). Scripts and lint gates live in `package.json`, matching the CI wall so local runs mirror GitHub enforcement.【F:package.json†L13-L47】
