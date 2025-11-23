@@ -35,6 +35,8 @@
 
 AGI Alpha Node v0 is the owner-controlled intelligence engine that braids on-chain authority, libp2p runtime governance, and a fully provisioned observability wall. Every surface is tuned so the owner can pause, retune, or redirect the platform in a single transaction while the CI wall keeps the repository deployment-ready. The node is designed to act as the decisive intelligence substrate for high-stakes orchestration while keeping owner override levers visible, auditable, and safe to trigger. The canonical token contract is anchored at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals) so treasury, staking, and governance always remain under explicit owner command.
 
+The stack is curated like a flight deck built to defend a green badge wall: diagrams lint the same way GitHub renders them, CI surfaces every check as a visible status, and branch protection is wired to the same job names that the local `npm run ci:verify` emits. The owner keeps immediate control over runtime posture, validator rosters, identity routes, staking balances, and treasury sweeps—every override is accompanied by metrics, events, and dashboards so production actions are reversible, observable, and enforced by policy.
+
 The repository is curated as a production cockpit: mermaid diagrams lint for GitHub parity, coverage is gated at 85%+, dependency security is enforced on every PR, and branch protection mirrors the exact checks documented below so the CI badge is always green and visible.
 
 Mermaid diagrams, badges, and CI gate names have been aligned so GitHub renders everything identically to local previews. The README, docs, dashboards, and workflow job names are kept in lockstep to make enforcement transparent: the required checks, badge endpoints, and `npm run ci:verify` output all share the same strings, so a green wall locally means a green wall on PRs and `main`.
@@ -211,6 +213,12 @@ flowchart TD
   Security --> Verify
   Verify --> BranchProtection[Required checks\n(branch protection)]:::neon
 ```
+
+### Rendering + enforcement guardrails
+
+- **Mermaid parity:** `npm run lint:md` and `npm run lint:links` validate diagram fences and anchors exactly as GitHub parses them so every flowchart above stays visible on repository pages. Use `npx @mermaid-js/mermaid-cli` locally if you want PNG/SVG spot checks, but the lint gate is authoritative for PRs.
+- **Badge fidelity:** the CI badge at the top of this README points to [`ci.yml`](.github/workflows/ci.yml) on `main`; if a required check fails, the badge turns red and branch protection blocks merges. The optional `badges` job publishes Shields endpoints using the same job names so you can embed granular status badges without editing workflow code.
+- **Branch rules:** apply [`.github/required-checks.json`](.github/required-checks.json) to `main` and enable “Require branches to be up to date” + “Require conversation resolution.” This keeps the Full CI Verification wall, individual gates, and the aggregated verify step visible to reviewers and enforced on every PR.
 
 ## Owner control quick reference
 
