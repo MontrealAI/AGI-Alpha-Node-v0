@@ -1469,14 +1469,14 @@ flowchart LR
   classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
   classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
 
-  Source[Main branch\nPR-protected]:::lava --> CI[CI pipeline\n(all gates)]:::frost
-  CI --> Image[Docker image\nbuilt from Dockerfile]:::neon
-  CI --> Chart[Helm chart\nvalues.yaml overrides]:::frost
-  Image --> Cluster[Kubernetes release]:::lava
+  Source["Main branch<br/>PR-protected"]:::lava --> CI["CI pipeline<br/>(all gates)"]:::frost
+  CI --> Image["Docker image<br/>built from Dockerfile"]:::neon
+  CI --> Chart["Helm chart<br/>values.yaml overrides"]:::frost
+  Image --> Cluster["Kubernetes release<br/>(PR-gated)"]:::lava
   Chart --> Cluster
-  Cluster --> Telemetry[Prometheus/OTel\n/metrics & /debug/resources]:::neon
-  Cluster --> GovernanceAPI[Owner commands\n/governance/*]:::lava
-  Telemetry --> Operator[Dashboards + CLI]:::frost
+  Cluster --> Telemetry["Prometheus/OTel<br/>/metrics & /debug/resources"]:::neon
+  Cluster --> GovernanceAPI["Owner commands<br/>/governance/*"]:::lava
+  Telemetry --> Operator["Dashboards + CLI<br/>(Grafana + curl)"]:::frost
 ```
 
 ## Validation & tests
@@ -1510,10 +1510,10 @@ flowchart LR
   classDef lava fill:#0b1120,stroke:#f97316,stroke-width:2px,color:#ffedd5;
   classDef frost fill:#0b1120,stroke:#0ea5e9,stroke-width:2px,color:#e0f2fe;
 
-  MetricsStub[METRICS.md\n(label schema + emitters) ]:::lava --> Prom[Prometheus scrape\n/metrics stays stable]:::frost
-  DashStub[DASHBOARD.md\npanel-by-panel guide + placeholder]:::neon --> Grafana[Grafana import\n`dcutr_dashboard.json`]:::lava
+  MetricsStub["METRICS.md<br/>label schema + emitters"]:::lava --> Prom["Prometheus scrape<br/>/metrics stays stable"]:::frost
+  DashStub["DASHBOARD.md<br/>panel-by-panel guide + placeholder"]:::neon --> Grafana["Grafana import<br/>`dcutr_dashboard.json`"]:::lava
   Prom --> Grafana
-  Grafana --> Ops[Ops & Owner cockpit\nalerts, offload policy]:::frost
+  Grafana --> Ops["Ops & Owner cockpit<br/>alerts + offload policy"]:::frost
 ```
 
 - **METRICS.md** — declares the `region/asn/transport/relay_id` label set, per-metric semantics, and code snippets for registering emitters. It stays in lockstep with `observability/prometheus/metrics_dcutr.js` so CI and Grafana panels agree.【F:observability/docs/METRICS.md†L1-L99】【F:observability/prometheus/metrics_dcutr.js†L1-L221】
