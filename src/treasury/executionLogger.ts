@@ -49,9 +49,14 @@ export class ExecutionLogger {
     );
   }
 
-  thresholdShortfall(threshold: number, approvals: number, pending: string[], context: ExecutionLogContext) {
+  thresholdShortfall(
+    threshold: number,
+    approvalWeight: number,
+    pending: string[],
+    context: ExecutionLogContext & { approvalCount?: number }
+  ) {
     this.logger.warn(
-      { event: 'threshold_shortfall', threshold, approvals, pending, ...context },
+      { event: 'threshold_shortfall', threshold, approvalWeight, pending, ...context },
       'Threshold not met'
     );
   }
