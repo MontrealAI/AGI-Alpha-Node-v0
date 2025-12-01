@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { getAddress } from 'ethers';
 
 const ORIGINAL_ENV = { ...process.env };
 
@@ -52,9 +53,9 @@ describe('ENS network config', () => {
 
     expect(config.chainId).toBe(11155111);
     expect(config.rpcUrl).toBe('https://rpc.sepolia.example');
-    expect(config.ensRegistry).toBe('0x00000000000000000000000000000000000000ab');
-    expect(config.nameWrapper).toBe('0x00000000000000000000000000000000000000cd');
-    expect(config.publicResolver).toBe('0x00000000000000000000000000000000000000ef');
+    expect(config.ensRegistry).toBe(getAddress('0x00000000000000000000000000000000000000ab'));
+    expect(config.nameWrapper).toBe(getAddress('0x00000000000000000000000000000000000000cd'));
+    expect(config.publicResolver).toBe(getAddress('0x00000000000000000000000000000000000000ef'));
   });
 
   it('throws when provided invalid addresses', async () => {

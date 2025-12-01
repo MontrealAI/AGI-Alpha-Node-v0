@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { getAddress } from 'ethers';
 
 const { loadEnsConfigMock, getEnsClientMock } = vi.hoisted(() => ({
   loadEnsConfigMock: vi.fn(),
@@ -17,6 +18,11 @@ vi.mock('../src/ens/client.js', () => ({
 }));
 
 describe('ens:inspect integration contract', () => {
+  const ENS_REGISTRY = getAddress('0x00000000000c2e074ec69a0dfb2997ba6c7d2e1e');
+  const NAME_WRAPPER = getAddress('0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401');
+  const PUBLIC_RESOLVER = getAddress('0x231b0ee14048e9dccd1d247744d114a4eb5e8e63');
+  const SEPOLIA_PUBLIC_RESOLVER = getAddress('0xe99638b40e4fff0129d56f03b55b6bbc4bbe49b5');
+
   beforeEach(() => {
     vi.resetModules();
     vi.resetAllMocks();
@@ -27,9 +33,9 @@ describe('ens:inspect integration contract', () => {
     loadEnsConfigMock.mockReturnValue({
       chainId: 1,
       rpcUrl: 'https://rpc.example',
-      ensRegistry: '0x00000000000c2e074ec69a0dfb2997ba6c7d2e1e',
-      nameWrapper: '0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401',
-      publicResolver: '0x231b0ee14048e9dccd1d247744d114a4eb5e8e63'
+      ensRegistry: ENS_REGISTRY,
+      nameWrapper: NAME_WRAPPER,
+      publicResolver: PUBLIC_RESOLVER
     });
 
     const textRecords = new Map([
@@ -79,7 +85,7 @@ describe('ens:inspect integration contract', () => {
     loadEnsConfigMock.mockReturnValue({
       chainId: 1,
       rpcUrl: 'https://rpc.outage',
-      ensRegistry: '0x00000000000c2e074ec69a0dfb2997ba6c7d2e1e',
+      ensRegistry: ENS_REGISTRY,
       nameWrapper: null,
       publicResolver: null
     });
@@ -111,9 +117,9 @@ describe('ens:inspect integration contract', () => {
     loadEnsConfigMock.mockReturnValue({
       chainId: 11155111,
       rpcUrl: 'https://sepolia.rpc',
-      ensRegistry: '0x00000000000c2e074ec69a0dfb2997ba6c7d2e1e',
+      ensRegistry: ENS_REGISTRY,
       nameWrapper: null,
-      publicResolver: '0xe99638b40e4fff0129d56f03b55b6bbc4bbe49b5'
+      publicResolver: SEPOLIA_PUBLIC_RESOLVER
     });
 
     getEnsClientMock.mockReturnValue({
