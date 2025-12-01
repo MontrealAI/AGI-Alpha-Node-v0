@@ -1,4 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { coerceConfig } from '../src/config/schema.js';
 import {
   AGIALPHA_TOKEN_CHECKSUM_ADDRESS,
@@ -9,6 +12,7 @@ import {
   VRAM_TIER_WEIGHTS,
   SLA_WEIGHTS
 } from '../src/constants/workUnits.js';
+import { loadConfig, resetConfigCache } from '../src/config/env.js';
 
 describe('config schema', () => {
   it('coerces boolean flags', () => {
@@ -255,5 +259,48 @@ describe('config schema', () => {
         })
       })
     ).toThrow(/cannot be negative/);
+  });
+
+  describe('loadConfig', () => {
+    const baseEnv = { ...process.env };
+    let tempDir;
+
+    beforeEach(() => {
+      tempDir = mkdtempSync(join(tmpdir(), 'agi-config-'));
+      process.env = { ...baseEnv };
+      resetConfigCache();
+    });
+
+    afterEach(() => {
+      process.env = baseEnv;
+      resetConfigCache();
+      if (tempDir) {
+        rmSync(tempDir, { recursive: true, force: true });
+      }
+    });
+
+    it('hydrates configuration from CONFIG_PATH env files', () => {
+      const envPath = join(tempDir, 'node.env');
+      writeFileSync(envPath, 'RPC_URL=https://rpc.from.file\nNODE_LABEL=from-file\n');
+      process.env.CONFIG_PATH = envPath;
+
+      const config = loadConfig();
+
+      expect(config.RPC_URL).toBe('https://rpc.from.file');
+      expect(config.NODE_LABEL).toBe('from-file');
+    });
+
+    it('refreshes cached configuration when the config path changes', () => {
+      const firstEnv = join(tempDir, 'first.env');
+      const secondEnv = join(tempDir, 'second.env');
+      writeFileSync(firstEnv, 'RPC_URL=https://rpc.first\n');
+      writeFileSync(secondEnv, 'RPC_URL=https://rpc.second\n');
+
+      const firstConfig = loadConfig({}, { configPath: firstEnv });
+      const secondConfig = loadConfig({}, { configPath: secondEnv });
+
+      expect(firstConfig.RPC_URL).toBe('https://rpc.first');
+      expect(secondConfig.RPC_URL).toBe('https://rpc.second');
+    });
   });
 });
