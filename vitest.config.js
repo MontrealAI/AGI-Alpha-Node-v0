@@ -20,6 +20,17 @@ export default defineConfig({
           exclude: ['better-sqlite3', 'cborg', '@ethereumjs/vm']
         }
       }
+    },
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov', 'json-summary'],
+      include: ['src/network/**', 'src/telemetry/**'],
+      thresholds: {
+        lines: 85,
+        functions: 85,
+        branches: 60,
+        statements: 85
+      }
     }
   },
   optimizeDeps: {
