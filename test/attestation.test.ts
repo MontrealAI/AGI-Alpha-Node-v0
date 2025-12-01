@@ -164,6 +164,7 @@ describe('health check service', () => {
       spanProcessors: [new SimpleSpanProcessor(exporter)]
     });
     provider.register();
+    const tracer = provider.getTracer('attestation-test');
 
     const { nodeIdentity, keypair } = buildIdentity();
 
@@ -172,7 +173,8 @@ describe('health check service', () => {
       measureLatency: async () => 42,
       role: 'orchestrator',
       nodeVersion: '1.2.3',
-      logger: pino({ level: 'silent' })
+      logger: pino({ level: 'silent' }),
+      tracer
     });
 
     await vi.runOnlyPendingTimersAsync();

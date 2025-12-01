@@ -13,16 +13,9 @@ export function loadConfig(overrides = {}) {
   loadEnv();
   const defaults = { ...DEFAULT_CONFIG };
 
-  for (const [key, value] of Object.entries(DEFAULT_CONFIG)) {
-    if (SENSITIVE_DEFAULT_KEYS.has(key)) {
-      if (process.env[key] === undefined && overrides[key] === undefined) {
-        delete defaults[key];
-        continue;
-      }
-    }
-
-    if (process.env[key] === undefined && overrides[key] === undefined) {
-      process.env[key] = typeof value === 'string' ? value : String(value);
+  for (const key of Object.keys(DEFAULT_CONFIG)) {
+    if (SENSITIVE_DEFAULT_KEYS.has(key) && process.env[key] === undefined && overrides[key] === undefined) {
+      delete defaults[key];
     }
   }
 
