@@ -1,9 +1,12 @@
 import { createHash } from 'node:crypto';
+import { createRequire } from 'node:module';
 import Ajv from 'ajv';
 import pino from 'pino';
-import taskRunTelemetrySchema from '../../spec/task_run_telemetry.schema.json' with { type: 'json' };
-import energyReportSchema from '../../spec/energy_report.schema.json' with { type: 'json' };
-import qualityEvalSchema from '../../spec/quality_eval.schema.json' with { type: 'json' };
+
+const require = createRequire(import.meta.url);
+const taskRunTelemetrySchema = require('../../spec/task_run_telemetry.schema.json');
+const energyReportSchema = require('../../spec/energy_report.schema.json');
+const qualityEvalSchema = require('../../spec/quality_eval.schema.json');
 import { initializeDatabase } from '../persistence/database.js';
 import {
   EnergyReportRepository,
