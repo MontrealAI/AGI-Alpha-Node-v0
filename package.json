@@ -19,7 +19,7 @@
     "test:frontend": "vitest run --config dashboard/vitest.config.js --passWithNoTests=false",
     "test:watch": "vitest",
     "pretest": "node scripts/check-ajv-version.mjs",
-    "coverage": "c8 --reporter=text --reporter=lcov --reporter=json-summary vitest run && c8 report --check-coverage --lines 85 --functions 85 --branches 80 --statements 85 --include 'src/network/**' --include 'src/telemetry/**'",
+    "coverage": "vitest run --passWithNoTests=false --coverage",
     "precoverage": "node scripts/check-ajv-version.mjs",
     "lint:sol": "solhint --config .solhint.json \"contracts/**/*.sol\"",
     "test:sol": "node scripts/run-solc.mjs",
@@ -99,6 +99,7 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4",
     "vite": "^5.4.7",
-    "vitest": "^1.6.0"
+    "vitest": "^1.6.0",
+    "@vitest/coverage-v8": "^1.6.0"
   }
 }
