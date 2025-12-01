@@ -73,7 +73,7 @@ import { acknowledgeStakeAndActivate } from './services/stakeActivation.js';
 import { createJobLifecycle } from './services/jobLifecycle.js';
 import { createLifecycleJournal } from './services/lifecycleJournal.js';
 import { buildEpochPayload } from './services/oracleExport.js';
-import { buildEnsRecordTemplate } from './ens/ens_config.js';
+import { applyEnsRecordOverrides, buildEnsRecordTemplate } from './ens/ens_config.js';
 import { createSyntheticLaborEngine } from './services/syntheticLaborEngine.js';
 import { createGlobalIndexEngine } from './services/globalIndexEngine.js';
 import { initializeDatabase } from './persistence/database.js';
@@ -707,17 +707,64 @@ program
 program
   .command('ens:records')
   .description('Print ENS metadata template for the current node configuration')
+  .option('-l, --label <label>', 'ENS label to embed in the generated records')
+  .option('-p, --parent <domain>', 'ENS parent domain (e.g. alpha.node.agi.eth)')
+  .option('--ens-name <ens>', 'Full ENS name override (takes precedence over label/parent)')
+  .option('--payout-eth <address>', 'Override ETH payout address used for the coin record')
+  .option('--payout-agialpha <address>', 'Override AGIALPHA payout address used for the coin record')
+  .option('--verifier-url <url>', 'Override verifier base URL for published text records')
+  .option('--primary-model <model>', 'Primary model identifier for agialpha_model text record')
+  .option('--commit <hash>', 'Override commit hash embedded in agialpha_commit text record')
   .option('--pretty', 'Pretty-print JSON output', false)
   .action((options) => {
-    let config;
+    let config = {};
+    let configLoaded = false;
     try {
       config = loadConfig();
+      configLoaded = true;
     } catch (error) {
-      console.error(chalk.red(`Failed to load configuration: ${error.message}`));
+      const hasOverrides = [
+        'ensName',
+        'label',
+        'parent',
+        'payoutEth',
+        'payoutAgialpha',
+        'verifierUrl',
+        'primaryModel',
+        'commit'
+      ].some((key) => Boolean(options[key]));
+      if (!hasOverrides) {
+        console.error(chalk.red(`Failed to load configuration: ${error.message}`));
+        process.exitCode = 1;
+        return;
+      }
+
+      console.error(
+        chalk.yellow(
+          `Configuration could not be loaded (${error.message}); proceeding with CLI overrides only`
+        )
+      );
+    }
+    const mergedConfig = applyEnsRecordOverrides(config, {
+      ensName: options.ensName,
+      label: options.label,
+      parent: options.parent,
+      payoutEth: options.payoutEth,
+      payoutAgialpha: options.payoutAgialpha,
+      verifierUrl: options.verifierUrl,
+      primaryModel: options.primaryModel
+    });
+
+    if (!configLoaded && !Object.keys(mergedConfig).length) {
+      console.error(chalk.red('ENS records require configuration or explicit CLI overrides.'));
       process.exitCode = 1;
       return;
     }
-    const template = buildEnsRecordTemplate({ config });
+
+    const template = buildEnsRecordTemplate({
+      config: mergedConfig,
+      commitHash: options.commit?.trim?.() ?? null
+    });
     const payload = options.pretty ? JSON.stringify(template, null, 2) : JSON.stringify(template);
     console.log(payload);
   });

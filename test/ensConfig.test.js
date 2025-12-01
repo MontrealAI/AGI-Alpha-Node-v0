@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  applyEnsRecordOverrides,
   getNodeEnsName,
   getNodePayoutAddresses,
   buildEnsRecordTemplate
@@ -60,5 +61,39 @@ describe('ENS config helpers', () => {
 
     expect(template.text_records.agialpha_verifier).toBe('https://validator.alpha');
     expect(template.text_records.agialpha_health).toBe('https://validator.alpha/verifier/health');
+  });
+
+  it('derives ENS name from label and parent overrides when explicit name exists', () => {
+    const merged = applyEnsRecordOverrides(
+      { NODE_ENS_NAME: 'old.alpha.eth' },
+      { label: 'custom', parent: 'alpha.node.agi.eth' }
+    );
+
+    expect(merged.NODE_ENS_NAME).toBe('custom.alpha.node.agi.eth');
+  });
+
+  it('merges CLI-style overrides for ENS record generation', () => {
+    const merged = applyEnsRecordOverrides(
+      {},
+      {
+        ensName: ' custom.node.agi.eth ',
+        label: ' 42 ',
+        parent: 'alpha.node.agi.eth',
+        payoutEth: '0x0000000000000000000000000000000000000042',
+        payoutAgialpha: '0x0000000000000000000000000000000000000043',
+        verifierUrl: 'https://verifier.node/',
+        primaryModel: 'custom-model:v2'
+      }
+    );
+
+    const template = buildEnsRecordTemplate({ config: merged, commitHash: '0xcli' });
+
+    expect(template.ens_name).toBe('custom.node.agi.eth');
+    expect(template.text_records.agialpha_verifier).toBe('https://verifier.node');
+    expect(template.text_records.agialpha_health).toBe('https://verifier.node/verifier/health');
+    expect(template.text_records.agialpha_model).toBe('custom-model:v2');
+    expect(template.text_records.agialpha_commit).toBe('0xcli');
+    expect(template.coin_addresses.ETH).toBe('0x0000000000000000000000000000000000000042');
+    expect(template.coin_addresses.AGIALPHA).toBe('0x0000000000000000000000000000000000000043');
   });
 });
