@@ -20,6 +20,33 @@ const DEFAULT_LABELS = {
 
 const LABEL_NAMES = ['region', 'asn', 'transport', 'relay_id'];
 
+function getOrCreateCounter(registry, options) {
+  const existing = registry.getSingleMetric(options.name);
+  if (existing instanceof Counter) return existing;
+  if (existing) {
+    registry.removeSingleMetric(options.name);
+  }
+  return new Counter({ ...options, registers: [] });
+}
+
+function getOrCreateGauge(registry, options) {
+  const existing = registry.getSingleMetric(options.name);
+  if (existing instanceof Gauge) return existing;
+  if (existing) {
+    registry.removeSingleMetric(options.name);
+  }
+  return new Gauge({ ...options, registers: [] });
+}
+
+function getOrCreateHistogram(registry, options) {
+  const existing = registry.getSingleMetric(options.name);
+  if (existing instanceof Histogram) return existing;
+  if (existing) {
+    registry.removeSingleMetric(options.name);
+  }
+  return new Histogram({ ...options, registers: [] });
+}
+
 /**
  * @param {DCUtRLabelSet} [labels]
  * @returns {NormalizedLabelSet}
@@ -41,68 +68,68 @@ function labelKey(labelSet) {
   return `${labelSet.region}|${labelSet.asn}|${labelSet.transport}|${labelSet.relay_id}`;
 }
 
-export const dcutrPunchAttemptsTotal = new Counter({
+export const dcutrPunchAttemptsTotal = getOrCreateCounter(defaultRegistry, {
   name: 'dcutr_punch_attempts_total',
   help: 'Total hole punch attempts initiated via DCUtR coordination.',
   labelNames: LABEL_NAMES,
 });
 
-export const dcutrPunchSuccessTotal = new Counter({
+export const dcutrPunchSuccessTotal = getOrCreateCounter(defaultRegistry, {
   name: 'dcutr_punch_success_total',
   help: 'Successful hole punch upgrades that migrated traffic off the relay.',
   labelNames: LABEL_NAMES,
 });
 
-export const dcutrPunchFailureTotal = new Counter({
+export const dcutrPunchFailureTotal = getOrCreateCounter(defaultRegistry, {
   name: 'dcutr_punch_failure_total',
   help: 'Failed hole punch attempts that could not establish a direct path.',
   labelNames: LABEL_NAMES,
 });
 
-export const dcutrFallbackRelayTotal = new Counter({
+export const dcutrFallbackRelayTotal = getOrCreateCounter(defaultRegistry, {
   name: 'dcutr_fallback_relay_total',
   help: 'Connections that remained on the relay after unsuccessful direct upgrade attempts.',
   labelNames: LABEL_NAMES,
 });
 
-export const dcutrRelayOffloadTotal = new Counter({
+export const dcutrRelayOffloadTotal = getOrCreateCounter(defaultRegistry, {
   name: 'dcutr_relay_offload_total',
   help: 'Connections that successfully offloaded relay usage after establishing direct connectivity.',
   labelNames: LABEL_NAMES,
 });
 
-export const dcutrRelayDataBytesTotal = new Counter({
+export const dcutrRelayDataBytesTotal = getOrCreateCounter(defaultRegistry, {
   name: 'dcutr_relay_data_bytes_total',
   help: 'Bytes transmitted over relay paths during DCUtR sessions.',
   labelNames: LABEL_NAMES,
 });
 
-export const dcutrDirectDataBytesTotal = new Counter({
+export const dcutrDirectDataBytesTotal = getOrCreateCounter(defaultRegistry, {
   name: 'dcutr_direct_data_bytes_total',
   help: 'Bytes transmitted over direct connections after DCUtR upgrade.',
   labelNames: LABEL_NAMES,
 });
 
-export const dcutrTimeToDirectSeconds = new Histogram({
+export const dcutrTimeToDirectSeconds = getOrCreateHistogram(defaultRegistry, {
   name: 'dcutr_time_to_direct_seconds',
   help: 'Elapsed seconds from relay rendezvous to confirmed direct path.',
   buckets: [0.25, 0.5, 1, 2, 4, 8, 12, 20, 30],
   labelNames: LABEL_NAMES,
 });
 
-export const dcutrPathQualityRttMs = new Gauge({
+export const dcutrPathQualityRttMs = getOrCreateGauge(defaultRegistry, {
   name: 'dcutr_path_quality_rtt_ms',
   help: 'Round-trip time of the selected direct path in milliseconds.',
   labelNames: LABEL_NAMES,
 });
 
-export const dcutrPathQualityLossRate = new Gauge({
+export const dcutrPathQualityLossRate = getOrCreateGauge(defaultRegistry, {
   name: 'dcutr_path_quality_loss_rate',
   help: 'Loss rate percentage observed on the selected direct path.',
   labelNames: LABEL_NAMES,
 });
 
-export const dcutrPunchSuccessRate = new Gauge({
+export const dcutrPunchSuccessRate = getOrCreateGauge(defaultRegistry, {
   name: 'dcutr_punch_success_rate',
   help: 'Computed success ratio of hole punch attempts vs successes.',
   labelNames: LABEL_NAMES,
@@ -151,6 +178,20 @@ export function registerDCUtRMetrics(registry = defaultRegistry) {
     return;
   }
 
+  const metrics = [
+    dcutrPunchAttemptsTotal,
+    dcutrPunchSuccessTotal,
+    dcutrPunchFailureTotal,
+    dcutrPunchSuccessRate,
+    dcutrTimeToDirectSeconds,
+    dcutrPathQualityRttMs,
+    dcutrPathQualityLossRate,
+    dcutrFallbackRelayTotal,
+    dcutrRelayOffloadTotal,
+    dcutrRelayDataBytesTotal,
+    dcutrDirectDataBytesTotal,
+  ];
+
   const defaultMetricsAlreadyRegistered = registry
     .getMetricsAsArray()
     .some((metric) => DEFAULT_METRIC_NAMES.has(metric.name));
@@ -158,17 +199,11 @@ export function registerDCUtRMetrics(registry = defaultRegistry) {
   if (!defaultMetricsAlreadyRegistered) {
     collectDefaultMetrics({ register: registry });
   }
-  registry.registerMetric(dcutrPunchAttemptsTotal);
-  registry.registerMetric(dcutrPunchSuccessTotal);
-  registry.registerMetric(dcutrPunchFailureTotal);
-  registry.registerMetric(dcutrPunchSuccessRate);
-  registry.registerMetric(dcutrTimeToDirectSeconds);
-  registry.registerMetric(dcutrPathQualityRttMs);
-  registry.registerMetric(dcutrPathQualityLossRate);
-  registry.registerMetric(dcutrFallbackRelayTotal);
-  registry.registerMetric(dcutrRelayOffloadTotal);
-  registry.registerMetric(dcutrRelayDataBytesTotal);
-  registry.registerMetric(dcutrDirectDataBytesTotal);
+  for (const metric of metrics) {
+    if (!registry.getSingleMetric(metric.name)) {
+      registry.registerMetric(metric);
+    }
+  }
 
   registeredRegistries.add(registry);
 }

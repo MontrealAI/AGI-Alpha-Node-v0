@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events';
 import { performance } from 'node:perf_hooks';
-import { SpanStatusCode, context, trace } from '@opentelemetry/api';
+import { SpanStatusCode, context, trace, type Tracer } from '@opentelemetry/api';
 import pino, { type Logger } from 'pino';
 import type { NodeIdentity, NodeKeypair } from '../identity/types.js';
 import type { HealthAttestation, SignedHealthAttestation } from './schema.js';
@@ -19,6 +19,7 @@ export interface HealthCheckOptions {
   readonly nodeVersion?: string;
   readonly meta?: Record<string, unknown>;
   readonly logToConsole?: boolean;
+  readonly tracer?: Tracer;
 }
 
 export interface HealthCheckHandle {
@@ -65,7 +66,7 @@ export function startHealthChecks(
   const measureLatency = opts.measureLatency ?? defaultMeasureLatency;
   const statusEvaluator = opts.statusEvaluator ?? defaultStatus;
   const logToConsole = opts.logToConsole ?? false;
-  const tracer = getTracer();
+  const tracer = opts.tracer ?? getTracer();
 
   const emitAttestation = async () => {
     const span = tracer.startSpan('node.healthcheck', {
