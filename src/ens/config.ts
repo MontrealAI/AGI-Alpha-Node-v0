@@ -1,5 +1,6 @@
 import { DEFAULT_CONFIG } from '../config/defaults.js';
 import { getConfig, loadConfig } from '../config/env.js';
+import { getAddress } from 'ethers';
 import { z } from 'zod';
 
 export interface EnsNetworkPreset {
@@ -30,16 +31,21 @@ export interface EnsConfig {
   readonly publicResolver: string | null;
 }
 
-const ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 const DEFAULT_CHAIN_ID = 1;
+const EIP_55_ERROR = 'Expected EIP-55 address';
 
-const addressSchema = z
-  .string()
-  .trim()
-  .refine((value) => ADDRESS_REGEX.test(value), {
-    message: 'Expected EIP-55 address'
-  })
-  .transform((value) => value.toLowerCase());
+function checksumAddress(value: string): string {
+  return getAddress(value);
+}
+
+const addressSchema = z.string().trim().transform((value, ctx) => {
+  try {
+    return checksumAddress(value);
+  } catch {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: EIP_55_ERROR });
+    return z.NEVER;
+  }
+});
 
 const configSchema = z.object({
   chainId: z
@@ -52,17 +58,25 @@ const configSchema = z.object({
   publicResolver: addressSchema.nullable()
 });
 
+function normalizePreset(preset: EnsNetworkPreset): EnsNetworkPreset {
+  return Object.freeze({
+    ensRegistry: checksumAddress(preset.ensRegistry),
+    nameWrapper: preset.nameWrapper ? checksumAddress(preset.nameWrapper) : null,
+    publicResolver: preset.publicResolver ? checksumAddress(preset.publicResolver) : null
+  });
+}
+
 const PRESET_NETWORKS: Readonly<Record<number, EnsNetworkPreset>> = Object.freeze({
-  1: {
+  1: normalizePreset({
     ensRegistry: '0x00000000000c2e074ec69a0dfb2997ba6c7d2e1e',
     nameWrapper: '0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401',
     publicResolver: '0x231b0ee14048e9dccd1d247744d114a4eb5e8e63'
-  },
-  11155111: {
+  }),
+  11155111: normalizePreset({
     ensRegistry: '0x00000000000c2e074ec69a0dfb2997ba6c7d2e1e',
     nameWrapper: '0x0635513f179d50a207757e05759cbd106d7dfce8',
     publicResolver: '0xe99638b40e4fff0129d56f03b55b6bbc4bbe49b5'
-  }
+  })
 });
 
 let cachedConfig: EnsConfig | null = null;
