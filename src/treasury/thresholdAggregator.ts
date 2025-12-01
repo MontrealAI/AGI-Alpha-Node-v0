@@ -9,6 +9,7 @@ export interface AggregationReport {
   digest: HexData;
   threshold: number;
   approvals: VerifiedApproval[];
+  approvalWeight: number;
   invalid: InvalidEnvelopeReport[];
   pendingGuardians: GuardianRecord[];
   shortfall: number;
@@ -45,6 +46,7 @@ export async function aggregateGuardianEnvelopes(
   const replayDetected = Boolean(executedResult);
 
   const approvals: VerifiedApproval[] = [];
+  let approvalWeight = 0;
   const invalid: InvalidEnvelopeReport[] = [];
   const claimedGuardians = new Set<string>();
 
@@ -68,6 +70,7 @@ export async function aggregateGuardianEnvelopes(
       continue;
     }
     claimedGuardians.add(guardian.id);
+    approvalWeight += guardian.weight ?? 1;
     approvals.push({ guardian, envelope });
   }
 
@@ -75,13 +78,14 @@ export async function aggregateGuardianEnvelopes(
     .list()
     .filter((guardian) => !claimedGuardians.has(guardian.id));
 
-  const thresholdMet = approvals.length >= options.threshold && !replayDetected;
-  const shortfall = Math.max(0, options.threshold - approvals.length);
+  const thresholdMet = approvalWeight >= options.threshold && !replayDetected;
+  const shortfall = Math.max(0, options.threshold - approvalWeight);
 
   return {
     digest: options.digest,
     threshold: options.threshold,
     approvals,
+    approvalWeight,
     invalid,
     pendingGuardians,
     shortfall,

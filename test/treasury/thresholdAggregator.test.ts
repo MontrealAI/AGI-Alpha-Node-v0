@@ -176,6 +176,61 @@ describe('Guardian threshold aggregation', () => {
     expect(report.pendingGuardians.map((g) => g.id)).toEqual(['guardian-2']);
   });
 
+  it('honors guardian weights when computing thresholds', async () => {
+    const dilithium = await getDilithiumInstance();
+    const heavy = dilithium.generateKeys(2);
+    const light = dilithium.generateKeys(2);
+
+    const registry = new GuardianRegistry([
+      { id: 'guardian-heavy', publicKey: Buffer.from(heavy.publicKey).toString('base64'), parameterSet: 2, weight: 2 },
+      { id: 'guardian-light', publicKey: Buffer.from(light.publicKey).toString('base64'), parameterSet: 2, weight: 1 }
+    ]);
+
+    const heavyApproval = await signIntentDigest({
+      digest,
+      privateKey: heavy.privateKey,
+      publicKey: heavy.publicKey,
+      metadata: { guardianId: 'guardian-heavy' }
+    });
+
+    const lightApproval = await signIntentDigest({
+      digest,
+      privateKey: light.privateKey,
+      publicKey: light.publicKey,
+      metadata: { guardianId: 'guardian-light' }
+    });
+
+    const weightedReport = await aggregateGuardianEnvelopes([heavyApproval], {
+      digest,
+      threshold: 2,
+      registry
+    });
+
+    expect(weightedReport.approvalWeight).toBe(2);
+    expect(weightedReport.thresholdMet).toBe(true);
+    expect(weightedReport.shortfall).toBe(0);
+    expect(weightedReport.pendingGuardians.map((g) => g.id)).toEqual(['guardian-light']);
+
+    const shortfallReport = await aggregateGuardianEnvelopes([lightApproval], {
+      digest,
+      threshold: 2,
+      registry
+    });
+
+    expect(shortfallReport.approvalWeight).toBe(1);
+    expect(shortfallReport.thresholdMet).toBe(false);
+    expect(shortfallReport.shortfall).toBe(1);
+  });
+
+  it('rejects guardian entries with non-positive weights', () => {
+    expect(
+      () =>
+        new GuardianRegistry([
+          { id: 'bad-weight', publicKey: Buffer.from('bad').toString('base64'), parameterSet: 2, weight: 0 }
+        ])
+    ).toThrow(/positive number/);
+  });
+
   it('marks reports when the digest was already executed in the ledger', async () => {
     const dilithium = await getDilithiumInstance();
     const keyPairs = [dilithium.generateKeys(2)];

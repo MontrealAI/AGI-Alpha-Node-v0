@@ -135,7 +135,9 @@ async function main() {
     executedCheck: (candidate) => ledger.getRecord(candidate)
   });
 
-  console.log(`\nCollected ${report.approvals.length} valid approval(s). Threshold: ${report.threshold}`);
+  console.log(
+    `\nCollected ${report.approvals.length} valid approval(s) (weight ${report.approvalWeight}). Threshold: ${report.threshold}`
+  );
   for (const approval of report.approvals) {
     console.log(`  ✓ ${approval.guardian.id} :: parameterSet=${approval.guardian.parameterSet}`);
   }
@@ -150,28 +152,35 @@ async function main() {
       console.error(note);
       logger.thresholdShortfall(
         report.threshold,
-        report.approvals.length,
+        report.approvalWeight,
         report.pendingGuardians.map((g) => g.id),
         {
           intentDigest: digest,
           onChainDigest,
-          note
+          note,
+          approvalCount: report.approvals.length
         }
       );
     } else {
       const pending = report.pendingGuardians.map((g) => g.id);
-      const note = `Threshold not met. Approvals=${report.approvals.length}/${report.threshold} (shortfall ${report.shortfall}). Pending guardians: ${pending.join(', ') || 'none'}`;
+      const note = `Threshold not met. Approvals=${report.approvalWeight}/${report.threshold} (shortfall ${report.shortfall}). Pending guardians: ${pending.join(', ') || 'none'}`;
       console.error(note);
-      logger.thresholdShortfall(report.threshold, report.approvals.length, pending, {
+      logger.thresholdShortfall(report.threshold, report.approvalWeight, pending, {
         intentDigest: digest,
-        onChainDigest
+        onChainDigest,
+        approvalCount: report.approvals.length
       });
     }
     process.exit(1);
   }
 
   const approvedGuardians = report.approvals.map((approval) => approval.guardian.id);
-  logger.thresholdSatisfied(report.threshold, approvedGuardians, { intentDigest: digest, onChainDigest });
+  logger.thresholdSatisfied(report.threshold, approvedGuardians, {
+    intentDigest: digest,
+    onChainDigest,
+    approvalWeight: report.approvalWeight,
+    approvalCount: report.approvals.length
+  });
 
   if (options.dryRun) {
     console.log('Dry-run enabled. Threshold satisfied; skipping on-chain execution.');

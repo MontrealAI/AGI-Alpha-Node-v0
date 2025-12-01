@@ -24,6 +24,10 @@ export class GuardianRegistry {
       if (record.revoked) {
         continue;
       }
+      const weight = record.weight ?? 1;
+      if (!Number.isFinite(weight) || weight <= 0) {
+        throw new Error(`Guardian weight must be a positive number (id=${record.id}).`);
+      }
       const normalizedKey = record.publicKey.trim();
       if (this.#guardians.has(record.id)) {
         throw new Error(`Duplicate guardian id detected: ${record.id}`);
@@ -31,8 +35,9 @@ export class GuardianRegistry {
       if (this.#byPublicKey.has(normalizedKey)) {
         throw new Error(`Guardian public key reused: ${normalizedKey}`);
       }
-      this.#guardians.set(record.id, { ...record, publicKey: normalizedKey });
-      this.#byPublicKey.set(normalizedKey, { ...record, publicKey: normalizedKey });
+      const normalizedRecord = { ...record, publicKey: normalizedKey, weight } satisfies GuardianRecord;
+      this.#guardians.set(record.id, normalizedRecord);
+      this.#byPublicKey.set(normalizedKey, normalizedRecord);
     }
   }
 
