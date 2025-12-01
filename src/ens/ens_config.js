@@ -26,6 +26,38 @@ function safeTrim(value) {
   return String(value).trim();
 }
 
+function applyOverride(target, key, value) {
+  const trimmed = safeTrim(value);
+  if (!trimmed) {
+    return;
+  }
+  target[key] = trimmed;
+}
+
+export function applyEnsRecordOverrides(baseConfig, overrides = {}) {
+  const merged = { ...(baseConfig ?? {}) };
+
+  const hasExplicitEnsName = Boolean(safeTrim(overrides.ensName));
+
+  applyOverride(merged, 'NODE_ENS_NAME', overrides.ensName);
+  applyOverride(merged, 'NODE_LABEL', overrides.label);
+  applyOverride(merged, 'ENS_PARENT_DOMAIN', overrides.parent);
+  applyOverride(merged, 'NODE_PAYOUT_ETH_ADDRESS', overrides.payoutEth);
+  applyOverride(merged, 'NODE_PAYOUT_AGIALPHA_ADDRESS', overrides.payoutAgialpha);
+  applyOverride(merged, 'VERIFIER_PUBLIC_BASE_URL', overrides.verifierUrl);
+  applyOverride(merged, 'NODE_PRIMARY_MODEL', overrides.primaryModel);
+
+  if (!hasExplicitEnsName && (overrides.label || overrides.parent)) {
+    const label = safeTrim(merged.NODE_LABEL);
+    const parent = safeTrim(merged.ENS_PARENT_DOMAIN);
+    if (label && parent) {
+      merged.NODE_ENS_NAME = `${label}.${parent}`.toLowerCase();
+    }
+  }
+
+  return merged;
+}
+
 function deriveEnsName(config, env = process.env) {
   if (!config) {
     const envLabel = safeTrim(env.NODE_LABEL);
