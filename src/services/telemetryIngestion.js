@@ -1,9 +1,9 @@
 import { createHash } from 'node:crypto';
 import Ajv from 'ajv';
 import pino from 'pino';
-import taskRunTelemetrySchema from '../../spec/task_run_telemetry.schema.json' assert { type: 'json' };
-import energyReportSchema from '../../spec/energy_report.schema.json' assert { type: 'json' };
-import qualityEvalSchema from '../../spec/quality_eval.schema.json' assert { type: 'json' };
+import taskRunTelemetrySchema from '../../spec/task_run_telemetry.schema.json' with { type: 'json' };
+import energyReportSchema from '../../spec/energy_report.schema.json' with { type: 'json' };
+import qualityEvalSchema from '../../spec/quality_eval.schema.json' with { type: 'json' };
 import { initializeDatabase } from '../persistence/database.js';
 import {
   EnergyReportRepository,
