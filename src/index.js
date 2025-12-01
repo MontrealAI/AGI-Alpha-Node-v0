@@ -79,8 +79,10 @@ import { createGlobalIndexEngine } from './services/globalIndexEngine.js';
 import { initializeDatabase } from './persistence/database.js';
 import { buildGossipsubRoutingConfig } from './network/pubsubConfig.js';
 import { buildDialerPolicyConfig } from './network/dialerPolicy.js';
+import { installProcessGuards } from './utils/processGuard.js';
 
 const program = new Command();
+installProcessGuards();
 
 function parseStrategiesOption(input) {
   if (!input) return DEFAULT_STRATEGIES;
