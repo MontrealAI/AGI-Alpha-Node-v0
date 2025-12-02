@@ -1,42 +1,22 @@
-import { createRequire } from 'node:module';
-import { spawn } from 'node:child_process';
+import { runVitest } from './lib/vitest-runner.js';
 
-const require = createRequire(import.meta.url);
-const vitestBin = require.resolve('vitest/vitest.mjs');
+async function run() {
+  try {
+    const { code, signal } = await runVitest(process.argv.slice(2));
 
-function translateArgs(args) {
-  const forwarded = [];
-  let runInBand = false;
-
-  for (const arg of args) {
-    if (arg === '--runInBand' || arg === '-i') {
-      runInBand = true;
-      continue;
-    }
-    forwarded.push(arg);
-  }
-
-  if (runInBand) {
-    forwarded.push('--pool=threads', '--poolOptions.threads.singleThread=true');
-  }
-
-  return forwarded;
-}
-
-function run() {
-  const args = translateArgs(process.argv.slice(2));
-  const child = spawn(process.execPath, [vitestBin, ...args], {
-    stdio: 'inherit',
-    env: process.env
-  });
-
-  child.on('exit', (code, signal) => {
     if (signal) {
       process.kill(process.pid, signal);
       return;
     }
-    process.exit(code ?? 1);
-  });
+
+    process.exit(code);
+  } catch (error) {
+    console.error('[vitest-runner] Unable to start Vitest process');
+    if (error) {
+      console.error(error);
+    }
+    process.exit(1);
+  }
 }
 
 run();
