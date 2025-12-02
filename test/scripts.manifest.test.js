@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { getAddress } from 'ethers';
 import { renderSubgraphManifest } from '../scripts/render-subgraph-manifest.mjs';
 
 describe('render-subgraph-manifest script', () => {
@@ -17,6 +18,8 @@ describe('render-subgraph-manifest script', () => {
     ].join('\n');
     writeFileSync(templatePath, template, 'utf8');
 
+    const checksummed = getAddress('0x00000000000000000000000000000000000000ab');
+
     const result = renderSubgraphManifest({
       templatePath,
       outputPath,
@@ -24,10 +27,10 @@ describe('render-subgraph-manifest script', () => {
       startBlock: '1234567'
     });
 
-    expect(result.address).toBe('0x00000000000000000000000000000000000000ab');
+    expect(result.address).toBe(checksummed);
     expect(result.startBlock).toBe('1234567');
     const rendered = readFileSync(outputPath, 'utf8');
-    expect(rendered).toContain('address: 0x00000000000000000000000000000000000000ab');
+    expect(rendered).toContain(`address: ${checksummed}`);
     expect(rendered).toContain('startBlock: 1234567');
   });
 });
