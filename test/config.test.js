@@ -280,19 +280,23 @@ describe('config schema', () => {
     });
 
     it('hydrates default .env on first load when no CONFIG_PATH is provided', () => {
-      const originalCwd = process.cwd();
       const envPath = join(tempDir, '.env');
       writeFileSync(envPath, 'RPC_URL=https://rpc.default\n');
       delete process.env.RPC_URL;
-      process.chdir(tempDir);
 
-      try {
-        const config = loadConfig();
+      const config = loadConfig({}, { workingDir: tempDir });
 
-        expect(config.RPC_URL).toBe('https://rpc.default');
-      } finally {
-        process.chdir(originalCwd);
-      }
+      expect(config.RPC_URL).toBe('https://rpc.default');
+    });
+
+    it('does not override existing environment variables when hydrating the default .env', () => {
+      const envPath = join(tempDir, '.env');
+      writeFileSync(envPath, 'RPC_URL=https://rpc.default\n');
+      process.env.RPC_URL = 'https://rpc.from.env';
+
+      const config = loadConfig({}, { workingDir: tempDir });
+
+      expect(config.RPC_URL).toBe('https://rpc.from.env');
     });
 
     it('hydrates configuration from CONFIG_PATH env files', () => {
