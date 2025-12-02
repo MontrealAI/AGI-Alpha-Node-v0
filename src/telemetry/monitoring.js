@@ -586,9 +586,15 @@ export function startMonitoringServer({
 
   const server = http.createServer(async (req, res) => {
     if (req.url === '/metrics') {
-      const metrics = await registry.metrics();
-      res.writeHead(200, { 'Content-Type': registry.contentType });
-      res.end(metrics);
+      try {
+        const metrics = await registry.metrics();
+        res.writeHead(200, { 'Content-Type': registry.contentType });
+        res.end(metrics);
+      } catch (error) {
+        logger?.error?.(error, 'Failed to collect metrics');
+        res.writeHead(500, { 'Content-Type': 'text/plain' });
+        res.end('failed to collect metrics');
+      }
       return;
     }
     res.writeHead(404);
