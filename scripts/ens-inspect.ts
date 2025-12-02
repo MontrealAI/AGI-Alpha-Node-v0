@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 import 'dotenv/config';
 import chalk from 'chalk';
-import { Command } from 'commander';
+import { Command, CommanderError } from 'commander';
 import { pathToFileURL } from 'node:url';
 import { format } from 'node:util';
 import { loadEnsConfig, type EnsConfigOverrides } from '../src/ens/config.js';
@@ -34,6 +34,7 @@ export class EnsNetworkError extends Error {
 }
 
 export interface InspectOptions {
+  readonly ens?: string;
   readonly json?: boolean;
   readonly chainId?: string;
   readonly rpcUrl?: string;
@@ -214,10 +215,27 @@ function printHumanReadable(data: InspectResult): void {
   console.log(lines.join('\n'));
 }
 
-export async function main() {
+function requireTargetName(name: string | undefined, options: InspectOptions, program: Command): string {
+  const resolved = name ?? options.ens;
+  if (!resolved) {
+    program.error('ENS name is required via positional argument or --ens <name>');
+  }
+  return resolved;
+}
+
+export function createProgram(
+  deps: { inspect?: typeof inspectEnsName; printer?: typeof printHumanReadable; exitOverride?: boolean } = {}
+) {
+  const inspect = deps.inspect ?? inspectEnsName;
+  const printer = deps.printer ?? printHumanReadable;
   const program = new Command();
+
+  if (deps.exitOverride) {
+    program.exitOverride();
+  }
   program
-    .argument('<name>', 'ENS name to inspect (e.g. alpha.agent.agi.eth)')
+    .argument('[name]', 'ENS name to inspect (e.g. alpha.agent.agi.eth)')
+    .option('--ens <name>', 'ENS name to inspect (alternative to positional argument)')
     .option('--json', 'Emit machine-readable JSON', false)
     .option('--chain-id <chainId>', 'Override the chain ID for RPC calls')
     .option('--rpc-url <url>', 'Override the RPC endpoint URL')
@@ -226,14 +244,19 @@ export async function main() {
     .option('--public-resolver <address>', 'Override the PublicResolver address or blank to disable')
     .action(async (name: string, opts: InspectOptions) => {
       try {
-        const result = await inspectEnsName(name, opts);
+        const target = requireTargetName(name, opts, program);
+        const result = await inspect(target, opts);
         if (opts.json) {
           console.log(JSON.stringify(result, null, 2));
           return;
         }
 
-        printHumanReadable(result);
+        printer(result);
       } catch (error) {
+        if (error instanceof CommanderError) {
+          throw error;
+        }
+
         if (error instanceof EnsResolutionError) {
           console.error(chalk.red(`Resolution error: ${error.message}`));
           process.exitCode = 2;
@@ -260,6 +283,12 @@ export async function main() {
         process.exitCode = 1;
       }
     });
+
+  return program;
+}
+
+export async function main() {
+  const program = createProgram();
 
   await program.parseAsync(process.argv);
 }
