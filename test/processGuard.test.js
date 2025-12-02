@@ -61,4 +61,45 @@ describe('process guard', () => {
 
     remove();
   });
+
+  it('supports graceful shutdown hooks on termination signals', async () => {
+    const logger = { error: vi.fn(), info: noop, warn: vi.fn() };
+    const shutdownHook = vi.fn().mockResolvedValue(undefined);
+    process.exit = vi.fn();
+
+    const remove = installProcessGuards(logger, { onShutdown: shutdownHook });
+
+    await remove.handlers.onSignal('SIGTERM');
+
+    expect(logger.warn).toHaveBeenCalledWith(
+      { signal: 'SIGTERM' },
+      'Graceful shutdown requested; draining tasks'
+    );
+    expect(shutdownHook).toHaveBeenCalledWith('SIGTERM');
+    expect(process.exit).toHaveBeenCalledWith(0);
+
+    remove();
+  });
+
+  it('logs shutdown handler failures and still exits cleanly', async () => {
+    const logger = { error: vi.fn(), info: noop, warn: vi.fn() };
+    const shutdownHook = vi.fn().mockRejectedValue(new Error('drain failed'));
+    process.exit = vi.fn();
+
+    const remove = installProcessGuards(logger, { onShutdown: shutdownHook });
+
+    await remove.handlers.onSignal('SIGINT');
+
+    expect(logger.warn).toHaveBeenCalledWith(
+      { signal: 'SIGINT' },
+      'Graceful shutdown requested; draining tasks'
+    );
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ signal: 'SIGINT' }),
+      'Error during shutdown handler'
+    );
+    expect(process.exit).toHaveBeenCalledWith(0);
+
+    remove();
+  });
 });
