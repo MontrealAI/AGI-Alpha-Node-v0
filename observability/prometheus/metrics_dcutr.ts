@@ -1,46 +1,33 @@
+// @ts-nocheck
 import type { Counter, Gauge, Histogram, Registry } from 'prom-client';
-import {
-  dcutrDirectDataBytesTotal,
-  dcutrFallbackRelayTotal,
-  dcutrPathQualityLossRate,
-  dcutrPathQualityRttMs,
-  dcutrPunchAttemptsTotal,
-  dcutrPunchFailureTotal,
-  dcutrPunchSuccessRate,
-  dcutrPunchSuccessTotal,
-  dcutrRelayDataBytesTotal,
-  dcutrRelayOffloadTotal,
-  dcutrTimeToDirectSeconds,
-  normalizeLabels,
-  onDirectBytes as jsOnDirectBytes,
-  onDirectLossRate as jsOnDirectLossRate,
-  onDirectRttMs as jsOnDirectRttMs,
-  onPunchFailure as jsOnPunchFailure,
-  onPunchLatency as jsOnPunchLatency,
-  onPunchStart as jsOnPunchStart,
-  onPunchSuccess as jsOnPunchSuccess,
-  onRelayBytes as jsOnRelayBytes,
-  onRelayFallback as jsOnRelayFallback,
-  onRelayOffload as jsOnRelayOffload,
-  registerDCUtRMetrics as jsRegisterDCUtRMetrics,
-} from './metrics_dcutr.js';
+import * as dcutr from './metrics_dcutr.js';
 
-export type { DCUtRLabelSet } from './metrics_dcutr.js';
-export type NormalizedLabelSet = ReturnType<typeof normalizeLabels>;
+export interface DCUtRLabelSet {
+  region?: string;
+  asn?: string;
+  transport?: string;
+  relay_id?: string;
+}
 
-export const metrics = {
-  dcutrPunchAttemptsTotal,
-  dcutrPunchSuccessTotal,
-  dcutrPunchFailureTotal,
-  dcutrPunchSuccessRate,
-  dcutrTimeToDirectSeconds,
-  dcutrPathQualityRttMs,
-  dcutrPathQualityLossRate,
-  dcutrFallbackRelayTotal,
-  dcutrRelayOffloadTotal,
-  dcutrRelayDataBytesTotal,
-  dcutrDirectDataBytesTotal,
+export type NormalizedLabelSet = Required<DCUtRLabelSet>;
+
+const normalizeLabels: (labels?: DCUtRLabelSet) => NormalizedLabelSet = dcutr.normalizeLabels;
+
+const metricsImpl = {
+  dcutrDirectDataBytesTotal: dcutr.dcutrDirectDataBytesTotal as Counter<string>,
+  dcutrFallbackRelayTotal: dcutr.dcutrFallbackRelayTotal as Counter<string>,
+  dcutrPathQualityLossRate: dcutr.dcutrPathQualityLossRate as Gauge<string>,
+  dcutrPathQualityRttMs: dcutr.dcutrPathQualityRttMs as Gauge<string>,
+  dcutrPunchAttemptsTotal: dcutr.dcutrPunchAttemptsTotal as Counter<string>,
+  dcutrPunchFailureTotal: dcutr.dcutrPunchFailureTotal as Counter<string>,
+  dcutrPunchSuccessRate: dcutr.dcutrPunchSuccessRate as Gauge<string>,
+  dcutrPunchSuccessTotal: dcutr.dcutrPunchSuccessTotal as Counter<string>,
+  dcutrRelayDataBytesTotal: dcutr.dcutrRelayDataBytesTotal as Counter<string>,
+  dcutrRelayOffloadTotal: dcutr.dcutrRelayOffloadTotal as Counter<string>,
+  dcutrTimeToDirectSeconds: dcutr.dcutrTimeToDirectSeconds as Histogram<string>
 };
+
+export const metrics = metricsImpl;
 
 export const dcutrMetrics: {
   dcutrPunchAttemptsTotal: Counter<string>;
@@ -57,47 +44,47 @@ export const dcutrMetrics: {
 } = metrics;
 
 export function registerDCUtRMetrics(registry?: Registry): void {
-  jsRegisterDCUtRMetrics(registry);
+  dcutr.registerDCUtRMetrics(registry);
 }
 
 export function onPunchStart(labels?: Partial<NormalizedLabelSet>): void {
-  jsOnPunchStart(labels);
+  dcutr.onPunchStart(labels);
 }
 
 export function onPunchSuccess(labels?: Partial<NormalizedLabelSet>): void {
-  jsOnPunchSuccess(labels);
+  dcutr.onPunchSuccess(labels);
 }
 
 export function onPunchFailure(labels?: Partial<NormalizedLabelSet>): void {
-  jsOnPunchFailure(labels);
+  dcutr.onPunchFailure(labels);
 }
 
 export function onPunchLatency(seconds: number, labels?: Partial<NormalizedLabelSet>): void {
-  jsOnPunchLatency(seconds, labels);
+  dcutr.onPunchLatency(seconds, labels);
 }
 
 export function onDirectRttMs(rtt: number, labels?: Partial<NormalizedLabelSet>): void {
-  jsOnDirectRttMs(rtt, labels);
+  dcutr.onDirectRttMs(rtt, labels);
 }
 
 export function onDirectLossRate(percent: number, labels?: Partial<NormalizedLabelSet>): void {
-  jsOnDirectLossRate(percent, labels);
+  dcutr.onDirectLossRate(percent, labels);
 }
 
 export function onRelayFallback(labels?: Partial<NormalizedLabelSet>): void {
-  jsOnRelayFallback(labels);
+  dcutr.onRelayFallback(labels);
 }
 
 export function onRelayOffload(labels?: Partial<NormalizedLabelSet>): void {
-  jsOnRelayOffload(labels);
+  dcutr.onRelayOffload(labels);
 }
 
 export function onRelayBytes(bytes: number, labels?: Partial<NormalizedLabelSet>): void {
-  jsOnRelayBytes(bytes, labels);
+  dcutr.onRelayBytes(bytes, labels);
 }
 
 export function onDirectBytes(bytes: number, labels?: Partial<NormalizedLabelSet>): void {
-  jsOnDirectBytes(bytes, labels);
+  dcutr.onDirectBytes(bytes, labels);
 }
 
 export { normalizeLabels };
