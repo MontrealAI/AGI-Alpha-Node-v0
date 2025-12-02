@@ -70,6 +70,8 @@ export function startHealthChecks(
   const logToConsole = opts.logToConsole ?? false;
   const tracer = opts.tracer ?? getTracer();
 
+  let inFlight = false;
+
   const emitAttestation = async () => {
     const span = tracer.startSpan('node.healthcheck', {
       attributes: {
@@ -134,13 +136,30 @@ export function startHealthChecks(
     }
   };
 
+  const runAttestation = async () => {
+    if (inFlight) {
+      logger?.warn?.(
+        { intervalMs },
+        'Health attestation skipped because previous emission is still in flight'
+      );
+      return;
+    }
+
+    inFlight = true;
+    try {
+      await emitAttestation();
+    } finally {
+      inFlight = false;
+    }
+  };
+
   const timer = setInterval(() => {
-    emitAttestation().catch((error) => {
+    runAttestation().catch((error) => {
       logger.error({ err: error }, 'Health attestation emission failed');
     });
   }, intervalMs);
 
-  emitAttestation().catch((error) => {
+  runAttestation().catch((error) => {
     logger.error({ err: error }, 'Initial health attestation failed');
   });
 

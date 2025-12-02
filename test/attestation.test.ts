@@ -196,4 +196,48 @@ describe('health check service', () => {
     handle.stop();
     await provider.shutdown();
   });
+
+  it('does not overlap attestation emissions when processing exceeds interval', async () => {
+    vi.useFakeTimers();
+    const { nodeIdentity, keypair } = buildIdentity();
+    const emitter = new EventEmitter();
+    const emissions: SignedHealthAttestation[] = [];
+    const latencyResolvers: Array<(value: number) => void> = [];
+    const warn = vi.fn();
+    const logger = { warn, error: vi.fn(), debug: vi.fn() } as unknown as pino.Logger;
+    const firstEmission = new Promise((resolve) => emitter.once('attestation', resolve));
+
+    const handle = startHealthChecks(nodeIdentity, keypair, {
+      intervalMs: 100,
+      emitter,
+      logger,
+      measureLatency: async () => {
+        return await new Promise<number>((resolve) => {
+          latencyResolvers.push(resolve);
+        });
+      },
+      onAttestation: (signed) => emissions.push(signed)
+    });
+
+    expect(latencyResolvers.length).toBe(1);
+
+    await vi.advanceTimersByTimeAsync(500);
+    expect(latencyResolvers.length).toBe(1);
+    expect(warn).toHaveBeenCalled();
+
+    latencyResolvers.shift()?.(5);
+    await firstEmission;
+    await vi.runOnlyPendingTimersAsync();
+
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(latencyResolvers.length).toBe(1);
+
+    const secondEmission = new Promise((resolve) => emitter.once('attestation', resolve));
+    latencyResolvers.shift()?.(6);
+    await secondEmission;
+
+    expect(emissions.length).toBe(2);
+
+    handle.stop();
+  });
 });
