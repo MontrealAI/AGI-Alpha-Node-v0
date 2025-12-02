@@ -33,4 +33,33 @@ describe('planning', () => {
       })
     ).toThrow(/horizon/);
   });
+
+  it('rejects empty strategy lists', () => {
+    expect(() =>
+      planJobExecution({
+        jobProfile: { reward: '10', complexity: 2, deadlineHours: 1 },
+        strategies: [],
+        horizon: 1
+      })
+    ).toThrow(/strategy/);
+  });
+
+  it('prefers higher net value when scores tie', () => {
+    const plan = planJobExecution({
+      jobProfile: {
+        reward: '10',
+        complexity: 50,
+        deadlineHours: 1,
+        riskBps: 6000,
+        penaltiesBps: 4000
+      },
+      strategies: [
+        { name: 'high-cost', computeCost: '9', reliability: 0.75, capability: 0.8, parallelism: 1 },
+        { name: 'lower-cost', computeCost: '8', reliability: 0.75, capability: 0.8, parallelism: 1 }
+      ],
+      horizon: 1
+    });
+
+    expect(plan.recommended.strategy.name).toBe('lower-cost');
+  });
 });
