@@ -42,4 +42,23 @@ describe('process guard', () => {
 
     remove();
   });
+
+  it('handles unserializable inputs without throwing', () => {
+    const logger = { error: vi.fn(), info: noop, warn: noop };
+    process.exit = vi.fn();
+    const remove = installProcessGuards(logger);
+
+    const circular = {};
+    circular.self = circular;
+
+    expect(() => remove.handlers.onUnhandledRejection(circular)).not.toThrow();
+
+    const [[payload]] = logger.error.mock.calls;
+    expect(payload.err).toBeInstanceOf(Error);
+    expect(payload.err.message).toBe('Unserializable error payload');
+    expect(payload.err.cause).toBe(circular);
+    expect(process.exit).toHaveBeenCalledWith(1);
+
+    remove();
+  });
 });

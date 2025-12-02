@@ -5,7 +5,14 @@ const SHUTDOWN_MESSAGE = 'Unhandled error encountered; shutting down';
 
 function normalizeError(input) {
   if (input instanceof Error) return input;
-  return new Error(typeof input === 'string' ? input : JSON.stringify(input));
+  if (typeof input === 'string') return new Error(input, { cause: input });
+
+  try {
+    return new Error(JSON.stringify(input), { cause: input });
+  } catch (serializationError) {
+    const fallbackMessage = 'Unserializable error payload';
+    return new Error(fallbackMessage, { cause: input ?? serializationError });
+  }
 }
 
 export function installProcessGuards(logger = guardLogger) {
