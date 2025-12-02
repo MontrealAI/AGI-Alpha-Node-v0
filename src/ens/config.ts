@@ -167,7 +167,7 @@ export function loadEnsConfig(init: EnsConfigInit = {}): EnsConfig {
 
   const baseConfig = safeGetBaseConfig(config);
   const mergedSources: Record<string, unknown>[] = [
-    overrides ?? {},
+    (overrides ? { ...overrides } : {}) as Record<string, unknown>,
     process.env as Record<string, unknown>,
     baseConfig,
     DEFAULT_CONFIG as Record<string, unknown>

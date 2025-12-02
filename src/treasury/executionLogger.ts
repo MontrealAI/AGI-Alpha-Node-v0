@@ -3,6 +3,8 @@ import { dirname, resolve } from 'node:path';
 import pino, { multistream, type LoggerOptions, type DestinationStream } from 'pino';
 import type { TreasuryIntentV1, HexData } from './intentTypes.js';
 
+const createLogger = pino as unknown as typeof import('pino').default;
+
 export interface ExecutionLoggerOptions {
   logPath?: string;
   sync?: boolean;
@@ -21,7 +23,8 @@ export class ExecutionLogger {
 
   constructor(options: ExecutionLoggerOptions = {}) {
     const { logPath, sync = false, baseFields = {} } = options;
-    const streams: DestinationStream[] = [{ stream: process.stdout }];
+    const stdout = pino.destination({ dest: 1, sync });
+    const streams: DestinationStream[] = [stdout];
 
     if (logPath) {
       const target = resolve(logPath);
@@ -31,7 +34,9 @@ export class ExecutionLogger {
     }
 
     const config: LoggerOptions = { level: 'info', base: baseFields };
-    this.logger = streams.length > 1 ? pino(config, multistream(streams)) : pino(config, streams[0]);
+    this.logger = streams.length > 1
+      ? createLogger(config, multistream(streams))
+      : createLogger(config, streams[0]);
   }
 
   intentReceived(context: ExecutionLogContext) {

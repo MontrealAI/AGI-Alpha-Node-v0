@@ -8,6 +8,8 @@ import { createHealthAttestation, serializeSignedAttestation } from './schema.js
 import { signHealthAttestation } from './verify.js';
 import { getTracer } from '../telemetry/otel.js';
 
+const createLogger = pino as unknown as typeof import('pino').default;
+
 export interface HealthCheckOptions {
   readonly intervalMs?: number;
   readonly emitter?: EventEmitter;
@@ -61,7 +63,7 @@ export function startHealthChecks(
   opts: HealthCheckOptions = {}
 ): HealthCheckHandle {
   const emitter = opts.emitter ?? new EventEmitter();
-  const logger = opts.logger ?? pino({ level: 'info', name: 'health-service' });
+  const logger = opts.logger ?? createLogger({ level: 'info', name: 'health-service' });
   const intervalMs = Math.max(opts.intervalMs ?? DEFAULT_INTERVAL_MS, 250);
   const measureLatency = opts.measureLatency ?? defaultMeasureLatency;
   const statusEvaluator = opts.statusEvaluator ?? defaultStatus;

@@ -23,11 +23,12 @@ const NAME_WRAPPER_ABI = [
 ];
 
 export class EnsResolutionError extends Error {
+  readonly cause?: unknown;
+
   constructor(message: string, options?: { cause?: unknown }) {
     super(message);
     this.name = 'EnsResolutionError';
     if (options?.cause !== undefined) {
-      // @ts-expect-error cause is supported in modern runtimes
       this.cause = options.cause;
     }
   }
@@ -132,7 +133,7 @@ export class EnsClient {
 
     // ethers v6 uses a custom error shape
     if (typeof (error as { code?: unknown }).code === 'string') {
-      const code = (error as { code: string }).code.toLowerCase();
+      const code = ((error as { code?: string }).code ?? '').toLowerCase();
       if (code === 'call_exception' || code === 'resolver_missing') {
         return true;
       }

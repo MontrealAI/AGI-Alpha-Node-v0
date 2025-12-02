@@ -72,15 +72,10 @@ export function createHealthAttestation(
     fuses: nodeIdentity.fuses,
     expiry: nodeIdentity.expiry,
     multiaddrs: [...nodeIdentity.multiaddrs],
-    status
+    status,
+    ...(options.latencyMs !== undefined ? { latencyMs: options.latencyMs } : {}),
+    ...(options.meta ? { meta: options.meta } : {})
   };
-
-  if (options.latencyMs !== undefined) {
-    attestation.latencyMs = options.latencyMs;
-  }
-  if (options.meta) {
-    attestation.meta = options.meta;
-  }
 
   return attestation;
 }

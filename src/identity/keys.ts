@@ -4,6 +4,8 @@ import pino, { type Logger } from 'pino';
 import { SigningKey } from 'ethers';
 import type { NodeIdentity, NodeKeypair, NodePubkey } from './types.js';
 
+const createLogger = pino as unknown as typeof import('pino').default;
+
 export class NodeKeypairError extends Error {
   constructor(message: string, options?: { cause?: unknown }) {
     super(message);
@@ -108,7 +110,7 @@ function deriveSecp256k1PublicKey(privateKey: string): NodePubkey {
 }
 
 function normalizeLogger(logger?: Logger): Logger {
-  return logger ?? pino({ level: 'info', name: 'identity-keys' });
+  return logger ?? createLogger({ level: 'info', name: 'identity-keys' });
 }
 
 export function loadNodeKeypair(options: LoadKeypairOptions = {}): NodeKeypair {

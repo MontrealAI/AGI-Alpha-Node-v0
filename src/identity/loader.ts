@@ -3,6 +3,8 @@ import { getEnsClient, type EnsClient, EnsResolutionError } from '../ens/client.
 import { parseDnsaddr } from './dnsaddr.js';
 import type { NodeIdentity } from './types.js';
 
+const createLogger = pino as unknown as typeof import('pino').default;
+
 export class NodeIdentityError extends Error {
   constructor(message: string, options?: { cause?: unknown }) {
     super(message);
@@ -137,7 +139,7 @@ export async function loadNodeIdentity(
   ensName: string,
   options: LoadNodeIdentityOptions = {}
 ): Promise<NodeIdentity> {
-  const logger = options.logger ?? pino({ level: 'info', name: 'identity-loader' });
+  const logger = options.logger ?? createLogger({ level: 'info', name: 'identity-loader' });
   const normalizedName = normalizeName(ensName);
   const client = options.client ?? getEnsClient();
   const metadataKeys = options.metadataKeys ?? DEFAULT_METADATA_KEYS;
@@ -157,21 +159,16 @@ export async function loadNodeIdentity(
   const multiaddrs = await loadDnsaddrRecords(client, normalizedName, metadata, logger);
 
   const wrapper = await client.getNameWrapperData(normalizedName);
+  const expiry = wrapper ? parseExpiry(wrapper.expiry) : undefined;
   const identity: NodeIdentity = {
     ensName: normalizedName,
     peerId,
     pubkey,
     multiaddrs,
-    metadata
+    metadata,
+    ...(wrapper ? { fuses: wrapper.fuses } : {}),
+    ...(expiry !== undefined ? { expiry } : {})
   };
-
-  if (wrapper) {
-    identity.fuses = wrapper.fuses;
-    const expiry = parseExpiry(wrapper.expiry);
-    if (expiry !== undefined) {
-      identity.expiry = expiry;
-    }
-  }
 
   return identity;
 }
