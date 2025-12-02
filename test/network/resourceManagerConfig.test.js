@@ -41,6 +41,27 @@ describe('resourceManagerConfig', () => {
     expect(config.connectionManager.highWater).toBe(8);
   });
 
+  it('raises descriptive errors when override payloads cannot be parsed', () => {
+    expect(() =>
+      buildResourceManagerConfig({
+        config: {
+          NRM_LIMITS_JSON: '{invalid json'
+        }
+      })
+    ).toThrow('NRM_LIMITS_JSON');
+
+    const malformedFile = path.join(os.tmpdir(), 'limits-malformed.yaml');
+    fs.writeFileSync(malformedFile, 'perProtocol:\n  gossipsub: [unterminated');
+
+    expect(() =>
+      buildResourceManagerConfig({
+        config: {
+          NRM_LIMITS_PATH: malformedFile
+        }
+      })
+    ).toThrow('NRM limits file');
+  });
+
   it('rejects invalid watermarks', () => {
     expect(() =>
       buildResourceManagerConfig({

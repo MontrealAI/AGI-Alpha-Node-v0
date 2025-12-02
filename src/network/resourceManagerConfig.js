@@ -55,8 +55,58 @@ function parseYamlLite(input) {
   return Object.keys(result).length ? result : undefined;
 }
 
+function validateOverrideObject(candidate, sourceLabel) {
+  if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) {
+    throw new Error(`${sourceLabel} must be an object with override sections`);
+  }
+
+  const allowedKeys = new Set(['global', 'perProtocol', 'perPeer', 'connectionManager', 'ipLimiter']);
+  const keys = Object.keys(candidate);
+  if (keys.length === 0) {
+    throw new Error(`${sourceLabel} is empty; provide at least one override section`);
+  }
+
+  const sectionValidators = {
+    global: 'object',
+    perProtocol: 'object',
+    perPeer: 'object',
+    connectionManager: 'object',
+    ipLimiter: 'object'
+  };
+
+  for (const [section, expectedType] of Object.entries(sectionValidators)) {
+    if (candidate[section] === undefined) {
+      continue;
+    }
+    if (!candidate[section] || typeof candidate[section] !== expectedType || Array.isArray(candidate[section])) {
+      throw new Error(`${sourceLabel} ${section} must be an object when provided`);
+    }
+  }
+
+  const hasPrimarySection = ['global', 'perProtocol', 'perPeer'].some(
+    (section) => candidate[section] !== undefined
+  );
+  if (!hasPrimarySection) {
+    throw new Error(`${sourceLabel} must include global, perProtocol, or perPeer overrides`);
+  }
+
+  return candidate;
+}
+
+function parseOverridesPayload(payload, sourceLabel) {
+  const parsed = parseJsonMaybe(payload) ?? parseYamlLite(payload);
+  if (parsed) {
+    return validateOverrideObject(parsed, sourceLabel);
+  }
+  if (!payload || (typeof payload === 'string' && !payload.trim())) {
+    return undefined;
+  }
+
+  throw new Error(`${sourceLabel} could not be parsed as JSON or key:value lines`);
+}
+
 function loadAdvancedOverrides({ inlineOverrides, overridesPath }) {
-  const inlineParsed = parseJsonMaybe(inlineOverrides) ?? parseYamlLite(inlineOverrides);
+  const inlineParsed = parseOverridesPayload(inlineOverrides, 'NRM_LIMITS_JSON');
   if (inlineParsed) {
     return inlineParsed;
   }
@@ -69,7 +119,7 @@ function loadAdvancedOverrides({ inlineOverrides, overridesPath }) {
     throw new Error(`NRM limits file not found at ${resolved}`);
   }
   const raw = fs.readFileSync(resolved, 'utf8');
-  return parseJsonMaybe(raw) ?? parseYamlLite(raw);
+  return parseOverridesPayload(raw, `NRM limits file at ${resolved}`);
 }
 
 function scaleLimit(value, scaleFactor) {
