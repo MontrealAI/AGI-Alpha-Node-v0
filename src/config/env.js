@@ -1,6 +1,7 @@
 import { config as loadEnv } from 'dotenv';
 import { DEFAULT_CONFIG } from './defaults.js';
 import { coerceConfig } from './schema.js';
+import { join } from 'node:path';
 
 const SENSITIVE_DEFAULT_KEYS = new Set([
   'NODE_PRIVATE_KEY',
@@ -10,24 +11,28 @@ const SENSITIVE_DEFAULT_KEYS = new Set([
 let cachedConfig = null;
 let cachedConfigPath;
 
-function hydrateEnv(configPath) {
-  const dotenvPath = configPath ?? process.env.CONFIG_PATH;
-  const result = dotenvPath ? loadEnv({ path: dotenvPath, override: true }) : loadEnv();
+function hydrateEnv(configPath, workingDir, explicitConfigProvided) {
+  const defaultPath = join(workingDir ?? process.cwd(), '.env');
+  const dotenvPath = configPath ?? process.env.CONFIG_PATH ?? defaultPath;
+  const result = loadEnv({ path: dotenvPath, override: true });
 
-  if (result?.error) {
-    if (dotenvPath) {
-      throw result.error;
-    }
+  if (result?.error && explicitConfigProvided) {
+    throw result.error;
   }
 
-  return dotenvPath ?? '.env';
+  return dotenvPath;
 }
 
 export function loadConfig(overrides = {}, options = {}) {
+  const workingDir = options.workingDir;
   const requestedConfigPath = options.configPath ?? overrides.CONFIG_PATH ?? process.env.CONFIG_PATH ?? null;
-  if (cachedConfigPath === undefined || requestedConfigPath !== cachedConfigPath) {
-    hydrateEnv(requestedConfigPath);
-    cachedConfigPath = requestedConfigPath ?? null;
+  const explicitConfigProvided =
+    options.configPath !== undefined || overrides.CONFIG_PATH !== undefined || process.env.CONFIG_PATH !== undefined;
+  const effectiveConfigPath = requestedConfigPath ?? join(workingDir ?? process.cwd(), '.env');
+
+  if (cachedConfigPath === undefined || effectiveConfigPath !== cachedConfigPath) {
+    hydrateEnv(requestedConfigPath, workingDir, explicitConfigProvided);
+    cachedConfigPath = effectiveConfigPath;
     cachedConfig = null;
   }
 
