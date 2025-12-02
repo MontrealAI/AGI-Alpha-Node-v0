@@ -1274,7 +1274,8 @@ export function startAgentApi({
       parsed = schema.parse(body ?? {});
     } catch (error) {
       logger.error(error, 'Invalid governance payload');
-      jsonResponse(res, 400, { error: error.message });
+      const status = error.statusCode ?? 400;
+      jsonResponse(res, status, { error: error.message });
       return;
     }
 
@@ -1347,6 +1348,20 @@ export function startAgentApi({
   const server = http.createServer(async (req, res) => {
     const instrumentation = instrumentHttpRequest({ tracer, req, res, logger });
     const readRequestBody = () => parseRequestBody(req, maxBodyBytes);
+    const invalidBody = Symbol('invalid-body');
+    const readRequestBodySafely = async () => {
+      try {
+        return await readRequestBody();
+      } catch (error) {
+        const status = error.statusCode ?? 400;
+        logger.warn(error, 'Failed to parse request body');
+        if (error instanceof PayloadTooLargeError) {
+          res.setHeader('Connection', 'close');
+        }
+        jsonResponse(res, status, { error: error.message });
+        return invalidBody;
+      }
+    };
 
     const handleRequest = async () => {
       applyCorsHeaders(req, res, allowedCorsOrigin);
@@ -1601,7 +1616,10 @@ export function startAgentApi({
 
       if (req.method === 'POST' && req.url === '/ingest/task-runs') {
         try {
-          const body = await readRequestBody();
+          const body = await readRequestBodySafely();
+          if (body === invalidBody) {
+            return;
+          }
           const apiKey = extractApiKey(req);
           const result = telemetryService.ingestTaskRun({
             payload: body ?? {},
@@ -1625,7 +1643,10 @@ export function startAgentApi({
 
       if (req.method === 'POST' && req.url === '/ingest/energy') {
         try {
-          const body = await readRequestBody();
+          const body = await readRequestBodySafely();
+          if (body === invalidBody) {
+            return;
+          }
           const apiKey = extractApiKey(req);
           const result = telemetryService.ingestEnergy({
             payload: body ?? {},
@@ -1650,7 +1671,10 @@ export function startAgentApi({
 
       if (req.method === 'POST' && req.url === '/ingest/quality') {
         try {
-          const body = await readRequestBody();
+          const body = await readRequestBodySafely();
+          if (body === invalidBody) {
+            return;
+          }
           const apiKey = extractApiKey(req);
           const result = telemetryService.ingestQuality({
             payload: body ?? {},
@@ -1983,7 +2007,10 @@ export function startAgentApi({
       }
 
       if (req.method === 'POST' && req.url === '/jobs') {
-        const body = await readRequestBody();
+        const body = await readRequestBodySafely();
+        if (body === invalidBody) {
+          return;
+        }
         const jobId = randomUUID();
         const jobRecord = {
           id: jobId,
@@ -2060,7 +2087,10 @@ export function startAgentApi({
         }
 
         try {
-          const body = await readRequestBody();
+          const body = await readRequestBodySafely();
+          if (body === invalidBody) {
+            return;
+          }
           if (!body || typeof body !== 'object' || Array.isArray(body)) {
             jsonResponse(res, 400, { error: 'Directive payload must be an object' });
             return;
@@ -2123,7 +2153,10 @@ export function startAgentApi({
         }
 
         try {
-          const body = await readRequestBody();
+          const body = await readRequestBodySafely();
+          if (body === invalidBody) {
+            return;
+          }
           const ips = normalizeListInput(body?.ip ?? body?.ips);
           const peers = normalizeListInput(body?.peerId ?? body?.peer ?? body?.peers);
           const asns = normalizeListInput(body?.asn ?? body?.asns);
@@ -2166,7 +2199,10 @@ export function startAgentApi({
         }
 
         try {
-          const body = await readRequestBody();
+          const body = await readRequestBodySafely();
+          if (body === invalidBody) {
+            return;
+          }
           const ips = normalizeListInput(body?.ip ?? body?.ips);
           const peers = normalizeListInput(body?.peerId ?? body?.peer ?? body?.peers);
           const asns = normalizeListInput(body?.asn ?? body?.asns);
@@ -2577,7 +2613,10 @@ export function startAgentApi({
 
       if (req.method === 'POST' && req.url === '/governance/stake-top-up') {
         try {
-          const body = await readRequestBody();
+          const body = await readRequestBodySafely();
+          if (body === invalidBody) {
+            return;
+          }
           if (!body?.incentivesAddress) {
             jsonResponse(res, 400, { error: 'incentivesAddress is required' });
             return;
@@ -2614,7 +2653,10 @@ export function startAgentApi({
           return;
         }
         const [, , jobId] = req.url.split('/');
-        const body = await readRequestBody();
+        const body = await readRequestBodySafely();
+        if (body === invalidBody) {
+          return;
+        }
         try {
           const result = await jobLifecycle.apply(jobId, {
             subdomain: body?.subdomain,
@@ -2638,7 +2680,10 @@ export function startAgentApi({
           return;
         }
         const [, , jobId] = req.url.split('/');
-        const body = await readRequestBody();
+        const body = await readRequestBodySafely();
+        if (body === invalidBody) {
+          return;
+        }
         if (body?.result === undefined && body?.resultUri === undefined) {
           jsonResponse(res, 400, { error: 'result or resultUri required for submission' });
           return;
