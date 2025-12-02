@@ -279,6 +279,22 @@ describe('config schema', () => {
       }
     });
 
+    it('hydrates default .env on first load when no CONFIG_PATH is provided', () => {
+      const originalCwd = process.cwd();
+      const envPath = join(tempDir, '.env');
+      writeFileSync(envPath, 'RPC_URL=https://rpc.default\n');
+      delete process.env.RPC_URL;
+      process.chdir(tempDir);
+
+      try {
+        const config = loadConfig();
+
+        expect(config.RPC_URL).toBe('https://rpc.default');
+      } finally {
+        process.chdir(originalCwd);
+      }
+    });
+
     it('hydrates configuration from CONFIG_PATH env files', () => {
       const envPath = join(tempDir, 'node.env');
       writeFileSync(envPath, 'RPC_URL=https://rpc.from.file\nNODE_LABEL=from-file\n');

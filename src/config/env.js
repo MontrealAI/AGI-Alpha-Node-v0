@@ -8,7 +8,7 @@ const SENSITIVE_DEFAULT_KEYS = new Set([
 ]);
 
 let cachedConfig = null;
-let cachedConfigPath = null;
+let cachedConfigPath;
 
 function hydrateEnv(configPath) {
   const dotenvPath = configPath ?? process.env.CONFIG_PATH;
@@ -25,7 +25,7 @@ function hydrateEnv(configPath) {
 
 export function loadConfig(overrides = {}, options = {}) {
   const requestedConfigPath = options.configPath ?? overrides.CONFIG_PATH ?? process.env.CONFIG_PATH ?? null;
-  if (requestedConfigPath !== cachedConfigPath) {
+  if (cachedConfigPath === undefined || requestedConfigPath !== cachedConfigPath) {
     hydrateEnv(requestedConfigPath);
     cachedConfigPath = requestedConfigPath ?? null;
     cachedConfig = null;
@@ -59,5 +59,5 @@ export function getConfig() {
 
 export function resetConfigCache() {
   cachedConfig = null;
-  cachedConfigPath = null;
+  cachedConfigPath = undefined;
 }
