@@ -2,6 +2,7 @@
 import chalk from 'chalk';
 import pino from 'pino';
 import { Wallet } from 'ethers';
+import { fileURLToPath } from 'node:url';
 
 import { loadConfig } from '../src/config/env.js';
 import { createJobLifecycle } from '../src/services/jobLifecycle.js';
@@ -25,6 +26,33 @@ function createMemoryJournal() {
       return normalised;
     }
   };
+}
+
+export function ensureLocalKeys(config, log = logger) {
+  const hydrated = { ...config };
+
+  if (!hydrated.NODE_PRIVATE_KEY) {
+    const operatorWallet = Wallet.createRandom();
+    hydrated.NODE_PRIVATE_KEY = operatorWallet.privateKey;
+    hydrated.OPERATOR_ADDRESS = hydrated.OPERATOR_ADDRESS ?? operatorWallet.address;
+    log?.warn({ operator: operatorWallet.address }, 'NODE_PRIVATE_KEY missing; generated ephemeral key for local demo');
+  }
+
+  if (!process.env.NODE_PRIVATE_KEY && hydrated.NODE_PRIVATE_KEY) {
+    process.env.NODE_PRIVATE_KEY = hydrated.NODE_PRIVATE_KEY;
+  }
+
+  if (!hydrated.VALIDATOR_PRIVATE_KEY && !hydrated.OPERATOR_PRIVATE_KEY) {
+    const validatorWallet = Wallet.createRandom();
+    hydrated.VALIDATOR_PRIVATE_KEY = validatorWallet.privateKey;
+    log?.warn({ validator: validatorWallet.address }, 'VALIDATOR_PRIVATE_KEY missing; generated ephemeral validator key');
+  }
+
+  if (!process.env.VALIDATOR_PRIVATE_KEY && hydrated.VALIDATOR_PRIVATE_KEY) {
+    process.env.VALIDATOR_PRIVATE_KEY = hydrated.VALIDATOR_PRIVATE_KEY;
+  }
+
+  return hydrated;
 }
 
 function createOfflineJob(jobId, operatorAddress) {
@@ -100,15 +128,8 @@ function buildLocalContractFactory({ lifecycleLogger, interfaceAbi }) {
 async function runCluster() {
   logger.info('Bootstrapping local α-network (orchestrator + executor + validator)…');
 
-  const config = loadConfig();
+  const config = ensureLocalKeys(loadConfig());
   const orchestratorLabel = config.NODE_LABEL ?? 'demo-core';
-
-  if (!config.NODE_PRIVATE_KEY) {
-    throw new Error('NODE_PRIVATE_KEY must be configured (see .env.example)');
-  }
-  if (!config.VALIDATOR_PRIVATE_KEY && !config.OPERATOR_PRIVATE_KEY) {
-    throw new Error('VALIDATOR_PRIVATE_KEY must be configured for validator attestation');
-  }
 
   const journal = createMemoryJournal();
 
@@ -216,8 +237,11 @@ async function runCluster() {
   logger.info(chalk.green('Local α-network demo complete.'));
 }
 
-runCluster().catch((error) => {
-  logger.error(error, 'Local cluster demo failed');
-  console.error(chalk.red(error.message));
-  process.exitCode = 1;
-});
+const entrypoint = fileURLToPath(import.meta.url);
+if (process.argv[1] === entrypoint) {
+  runCluster().catch((error) => {
+    logger.error(error, 'Local cluster demo failed');
+    console.error(chalk.red(error.message));
+    process.exitCode = 1;
+  });
+}
