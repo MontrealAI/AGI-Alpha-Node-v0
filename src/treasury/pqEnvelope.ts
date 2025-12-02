@@ -123,16 +123,34 @@ export async function verifySignedEnvelope(
   envelope: SignedIntentEnvelope,
   expectedDigest?: HexData
 ): Promise<VerificationResult> {
+  if (!envelope?.digest) {
+    return { valid: false, reason: 'Missing digest' };
+  }
   if (expectedDigest && envelope.digest.toLowerCase() !== expectedDigest.toLowerCase()) {
     return { valid: false, reason: 'Digest mismatch' };
   }
-  const dilithium = await getDilithiumInstance();
-  const message = getBytes(envelope.digest);
-  const signature = Buffer.from(envelope.signature, 'base64');
-  const publicKey = Buffer.from(envelope.publicKey, 'base64');
-  const result = dilithium.verify(signature, message, publicKey, envelope.parameterSet);
-  if (result.result !== 0) {
-    return { valid: false, reason: 'Signature verification failed' };
+  if (!envelope.signature) {
+    return { valid: false, reason: 'Missing signature' };
   }
-  return { valid: true };
+  if (!envelope.publicKey) {
+    return { valid: false, reason: 'Missing public key' };
+  }
+  if (!Number.isInteger(envelope.parameterSet) || envelope.parameterSet < 0 || envelope.parameterSet > 3) {
+    return { valid: false, reason: 'Invalid parameter set' };
+  }
+
+  try {
+    const dilithium = await getDilithiumInstance();
+    const message = getBytes(envelope.digest);
+    const signature = Buffer.from(envelope.signature, 'base64');
+    const publicKey = Buffer.from(envelope.publicKey, 'base64');
+    const result = dilithium.verify(signature, message, publicKey, envelope.parameterSet);
+    if (result.result !== 0) {
+      return { valid: false, reason: 'Signature verification failed' };
+    }
+    return { valid: true };
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : 'Signature verification failed';
+    return { valid: false, reason };
+  }
 }

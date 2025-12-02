@@ -1,5 +1,6 @@
 import { Buffer } from 'node:buffer';
 import { describe, it, expect } from 'vitest';
+import type { SignedIntentEnvelope } from '../../src/treasury/pqEnvelope.js';
 import {
   encodeEnvelopeToCbor,
   decodeEnvelopeFromCbor,
@@ -37,5 +38,40 @@ describe('PQ envelope signing', () => {
     expect(pairB.parameterSet).toBe(2);
     expect(Buffer.from(pairA.publicKey).toString('hex')).toBe(Buffer.from(pairB.publicKey).toString('hex'));
     expect(Buffer.from(pairA.privateKey).toString('hex')).toBe(Buffer.from(pairB.privateKey).toString('hex'));
+  });
+
+  it('rejects malformed envelopes without throwing', async () => {
+    const malformedEnvelope = {
+      version: 1,
+      algorithm: 'dilithium' as const,
+      parameterSet: 99,
+      digest,
+      publicKey: '',
+      signature: ''
+    } satisfies Partial<SignedIntentEnvelope>;
+
+    const verification = await verifySignedEnvelope(malformedEnvelope as any, digest);
+
+    expect(verification.valid).toBe(false);
+    expect(verification.reason).toMatch(/parameter set|signature|public key/i);
+  });
+
+  it('returns a clear reason when signature material is missing', async () => {
+    const dilithium = await getDilithiumInstance();
+    const { publicKey } = dilithium.generateKeys(2);
+
+    const incompleteEnvelope = {
+      version: 1,
+      algorithm: 'dilithium' as const,
+      parameterSet: 2,
+      digest,
+      publicKey: Buffer.from(publicKey).toString('base64'),
+      signature: ''
+    };
+
+    const verification = await verifySignedEnvelope(incompleteEnvelope as any, digest);
+
+    expect(verification.valid).toBe(false);
+    expect(verification.reason).toMatch(/signature/i);
   });
 });
