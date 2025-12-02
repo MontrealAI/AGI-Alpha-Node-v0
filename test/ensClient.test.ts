@@ -7,6 +7,7 @@ const resolverState = new Map<
     textRecords: Record<string, string | null>;
     contenthash: string | null;
     pubkey?: { x: string; y: string };
+    pubkeyError?: Error;
   }
 >();
 
@@ -59,6 +60,9 @@ vi.mock('ethers', () => {
 
     async pubkey(node: string): Promise<[string, string]> {
       const entry = [...resolverState.values()].find((resolver) => resolver.address === this.address);
+      if (entry?.pubkeyError) {
+        throw entry.pubkeyError;
+      }
       if (!entry?.pubkey) {
         return [ZERO_BYTES, ZERO_BYTES];
       }
@@ -131,6 +135,24 @@ describe('ENS client', () => {
     const pubkey = await client.getPubkey(name);
 
     expect(pubkey).toBeNull();
+  });
+
+  it('treats reverted pubkey lookups as missing records', async () => {
+    const name = 'alpha.agent.agi.eth';
+    const error = new Error('execution reverted');
+    (error as { code?: string }).code = 'CALL_EXCEPTION';
+
+    resolverState.set(name, {
+      address: '0x231b0ee14048e9dccd1d247744d114a4eb5e8e63',
+      textRecords: {},
+      contenthash: null,
+      pubkeyError: error
+    });
+
+    const { getEnsClient } = await import('../src/ens/client.js');
+    const client = getEnsClient({ forceReload: true });
+
+    await expect(client.getPubkey(name)).resolves.toBeNull();
   });
 
   it('reads configured pubkey, text records, and contenthash', async () => {
