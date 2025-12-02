@@ -76,12 +76,6 @@ export function initTelemetry(config) {
   providerInstance = new NodeTracerProvider(providerOptions);
   tracerServiceName = serviceName;
 
-  if (typeof providerInstance.addSpanProcessor === 'function') {
-    spanProcessors.forEach((processor) => providerInstance.addSpanProcessor(processor));
-  } else if (spanProcessors.length) {
-    logger.warn('Span processors could not be registered: provider does not expose addSpanProcessor');
-  }
-
   providerInstance.register();
   tracerInstance = providerInstance.getTracer(tracerServiceName);
   logger.info({ exporter: exporterChoice, otlpEndpoint: config.otlpEndpoint ?? null }, 'Telemetry initialized');

@@ -1,5 +1,4 @@
 import http from 'node:http';
-import { trace } from '@opentelemetry/api';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
@@ -21,21 +20,23 @@ export function configureOpenTelemetry({ logger } = {}) {
   }
 
   const resource = resourceFromAttributes({ 'service.name': DEFAULT_SERVICE_NAME });
-  const provider = new NodeTracerProvider({ resource });
 
   const otlpEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
   const otlpHeaders = parseOtlpHeaders(process.env.OTEL_EXPORTER_OTLP_HEADERS);
+  const spanProcessors = [];
 
   if (otlpEndpoint) {
     const exporter = new OTLPTraceExporter({ url: otlpEndpoint, headers: otlpHeaders });
-    provider.addSpanProcessor(new BatchSpanProcessor(exporter));
+    spanProcessors.push(new BatchSpanProcessor(exporter));
     logger?.info?.({ otlpEndpoint }, 'OTLP trace exporter configured');
   } else {
     logger?.info?.('OTLP trace exporter disabled; spans remain local until an endpoint is configured');
   }
 
+  const provider = new NodeTracerProvider({ resource, spanProcessors });
+
   provider.register();
-  cachedTracer = trace.getTracer(DEFAULT_SERVICE_NAME);
+  cachedTracer = provider.getTracer(DEFAULT_SERVICE_NAME);
 
   const stop = async () => {
     try {
