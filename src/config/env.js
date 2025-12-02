@@ -38,6 +38,7 @@ export function loadConfig(overrides = {}, options = {}) {
   const explicitConfigProvided =
     options.configPath !== undefined || overrides.CONFIG_PATH !== undefined || process.env.CONFIG_PATH !== undefined;
   const effectiveConfigPath = resolveConfigPath(requestedConfigPath, workingDir);
+  const cacheOverrides = options.cacheOverrides ?? true;
 
   if (cachedConfigPath === undefined || effectiveConfigPath !== cachedConfigPath) {
     hydrateEnv(effectiveConfigPath, explicitConfigProvided);
@@ -60,11 +61,18 @@ export function loadConfig(overrides = {}, options = {}) {
     }
   }
 
-  const merged = { ...defaults, ...process.env, ...overrides };
-  delete merged.CONFIG_PATH;
+  const baseMerged = { ...defaults, ...process.env };
+  delete baseMerged.CONFIG_PATH;
 
-  cachedConfig = coerceConfig(merged);
-  return cachedConfig;
+  const merged = hasEffectiveOverrides ? { ...baseMerged, ...overrides } : baseMerged;
+
+  const coerced = coerceConfig(merged);
+
+  if (!hasEffectiveOverrides || cacheOverrides) {
+    cachedConfig = coerced;
+  }
+
+  return coerced;
 }
 
 export function getConfig() {

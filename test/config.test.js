@@ -334,5 +334,15 @@ describe('config schema', () => {
       expect(config.RPC_URL).toBe('https://rpc.relative');
       expect(config.NODE_LABEL).toBe('relative');
     });
+
+    it('optionally avoids caching overrides across subsequent loadConfig calls', () => {
+      process.env.NODE_LABEL = 'base-label';
+
+      const overrideConfig = loadConfig({ NODE_LABEL: 'override-label' }, { cacheOverrides: false });
+      const freshConfig = loadConfig();
+
+      expect(overrideConfig.NODE_LABEL).toBe('override-label');
+      expect(freshConfig.NODE_LABEL).toBe('base-label');
+    });
   });
 });
