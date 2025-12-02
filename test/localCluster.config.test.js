@@ -31,4 +31,16 @@ describe('local cluster config hydration', () => {
     expect(hydrated.VALIDATOR_PRIVATE_KEY).toBe(validator.privateKey);
     expect(hydrated.OPERATOR_ADDRESS).toBe(operator.address);
   });
+
+  it('overrides default operator address when generating a new key', () => {
+    const defaultOperatorAddress = Wallet.createRandom().address;
+    const baseConfig = { OPERATOR_ADDRESS: defaultOperatorAddress };
+
+    const hydrated = ensureLocalKeys(baseConfig, silentLogger());
+
+    const derivedOperatorAddress = new Wallet(hydrated.NODE_PRIVATE_KEY).address;
+
+    expect(hydrated.OPERATOR_ADDRESS).toBe(derivedOperatorAddress);
+    expect(hydrated.OPERATOR_ADDRESS).not.toBe(defaultOperatorAddress);
+  });
 });

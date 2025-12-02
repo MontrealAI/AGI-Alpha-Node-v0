@@ -34,7 +34,7 @@ export function ensureLocalKeys(config, log = logger) {
   if (!hydrated.NODE_PRIVATE_KEY) {
     const operatorWallet = Wallet.createRandom();
     hydrated.NODE_PRIVATE_KEY = operatorWallet.privateKey;
-    hydrated.OPERATOR_ADDRESS = hydrated.OPERATOR_ADDRESS ?? operatorWallet.address;
+    hydrated.OPERATOR_ADDRESS = operatorWallet.address;
     log?.warn({ operator: operatorWallet.address }, 'NODE_PRIVATE_KEY missing; generated ephemeral key for local demo');
   }
 
