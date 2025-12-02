@@ -4,7 +4,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import pino from 'pino';
 import { getAddress, parseUnits } from 'ethers';
-import { loadConfig } from './config/env.js';
+import { loadConfig, resetConfigCache } from './config/env.js';
 import { createProvider, createWallet } from './services/provider.js';
 import { verifyNodeOwnership, buildNodeNameFromLabel } from './services/ensVerifier.js';
 import { buildStakeAndActivateTx, validateStakeThreshold } from './services/staking.js';
@@ -713,7 +713,16 @@ function collectRoleShareTargets(value, previous) {
 program
   .name('agi-alpha-node')
   .description('AGI Alpha Node sovereign runtime CLI')
-  .version('1.1.0');
+  .version('1.1.0')
+  .option('-c, --config <path>', 'Path to a .env configuration file for the current command');
+
+program.hook('preAction', (thisCommand) => {
+  const options = thisCommand.optsWithGlobals();
+  if (options.config) {
+    process.env.CONFIG_PATH = options.config;
+    resetConfigCache();
+  }
+});
 
 program
   .command('ens:records')
