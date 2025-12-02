@@ -51,7 +51,17 @@ export class EnsClient {
   async getPubkey(name: string): Promise<EnsPubkey | null> {
     const resolver = await this.#requireResolver(name);
     const contract = new Contract(resolver.address, PUBKEY_ABI, this.provider);
-    const [xRaw, yRaw] = (await contract.pubkey(namehash(name))) as readonly [string, string];
+    let xRaw: string;
+    let yRaw: string;
+
+    try {
+      [xRaw, yRaw] = (await contract.pubkey(namehash(name))) as readonly [string, string];
+    } catch (error) {
+      if (this.#isRecordMissingError(error)) {
+        return null;
+      }
+      throw error;
+    }
 
     if (this.#isZeroBytes(xRaw) && this.#isZeroBytes(yRaw)) {
       return null;
