@@ -1,7 +1,7 @@
 import { config as loadEnv } from 'dotenv';
 import { DEFAULT_CONFIG } from './defaults.js';
 import { coerceConfig } from './schema.js';
-import { join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
 
 const SENSITIVE_DEFAULT_KEYS = new Set([
   'NODE_PRIVATE_KEY',
@@ -11,16 +11,25 @@ const SENSITIVE_DEFAULT_KEYS = new Set([
 let cachedConfig = null;
 let cachedConfigPath;
 
-function hydrateEnv(configPath, workingDir, explicitConfigProvided) {
-  const defaultPath = join(workingDir ?? process.cwd(), '.env');
-  const dotenvPath = configPath ?? process.env.CONFIG_PATH ?? defaultPath;
-  const result = loadEnv({ path: dotenvPath, override: explicitConfigProvided });
+function resolveConfigPath(configPath, workingDir) {
+  const baseDir = workingDir ?? process.cwd();
+  if (!configPath) {
+    return join(baseDir, '.env');
+  }
+  if (isAbsolute(configPath)) {
+    return configPath;
+  }
+  return join(baseDir, configPath);
+}
+
+function hydrateEnv(configPath, explicitConfigProvided) {
+  const result = loadEnv({ path: configPath, override: explicitConfigProvided });
 
   if (result?.error && explicitConfigProvided) {
     throw result.error;
   }
 
-  return dotenvPath;
+  return configPath;
 }
 
 export function loadConfig(overrides = {}, options = {}) {
@@ -28,10 +37,10 @@ export function loadConfig(overrides = {}, options = {}) {
   const requestedConfigPath = options.configPath ?? overrides.CONFIG_PATH ?? process.env.CONFIG_PATH ?? null;
   const explicitConfigProvided =
     options.configPath !== undefined || overrides.CONFIG_PATH !== undefined || process.env.CONFIG_PATH !== undefined;
-  const effectiveConfigPath = requestedConfigPath ?? join(workingDir ?? process.cwd(), '.env');
+  const effectiveConfigPath = resolveConfigPath(requestedConfigPath, workingDir);
 
   if (cachedConfigPath === undefined || effectiveConfigPath !== cachedConfigPath) {
-    hydrateEnv(requestedConfigPath, workingDir, explicitConfigProvided);
+    hydrateEnv(effectiveConfigPath, explicitConfigProvided);
     cachedConfigPath = effectiveConfigPath;
     cachedConfig = null;
   }

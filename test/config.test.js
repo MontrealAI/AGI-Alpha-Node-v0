@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
@@ -321,6 +321,18 @@ describe('config schema', () => {
 
       expect(firstConfig.RPC_URL).toBe('https://rpc.first');
       expect(secondConfig.RPC_URL).toBe('https://rpc.second');
+    });
+
+    it('resolves relative config paths against the provided working directory', () => {
+      const nestedDir = join(tempDir, 'configs');
+      mkdirSync(nestedDir);
+      const relativePath = join('configs', 'node.env');
+      writeFileSync(join(nestedDir, 'node.env'), 'RPC_URL=https://rpc.relative\nNODE_LABEL=relative\n');
+
+      const config = loadConfig({}, { configPath: relativePath, workingDir: tempDir });
+
+      expect(config.RPC_URL).toBe('https://rpc.relative');
+      expect(config.NODE_LABEL).toBe('relative');
     });
   });
 });
