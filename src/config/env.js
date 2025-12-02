@@ -14,7 +14,7 @@ let cachedConfigPath;
 function hydrateEnv(configPath, workingDir, explicitConfigProvided) {
   const defaultPath = join(workingDir ?? process.cwd(), '.env');
   const dotenvPath = configPath ?? process.env.CONFIG_PATH ?? defaultPath;
-  const result = loadEnv({ path: dotenvPath, override: true });
+  const result = loadEnv({ path: dotenvPath, override: explicitConfigProvided });
 
   if (result?.error && explicitConfigProvided) {
     throw result.error;

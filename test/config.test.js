@@ -289,6 +289,16 @@ describe('config schema', () => {
       expect(config.RPC_URL).toBe('https://rpc.default');
     });
 
+    it('does not override existing environment variables when hydrating the default .env', () => {
+      const envPath = join(tempDir, '.env');
+      writeFileSync(envPath, 'RPC_URL=https://rpc.default\n');
+      process.env.RPC_URL = 'https://rpc.from.env';
+
+      const config = loadConfig({}, { workingDir: tempDir });
+
+      expect(config.RPC_URL).toBe('https://rpc.from.env');
+    });
+
     it('hydrates configuration from CONFIG_PATH env files', () => {
       const envPath = join(tempDir, 'node.env');
       writeFileSync(envPath, 'RPC_URL=https://rpc.from.file\nNODE_LABEL=from-file\n');
