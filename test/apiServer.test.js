@@ -137,6 +137,39 @@ describe('agent API server', () => {
     expect(payload.error).toMatch(/not configured/i);
   });
 
+  it('rejects oversized JSON payloads with a 413 response', async () => {
+    const jobLifecycle = {
+      listJobs: vi.fn(() => []),
+      on: vi.fn(() => () => {}),
+      apply: vi.fn(),
+      submitExecutorResult: vi.fn(),
+      finalize: vi.fn()
+    };
+
+    api = startAgentApi({
+      port: 0,
+      jobLifecycle,
+      logger: noopLogger,
+      ownerToken: OWNER_TOKEN,
+      ledgerRoot: ledgerDir,
+      maxBodyBytes: 64
+    });
+    await new Promise((resolve) => setTimeout(resolve, 25));
+
+    const baseUrl = buildBaseUrl(api.server);
+    const oversized = 'a'.repeat(1024);
+    const response = await fetch(`${baseUrl}/jobs/job-fat/apply`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ proof: '0x', payload: oversized })
+    });
+
+    expect(response.status).toBe(413);
+    const payload = await response.json();
+    expect(payload.error).toMatch(/exceeds/i);
+    expect(jobLifecycle.apply).not.toHaveBeenCalled();
+  });
+
   it('reports alpha work unit telemetry through status endpoints', async () => {
     api = startAgentApi({ port: 0, logger: noopLogger, ownerToken: OWNER_TOKEN, ledgerRoot: ledgerDir });
     await new Promise((resolve) => setTimeout(resolve, 25));

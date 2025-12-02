@@ -222,24 +222,65 @@ function instrumentHttpRequest({ tracer, req, res, logger }) {
   };
 }
 
-function parseRequestBody(req) {
+const DEFAULT_MAX_BODY_BYTES = 512 * 1024;
+
+class PayloadTooLargeError extends Error {
+  constructor(limit) {
+    super(`Request payload exceeds ${limit} bytes`);
+    this.name = 'PayloadTooLargeError';
+    this.statusCode = 413;
+    this.limit = limit;
+  }
+}
+
+function parseRequestBody(req, maxBytes = DEFAULT_MAX_BODY_BYTES) {
+  const limit = Number.isFinite(maxBytes) && maxBytes > 0 ? maxBytes : DEFAULT_MAX_BODY_BYTES;
+
   return new Promise((resolve, reject) => {
     const chunks = [];
-    req
-      .on('data', (chunk) => chunks.push(chunk))
-      .on('end', () => {
-        if (chunks.length === 0) {
-          resolve(null);
-          return;
-        }
-        try {
-          const parsed = JSON.parse(Buffer.concat(chunks).toString('utf8'));
-          resolve(parsed);
-        } catch (error) {
-          reject(error);
-        }
-      })
-      .on('error', (error) => reject(error));
+    let totalBytes = 0;
+
+    const cleanup = () => {
+      req.off('data', onData);
+      req.off('end', onEnd);
+      req.off('error', onError);
+      req.off('aborted', onAborted);
+    };
+
+    const onError = (error) => {
+      cleanup();
+      reject(error);
+    };
+
+    const onAborted = () => onError(new Error('Request aborted'));
+
+    const onData = (chunk) => {
+      totalBytes += chunk?.length ?? 0;
+      if (totalBytes > limit) {
+        const error = new PayloadTooLargeError(limit);
+        cleanup();
+        reject(error);
+        req.resume();
+        return;
+      }
+      chunks.push(chunk);
+    };
+
+    const onEnd = () => {
+      cleanup();
+      if (chunks.length === 0) {
+        resolve(null);
+        return;
+      }
+      try {
+        const parsed = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+        resolve(parsed);
+      } catch (error) {
+        reject(error);
+      }
+    };
+
+    req.on('data', onData).on('end', onEnd).on('error', onError).on('aborted', onAborted);
   });
 }
 
@@ -1061,7 +1102,8 @@ export function startAgentApi({
   reachabilityState = null,
   resourceManager = null,
   connectionManager = null,
-  tracer: tracerOverride = null
+  tracer: tracerOverride = null,
+  maxBodyBytes = DEFAULT_MAX_BODY_BYTES
 } = {}) {
   const jobs = new Map();
   const lifecycleJobs = new Map();
@@ -1228,7 +1270,7 @@ export function startAgentApi({
 
     let parsed;
     try {
-      const body = await parseRequestBody(req);
+      const body = await parseRequestBody(req, maxBodyBytes);
       parsed = schema.parse(body ?? {});
     } catch (error) {
       logger.error(error, 'Invalid governance payload');
@@ -1304,6 +1346,7 @@ export function startAgentApi({
 
   const server = http.createServer(async (req, res) => {
     const instrumentation = instrumentHttpRequest({ tracer, req, res, logger });
+    const readRequestBody = () => parseRequestBody(req, maxBodyBytes);
 
     const handleRequest = async () => {
       applyCorsHeaders(req, res, allowedCorsOrigin);
@@ -1558,7 +1601,7 @@ export function startAgentApi({
 
       if (req.method === 'POST' && req.url === '/ingest/task-runs') {
         try {
-          const body = await parseRequestBody(req);
+          const body = await readRequestBody();
           const apiKey = extractApiKey(req);
           const result = telemetryService.ingestTaskRun({
             payload: body ?? {},
@@ -1582,7 +1625,7 @@ export function startAgentApi({
 
       if (req.method === 'POST' && req.url === '/ingest/energy') {
         try {
-          const body = await parseRequestBody(req);
+          const body = await readRequestBody();
           const apiKey = extractApiKey(req);
           const result = telemetryService.ingestEnergy({
             payload: body ?? {},
@@ -1607,7 +1650,7 @@ export function startAgentApi({
 
       if (req.method === 'POST' && req.url === '/ingest/quality') {
         try {
-          const body = await parseRequestBody(req);
+          const body = await readRequestBody();
           const apiKey = extractApiKey(req);
           const result = telemetryService.ingestQuality({
             payload: body ?? {},
@@ -1940,7 +1983,7 @@ export function startAgentApi({
       }
 
       if (req.method === 'POST' && req.url === '/jobs') {
-        const body = await parseRequestBody(req);
+        const body = await readRequestBody();
         const jobId = randomUUID();
         const jobRecord = {
           id: jobId,
@@ -2017,7 +2060,7 @@ export function startAgentApi({
         }
 
         try {
-          const body = await parseRequestBody(req);
+          const body = await readRequestBody();
           if (!body || typeof body !== 'object' || Array.isArray(body)) {
             jsonResponse(res, 400, { error: 'Directive payload must be an object' });
             return;
@@ -2080,7 +2123,7 @@ export function startAgentApi({
         }
 
         try {
-          const body = await parseRequestBody(req);
+          const body = await readRequestBody();
           const ips = normalizeListInput(body?.ip ?? body?.ips);
           const peers = normalizeListInput(body?.peerId ?? body?.peer ?? body?.peers);
           const asns = normalizeListInput(body?.asn ?? body?.asns);
@@ -2123,7 +2166,7 @@ export function startAgentApi({
         }
 
         try {
-          const body = await parseRequestBody(req);
+          const body = await readRequestBody();
           const ips = normalizeListInput(body?.ip ?? body?.ips);
           const peers = normalizeListInput(body?.peerId ?? body?.peer ?? body?.peers);
           const asns = normalizeListInput(body?.asn ?? body?.asns);
@@ -2534,7 +2577,7 @@ export function startAgentApi({
 
       if (req.method === 'POST' && req.url === '/governance/stake-top-up') {
         try {
-          const body = await parseRequestBody(req);
+          const body = await readRequestBody();
           if (!body?.incentivesAddress) {
             jsonResponse(res, 400, { error: 'incentivesAddress is required' });
             return;
@@ -2571,7 +2614,7 @@ export function startAgentApi({
           return;
         }
         const [, , jobId] = req.url.split('/');
-        const body = await parseRequestBody(req);
+        const body = await readRequestBody();
         try {
           const result = await jobLifecycle.apply(jobId, {
             subdomain: body?.subdomain,
@@ -2595,7 +2638,7 @@ export function startAgentApi({
           return;
         }
         const [, , jobId] = req.url.split('/');
-        const body = await parseRequestBody(req);
+        const body = await readRequestBody();
         if (body?.result === undefined && body?.resultUri === undefined) {
           jsonResponse(res, 400, { error: 'result or resultUri required for submission' });
           return;
@@ -2652,9 +2695,14 @@ export function startAgentApi({
       await instrumentation.runWithContext(handleRequest);
     } catch (error) {
       instrumentation.recordError(error);
-      logger.error(error, 'API request handling failed');
+      const logMethod = error instanceof PayloadTooLargeError ? 'warn' : 'error';
+      logger[logMethod]?.(error, 'API request handling failed');
       if (!res.headersSent) {
-        jsonResponse(res, 500, { error: 'Internal server error' });
+        if (error instanceof PayloadTooLargeError) {
+          jsonResponse(res, error.statusCode, { error: error.message });
+        } else {
+          jsonResponse(res, 500, { error: 'Internal server error' });
+        }
       }
     } finally {
       instrumentation.end(res.statusCode ?? 500);
