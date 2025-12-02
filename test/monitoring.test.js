@@ -1,4 +1,5 @@
 import { describe, it, expect, afterEach, beforeEach } from 'vitest';
+import { Registry } from 'prom-client';
 import { EventEmitter } from 'node:events';
 import { setTimeout as delay } from 'node:timers/promises';
 import {
@@ -139,6 +140,22 @@ describe('monitoring telemetry server', () => {
     expect(metrics).toContain('alpha_wu_validated_total');
     expect(metrics).toContain('alpha_wu_invalid_total');
     expect(metrics).toContain('alpha_wu_validation_latency_ms');
+  });
+
+  it('returns a 500 when the registry fails to produce metrics', async () => {
+    const failingRegistry = new Registry();
+    failingRegistry.metrics = async () => {
+      throw new Error('registry exploded');
+    };
+
+    telemetry = startMonitoringServer({ port: 0, logger: noopLogger, registry: failingRegistry });
+    await waitForServer(telemetry.server);
+
+    const { port } = telemetry.server.address();
+    const response = await fetch(`http://127.0.0.1:${port}/metrics`);
+
+    expect(response.status).toBe(500);
+    expect(await response.text()).toContain('failed to collect metrics');
   });
 
   it('streams reachability gauge updates from a provided reachability state', async () => {
