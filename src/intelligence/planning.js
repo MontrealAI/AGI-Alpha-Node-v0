@@ -51,7 +51,16 @@ function normalizeStrategies(strategies, decimals) {
     };
   });
 
+  if (normalized.length === 0) {
+    throw new Error('At least one strategy must be provided');
+  }
+
   return normalized;
+}
+
+function compareBigIntDesc(left, right) {
+  if (left === right) return 0;
+  return left > right ? -1 : 1;
 }
 
 function buildJobProfile({ name, reward, complexity, deadlineHours, riskBps, penaltiesBps }, decimals) {
@@ -135,7 +144,11 @@ export function planJobExecution({ jobProfile, strategies, horizon = 3, decimals
   const normalizedStrategies = normalizeStrategies(strategies, decimals);
 
   const evaluations = normalizedStrategies.map((strategy) => computeScore({ job: normalizedJob, strategy }));
-  evaluations.sort((a, b) => (a.score === b.score ? Number(b.netValue - a.netValue) : Number(b.score - a.score)));
+  evaluations.sort((a, b) => {
+    const scoreOrder = compareBigIntDesc(a.score, b.score);
+    if (scoreOrder !== 0) return scoreOrder;
+    return compareBigIntDesc(a.netValue, b.netValue);
+  });
 
   const recommended = evaluations[0];
   const projectedTimeline = [];
