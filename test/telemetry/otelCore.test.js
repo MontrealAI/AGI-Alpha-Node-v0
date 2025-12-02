@@ -2,16 +2,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const tracerStub = {};
 
-const mockAddSpanProcessor = vi.fn();
 const mockRegister = vi.fn();
 const mockGetTracer = vi.fn(() => tracerStub);
+const providerOptions = [];
 
 vi.mock('@opentelemetry/sdk-trace-node', () => ({
-  NodeTracerProvider: vi.fn(() => ({
-    addSpanProcessor: mockAddSpanProcessor,
-    register: mockRegister,
-    getTracer: mockGetTracer
-  }))
+  NodeTracerProvider: vi.fn((options) => {
+    providerOptions.push(options);
+    return {
+      register: mockRegister,
+      getTracer: mockGetTracer
+    };
+  })
 }));
 
 vi.mock('@opentelemetry/resources', () => ({
@@ -42,9 +44,9 @@ describe('initTelemetry', () => {
   beforeEach(() => {
     vi.resetModules();
     exporterOptions.length = 0;
-    mockAddSpanProcessor.mockClear();
     mockRegister.mockClear();
     mockGetTracer.mockClear();
+    providerOptions.length = 0;
   });
 
   it('parses OTLP headers provided as a string', async () => {
@@ -62,6 +64,7 @@ describe('initTelemetry', () => {
       url: 'https://otel.example/v1/traces',
       headers: { 'api-key': 'secret-123', env: 'prod' }
     });
+    expect(providerOptions[0].spanProcessors).toHaveLength(1);
     expect(logger.info).toHaveBeenCalled();
     expect(mockRegister).toHaveBeenCalled();
     expect(mockGetTracer).toHaveBeenCalled();
