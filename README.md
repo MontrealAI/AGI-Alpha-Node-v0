@@ -279,12 +279,13 @@ flowchart LR
 ## Quick start
 
 1. **Install dependencies:** `npm ci` (Node.js 20.18+).
-2. **Run the CI wall locally:** `npm run ci:verify` — mirrors the workflow and keeps required checks green (matches [`.github/required-checks.json`](.github/required-checks.json)).
-3. **Bring up observability:** `docker-compose up -d prom grafana alertmanager` — Prometheus at `:9090`, Grafana at `:3000` (admin/admin), Alertmanager at `:9093` with dashboards and alerts pre-provisioned.
-4. **Explore metrics:** visit `http://localhost:9090/targets` to confirm the scrape job is `UP`; dashboards load automatically under Grafana → Manage.
-5. **Exercise governance:** call the owner-only functions on `AlphaNodeManager` to pause/unpause, gate validators, rotate ENS controllers, or withdraw stake; metrics and dashboards reflect changes immediately.
-6. **Keep docs + mermaids crisp:** `npm run lint:md` and `npm run lint:links` verify README/docs rendering (including mermaid diagrams) exactly as GitHub displays them.
-7. **Publish shields (optional):** add `BADGE_GIST_ID` + `BADGE_GIST_TOKEN` secrets, then let the `badges` job publish Shields endpoints you can embed here for a permanent “all green” wall.
+2. **Build artifacts:** `npm run build` — renders the subgraph manifest with your `ALPHA_NODE_MANAGER_*` overrides, compiles the subgraph, and ships the dashboard bundle.
+3. **Run the CI wall locally:** `npm run ci:verify` — mirrors the workflow and keeps required checks green (matches [`.github/required-checks.json`](.github/required-checks.json)).
+4. **Bring up observability:** `docker-compose up -d prom grafana alertmanager` — Prometheus at `:9090`, Grafana at `:3000` (admin/admin), Alertmanager at `:9093` with dashboards and alerts pre-provisioned.
+5. **Explore metrics:** visit `http://localhost:9090/targets` to confirm the scrape job is `UP`; dashboards load automatically under Grafana → Manage.
+6. **Exercise governance:** call the owner-only functions on `AlphaNodeManager` to pause/unpause, gate validators, rotate ENS controllers, or withdraw stake; metrics and dashboards reflect changes immediately.
+7. **Keep docs + mermaids crisp:** `npm run lint:md` and `npm run lint:links` verify README/docs rendering (including mermaid diagrams) exactly as GitHub displays them.
+8. **Publish shields (optional):** add `BADGE_GIST_ID` + `BADGE_GIST_TOKEN` secrets, then let the `badges` job publish Shields endpoints you can embed here for a permanent “all green” wall.
 
 ## Testing and validation
 
