@@ -84,6 +84,15 @@ import { installProcessGuards } from './utils/processGuard.js';
 const program = new Command();
 installProcessGuards();
 
+program
+  .showHelpAfterError()
+  .exitOverride((error) => {
+    if (error?.code === 'commander.helpDisplayed') {
+      error.exitCode = 0;
+    }
+    throw error;
+  });
+
 function parseStrategiesOption(input) {
   if (!input) return DEFAULT_STRATEGIES;
   return input
@@ -3561,4 +3570,13 @@ program
     }
   });
 
-await program.parseAsync(process.argv);
+try {
+  await program.parseAsync(process.argv);
+} catch (error) {
+  const isCommanderError = typeof error?.code === 'string' && error.code.startsWith('commander.');
+  if (isCommanderError) {
+    process.exitCode = error.exitCode ?? 1;
+    process.exit();
+  }
+  throw error;
+}
