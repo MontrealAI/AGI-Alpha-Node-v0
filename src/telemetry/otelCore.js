@@ -33,18 +33,22 @@ export function initTelemetry(config) {
   const sampler = buildSampler(config.samplingRatio);
   const serviceName = config.serviceName || tracerServiceName;
   const exporterChoice = (config.exporter ?? 'console').toLowerCase();
+  const otlpHeaders =
+    typeof config.otlpHeaders === 'string'
+      ? parseOtlpHeaders(config.otlpHeaders)
+      : config.otlpHeaders;
   const spanProcessors = [];
 
   if (exporterChoice === 'otlp') {
     if (config.otlpEndpoint) {
-        spanProcessors.push(
-          new BatchSpanProcessor(
-            new OTLPTraceExporter({
-              url: config.otlpEndpoint,
-              headers: config.otlpHeaders ?? parseOtlpHeaders(config.otlpHeaders)
-            })
-          )
-        );
+      spanProcessors.push(
+        new BatchSpanProcessor(
+          new OTLPTraceExporter({
+            url: config.otlpEndpoint,
+            headers: otlpHeaders
+          })
+        )
+      );
     } else {
       logger.warn('OTLP exporter requested but no OTEL_EXPORTER_OTLP_ENDPOINT was provided; falling back to console exporter');
     }
