@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { config as loadEnv } from 'dotenv';
 import { DEFAULT_CONFIG } from './defaults.js';
 import { coerceConfig } from './schema.js';
@@ -11,7 +11,16 @@ const SENSITIVE_DEFAULT_KEYS = new Set([
 
 let cachedBaseConfig = null;
 let cachedConfigPath;
+let cachedConfigMtime;
 const cachedOverrideConfigs = new Map();
+
+function getConfigMtime(configPath) {
+  try {
+    return statSync(configPath).mtimeMs;
+  } catch {
+    return null;
+  }
+}
 
 function resolveConfigPath(configPath, workingDir) {
   const baseDir = workingDir ?? process.cwd();
@@ -58,12 +67,14 @@ export function loadConfig(overrides = {}, options = {}) {
   const explicitConfigProvided =
     options.configPath !== undefined || overrides.CONFIG_PATH !== undefined || process.env.CONFIG_PATH !== undefined;
   const effectiveConfigPath = resolveConfigPath(requestedConfigPath, workingDir);
+  const configMtime = getConfigMtime(effectiveConfigPath);
   const cacheOverrides = options.cacheOverrides ?? true;
   const logger = options.logger;
 
-  if (cachedConfigPath === undefined || effectiveConfigPath !== cachedConfigPath) {
+  if (cachedConfigPath === undefined || effectiveConfigPath !== cachedConfigPath || cachedConfigMtime !== configMtime) {
     hydrateEnv(effectiveConfigPath, explicitConfigProvided, logger);
     cachedConfigPath = effectiveConfigPath;
+    cachedConfigMtime = configMtime;
     cachedBaseConfig = null;
     cachedOverrideConfigs.clear();
   }
@@ -121,5 +132,6 @@ export function getConfig() {
 export function resetConfigCache() {
   cachedBaseConfig = null;
   cachedConfigPath = undefined;
+  cachedConfigMtime = undefined;
   cachedOverrideConfigs.clear();
 }
