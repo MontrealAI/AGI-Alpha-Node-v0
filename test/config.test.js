@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { describe, expect, it, beforeEach, afterEach } from 'vitest';
+import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import { coerceConfig } from '../src/config/schema.js';
 import {
   AGIALPHA_TOKEN_CHECKSUM_ADDRESS,
@@ -343,6 +343,24 @@ describe('config schema', () => {
 
       expect(overrideConfig.NODE_LABEL).toBe('override-label');
       expect(freshConfig.NODE_LABEL).toBe('base-label');
+    });
+
+    it('throws when an explicit config path does not exist', () => {
+      const missingPath = join(tempDir, 'missing.env');
+
+      expect(() => loadConfig({}, { configPath: missingPath })).toThrow(/Configuration file not found/);
+    });
+
+    it('emits a warning when the default config file is missing and a logger is provided', () => {
+      const logger = { warn: vi.fn() };
+      const expectedPath = join(tempDir, '.env');
+
+      loadConfig({}, { workingDir: tempDir, logger });
+
+      expect(logger.warn).toHaveBeenCalledWith(
+        `Configuration file not found at ${expectedPath}; proceeding with in-memory environment variables only.`,
+        { configPath: expectedPath }
+      );
     });
   });
 });

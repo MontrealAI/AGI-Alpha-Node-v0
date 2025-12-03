@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { config as loadEnv } from 'dotenv';
 import { DEFAULT_CONFIG } from './defaults.js';
 import { coerceConfig } from './schema.js';
@@ -22,7 +23,25 @@ function resolveConfigPath(configPath, workingDir) {
   return join(baseDir, configPath);
 }
 
-function hydrateEnv(configPath, explicitConfigProvided) {
+function hydrateEnv(configPath, explicitConfigProvided, logger) {
+  const configExists = existsSync(configPath);
+
+  if (!configExists && explicitConfigProvided) {
+    const error = new Error(`Configuration file not found at ${configPath}`);
+    error.code = 'CONFIG_FILE_NOT_FOUND';
+    throw error;
+  }
+
+  if (!configExists) {
+    if (logger?.warn) {
+      logger.warn(
+        `Configuration file not found at ${configPath}; proceeding with in-memory environment variables only.`,
+        { configPath }
+      );
+    }
+    return configPath;
+  }
+
   const result = loadEnv({ path: configPath, override: explicitConfigProvided });
 
   if (result?.error && explicitConfigProvided) {
@@ -39,9 +58,10 @@ export function loadConfig(overrides = {}, options = {}) {
     options.configPath !== undefined || overrides.CONFIG_PATH !== undefined || process.env.CONFIG_PATH !== undefined;
   const effectiveConfigPath = resolveConfigPath(requestedConfigPath, workingDir);
   const cacheOverrides = options.cacheOverrides ?? true;
+  const logger = options.logger;
 
   if (cachedConfigPath === undefined || effectiveConfigPath !== cachedConfigPath) {
-    hydrateEnv(effectiveConfigPath, explicitConfigProvided);
+    hydrateEnv(effectiveConfigPath, explicitConfigProvided, logger);
     cachedConfigPath = effectiveConfigPath;
     cachedConfig = null;
   }
