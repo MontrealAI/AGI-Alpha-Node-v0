@@ -9,8 +9,9 @@ const SENSITIVE_DEFAULT_KEYS = new Set([
   'VALIDATOR_PRIVATE_KEY'
 ]);
 
-let cachedConfig = null;
+let cachedBaseConfig = null;
 let cachedConfigPath;
+const cachedOverrideConfigs = new Map();
 
 function resolveConfigPath(configPath, workingDir) {
   const baseDir = workingDir ?? process.cwd();
@@ -63,14 +64,29 @@ export function loadConfig(overrides = {}, options = {}) {
   if (cachedConfigPath === undefined || effectiveConfigPath !== cachedConfigPath) {
     hydrateEnv(effectiveConfigPath, explicitConfigProvided, logger);
     cachedConfigPath = effectiveConfigPath;
-    cachedConfig = null;
+    cachedBaseConfig = null;
+    cachedOverrideConfigs.clear();
   }
 
   const overrideKeys = Object.keys(overrides).filter((key) => key !== 'CONFIG_PATH');
   const hasEffectiveOverrides = overrideKeys.length > 0;
 
-  if (cachedConfig && !hasEffectiveOverrides) {
-    return cachedConfig;
+  if (!hasEffectiveOverrides && cachedBaseConfig) {
+    return cachedBaseConfig;
+  }
+
+  let overrideCacheKey;
+
+  if (hasEffectiveOverrides && cacheOverrides) {
+    const serialisedOverrides = overrideKeys
+      .filter((key) => overrides[key] !== undefined)
+      .sort()
+      .map((key) => [key, overrides[key]]);
+    overrideCacheKey = `${effectiveConfigPath}:${JSON.stringify(serialisedOverrides)}`;
+
+    if (cachedOverrideConfigs.has(overrideCacheKey)) {
+      return cachedOverrideConfigs.get(overrideCacheKey);
+    }
   }
 
   const defaults = { ...DEFAULT_CONFIG };
@@ -88,8 +104,11 @@ export function loadConfig(overrides = {}, options = {}) {
 
   const coerced = coerceConfig(merged);
 
-  if (!hasEffectiveOverrides || cacheOverrides) {
-    cachedConfig = coerced;
+  if (!hasEffectiveOverrides) {
+    cachedBaseConfig = coerced;
+  } else if (cacheOverrides && overrideCacheKey) {
+    cachedOverrideConfigs.set(overrideCacheKey, coerced);
+    cachedBaseConfig = coerced;
   }
 
   return coerced;
@@ -100,6 +119,7 @@ export function getConfig() {
 }
 
 export function resetConfigCache() {
-  cachedConfig = null;
+  cachedBaseConfig = null;
   cachedConfigPath = undefined;
+  cachedOverrideConfigs.clear();
 }

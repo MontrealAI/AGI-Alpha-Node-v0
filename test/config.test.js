@@ -345,6 +345,16 @@ describe('config schema', () => {
       expect(freshConfig.NODE_LABEL).toBe('base-label');
     });
 
+    it('promotes the most recent cached override when caching is enabled', () => {
+      process.env.NODE_LABEL = 'default-label';
+
+      const overrideConfig = loadConfig({ NODE_LABEL: 'override-label' });
+      const cachedConfig = loadConfig();
+
+      expect(overrideConfig.NODE_LABEL).toBe('override-label');
+      expect(cachedConfig.NODE_LABEL).toBe('override-label');
+    });
+
     it('throws when an explicit config path does not exist', () => {
       const missingPath = join(tempDir, 'missing.env');
 
