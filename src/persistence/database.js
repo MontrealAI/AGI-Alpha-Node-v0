@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3';
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { inferMigrationVersion, seedAll } from './seeds.js';
@@ -16,7 +16,22 @@ const DEFAULT_DB = (() => {
   }
 })();
 
+function ensureDirectoryFor(filename) {
+  if (!filename || filename === ':memory:' || filename.startsWith('file:')) {
+    return;
+  }
+
+  const directory = dirname(filename);
+
+  if (!directory || directory === '.' || existsSync(directory)) {
+    return;
+  }
+
+  mkdirSync(directory, { recursive: true });
+}
+
 export function openDatabase({ filename = DEFAULT_DB } = {}) {
+  ensureDirectoryFor(filename);
   const db = new Database(filename, { verbose: undefined });
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
