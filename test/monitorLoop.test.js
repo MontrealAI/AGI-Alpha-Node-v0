@@ -235,4 +235,20 @@ describe('monitorLoop', () => {
 
     expect(callback).toHaveBeenCalledWith(mockDiagnostics);
   });
+
+  it('skips telemetry startup when disabled', async () => {
+    const monitor = await startMonitorLoop({
+      config: { ...config, TELEMETRY_ENABLED: false },
+      intervalSeconds: 60,
+      projectedRewards: null,
+      offlineSnapshotPath: null,
+      logger,
+      maxIterations: 1
+    });
+
+    await monitor.loopPromise;
+
+    expect(launchMonitoring).not.toHaveBeenCalled();
+    expect(monitor.getTelemetry()).toBeNull();
+  });
 });

@@ -157,6 +157,8 @@ export async function startMonitorLoop({
   const intervalValue = Number.parseInt(intervalSeconds, 10);
   assertPositiveInteger(intervalValue, 'intervalSeconds');
 
+  const telemetryEnabled = config.TELEMETRY_ENABLED !== false;
+
   const resolver = buildSnapshotResolver(offlineSnapshotPath, logger);
   let telemetryServer = null;
   let iterationsCompleted = 0;
@@ -164,22 +166,28 @@ export async function startMonitorLoop({
   let timer = null;
   let pendingResolve = null;
 
-  const networkMetricConfig = (() => {
-    try {
-      const gossipsubRouting = buildGossipsubRoutingConfig({ config, logger });
-      const dialerPolicy = buildDialerPolicyConfig({ config, baseLogger: logger });
-      return {
-        meshConfig: gossipsubRouting.mesh,
-        gossipConfig: gossipsubRouting.gossip,
-        dialerPolicy,
-        collectors: networkMetrics
-      };
-    } catch (error) {
-      logger?.warn?.(error, 'Failed to derive network metrics configuration; gauges will remain unset');
-      return null;
-    }
-  })();
+  const networkMetricConfig = telemetryEnabled
+    ? (() => {
+        try {
+          const gossipsubRouting = buildGossipsubRoutingConfig({ config, logger });
+          const dialerPolicy = buildDialerPolicyConfig({ config, baseLogger: logger });
+          return {
+            meshConfig: gossipsubRouting.mesh,
+            gossipConfig: gossipsubRouting.gossip,
+            dialerPolicy,
+            collectors: networkMetrics
+          };
+        } catch (error) {
+          logger?.warn?.(error, 'Failed to derive network metrics configuration; gauges will remain unset');
+          return null;
+        }
+      })()
+    : null;
   const alphaWuHistory = [];
+
+  if (!telemetryEnabled) {
+    logger?.info?.('Telemetry disabled; skipping monitoring endpoint startup');
+  }
 
   const refreshAlphaWuHistory = () => {
     const summaries = getRecentEpochSummaries({ limit: 24 });
@@ -277,21 +285,23 @@ export async function startMonitorLoop({
           });
         }
 
-        if (!telemetryServer) {
-          telemetryServer = await launchMonitoring({
-            port: config.METRICS_PORT,
-            stakeStatus: diagnostics.stakeStatus,
-            performance: diagnostics.performance,
-            runtimeMode: diagnostics.runtimeMode,
-            logger,
-            healthGate,
-            enableAlphaWuPerJob: Boolean(config.METRICS_ALPHA_WU_PER_JOB),
-            networkMetrics: networkMetricConfig,
-            reachabilityState,
-            registry
-          });
-        } else {
-        updateTelemetryGauges(telemetryServer, diagnostics, healthGate);
+        if (telemetryEnabled) {
+          if (!telemetryServer) {
+            telemetryServer = await launchMonitoring({
+              port: config.METRICS_PORT,
+              stakeStatus: diagnostics.stakeStatus,
+              performance: diagnostics.performance,
+              runtimeMode: diagnostics.runtimeMode,
+              logger,
+              healthGate,
+              enableAlphaWuPerJob: Boolean(config.METRICS_ALPHA_WU_PER_JOB),
+              networkMetrics: networkMetricConfig,
+              reachabilityState,
+              registry
+            });
+          } else {
+            updateTelemetryGauges(telemetryServer, diagnostics, healthGate);
+          }
         }
 
         refreshAlphaWuHistory();
