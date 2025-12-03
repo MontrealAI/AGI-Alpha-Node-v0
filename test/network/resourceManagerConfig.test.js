@@ -41,6 +41,25 @@ describe('resourceManagerConfig', () => {
     expect(config.connectionManager.highWater).toBe(8);
   });
 
+  it('sanitizes non-positive inputs back to safe defaults', () => {
+    const config = buildResourceManagerConfig({
+      config: {
+        NRM_SCALE_FACTOR: -5,
+        NRM_MAX_CONNECTIONS: 0,
+        MAX_CONNS_PER_IP: -3,
+        CONN_LOW_WATER: 0,
+        CONN_HIGH_WATER: -10
+      }
+    });
+
+    expect(config.scaleFactor).toBe(1);
+    expect(config.global.maxConnections).toBe(1_024);
+    expect(config.global.maxStreams).toBe(8_192);
+    expect(config.ipLimiter.maxConnsPerIp).toBe(64);
+    expect(config.connectionManager.lowWater).toBeGreaterThan(0);
+    expect(config.connectionManager.highWater).toBeGreaterThan(config.connectionManager.lowWater);
+  });
+
   it('raises descriptive errors when override payloads cannot be parsed', () => {
     expect(() =>
       buildResourceManagerConfig({
