@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
@@ -321,6 +321,22 @@ describe('config schema', () => {
 
       expect(firstConfig.RPC_URL).toBe('https://rpc.first');
       expect(secondConfig.RPC_URL).toBe('https://rpc.second');
+    });
+
+    it('invalidates cached configuration when the env file changes at the same path', () => {
+      const envPath = join(tempDir, 'node.env');
+      writeFileSync(envPath, 'RPC_URL=https://rpc.initial\n');
+
+      const initialConfig = loadConfig({}, { configPath: envPath });
+      expect(initialConfig.RPC_URL).toBe('https://rpc.initial');
+
+      writeFileSync(envPath, 'RPC_URL=https://rpc.updated\n');
+      const future = new Date(Date.now() + 1000);
+      utimesSync(envPath, future, future);
+
+      const refreshedConfig = loadConfig({}, { configPath: envPath });
+
+      expect(refreshedConfig.RPC_URL).toBe('https://rpc.updated');
     });
 
     it('resolves relative config paths against the provided working directory', () => {
