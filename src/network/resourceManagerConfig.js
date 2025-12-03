@@ -19,6 +19,14 @@ function coerceFiniteNumber(value, fallback) {
   return Number.isFinite(numeric) ? numeric : fallback;
 }
 
+function coercePositiveNumber(value, fallback, { min = 0 } = {}) {
+  const numeric = coerceFiniteNumber(value, undefined);
+  if (numeric === undefined || numeric <= min) {
+    return fallback;
+  }
+  return numeric;
+}
+
 function parseJsonMaybe(value) {
   if (value === undefined || value === null) {
     return undefined;
@@ -130,11 +138,11 @@ function scaleLimit(value, scaleFactor) {
 
 function buildLimitSet({ scaleFactor, config }) {
   const base = {
-    maxConnections: coerceFiniteNumber(config?.NRM_MAX_CONNECTIONS, 1_024),
-    maxStreams: coerceFiniteNumber(config?.NRM_MAX_STREAMS, 8_192),
-    maxMemoryBytes: coerceFiniteNumber(config?.NRM_MAX_MEMORY_BYTES, 512 * 1024 * 1024),
-    maxFds: coerceFiniteNumber(config?.NRM_MAX_FDS, 2_048),
-    maxBandwidthBps: coerceFiniteNumber(config?.NRM_MAX_BANDWIDTH_BPS, 64 * 1024 * 1024)
+    maxConnections: coercePositiveNumber(config?.NRM_MAX_CONNECTIONS, 1_024),
+    maxStreams: coercePositiveNumber(config?.NRM_MAX_STREAMS, 8_192),
+    maxMemoryBytes: coercePositiveNumber(config?.NRM_MAX_MEMORY_BYTES, 512 * 1024 * 1024),
+    maxFds: coercePositiveNumber(config?.NRM_MAX_FDS, 2_048),
+    maxBandwidthBps: coercePositiveNumber(config?.NRM_MAX_BANDWIDTH_BPS, 64 * 1024 * 1024)
   };
 
   return Object.fromEntries(
@@ -144,17 +152,23 @@ function buildLimitSet({ scaleFactor, config }) {
 
 function buildWatermarks({ limitSet, config }) {
   const fallbackLow = Math.max(256, Math.floor(limitSet.maxConnections * 0.5));
-  const explicitLow = coerceFiniteNumber(config.CONN_LOW_WATER, undefined);
+  const explicitLow = coercePositiveNumber(config.CONN_LOW_WATER, undefined);
   const lowWater = explicitLow ?? fallbackLow;
 
   const fallbackHigh = Math.max(
     lowWater + Math.max(64, Math.floor(limitSet.maxConnections * 0.1)),
     Math.floor(limitSet.maxConnections * 0.85)
   );
-  const explicitHigh = coerceFiniteNumber(config.CONN_HIGH_WATER, undefined);
+  const explicitHighRaw = coerceFiniteNumber(config.CONN_HIGH_WATER, undefined);
+  if (explicitHighRaw !== undefined && explicitHighRaw > 0 && explicitHighRaw <= lowWater) {
+    throw new Error('Connection manager high_water must be greater than low_water');
+  }
+
+  const explicitHigh =
+    explicitHighRaw !== undefined ? coercePositiveNumber(explicitHighRaw, undefined, { min: 0 }) : undefined;
   const highWater = explicitHigh ?? fallbackHigh;
 
-  const gracePeriodSeconds = coerceFiniteNumber(config.CONN_GRACE_PERIOD_SEC, 120);
+  const gracePeriodSeconds = coercePositiveNumber(config.CONN_GRACE_PERIOD_SEC, 120);
 
   validateWatermarks({ lowWater, highWater });
 
@@ -169,7 +183,7 @@ function validateWatermarks({ lowWater, highWater }) {
 
 export function buildResourceManagerConfig({ config = {}, logger: baseLogger } = {}) {
   const log = typeof baseLogger?.info === 'function' ? baseLogger : logger;
-  const scaleFactor = coerceFiniteNumber(config.NRM_SCALE_FACTOR, 1) || 1;
+  const scaleFactor = coercePositiveNumber(config.NRM_SCALE_FACTOR, 1);
   const advancedOverrides = loadAdvancedOverrides({
     inlineOverrides: config.NRM_LIMITS_JSON,
     overridesPath: config.NRM_LIMITS_PATH
@@ -183,8 +197,8 @@ export function buildResourceManagerConfig({ config = {}, logger: baseLogger } =
   const connectionManager = buildWatermarks({ limitSet: mergedGlobal, config });
 
   const ipLimiter = {
-    maxConnsPerIp: coerceFiniteNumber(config.MAX_CONNS_PER_IP, 64),
-    maxConnsPerAsn: coerceFiniteNumber(config.MAX_CONNS_PER_ASN, 256),
+    maxConnsPerIp: coercePositiveNumber(config.MAX_CONNS_PER_IP, 64),
+    maxConnsPerAsn: coercePositiveNumber(config.MAX_CONNS_PER_ASN, 256),
     bannedPeers: new Set(config.NRM_BANNED_PEERS ?? []),
     bannedIps: new Set(config.NRM_BANNED_IPS ?? []),
     bannedAsns: new Set(config.NRM_BANNED_ASNS ?? [])
