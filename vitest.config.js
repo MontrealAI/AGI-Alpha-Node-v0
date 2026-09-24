@@ -26,7 +26,8 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'json-summary'],
-      include: ['src/network/**', 'src/telemetry/**'],
+      include: ['src/network/**', 'src/telemetry/**', 'src/alpha/*.js'],
+      exclude: ['src/alpha/cli.js'],
       thresholds: {
         lines: 85,
         functions: 85,

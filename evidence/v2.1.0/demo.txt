@@ -1,0 +1,42 @@
+
+> agi-alpha-node-v0@2.1.0 demo:operations
+> node scripts/demo-operations.mjs evidence/v2.1.0/sample
+
+{
+  "fixture": true,
+  "liveInference": false,
+  "mainnetPayment": false,
+  "independentHumanReview": false,
+  "first": {
+    "status": "awaiting-review",
+    "missionId": "usage-0x1e86af205b8f6e6605dc06d96e8d5e036a2613",
+    "evidenceHash": "0x21fb6d00a5741127bdf44de8da0d17c384c6ab9e48800719def108e194c4c6eb",
+    "recommendation": "cache-model"
+  },
+  "replay": {
+    "status": "replayed",
+    "missionId": "usage-0x1e86af205b8f6e6605dc06d96e8d5e036a2613",
+    "evidenceHash": "0x21fb6d00a5741127bdf44de8da0d17c384c6ab9e48800719def108e194c4c6eb"
+  },
+  "operations": {
+    "dailyRuns": 1,
+    "dailyReservedMicroUsd": 100000,
+    "unresolved": [],
+    "pendingReviews": 0
+  },
+  "outcomes": {
+    "acceptedMissions": 1,
+    "measuredMissions": 1,
+    "reviewerReportedNetUsd": 70,
+    "outcomes": [
+      {
+        "missionId": "usage-0x1e86af205b8f6e6605dc06d96e8d5e036a2613",
+        "projectedExpectedNet": 187,
+        "measuredNetUsd": 70,
+        "observedAt": "2026-09-24T12:12:46.180Z"
+      }
+    ],
+    "limitation": "Reviewer-attested measurements, not independently audited profit. Compare only equivalent observation periods. No automatic policy mutation or reinvestment."
+  },
+  "ledgerVerified": true
+}

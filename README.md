@@ -2,7 +2,7 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Version 2.0.0 · Standalone Mission Edition
+Version 2.1.0 · Bounded Operations Edition
 
 An owner-controlled node for turning supplied evidence into ranked opportunities, signed analytical deliverables, independently signed reviews, and explicitly funded $AGIALPHA rewards.
 
@@ -75,7 +75,7 @@ npm run dashboard:build
 npm run ci:security
 ```
 
-Read the [vision and implementation assessment](docs/alpha-assessment.md), [release evidence](evidence/v2.0.0/validation.json), and [release notes](RELEASE_NOTES.md). Local EVM token tests are not mainnet settlements; fixture HTTP tests are not paid-provider validation. Live ENS, operator keys, real reviewers and actual treasury funding must be commissioned in the operator's environment.
+Read the [vision and implementation assessment](docs/alpha-assessment.md), [release evidence](evidence/v2.1.0/validation.md), and [release notes](RELEASE_NOTES.md). Local EVM token tests are not mainnet settlements; fixture HTTP tests are not paid-provider validation. Live ENS, operator keys, real reviewers and actual treasury funding must be commissioned in the operator's environment.
 
 ## Repository atlas
 
@@ -91,3 +91,9 @@ Read the [vision and implementation assessment](docs/alpha-assessment.md), [rele
 | `docs/archive/README-v1.1.0.md` | Historical presentation, preserved for context |
 
 The [original manifesto](docs/manifesto.md) is a vision document. The implementation assessment and release evidence govern capability claims for this version. GitHub workflow definitions are included; branch-protection enforcement is a repository setting and is not inferred from badges.
+
+## Bounded operations in v2.1
+
+The node can now discover caching experiments from fresh usage measurements, reserve daily execution capacity, deliver signed reports, accept asynchronous reviews, and track reviewer-attested outcomes. A loopback operator interface exposes controls and evidence without exposing signing keys. See [operations and recovery](docs/alpha-operations.md).
+
+This release does not complete the repository’s open-ended AGI vision. It does not autonomously deploy optimizations, prove profitability, operate a specialist peer marketplace, or reinvest funds. Model inference and mainnet settlement require separately configured live services.

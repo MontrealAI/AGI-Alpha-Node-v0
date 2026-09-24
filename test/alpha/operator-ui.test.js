@@ -1,0 +1,25 @@
+import { it, expect } from 'vitest';
+import { readFile } from 'node:fs/promises';
+import { JSDOM } from 'jsdom';
+it('renders evidence as text, removes the URL token, and sends authenticated pause controls', async () => {
+  const html = await readFile('src/alpha/web/operator.html', 'utf8');
+  const script = await readFile('src/alpha/web/operator-ui.js', 'utf8');
+  const dom = new JSDOM(html, { url: 'http://127.0.0.1:1234/#test-token', runScripts: 'outside-only' });
+  const calls = [];
+  const state = { mode: 'local', ens: 'fixture.alpha.node.agi.eth', address: '0xfixture', reviewer: '0xreviewer', paused: false, busy: false,
+    operations: { pendingReviews: 1, dailyReservedMicroUsd: 100000, dailyRuns: 1, unresolved: [] }, outcomes: { measuredMissions: 0, reviewerReportedNetUsd: 0, limitation: 'Not audited profit' },
+    missions: [{ id: 'fixture', title: '<img src=x onerror="window.pwned=true">', report: '<script>window.pwned=true</script>', decision: 'awaiting-review', recommendation: 'cache', hash: 'hash' }] };
+  dom.window.fetch = async (path, options) => { calls.push({ path, options }); return { ok: true, json: async () => state }; };
+  try {
+    dom.window.eval(script);
+    await new Promise(r => setTimeout(r, 20));
+    expect(dom.window.location.hash).toBe('');
+    expect(dom.window.document.querySelector('#missions img')).toBe(null);
+    expect(dom.window.document.querySelector('#missions script')).toBe(null);
+    expect(dom.window.document.querySelector('#missions').textContent).toContain('<img');
+    expect(dom.window.pwned).toBe(undefined);
+    dom.window.document.getElementById('pause').click(); await new Promise(r => setTimeout(r, 20));
+    const pause = calls.find(c => c.path === '/api/pause'); expect(pause.options.method).toBe('POST'); expect(pause.options.headers.Authorization).toBe('Bearer test-token');
+    expect(dom.window.document.getElementById('outcomes').textContent).toContain('Not audited profit');
+  } finally { dom.window.close(); }
+});

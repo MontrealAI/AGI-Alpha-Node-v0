@@ -14,7 +14,7 @@ prefix=f'AGI_Alpha_Node_v{version}/'
 with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED) as z:
  for p in files:
   info=zipfile.ZipInfo(prefix+p,(2026,1,1,0,0,0));info.compress_type=zipfile.ZIP_DEFLATED;info.external_attr=0o100644<<16;z.writestr(info,(root/p).read_bytes())
- z.writestr(prefix+'RELEASE_MANIFEST.json',json.dumps(manifest,indent=2)+'\n')
+ info=zipfile.ZipInfo(prefix+'RELEASE_MANIFEST.json',(2026,1,1,0,0,0));info.compress_type=zipfile.ZIP_DEFLATED;info.external_attr=0o100644<<16;z.writestr(info,json.dumps(manifest,indent=2)+'\n')
 checksum=hashlib.sha256(archive.read_bytes()).hexdigest()
 (out/'SHA256SUMS.txt').write_text(f'{checksum}  {archive.name}\n')
 print(json.dumps({'archive':str(archive),'sha256':checksum,'files':len(files),'sourceCommit':manifest['sourceCommit']}))

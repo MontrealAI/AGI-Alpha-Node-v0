@@ -1,0 +1,122 @@
+{
+  "schema": 2,
+  "ledgerHead": "0x0d4bb6ec97bf0aeeba03b8ad607ce810dd951d548bed66f64203eb11e74ccefa",
+  "identity": {
+    "ensName": "demo.alpha.node.agi.eth",
+    "address": "0x4E2348a52DeD2cb5b91A094d882Fa57F76e3D36C",
+    "reviewer": "0x36aA26F4bcC69b4631d7101B27D1E2cDcEEB19f4"
+  },
+  "run": {
+    "type": "run",
+    "workId": "0x3bb6b965e36064dc7bb27b0de0a9862655e957904b8de45a5ef080f1b71e758c",
+    "mission": {
+      "id": "usage-0x1e86af205b8f6e6605dc06d96e8d5e036a2613",
+      "title": "Usage-derived caching opportunities",
+      "objective": "Discover and rank caching experiments from supplied usage measurements. Produce a reviewable analysis; do not modify production systems.",
+      "sources": [
+        {
+          "id": "model",
+          "title": "Example inference: Synthetic demonstration month",
+          "text": "{\"id\":\"model\",\"name\":\"Example inference\",\"requests\":1000,\"repeatedRequests\":600,\"costUsd\":500,\"observedAt\":\"2026-09-24T12:12:46.063Z\",\"period\":\"Synthetic demonstration month\"}"
+        }
+      ],
+      "opportunities": [
+        {
+          "id": "cache-model",
+          "title": "Evaluate caching for Example inference",
+          "benefit": 300,
+          "cost": 20,
+          "probability": 0.7,
+          "downside": 10,
+          "sourceIds": [
+            "model"
+          ],
+          "rationale": "Observed repeated-request share multiplied by total cost estimates a savings ceiling, not measured savings. Assumes uniform request cost and cache eligibility. Validate privacy, correctness, freshness and implementation cost before deployment."
+        }
+      ],
+      "policy": {
+        "maxCost": 100,
+        "maxDownside": 50,
+        "minExpectedNet": 5,
+        "stressBenefitBps": 7000
+      },
+      "unit": "USD per observation period"
+    },
+    "identity": {
+      "verified": false,
+      "mode": "local",
+      "ensName": "demo.alpha.node.agi.eth",
+      "address": "0x4E2348a52DeD2cb5b91A094d882Fa57F76e3D36C"
+    },
+    "analysis": {
+      "kind": "deterministic-evidence-analysis",
+      "missionDigest": "0xafc094d9c4e3744c8b5bf14b5fba21014a5f43d948a0b822559cee201fa84134",
+      "unit": "USD per observation period",
+      "recommendation": "cache-model",
+      "rankings": [
+        {
+          "id": "cache-model",
+          "title": "Evaluate caching for Example inference",
+          "benefit": 300,
+          "cost": 20,
+          "probability": 0.7,
+          "downside": 10,
+          "sourceIds": [
+            "model"
+          ],
+          "rationale": "Observed repeated-request share multiplied by total cost estimates a savings ceiling, not measured savings. Assumes uniform request cost and cache eligibility. Validate privacy, correctness, freshness and implementation cost before deployment.",
+          "expectedNet": 187,
+          "stressedNet": 124,
+          "admitted": true
+        }
+      ],
+      "sources": [
+        {
+          "id": "model",
+          "title": "Example inference: Synthetic demonstration month",
+          "digest": "0xb67f622cf3f1944f7dfcc8b4bc60a1aca57495e0547423e29866e2a59843a82c",
+          "url": null
+        }
+      ],
+      "limitations": [
+        "Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.",
+        "Source hashes establish integrity, not truth. Independent review is required.",
+        "No trades, external actions, token earnings or AGI capability are implied by this report."
+      ]
+    },
+    "provider": null,
+    "report": "# Usage-derived caching opportunities\n\n<!-- markdownlint-disable MD013 -->\n\nDiscover and rank caching experiments from supplied usage measurements. Produce a reviewable analysis; do not modify production systems.\n\nAnalysis: deterministic-evidence-analysis\nInput digest: 0xafc094d9c4e3744c8b5bf14b5fba21014a5f43d948a0b822559cee201fa84134\nUnits: USD per observation period\nRecommendation: cache-model\n\n| Opportunity | Expected net | Stressed net | Admitted | Evidence |\n| --- | ---: | ---: | --- | --- |\n| Evaluate caching for Example inference | 187.00 | 124.00 | Yes | model |\n\n## Evidence and assumptions\n\n- cache-model: Observed repeated-request share multiplied by total cost estimates a savings ceiling, not measured savings. Assumes uniform request cost and cache eligibility. Validate privacy, correctness, freshness and implementation cost before deployment.\n\n- model — Example inference: Synthetic demonstration month — SHA-256 0xb67f622cf3f1944f7dfcc8b4bc60a1aca57495e0547423e29866e2a59843a82c\n\n## Limits\n\n- Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.\n- Source hashes establish integrity, not truth. Independent review is required.\n- No trades, external actions, token earnings or AGI capability are implied by this report.\n",
+    "status": "awaiting-review",
+    "reward": "unfunded-unverified",
+    "previous": "0x80e032a5b21e79135aac17fc0d990061e1b961116b7229a5d9988d8901c71cd0",
+    "at": "2026-09-24T12:12:46.088Z",
+    "hash": "0x21fb6d00a5741127bdf44de8da0d17c384c6ab9e48800719def108e194c4c6eb",
+    "signature": "0xeb591321a455ff1b7f31d5407d2363261404e698754d4463f9b07dde017164671b92b6ac44c02c1f7219b5e0965b22885a645b9eebc0f37be9c9072de851d3021c",
+    "review": {
+      "type": "review-attestation-v3",
+      "node": "0x4e2348a52ded2cb5b91a094d882fa57f76e3d36c",
+      "ensName": "demo.alpha.node.agi.eth",
+      "missionId": "usage-0x1e86af205b8f6e6605dc06d96e8d5e036a2613",
+      "runHash": "0x21fb6d00a5741127bdf44de8da0d17c384c6ab9e48800719def108e194c4c6eb",
+      "decision": "accepted",
+      "notes": "Synthetic role-separated test; no independent person or real economic validation.",
+      "at": "2026-09-24T12:12:46.144Z",
+      "hash": "0x44c7e0d7cabed6e6126b4ad8baabbf44ae6fb2a9b4f67c39f8cd3aa62ce5af89",
+      "signature": "0xc3b8746347cc1045f1a4b0d5c10ebdb12ca2d37b0a9788793d43fd07058e82a35fe7514a8eed4280a6a1573ca172569d784ae3d9184ad841b8e6bd31b4305c151c",
+      "envelopeHash": "0x133ca8f3dfd5bbdc14199286fbf2f1808aad9c80f140065d8c97b8485741ee5d"
+    },
+    "outcome": {
+      "measuredBenefitUsd": 100,
+      "measuredCostUsd": 30,
+      "observedAt": "2026-09-24T12:12:46.180Z",
+      "evidence": "Synthetic outcome for exercising the signature and aggregation path; not actual savings.",
+      "type": "outcome-attestation-v1",
+      "node": "0x4e2348a52ded2cb5b91a094d882fa57f76e3d36c",
+      "ensName": "demo.alpha.node.agi.eth",
+      "missionId": "usage-0x1e86af205b8f6e6605dc06d96e8d5e036a2613",
+      "runHash": "0x21fb6d00a5741127bdf44de8da0d17c384c6ab9e48800719def108e194c4c6eb",
+      "hash": "0x7489de293428c35f482eacf9bac3b1cd4bdc49c6a6ec09af4c0ad45d439424f9",
+      "signature": "0x96622f08607780954168cf28ca9875dcf262d9e8a04a5f2227df782cddb4f9f157b9c3372e67e8ad3f140a82865d722b55227c006a58cf22a78a4be3e6b48e041b"
+    }
+  }
+}

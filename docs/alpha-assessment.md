@@ -46,3 +46,19 @@ This release does not complete the manifesto's open-ended research aspirations: 
 ## Acceptance evidence
 
 Use `evidence/v2.0.0/validation.json` for commands, counts, limitations and qualification status. The sample report is an analytical deliverable, not a claim that a buyer paid for it. Model HTTP fixtures test integration behavior rather than model quality. Token fixtures at the canonical address exist only inside the local VM; they are not mainnet $AGIALPHA balances.
+
+## v2.1.0 reassessment
+
+The next release adds usage-derived discovery, a bounded scheduler, durable reservations, asynchronous review attestations, reviewer-signed outcome records, finalized multi-endpoint escrow observations, and a local operator interface. See [operations](alpha-operations.md) and [v2.1 qualification](../evidence/v2.1.0/validation.md).
+
+| Original goal | Current evidence and remaining gap |
+| --- | --- |
+| Anticipate opportunities | Fresh structured usage can generate caching experiments; no broad market discovery or validated forecasting |
+| Intended intelligence | Deterministic economic ranking and optional model narrative; live model quality and general world-model planning remain unqualified |
+| Specialist coordination | Separate reviewer file exchange works asynchronously; no implemented decentralized specialist marketplace |
+| Antifragile owner controls | Budget reservations, pending-review admission, pause, locks, backoff and circuit breaker; provider billing and production infrastructure need external controls |
+| Learn from outcomes | Immutable reviewer measurements and projection comparisons; no automatic model/policy learning or reinvestment |
+| Token mechanics | Local VM tests of prefunded $AGIALPHA escrow and corrected stake accounting; no verified production deployment or mainnet payment |
+| Operator experience | Real CLI and authenticated local interface tested through HTTP and DOM; Mac installation, visual browser qualification and long-running service commissioning remain unperformed |
+
+The project remains short of the full original vision. A release number and passing tests cannot establish general intelligence, independent people, profitability or production readiness without the corresponding external evidence.

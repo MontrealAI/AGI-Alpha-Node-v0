@@ -369,5 +369,5 @@ jobs:
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Release $TAG already exists; leaving it unchanged."
           else
-            gh release create "$TAG" "dist/AGI_Alpha_Node_v${VERSION}.zip" dist/SHA256SUMS.txt --target "$GITHUB_SHA" --title "AGI Alpha Node $TAG — Standalone Mission Edition" --notes-file RELEASE_NOTES.md
+            gh release create "$TAG" "dist/AGI_Alpha_Node_v${VERSION}.zip" dist/SHA256SUMS.txt --target "$GITHUB_SHA" --title "AGI Alpha Node $TAG — Bounded Operations Edition" --notes-file RELEASE_NOTES.md
           fi

@@ -1,0 +1,13 @@
+
+> agi-alpha-node-v0@2.1.0 dashboard:build
+> vite build --config dashboard/vite.config.js
+
+vite v5.4.21 building for production...
+transforming...
+✓ 41 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.70 kB │ gzip:   0.40 kB
+dist/assets/index-BH7bCNEe.css    4.22 kB │ gzip:   1.41 kB
+dist/assets/index-BC6Ls7W1.js   337.67 kB │ gzip: 112.81 kB
+✓ built in 1.49s

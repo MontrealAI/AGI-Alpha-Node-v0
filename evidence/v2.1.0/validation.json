@@ -1,0 +1,80 @@
+{
+  "version": "2.1.0",
+  "baseCommit": "1371e0f8c24843a5927efa0bc532595f941322d8",
+  "environment": {
+    "os": "Linux x64",
+    "node": "22.14.0",
+    "npm": "10.9.2"
+  },
+  "qualification": "Bounded local operations validated; full original project vision remains incomplete",
+  "checks": {
+    "backend": {
+      "passed": 484,
+      "skipped": 11
+    },
+    "legacyFrontend": {
+      "passed": 1
+    },
+    "standaloneAlphaTests": 47,
+    "aggregateCiVerify": "passed before final CLI test and expanded coverage scope; final full backend coverage run also passed",
+    "coverage": {
+      "lines": {
+        "total": 7362,
+        "covered": 6478,
+        "skipped": 0,
+        "pct": 87.99
+      },
+      "statements": {
+        "total": 7362,
+        "covered": 6478,
+        "skipped": 0,
+        "pct": 87.99
+      },
+      "functions": {
+        "total": 304,
+        "covered": 279,
+        "skipped": 0,
+        "pct": 91.77
+      },
+      "branches": {
+        "total": 2242,
+        "covered": 1524,
+        "skipped": 0,
+        "pct": 67.97
+      },
+      "branchesTrue": {
+        "total": 0,
+        "covered": 0,
+        "skipped": 0,
+        "pct": 100
+      }
+    },
+    "coverageScope": "Standalone alpha core, network and telemetry. CLI exercised as child process; web UI exercised through DOM and HTTP, outside coverage instrumentation.",
+    "typecheck": "passed",
+    "legacyDashboardBuild": "passed",
+    "subgraphBuild": "passed",
+    "solidityLintAndCompile": "passed",
+    "productionAudit": {
+      "vulnerabilities": 0
+    },
+    "healthPolicy": "passed",
+    "branchGate": "Skipped locally: branch environment absent; repository enforcement unverified",
+    "archiveReproducibility": "Two independently generated source ZIPs matched byte for byte; every manifest file hash verified."
+  },
+  "notPerformed": [
+    "live model inference or model-quality evaluation",
+    "production ENS identity commissioning",
+    "production escrow deployment or mainnet token payment",
+    "independent external human review",
+    "Mac installation or service-manager commissioning",
+    "sustained production workload",
+    "visual browser qualification",
+    "local Docker build (Docker absent; hosted CI performs it)"
+  ],
+  "notImplemented": [
+    "general world-model intelligence",
+    "decentralized specialist marketplace",
+    "automatic production optimization",
+    "automatic learning or reinvestment"
+  ]
+}

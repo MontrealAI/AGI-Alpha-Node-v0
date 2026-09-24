@@ -1,36 +1,28 @@
-# AGI Alpha Node v2.0.0 — Standalone Mission Edition
+# AGI Alpha Node v2.1.0 — Bounded Operations Edition
 
 <!-- markdownlint-disable MD013 -->
 
-This release gives the $AGIALPHA project a standalone operational mission loop. It separates the project from the legacy AGI Jobs integration, replaces simulated-success assumptions with explicit evidence states, and adds funded token settlement.
+This release extends the standalone **$AGIALPHA** node with usage-derived opportunity discovery, durable execution reservations, asynchronous independent review, and a local operator interface. It is not the completion of the repository's open-ended AGI vision and does not claim a 10/10 production qualification.
 
-## Added
+## Changes
 
-- `alpha-node` CLI: initialize, run, watch, status, doctor, pause, resume and export.
-- Source-linked opportunity ranking with spending/downside limits, stressed economics and abstention.
-- Optional real chat-completions HTTP inference with timeout, response-size and output-token bounds; failures never become simulated successes.
-- Signed reports, replay-safe mission IDs, atomic persistence, tamper detection and verified restart.
-- Separate reviewer authorization, detached review signing and import without sharing the node key.
-- `AlphaMissionEscrow`: canonical $AGIALPHA funding, fixed node/reviewer/deadline, evidence-bound review, one-time claim, rejection/expiry refund, pause and protected reserves.
-- Mandatory in-process EVM tests, including an analytical run whose actual signed evidence hash is submitted, reviewed and paid in the local VM.
-- Installation, operations, backup, recovery, original-vision assessment and machine-readable validation evidence.
+- Discover caching candidates directly from fresh structured usage measurements, with explicit economic assumptions and stress-tested admission.
+- Reserve daily run/cost capacity before inference; bound pending reviews; prevent concurrent cycles and silent retries after failures; recover committed work without duplicate inference.
+- Run a sequential scheduler with backoff, pause controls and a five-failure circuit breaker.
+- Inspect identity, reports, reservations and review status through a token-authenticated loopback operator interface. Download evidence and import signed reviews without exposing private keys.
+- Import reviewer signatures asynchronously, bound to the exact mission rather than an unrelated global ledger head. Existing v2.0 ledgers remain readable.
+- Record immutable reviewer-attested outcomes and compare reported net results with projections.
+- Observe pinned escrow state using two HTTPS RPC origins at a shared finalized canonical block, failing closed on disagreement or identity/evidence mismatch.
+- Produce deterministic source archives, including the manifest timestamp.
 
-## Fixed
+## Validation and boundaries
 
-- Stake withdrawals and slashing now debit recorded balances and aggregate stake.
-- Explicit account-debited owner custody transfer and surplus-only sweep.
-- Stale identity mappings removed when a controller moves between ENS nodes.
-- Telemetry test sampling no longer depends on host sampling configuration.
-- Native SQLite runtime compatibility and production dependency audit findings addressed through dependency and lockfile updates.
+See `evidence/v2.1.0/validation.md` and the GitHub Actions run associated with the release commit. Tests distinguish deterministic computation, HTTP/RPC fixtures, local Ethereum VM token mechanics, and external capabilities that were not exercised. The operations demonstration explicitly marks its inputs, role-separated reviewer and outcomes as synthetic.
 
-## Upgrade notes
+No live model credentials, production ENS-controlled key, funded mainnet escrow, independent human reviewer, Mac host or sustained production workload was available. Accordingly, this release does not establish actual inference quality, mainnet earnings, autonomous production optimization, profitability, a specialist marketplace, self-improvement or reinvestment. Cost reservations are estimates; provider-side spending controls remain necessary.
 
-Node.js 22.14+ is required. The new `alpha-node` CLI is separate from the retained `agi-alpha-node` infrastructure CLI. Existing dashboard and job adapters retain their legacy scope.
+## Installation and upgrade
 
-Contract changes require new deployments and an explicit migration plan. `withdrawStake(recipient, amount)` now debits that recipient's recorded stake; use `withdrawStakeFor(account, recipient, amount)` for an owner-directed custody transfer. Slashing now reduces real accounting balances. Existing deployed bytecode is unchanged by this software release.
+Download the source ZIP and `SHA256SUMS.txt`, verify the checksum, extract, and run `npm ci` with Node 22.14+ / npm 10+. Start with `START_HERE.md`, then `docs/alpha-operations.md`.
 
-## Evidence and qualification
-
-See `evidence/v2.0.0/validation.json` and the included command logs. The example inputs are synthetic. Local EVM token transfers and fixture HTTP requests are real test executions, but are not mainnet payments or paid-model validation. Separate signing keys in tests are test roles, not independent external reviewers.
-
-Live ENS/operator commissioning, Apple Silicon unattended operation, actual provider billing, external independent review, mainnet deployment and funded settlement remain operator-environment qualification steps. The release does not claim profitability, general intelligence, autonomous reinvestment or demonstrated distributed network scale.
+Stop and back up existing nodes before upgrading. v2.1 reads v2.0 state, but older executables cannot read new event types after v2.1 writes them. Rollback requires the corresponding pre-upgrade state backup. Keep a copy of all newer evidence.

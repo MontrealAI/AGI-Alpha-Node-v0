@@ -1,6 +1,6 @@
 {
   "name": "agi-alpha-node-v0",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Owner-controlled $AGIALPHA mission analysis, signed evidence, independent review and funded settlement toolkit",
   "license": "MIT",
   "private": true,
@@ -54,7 +54,8 @@
     "alpha": "node src/alpha/cli.js",
     "test:alpha": "vitest run test/alpha/ --pool forks --maxWorkers 2 --minWorkers 1",
     "release:package": "python3 scripts/package-alpha-release.py",
-    "demo:alpha": "node scripts/demo-alpha.mjs"
+    "demo:alpha": "node scripts/demo-alpha.mjs",
+    "demo:operations": "node scripts/demo-operations.mjs"
   },
   "engines": {
     "node": ">=22.14.0",

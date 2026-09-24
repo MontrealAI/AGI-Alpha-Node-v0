@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "source": "usage.json",
+  "maxAgeSeconds": 86400,
+  "maxPendingReviews": 3,
+  "maxDailyRuns": 10,
+  "maxDailyReservedMicroUsd": 1000000,
+  "reserveMicroUsdPerRun": 100000,
+  "assumptions": { "implementationCost": 20, "probability": 0.7, "downside": 10 },
+  "policy": { "maxCost": 100, "maxDownside": 50, "minExpectedNet": 5, "stressBenefitBps": 7000 }
+}

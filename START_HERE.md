@@ -1,4 +1,4 @@
-# Start here — AGI Alpha Node v2.0.0
+# Start here — AGI Alpha Node v2.1.0
 
 <!-- markdownlint-disable MD013 -->
 
@@ -38,7 +38,7 @@ npm run alpha -- review-import review.json
 npm run alpha -- status
 ```
 
-A detached review is bound to the exported ledger head. If the node has processed more work since export, export the current evidence again and obtain a fresh signature. This prevents silent rebinding. Pause the node during review if you need a stable ledger head. The `review` command is also available in a controlled reviewer environment, but the detached path avoids sharing the node's key.
+New detached reviews bind the exact signed mission, node identity and reviewer decision. Unrelated ledger activity no longer invalidates them. Older v2.0 review files still require their original ledger head; create a new signature with v2.1 if stale. The `review` command is also available in a controlled reviewer environment, but the detached path avoids sharing the node's key.
 
 ## 3. Optional actual model inference
 
@@ -99,3 +99,7 @@ npm run alpha -- watch ./my-mission-inbox
 The worker processes them sequentially. It reuses completed identical missions and reports conflicts or errors. Use `pause`, `resume` and `status` from a second terminal; use Ctrl+C to stop the worker. No external actions or transactions are executed automatically.
 
 A signed work record is evidence of an analytical output, not proof of financial alpha. Assess usefulness with real operator inputs and independently reviewed outcomes before widening the mission scope.
+
+## 9. Autonomous operations and local interface
+
+See [the operations guide](docs/alpha-operations.md) for usage-derived discovery, bounded scheduling, the operator interface, signed outcomes, settlement observations and crash recovery. This is a constrained analysis service; broader autonomous AGI capabilities remain unimplemented.
