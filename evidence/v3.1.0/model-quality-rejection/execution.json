@@ -1,0 +1,254 @@
+{
+  "actualInference": true,
+  "actualRepositorySources": true,
+  "paidProvider": false,
+  "independentPeople": false,
+  "elapsedMs": 69780,
+  "separateSpecialistProcesses": 2,
+  "verification": {
+    "verified": true,
+    "missionId": "runtime-5c353ff8cda59cef994390822b2514d163a078ba",
+    "runHash": "0xb36110f9cfa6ae63eb527bf56b02cd75e6520ceafe3fb99ec71a9c96401f4046",
+    "node": "0x608A687eC857C4E8cD9f6FA4CB76C6Dd4850D2BB",
+    "reviewer": "0x7e91868d8e424e6Ac362b8E2A59dde66d9e013F6",
+    "reviewVerified": false,
+    "outcomeVerified": false,
+    "specialistReceipts": 2,
+    "limitation": "Checks signatures, arithmetic, report integrity and v2 specialist receipts. Does not prove the complete ledger, ENS ownership, source truth or reviewer independence."
+  },
+  "replay": "replayed",
+  "modelCalls": 2,
+  "specialists": [
+    {
+      "address": "0x46d3741683277a405229df92a4c656b78200a428",
+      "capability": "research-synthesis",
+      "result": {
+        "inputDigest": "0x19e005f95a5adb8a1cda00b862bc100b31305cb6668855cb0a10b3a9bcb0cb00",
+        "capability": "research-synthesis",
+        "synthesis": {
+          "summary": "The $AGIALPHA repository has passed all required tests, demonstrating readiness for deployment. The owner-bounded outcome model indicates that the owner's risk policy has been passed, suggesting that the repository is ready for further development.",
+          "abstain": false,
+          "findings": [
+            {
+              "claim": "The repository has passed all required tests.",
+              "citations": [
+                {
+                  "sourceId": "S1",
+                  "quote": "{\"results\":{\"backend\":{\"passed\":524,\"skipped\":11},\"standalone\":{\"passed\":81,\"skipped\":0},\"frontend\":{\"passed\":1},\"coverage\":{\"lines\":{\"total\":3846,\"covered\":3392,\"skipped\":0,\"pct\":88.19},\"statements\":{\"total\":4277,\"covered\":3668,\"skipped\":0,\"pct\":85.76},\"functions\":{\"total\":701,\"covered\":644,\"skipped\":0,\"pct\":91.86},\"branches\":{\"total\":4057,\"covered\":3049,\"skipped\":0,\"pct\":75.15},\"branchesTrue\":{\""
+                },
+                {
+                  "sourceId": "S2",
+                  "quote": "# Completion contract for the standalone $AGIALPHA node"
+                }
+              ]
+            }
+          ],
+          "counterarguments": [
+            {
+              "text": "The repository has passed all required tests, but some of the tests are not fully implemented.",
+              "sourceIds": [
+                "S1"
+              ]
+            }
+          ],
+          "experiments": [
+            {
+              "action": "Run a full integration test",
+              "successCriterion": "The integration test passes all required tests and demonstrates the repository's readiness for deployment.",
+              "sourceIds": [
+                "S1"
+              ]
+            }
+          ]
+        },
+        "provider": {
+          "model": "/tmp/alpha-model/Qwen3-0.6B-Q8_0.gguf",
+          "usage": {
+            "completion_tokens": 396,
+            "prompt_tokens": 2240,
+            "total_tokens": 2636,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            }
+          },
+          "endpointOrigin": "http://127.0.0.1:18081"
+        },
+        "validation": "schema-and-exact-source-quotes",
+        "limitation": "Model-produced analysis; quoted text presence does not prove entailment or source truth. No execution authority or independent acceptance."
+      }
+    },
+    {
+      "address": "0x9bcb168603fd721210cb4d1538427250a5b09ed8",
+      "capability": "adversarial-review",
+      "result": {
+        "inputDigest": "0x19e005f95a5adb8a1cda00b862bc100b31305cb6668855cb0a10b3a9bcb0cb00",
+        "capability": "adversarial-review",
+        "synthesis": {
+          "summary": "The evidence presented in the $AGIALPHA repository readiness review shows that the backend and frontend systems passed certain tests, with coverage and performance metrics indicating a strong foundation. The owner-bounded outcome model confirms that the owner's risk policy was passed. However, the analysis does not provide any evidence for the economic benefits or external action claims mentioned in the review.",
+          "abstain": false,
+          "findings": [
+            {
+              "claim": "The repository has passed the backend and frontend tests with high coverage and performance metrics.",
+              "citations": [
+                {
+                  "sourceId": "S1",
+                  "quote": "{\"results\":{\"backend\":{\"passed\":524,\"skipped\":11},\"standalone\":{\"passed\":81,\"skipped\":0},\"frontend\":{\"passed\":1},\"coverage\":{\"lines\":{\"total\":3846,\"covered\":3392,\"skipped\":0,\"pct\":88.19},\"statements\":{\"total\":4277,\"covered\":3668,\"skipped\":0,\"pct\":85.76},\"functions\":{\"total\":701,\"covered\":644,\"skipped\":0,\"pct\":91.86},\"branches\":{\"total\":4057,\"covered\":3049,\"skipped\":0,\"pct\":75.15},\"branchesTrue\":{\""
+                }
+              ]
+            }
+          ],
+          "counterarguments": [
+            {
+              "text": "The analysis does not provide evidence for the economic benefits or external action claims mentioned in the review.",
+              "sourceIds": [
+                "S2"
+              ]
+            }
+          ],
+          "experiments": [
+            {
+              "action": "Analyze the recorded release evidence",
+              "successCriterion": "Read-only analysis, no forecasted economic benefit or external action.",
+              "sourceIds": [
+                "S1",
+                "S2"
+              ]
+            }
+          ]
+        },
+        "provider": {
+          "model": "/tmp/alpha-model/Qwen3-0.6B-Q8_0.gguf",
+          "usage": {
+            "completion_tokens": 432,
+            "prompt_tokens": 2243,
+            "total_tokens": 2675,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            }
+          },
+          "endpointOrigin": "http://127.0.0.1:18081"
+        },
+        "validation": "schema-and-exact-source-quotes",
+        "limitation": "Model-produced analysis; quoted text presence does not prove entailment or source truth. No execution authority or independent acceptance."
+      }
+    }
+  ],
+  "recovery": {
+    "ledgerHeadMatched": true,
+    "restoredPaused": true
+  },
+  "qualification": {
+    "schema": 1,
+    "scope": "live-owner-policy-evidence",
+    "gatePassed": false,
+    "observedAt": "2026-09-24T15:47:35.412Z",
+    "ledgerHead": "0x977b6a4aa805ca76b9c4e09d1a3a0286febcbe03d985452fdb76a4516911c231",
+    "softwareDigest": "0x82d8db8706558f457e5097cbd22bea0046941579de58ee8379b9572f2c2dc340",
+    "configurationDigest": "0xdb10dc7d7fcd3ce570f5514a8a65f6cb34c7ef66d5e7baec1cb7cf1e3405b91e",
+    "policy": {
+      "schema": 1,
+      "lookbackDays": 30,
+      "minMeasuredMissions": 5,
+      "minNetUsd": 0,
+      "maxLossFraction": 0.2,
+      "maxHumanMinutesPerUsefulResult": 15,
+      "maxReviewAgeHours": 72,
+      "requireLiveIdentity": true,
+      "minConfirmedClaims": 1,
+      "assessors": {}
+    },
+    "checks": [
+      {
+        "id": "live-identity",
+        "passed": false,
+        "detail": "Live identity not freshly verified"
+      },
+      {
+        "id": "measured-work",
+        "passed": false,
+        "detail": "0/5 comparable post-admission measurements"
+      },
+      {
+        "id": "net-value",
+        "passed": false,
+        "detail": "0 USD reviewer-attested net, including declared overhead"
+      },
+      {
+        "id": "loss-rate",
+        "passed": false,
+        "detail": "0/0 loss or quality-failure observations"
+      },
+      {
+        "id": "human-effort",
+        "passed": false,
+        "detail": "No useful measured result"
+      },
+      {
+        "id": "review-capacity",
+        "passed": true,
+        "detail": "0 reviews exceed the owner deadline"
+      },
+      {
+        "id": "recovery",
+        "passed": true,
+        "detail": "0 interrupted operations; 0 unresolved transactions"
+      },
+      {
+        "id": "settlement",
+        "passed": false,
+        "detail": "0/1 freshly audited finalized claims for useful measured work"
+      },
+      {
+        "id": "assurance-security",
+        "passed": false,
+        "detail": "Current owner-allowlisted security assessment bound to this software and configuration"
+      },
+      {
+        "id": "assurance-recovery",
+        "passed": false,
+        "detail": "Current owner-allowlisted recovery assessment bound to this software and configuration"
+      },
+      {
+        "id": "assurance-operations",
+        "passed": false,
+        "detail": "Current owner-allowlisted operations assessment bound to this software and configuration"
+      },
+      {
+        "id": "assurance-reviewer-independence",
+        "passed": false,
+        "detail": "Current owner-allowlisted reviewer-independence assessment bound to this software and configuration"
+      }
+    ],
+    "verifiedAssurances": [],
+    "rejectedAssurances": [],
+    "paidClaims": [],
+    "metrics": {
+      "measuredMissions": 0,
+      "excludedMeasurements": 0,
+      "usefulResults": 0,
+      "losses": 0,
+      "netUsd": 0,
+      "humanMinutes": 0,
+      "humanMinutesPerUsefulResult": null,
+      "confirmedClaims": 0
+    },
+    "evidence": [],
+    "limitations": [
+      "This is a configurable evidence admission gate, not certification of general intelligence, profitability or complete project fulfillment.",
+      "Assessor signatures identify authorized keys. Their assertions, organizational independence and artifact contents require external verification.",
+      "Cost completeness and measurement truth remain reviewer attestations. Matched windows do not prove causality.",
+      "Legacy, pre-admission, future, duplicate and overlapping measurements do not count. RPC agreement does not establish independent provider operators."
+    ]
+  },
+  "limitations": [
+    "Two separately keyed processes use the same local model; this is not independent human review.",
+    "Actual repository-source analysis, not paid buyer acceptance, measured economic benefit, mainnet operation or general intelligence certification.",
+    "Reservations and quotes are synthetic micro-dollar allowances; they are not invoices or peer payments."
+  ],
+  "provenance": {
+    "revision": "23749fefcc72300e3a2ad315e1317431b06b590a",
+    "sha256": "9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031",
+    "bytes": 639446688,
+    "runtime": "llama.cpp b11146"
+  }
+}

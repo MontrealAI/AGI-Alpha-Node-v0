@@ -2,7 +2,7 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Version 3.0.0 · Integrated Node Edition
+Version 3.1.0 · Measured Work and Assurance Edition
 
 An owner-controlled economic intelligence node: collect authorized observations, plan and stress-test opportunities, coordinate authenticated specialists, obtain signed review, execute an exact authorized change, settle funded $AGIALPHA work, and reinvest verified receipts within owner limits.
 
@@ -14,10 +14,10 @@ Install Node.js 22.14+ and npm 10+, extract the release ZIP and run:
 
 ```bash
 npm ci
-npm run demo:runtime
+npm run demo:measured
 ```
 
-Open `alpha-runtime-output/report.md` and `runtime.json`. The demonstration starts a separately keyed specialist process, exchanges signed HTTP messages, produces a reviewable plan, changes a real configuration file after signed acceptance, checks health, records an outcome and verifies replay. Usage and outcome values are synthetic; the reviewer is a demonstration role. It spends no funds.
+Open `alpha-measured-output/report.md` and `measurement.json`. The demonstration measures a real local workload, obtains signed review from a controlled demonstration role, applies an authorized algorithm change, verifies exact output equality, records a paired outcome and verifies its artifact bytes. CPU times are measured; dollar equivalents use an illustrative rate and cannot qualify as observed economic value. No funds are spent. Run `npm run demo:runtime` for the separately keyed HTTP specialist demonstration.
 
 For your own node, follow [START HERE](START_HERE.md) and the [integrated runtime guide](docs/alpha-runtime.md).
 
@@ -25,7 +25,7 @@ For your own node, follow [START HERE](START_HERE.md) and the [integrated runtim
 
 | Pillar | Working behavior |
 | --- | --- |
-| Task-scoped intelligence | Usage-derived candidates, explicit economic assumptions, scenario stress tests, abstention and conservative adaptation from accepted signed outcomes; optional actual model inference |
+| Task-scoped intelligence | General evidence-backed missions and usage-derived candidates, explicit economic assumptions, scenario stress tests, abstention and conservative adaptation from accepted signed outcomes; optional actual model inference |
 | Specialist mesh | Configured peer discovery, signed offers/requests/results, capability and price selection, caller allowlists, capacity bounds and persistent replay protection |
 | Sentinel and owner control | Cost reservations, pending-review admission, exact action permissions, pause, backoff, loss thresholds, health verification and rollback |
 | Evidence ledger | Signed hash-linked records bind observations, plans, specialist results, reports, reviews, actions, outcomes and transaction receipts |
@@ -34,7 +34,13 @@ For your own node, follow [START HERE](START_HERE.md) and the [integrated runtim
 | $AGIALPHA | Prefunded canonical-token escrow, signature-relayed reviewer acceptance, exact-once claims, finalized receipt checks and capped staking of verified receipts |
 | Operator experience | Guided setup, authenticated loopback interface, CLI, encrypted backup/restore and Linux/macOS service configuration |
 
-Each capability has explicit limits. Specialists currently offer three deterministic analytical capabilities; their quote is not an automatic peer payment. The adaptive model is task-scoped and can only tighten supplied estimates. Execution is an owner-selected configuration change with health checks. These concrete implementations do not establish general intelligence, guaranteed financial alpha, a permissionless global marketplace or unlimited scale.
+Each capability has explicit limits. Specialists offer three deterministic analytical capabilities plus schema-constrained research synthesis and adversarial review; their quote is not an automatic peer payment. The adaptive model learns only from observed, comparable, reviewer-signed paired measurements and can only tighten supplied estimates. Modeled economics, fixtures, overlapping windows and duplicate artifact sets are excluded. Execution is an owner-selected configuration change with health checks. These concrete implementations do not establish general intelligence, guaranteed financial alpha, a permissionless global marketplace or unlimited scale.
+
+## New in v3.1
+
+General mission envelopes support objectives beyond caching. Model specialist findings, exact source quotes, counterarguments and experiments are included in the signed report. Review signing recomputes the evidence before acceptance. A configurable qualification gate checks measured work, review effort, fresh payment receipts and signed external assessments bound to the software and configuration.
+
+See [mission intelligence](docs/alpha-intelligence.md), [measurement and qualification](docs/alpha-qualification.md), and [project status](docs/project-status.md).
 
 ## Run and control
 
@@ -58,7 +64,7 @@ npm run dashboard:build
 npm run demo:runtime
 ```
 
-See [qualification evidence](evidence/v3.0.0/validation.md), [recovered vision and assessment](docs/alpha-assessment.md), [release notes](RELEASE_NOTES.md) and [backup/recovery](docs/alpha-recovery.md). The package contains real local-model inference evidence, real HTTP/file execution evidence, and local EVM execution of the token lifecycle. Mainnet deployment, ENS commissioning, independent human review and sustained production economics remain operator-specific commissioning work.
+See [qualification evidence](evidence/v3.1.0/validation.md), [recovered vision and assessment](docs/alpha-assessment.md), [release notes](RELEASE_NOTES.md) and [backup/recovery](docs/alpha-recovery.md). The package contains real local-model inference evidence, real HTTP/file execution evidence, and local EVM execution of the token lifecycle. Mainnet deployment, ENS commissioning, independent human review and sustained production economics remain operator-specific commissioning work.
 
 ## Repository atlas
 

@@ -81,3 +81,17 @@ An already broadcast transaction can mine while the node is paused or offline. B
 Stop v2 workers, retain code/version/lockfile, record the trusted head, and back up the complete private directory before using v3. Existing schema-2 v2 records remain readable; new runtime records require v3. Once v3 has written them, older binaries cannot read the expanded event vocabulary. Rollback therefore needs the matching pre-upgrade directory plus reconciliation of every later external action/transaction. Preserve newer evidence; never silently discard obligations.
 
 The default `npm start`, `agi-alpha-node` executable and Docker entrypoint now use the standalone node. Legacy users must choose `npm run legacy`, `agi-alpha-infrastructure` or `deploy/docker/Dockerfile.legacy` explicitly. New review-relay contract logic requires a new verified deployment; no proxy upgrade is assumed.
+
+## v3.1 migration and specialist recovery
+
+Stop all workers, pause, take an encrypted backup and retain the external trusted ledger head before upgrading. v3.1 still reads older evidence. New schema-2 runtime reports and v2 measured outcomes require v3.1 readers; downgrade only with the matching pre-upgrade state and reconciled obligations. Existing unversioned outcomes remain visible but no longer affect learning.
+
+A `specialist.lock` blocks concurrent processes. After an interruption, stop the owning process and inspect the corresponding `specialist:*:reserved` and `:result` records. A completed result can be replayed. A reservation without a result cannot be retried automatically, even after a lock is cleared: reconcile any provider billing before explicitly authorizing a new mission. Never delete reservations to recover budget. Provider limits must also be configured at the provider.
+
+Changes to source, dependency lockfiles, node configuration, pipeline, engine or qualification policy invalidate the corresponding external assurance scope. Recompute fingerprints and obtain current signed assessments. Restored nodes stay paused; verify paths, identity, ledger head and external transactions before resuming.
+
+### v3.1 expense and reviewer compatibility
+
+v3.1 writes failed-attempt expense events and v2 measured outcomes. Prior executables cannot interpret those records. Retain the pre-upgrade backup for rollback and reconcile any later work first. Preserve the configured reviewer identity: new run signatures bind the node's reviewer choice, so silently replacing that address invalidates history. Use a separately commissioned node and retained archives when changing review authority; in-place key rotation is not implemented.
+
+Use `operations` and the [failure accounting procedure](alpha-qualification.md#account-for-failures-and-missing-measurements) after resolving interrupted work. Do not delete reservations to reclaim budgets. A signed expense closes an uncommitted failed mission permanently; start a new mission for a deliberate retry.

@@ -9,14 +9,21 @@ import {
   atomicJson,
   pauseNode,
 } from '../node.js';
-import { cycle, usageSchema, pipelineSchema } from '../operations.js';
+import {
+  cycle,
+  usageSchema,
+  missionSourceSchema,
+  pipelineSchema,
+} from '../operations.js';
 import { adaptivePolicySchema, planMission } from './planner.js';
 import { actionSchema, describeAction, executeAction } from './actions.js';
 import { coordinateSpecialist, peerUrl } from './specialists.js';
 import { transactionPolicySchema, settleAndReinvest } from './transactions.js';
+import { qualifyNode } from '../qualification.js';
 export const engineSchema = z
   .object({
     schema: z.literal(1),
+    requireQualifiedAdmission: z.boolean().default(false),
     adaptive: adaptivePolicySchema.default({}),
     peers: z
       .array(z.object({ address: z.string(), url: z.string() }).strict())
@@ -24,9 +31,19 @@ export const engineSchema = z
       .default([]),
     specialistCapabilities: z
       .array(
-        z.enum(['evidence-analysis', 'risk-review', 'implementation-plan']),
+        z.enum([
+          'evidence-analysis',
+          'risk-review',
+          'implementation-plan',
+          'research-synthesis',
+          'adversarial-review',
+        ]),
       )
-      .max(3)
+      .max(5)
+      .refine(
+        (a) => new Set(a).size === a.length,
+        'Duplicate specialist capabilities',
+      )
       .default([]),
     maxSpecialistPriceMicroUsd: z.number().int().min(0).max(1e9).default(0),
     actions: z.record(actionSchema).default({}),
@@ -52,12 +69,13 @@ async function collect(dir, config, pipeline) {
   let size = 0;
   for await (const chunk of response.body) {
     size += chunk.length;
-    if (size > 100000) throw new Error('Collector response exceeds limit');
+    if (size > (pipeline.sourceKind === 'mission' ? 1000000 : 100000))
+      throw new Error('Collector response exceeds limit');
     chunks.push(chunk);
   }
-  const usage = usageSchema.parse(
-    JSON.parse(Buffer.concat(chunks).toString('utf8')),
-  );
+  const usage = (
+    pipeline.sourceKind === 'mission' ? missionSourceSchema : usageSchema
+  ).parse(JSON.parse(Buffer.concat(chunks).toString('utf8')));
   const age = Date.now() - Date.parse(usage.observedAt);
   if (age < -60000 || age > pipeline.maxAgeSeconds * 1000)
     throw new Error('Collector observation is stale or future dated');
@@ -134,6 +152,11 @@ export async function operate(
           ),
         });
     }
+    if (config.requireQualifiedAdmission) {
+      const qualification = await qualifyNode(dir);
+      if (!qualification.gatePassed)
+        return { status: 'qualification-blocked', qualification, progress };
+    }
     await collect(dir, config, pipeline);
     let prepared;
     const result = await cycle(dir, join(dir, 'pipeline.json'), {
@@ -186,7 +209,10 @@ export async function operate(
           ...plan.mission,
           sources,
           objective: action
-            ? 'Discover and rank caching experiments from supplied usage measurements. After independent acceptance, execute only the exact execution-policy descriptor and rollback on failed health verification.'
+            ? `${plan.mission.objective} After independent acceptance, execute only the exact execution-policy descriptor and rollback on failed health verification.`.slice(
+                0,
+                4000,
+              )
             : plan.mission.objective,
         };
         expanded.id = `runtime-${digest(expanded).slice(2, 42)}`;
@@ -213,7 +239,7 @@ export async function operate(
             ),
           );
         return {
-          schema: 1,
+          schema: 2,
           planDigest: digest(prepared.plan),
           action: prepared.action,
           specialists,

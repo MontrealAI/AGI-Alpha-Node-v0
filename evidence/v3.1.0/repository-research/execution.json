@@ -1,0 +1,267 @@
+{
+  "actualInference": true,
+  "actualRepositorySources": true,
+  "paidProvider": false,
+  "independentPeople": false,
+  "elapsedMs": 200369,
+  "separateSpecialistProcesses": 2,
+  "verification": {
+    "verified": true,
+    "missionId": "runtime-867e709e52a2a29ac13d47684f6e9ac86e97b0af",
+    "runHash": "0x3cf047767f5483b849e37f60b6f65d43df2691fce8e5b475a3f7f4d05cdd9945",
+    "node": "0x7a343AE55ad4c50469E334dfFe1218370a93D578",
+    "reviewer": "0x4F63d0Ffb211d64eEf76f89FdCeb6bdF2EFf3eEB",
+    "reviewVerified": false,
+    "outcomeVerified": false,
+    "reviewerBinding": "signed-node-choice",
+    "specialistReceipts": 2,
+    "limitation": "Checks signatures, arithmetic, report integrity and v2 specialist receipts. Does not prove the complete ledger, ENS ownership, source truth or reviewer independence."
+  },
+  "replay": "replayed",
+  "modelCalls": 2,
+  "specialists": [
+    {
+      "address": "0x1a9c16ae53d7c67c5c36530e8d12803d7ea3c2eb",
+      "capability": "research-synthesis",
+      "result": {
+        "inputDigest": "0x0d0835d38dade18bf1b8238069b6497a98fa2d7e360a494d067309b83ccd4089",
+        "capability": "research-synthesis",
+        "synthesis": {
+          "summary": "The $AGIALPHA repository demonstrates partial technical readiness with strong test coverage in backend and standalone components, but critical operational and deployment conditions remain unverified. Release readiness is gated on concrete, executable evidence for live commissioning, including owner-controlled ENS keys, funding, and independent verification. The current evidence does not support claims of general intelligence, profitability, or market outperformance. A next-step experiment is required to validate live operation under owner-controlled conditions.",
+          "abstain": false,
+          "findings": [
+            {
+              "claim": "The repository has passed 524 backend and 81 standalone tests, with 88.19% line coverage and 91.86% function coverage, indicating robust code quality in core components.",
+              "citations": [
+                {
+                  "sourceId": "S1",
+                  "quote": "{\"results\":{\"backend\":{\"passed\":524,\"skipped\":11},\"standalone\":{\"passed\":81,\"skipped\":0},\"frontend\":{\"passed\":1},\"coverage\":{\"lines\":{\"total\":3846,\"covered\":3392,\"skipped\":0,\"pct\":88.19},\"statements\":{\"total\":4277,\"covered\":3668,\"skipped\":0,\"pct\":85.76},\"functions\":{\"total\":701,\"covered\":644,\"skipped\":0,\"pct\":91.86},\"branches\":{\"total\":4057,\"covered\":3049,\"skipped\":0,\"pct\":75.15},\"branchesTrue\":{\""
+                }
+              ]
+            }
+          ],
+          "counterarguments": [
+            {
+              "text": "The absence of live mainnet deployment, owner-controlled ENS keys, funding, and independent security audits means that demonstrated test passes do not equate to operational readiness or real-world functionality.",
+              "sourceIds": [
+                "S1"
+              ]
+            },
+            {
+              "text": "General intelligence, profitability, and market outperformance are not software acceptance criteria and cannot be validated from test results alone.",
+              "sourceIds": [
+                "S2"
+              ]
+            }
+          ],
+          "experiments": [
+            {
+              "action": "Deploy the standalone $AGIALPHA node on mainnet using owner-controlled ENS keys, fund the escrow, and execute a real-world task with verified specialist routing and outcome recording.",
+              "successCriterion": "A verifiable, tamper-evident record of a completed task with signed inputs, specialist outputs, and owner-authorized outcome confirmation, including a replayable audit trail and independent verification of execution parameters.",
+              "sourceIds": [
+                "S2"
+              ]
+            }
+          ]
+        },
+        "provider": {
+          "model": "/tmp/alpha-model/Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+          "usage": {
+            "completion_tokens": 587,
+            "prompt_tokens": 2236,
+            "total_tokens": 2823,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            }
+          },
+          "endpointOrigin": "http://127.0.0.1:18081"
+        },
+        "validation": "schema-and-exact-source-quotes",
+        "limitation": "Model-produced analysis; quoted text presence does not prove entailment or source truth. No execution authority or independent acceptance."
+      }
+    },
+    {
+      "address": "0xc7601a8440b530d589773f5c956f6ad2759badec",
+      "capability": "adversarial-review",
+      "result": {
+        "inputDigest": "0x0d0835d38dade18bf1b8238069b6497a98fa2d7e360a494d067309b83ccd4089",
+        "capability": "adversarial-review",
+        "synthesis": {
+          "summary": "The repository demonstrates partial technical readiness with high code coverage and passed test cases in backend and standalone components, but critical release conditions remain unmet. Key gaps include absence of live mainnet deployment, independent ownership keys, funded escrow, and verified operator experience. The completion contract explicitly requires real-world execution and live commissioning, which are not demonstrated. The owner-bounded outcome model confirms risk policy passage but provides no evidence of actual profitability or market performance. No measurable economic outcomes or operational data exist to validate claims of general intelligence or profitability.",
+          "abstain": false,
+          "findings": [
+            {
+              "claim": "The standalone node architecture has passed 81 tests with no skips, indicating functional integration, but this does not constitute live commissioning or operational validation.",
+              "citations": [
+                {
+                  "sourceId": "S1",
+                  "quote": "{\"results\":{\"backend\":{\"passed\":524,\"skipped\":11},\"standalone\":{\"passed\":81,\"skipped\":0},\"frontend\":{\"passed\":1},\"coverage\":{\"lines\":{\"total\":3846,\"covered\":3392,\"skipped\":0,\"pct\":88.19},\"statements\":{\"total\":4277,\"covered\":3668,\"skipped\":0,\"pct\":85.76},\"functions\":{\"total\":701,\"covered\":644,\"skipped\":0,\"pct\":91.86},\"branches\":{\"total\":4057,\"covered\":3049,\"skipped\":0,\"pct\":75.15},\"branchesTrue\":{\""
+                }
+              ]
+            }
+          ],
+          "counterarguments": [
+            {
+              "text": "The standalone node tests pass and cover core behaviors like authentication, routing, and execution, which may satisfy the technical baseline for a release, especially if the owner accepts narrow demonstrations as sufficient.",
+              "sourceIds": [
+                "S2"
+              ]
+            }
+          ],
+          "experiments": [
+            {
+              "action": "Deploy a live, independently funded $AGIALPHA node on mainnet with ENS-controlled keys, funded escrow, and verified operator access; record observable execution of a real-world task with measurable outcomes and audit trail.",
+              "successCriterion": "A verifiable, tamper-evident record of a completed task with signed inputs, executed changes, and outcome binding to a known policy boundary.",
+              "sourceIds": [
+                "S2"
+              ]
+            }
+          ]
+        },
+        "provider": {
+          "model": "/tmp/alpha-model/Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+          "usage": {
+            "completion_tokens": 540,
+            "prompt_tokens": 2239,
+            "total_tokens": 2779,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            }
+          },
+          "endpointOrigin": "http://127.0.0.1:18081"
+        },
+        "validation": "schema-and-exact-source-quotes",
+        "limitation": "Model-produced analysis; quoted text presence does not prove entailment or source truth. No execution authority or independent acceptance."
+      }
+    }
+  ],
+  "recovery": {
+    "ledgerHeadMatched": true,
+    "restoredPaused": true
+  },
+  "qualification": {
+    "schema": 1,
+    "scope": "live-owner-policy-evidence",
+    "gatePassed": false,
+    "observedAt": "2026-09-24T16:18:15.661Z",
+    "ledgerHead": "0xf42df2e8d7a5df26db50fe896e21c1ae5c80fe7ba8e07693f4dddb9780a3088c",
+    "softwareDigest": "0xd896c5f37368b9a485d18e7689877c67de1328f5e4ff9297997d394674f49123",
+    "configurationDigest": "0x880bc7f75d8de39e6ab8fda54636145df0651e0101f1702770b7cea179155462",
+    "policy": {
+      "schema": 1,
+      "lookbackDays": 30,
+      "minMeasuredMissions": 5,
+      "minNetUsd": 0,
+      "maxLossFraction": 0.2,
+      "maxHumanMinutesPerUsefulResult": 15,
+      "maxReviewAgeHours": 72,
+      "requireLiveIdentity": true,
+      "minConfirmedClaims": 1,
+      "assessors": {}
+    },
+    "checks": [
+      {
+        "id": "live-identity",
+        "passed": false,
+        "detail": "Live identity not freshly verified"
+      },
+      {
+        "id": "measured-work",
+        "passed": false,
+        "detail": "0/5 comparable post-admission measurements"
+      },
+      {
+        "id": "cost-coverage",
+        "passed": false,
+        "detail": "1 runs without eligible observed measurements; 0 failed attempts without expenses; 0 unresolved attempts"
+      },
+      {
+        "id": "net-value",
+        "passed": false,
+        "detail": "0 USD reviewer-attested net, including declared overhead and failed-attempt expenses; complete coverage: false"
+      },
+      {
+        "id": "loss-rate",
+        "passed": false,
+        "detail": "0/0 loss, quality-failure or failed attempts"
+      },
+      {
+        "id": "human-effort",
+        "passed": false,
+        "detail": "No useful measured result"
+      },
+      {
+        "id": "review-capacity",
+        "passed": true,
+        "detail": "0 reviews exceed the owner deadline"
+      },
+      {
+        "id": "recovery",
+        "passed": true,
+        "detail": "0 interrupted operations; 0 unresolved transactions"
+      },
+      {
+        "id": "settlement",
+        "passed": false,
+        "detail": "0/1 freshly audited finalized claims for useful measured work"
+      },
+      {
+        "id": "assurance-security",
+        "passed": false,
+        "detail": "Current owner-allowlisted security assessment bound to this software and configuration"
+      },
+      {
+        "id": "assurance-recovery",
+        "passed": false,
+        "detail": "Current owner-allowlisted recovery assessment bound to this software and configuration"
+      },
+      {
+        "id": "assurance-operations",
+        "passed": false,
+        "detail": "Current owner-allowlisted operations assessment bound to this software and configuration"
+      },
+      {
+        "id": "assurance-reviewer-independence",
+        "passed": false,
+        "detail": "Current owner-allowlisted reviewer-independence assessment bound to this software and configuration"
+      }
+    ],
+    "verifiedAssurances": [],
+    "rejectedAssurances": [],
+    "paidClaims": [],
+    "metrics": {
+      "measuredMissions": 0,
+      "excludedMeasurements": 0,
+      "usefulResults": 0,
+      "losses": 0,
+      "failedAttempts": 0,
+      "failedAttemptCostUsd": 0,
+      "costCoverageComplete": false,
+      "uncoveredRuns": 1,
+      "uncoveredFailedAttempts": 0,
+      "netUsd": 0,
+      "humanMinutes": 0,
+      "humanMinutesPerUsefulResult": null,
+      "confirmedClaims": 0
+    },
+    "evidence": [],
+    "expenseEvidence": [],
+    "limitations": [
+      "This is a configurable evidence admission gate, not certification of general intelligence, profitability or complete project fulfillment.",
+      "Assessor signatures identify authorized keys. Their assertions, organizational independence and artifact contents require external verification.",
+      "Cost completeness and measurement truth remain reviewer attestations. Matched windows do not prove causality.",
+      "Legacy, pre-admission, future, duplicate and overlapping measurements do not count. RPC agreement does not establish independent provider operators."
+    ]
+  },
+  "limitations": [
+    "Two separately keyed processes use the same local model; this is not independent human review.",
+    "Actual repository-source analysis, not paid buyer acceptance, measured economic benefit, mainnet operation or general intelligence certification.",
+    "Reservations and quotes are synthetic micro-dollar allowances; they are not invoices or peer payments."
+  ],
+  "provenance": {
+    "revision": "a06e946bb6b655725eafa393f4a9745d460374c9",
+    "sha256": "3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597",
+    "bytes": 2497281120,
+    "runtime": "llama.cpp b11146"
+  }
+}

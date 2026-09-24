@@ -6,6 +6,7 @@ import { createReadStream, createWriteStream } from 'node:fs';
 import { createHash, randomBytes } from 'node:crypto';
 import { Command } from 'commander';
 import { Wallet } from 'ethers';
+import { qualifyResearch } from './lib/research-qualification.mjs';
 import {
   initializeNode,
   runMission,
@@ -19,10 +20,31 @@ const options = new Command()
   .requiredOption('--revision <id>', 'Immutable model revision')
   .requiredOption('--runtime <version>', 'Runtime build identifier')
   .option('--port <number>', 'Unused loopback port', '18081')
+  .option(
+    '--research',
+    'Qualify two model specialists on real repository evidence, replay and encrypted recovery',
+  )
+  .option('--threads <number>', 'Model CPU threads', '4')
+  .option(
+    '--timeout-ms <number>',
+    'Bounded inference timeout, 1000–180000 ms',
+    '60000',
+  )
   .requiredOption('--out <directory>', 'Evidence output')
   .parse()
   .opts();
 const port = Number(options.port);
+const threads = Number(options.threads),
+  timeoutMs = Number(options.timeoutMs);
+if (
+  !Number.isInteger(threads) ||
+  threads < 1 ||
+  threads > 64 ||
+  !Number.isInteger(timeoutMs) ||
+  timeoutMs < 1000 ||
+  timeoutMs > 180000
+)
+  throw new Error('Invalid model resource bounds');
 if (
   !Number.isInteger(port) ||
   port < 1024 ||
@@ -55,7 +77,7 @@ const server = spawn(
     '--ctx-size',
     '8192',
     '--threads',
-    '4',
+    String(threads),
     '--reasoning',
     'off',
     '--api-key',
@@ -96,47 +118,72 @@ try {
     url: `http://127.0.0.1:${port}/v1/chat/completions`,
     model: 'qualified-local-model',
     maxTokens: 1536,
+    timeoutMs,
     keyEnv: 'ALPHA_QUALIFICATION_MODEL_KEY',
   };
   await writeFile(join(dir, 'config.json'), JSON.stringify(config));
-  const mission = JSON.parse(
-    await readFile(
-      new URL('../examples/alpha/opportunity-scan.json', import.meta.url),
-    ),
-  );
-  const start = Date.now();
-  const run = await runMission(dir, mission);
-  await exportMission(dir, mission.id, out);
-  const result = {
-    actualInference: true,
-    syntheticMission: true,
-    paidProvider: false,
-    elapsedMs: Date.now() - start,
-    provider: run.provider,
-    provenance: {
+  if (options.research) {
+    const result = await qualifyResearch(dir, config.provider, out);
+    result.provenance = {
       revision: options.revision,
       sha256: options.modelSha256,
       bytes,
       runtime: options.runtime,
-    },
-    limitations: [
-      'Single real-model integration run; not a general intelligence or model-quality certification',
-      'Economic source assumptions are synthetic',
-      'No production deployment or payment',
-    ],
-  };
-  await writeFile(
-    join(out, 'execution.json'),
-    JSON.stringify(result, null, 2) + '\n',
-  );
-  console.log(
-    JSON.stringify({
+    };
+    await writeFile(
+      join(out, 'execution.json'),
+      JSON.stringify(result, null, 2) + '\n',
+    );
+    console.log(
+      JSON.stringify({
+        actualInference: true,
+        modelCalls: result.modelCalls,
+        elapsedMs: result.elapsedMs,
+        verification: result.verification,
+        recovery: result.recovery,
+        evidenceGatePassed: result.qualification.gatePassed,
+      }),
+    );
+  } else {
+    const mission = JSON.parse(
+      await readFile(
+        new URL('../examples/alpha/opportunity-scan.json', import.meta.url),
+      ),
+    );
+    const start = Date.now();
+    const run = await runMission(dir, mission);
+    await exportMission(dir, mission.id, out);
+    const result = {
       actualInference: true,
-      elapsedMs: result.elapsedMs,
-      model: run.provider.model,
-      usage: run.provider.usage,
-    }),
-  );
+      syntheticMission: true,
+      paidProvider: false,
+      elapsedMs: Date.now() - start,
+      provider: run.provider,
+      provenance: {
+        revision: options.revision,
+        sha256: options.modelSha256,
+        bytes,
+        runtime: options.runtime,
+      },
+      limitations: [
+        'Single real-model integration run; not a general intelligence or model-quality certification',
+        'Economic source assumptions are synthetic',
+        'No production deployment or payment',
+      ],
+    };
+    await writeFile(
+      join(out, 'execution.json'),
+      JSON.stringify(result, null, 2) + '\n',
+    );
+    console.log(
+      JSON.stringify({
+        actualInference: true,
+        elapsedMs: result.elapsedMs,
+        model: run.provider.model,
+        usage: run.provider.usage,
+      }),
+    );
+  }
 } finally {
   server.kill('SIGTERM');
   log.end();

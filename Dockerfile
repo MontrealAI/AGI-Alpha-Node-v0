@@ -5,6 +5,7 @@ ENV NODE_ENV=production
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --no-audit --no-fund
 COPY src ./src
+COPY contracts ./contracts
 COPY examples ./examples
 COPY scripts ./scripts
 COPY README.md START_HERE.md ./

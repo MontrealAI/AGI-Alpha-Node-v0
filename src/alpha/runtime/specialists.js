@@ -1,105 +1,44 @@
 import { createServer } from 'node:http';
-import { Wallet, verifyMessage, getAddress } from 'ethers';
+import { open, unlink } from 'node:fs/promises';
+import { Wallet, getAddress } from 'ethers';
+import {
+  signEnvelope,
+  verifyEnvelope,
+  executeSpecialist,
+} from './specialist-protocol.js';
 import { join } from 'node:path';
 import { z } from 'zod';
-import { digest, analyzeMission, missionSchema } from '../mission.js';
-import { loadNode, readJson, recordRuntime } from '../node.js';
+import { digest, missionSchema } from '../mission.js';
+import { loadNode, readJson, recordRuntime, verifyIdentity } from '../node.js';
+import { synthesizeEvidence, validateModelResult } from './synthesis.js';
 
 const address = (x) => getAddress(x).toLowerCase();
 const capabilities = [
   'evidence-analysis',
   'risk-review',
   'implementation-plan',
+  'research-synthesis',
+  'adversarial-review',
 ];
 const configSchema = z
   .object({
     allowedCallers: z.array(z.string()).min(1).max(100),
-    capabilities: z.array(z.enum(capabilities)).min(1),
+    capabilities: z
+      .array(z.enum(capabilities))
+      .min(1)
+      .max(5)
+      .refine((a) => new Set(a).size === a.length, 'Duplicate capabilities'),
     priceMicroUsd: z.number().int().nonnegative().max(1e9),
     maxDailyRequests: z.number().int().min(1).max(1000),
+    reserveMicroUsdPerRequest: z.number().int().min(0).max(1e9).default(0),
+    maxDailyReservedMicroUsd: z.number().int().min(0).max(1e12).default(0),
   })
   .strict();
-export async function signEnvelope(
-  wallet,
-  kind,
-  recipient,
-  payload,
-  { ttlMs = 60000, now = Date.now() } = {},
-) {
-  const body = {
-    domain: 'agialpha:specialist:v1',
-    kind,
-    sender: address(wallet.address),
-    recipient: recipient ? address(recipient) : null,
-    issuedAt: now,
-    expiresAt: now + ttlMs,
-    payload,
-  };
-  const hash = digest(body);
-  return { ...body, hash, signature: await wallet.signMessage(hash) };
-}
-export function verifyEnvelope(
-  envelope,
-  { sender, recipient, kind, now = Date.now(), allowExpired = false },
-) {
-  const { hash, signature, ...body } = envelope;
-  if (
-    body.domain !== 'agialpha:specialist:v1' ||
-    body.kind !== kind ||
-    digest(body) !== hash ||
-    address(verifyMessage(hash, signature)) !== address(sender) ||
-    body.sender !== address(sender) ||
-    body.recipient !== (recipient ? address(recipient) : null)
-  )
-    throw new Error('Invalid specialist signature or binding');
-  if (
-    !Number.isSafeInteger(body.issuedAt) ||
-    !Number.isSafeInteger(body.expiresAt) ||
-    body.issuedAt > now + 30000 ||
-    body.expiresAt <= body.issuedAt ||
-    body.expiresAt - body.issuedAt > 300000 ||
-    (!allowExpired && body.expiresAt < now)
-  )
-    throw new Error('Expired or invalid specialist envelope');
-  return body.payload;
-}
-export function executeSpecialist(capability, input) {
-  const mission = missionSchema.parse(input);
-  const analysis = analyzeMission(mission);
-  if (capability === 'evidence-analysis')
-    return { inputDigest: digest(mission), analysis };
-  if (capability === 'risk-review')
-    return {
-      inputDigest: digest(mission),
-      recommendation: analysis.recommendation,
-      findings: analysis.rankings.map((o) => ({
-        id: o.id,
-        admitted: o.admitted,
-        stressedNet: o.stressedNet,
-        lossIfNoBenefit: o.cost + o.downside,
-      })),
-      requiredChecks: [
-        'Source truth',
-        'Uniform cost assumption',
-        'Privacy and correctness',
-        'Independent observed outcome',
-      ],
-    };
-  if (capability === 'implementation-plan')
-    return {
-      inputDigest: digest(mission),
-      recommendation: analysis.recommendation,
-      steps: [
-        'Validate the baseline and cache eligibility',
-        'Prepare a hash-bound configuration patch',
-        'Execute only an owner-authorized capability',
-        'Measure the same observation period',
-        'Rollback if the health check fails',
-      ],
-      executableCode: false,
-    };
-  throw new Error('Unsupported specialist capability');
-}
+export {
+  signEnvelope,
+  verifyEnvelope,
+  executeSpecialist,
+} from './specialist-protocol.js';
 async function body(req) {
   const chunks = [];
   let size = 0;
@@ -165,6 +104,7 @@ export async function specialistServer(
       });
       if (
         !config.capabilities.includes(payload.capability) ||
+        !Number.isSafeInteger(payload.maxPriceMicroUsd) ||
         payload.maxPriceMicroUsd < config.priceMicroUsd ||
         !/^0x[0-9a-f]{64}$/.test(payload.requestId)
       )
@@ -182,12 +122,39 @@ export async function specialistServer(
         throw new Error('Request ID does not bind inputs');
       if (busy) return send(409, { error: 'Specialist busy' });
       busy = true;
+      let executionLock;
       try {
+        try {
+          executionLock = await open(join(dir, 'specialist.lock'), 'wx', 0o600);
+        } catch (e) {
+          if (e.code === 'EEXIST')
+            throw new Error(
+              'Specialist busy or interrupted; inspect before recovery',
+            );
+          throw e;
+        }
+        await executionLock.writeFile(String(process.pid));
+        await executionLock.sync();
         const id = `specialist:${payload.requestId}`;
         const n = await loadNode(dir);
         if (n.paused) throw new Error('Specialist paused');
         const existing = n.runtime.get(`${id}:result`);
         if (existing) return send(200, existing.data.envelope);
+        if (n.runtime.has(`${id}:reserved`))
+          throw new Error(
+            'Specialist request interrupted or failed; automatic retry forbidden',
+          );
+        const isModel = ['research-synthesis', 'adversarial-review'].includes(
+          payload.capability,
+        );
+        if (
+          isModel &&
+          (!n.config.provider || config.reserveMicroUsdPerRequest <= 0)
+        )
+          throw new Error(
+            'Model specialist requires a provider and positive cost reservation',
+          );
+        await verifyIdentity(n.config);
         await recordRuntime(
           dir,
           'specialist',
@@ -196,6 +163,9 @@ export async function specialistServer(
             requestId: payload.requestId,
             capability: payload.capability,
             caller: request.sender,
+            ...(isModel
+              ? { reservedMicroUsd: config.reserveMicroUsdPerRequest }
+              : {}),
           },
           (node) => {
             const today = new Date().toISOString().slice(0, 10);
@@ -207,9 +177,29 @@ export async function specialistServer(
             ).length;
             if (node.paused || used >= config.maxDailyRequests)
               throw new Error('Specialist paused or daily capacity reached');
+            const reserved = [...node.runtime.values()]
+              .filter(
+                (e) =>
+                  e.topic === 'specialist' &&
+                  e.id.endsWith(':reserved') &&
+                  e.at.slice(0, 10) >= today,
+              )
+              .reduce((sum, e) => sum + (e.data.reservedMicroUsd ?? 0), 0);
+            if (
+              isModel &&
+              reserved + config.reserveMicroUsdPerRequest >
+                config.maxDailyReservedMicroUsd
+            )
+              throw new Error('Specialist daily inference budget exhausted');
           },
         );
-        const result = executeSpecialist(payload.capability, mission);
+        const result = isModel
+          ? await synthesizeEvidence(
+              payload.capability,
+              mission,
+              n.config.provider,
+            )
+          : executeSpecialist(payload.capability, mission);
         const envelope = await signEnvelope(wallet, 'result', request.sender, {
           requestId: payload.requestId,
           capability: payload.capability,
@@ -229,6 +219,10 @@ export async function specialistServer(
         );
         return send(200, envelope);
       } finally {
+        if (executionLock) {
+          await executionLock.close();
+          await unlink(join(dir, 'specialist.lock'));
+        }
         busy = false;
       }
     } catch (e) {
@@ -264,13 +258,12 @@ export function peerUrl(value) {
     );
   return u.origin;
 }
-async function fetchJson(url, options = {}) {
+async function fetchJson(url, options = {}, timeoutMs = 15000) {
   const response = await fetch(url, {
     ...options,
     redirect: 'error',
-    signal: AbortSignal.timeout(15000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
-  if (!response.ok) throw new Error(`Specialist HTTP ${response.status}`);
   const chunks = [];
   let size = 0;
   for await (const chunk of response.body) {
@@ -278,7 +271,12 @@ async function fetchJson(url, options = {}) {
     if (size > 500000) throw new Error('Specialist response too large');
     chunks.push(chunk);
   }
-  return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+  const parsed = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+  if (!response.ok)
+    throw new Error(
+      `Specialist HTTP ${response.status}: ${typeof parsed.error === 'string' ? parsed.error.slice(0, 500) : 'request rejected'}`,
+    );
+  return parsed;
 }
 export async function coordinateSpecialist(
   dir,
@@ -341,11 +339,18 @@ export async function coordinateSpecialist(
     mission,
     maxPriceMicroUsd,
   });
-  const envelope = await fetchJson(`${choice.url}/execute`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(request),
-  });
+  const isModel = ['research-synthesis', 'adversarial-review'].includes(
+    capability,
+  );
+  const envelope = await fetchJson(
+    `${choice.url}/execute`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    },
+    isModel ? 190000 : 15000,
+  );
   const result = verifyEnvelope(envelope, {
     sender: choice.peer.address,
     recipient: wallet.address,
@@ -361,7 +366,10 @@ export async function coordinateSpecialist(
   )
     throw new Error('Specialist result/input/price binding mismatch');
   // These capabilities are deterministic; recompute instead of trusting a signature as truth.
-  if (digest(result.result) !== digest(executeSpecialist(capability, mission)))
+  if (isModel) validateModelResult(result.result, mission, capability);
+  else if (
+    digest(result.result) !== digest(executeSpecialist(capability, mission))
+  )
     throw new Error('Specialist result failed local validation');
   await recordRuntime(dir, 'specialist', `peer:${requestId}`, {
     envelope,

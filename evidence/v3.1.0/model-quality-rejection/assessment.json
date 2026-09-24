@@ -1,0 +1,13 @@
+{
+  "assessor": "release builder; not an independent reviewer",
+  "decision": "rejected for operational reliance",
+  "model": "Qwen3-0.6B-Q8_0",
+  "structuralChecksPassed": true,
+  "citationPresencePassed": true,
+  "reasons": [
+    "Research summary inferred deployment readiness from test results and owner risk admission without commissioning evidence.",
+    "Research counterargument incorrectly characterized skipped tests as not fully implemented.",
+    "Adversarial output described coverage as performance evidence and proposed an insufficiently specific acceptance experiment."
+  ],
+  "conclusion": "Keep as evidence that schema, signatures and exact quotations do not establish semantic correctness."
+}

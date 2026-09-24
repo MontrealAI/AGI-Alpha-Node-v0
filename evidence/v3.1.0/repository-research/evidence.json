@@ -1,0 +1,278 @@
+{
+  "schema": 2,
+  "ledgerHead": "0xf42df2e8d7a5df26db50fe896e21c1ae5c80fe7ba8e07693f4dddb9780a3088c",
+  "identity": {
+    "ensName": "model.alpha.node.agi.eth",
+    "address": "0x7a343AE55ad4c50469E334dfFe1218370a93D578",
+    "reviewer": "0x4F63d0Ffb211d64eEf76f89FdCeb6bdF2EFf3eEB"
+  },
+  "run": {
+    "type": "run",
+    "workId": "0x15748c9f275822059841f053538a73ab5e6391c65e3b351c56ae8508b1f69b3a",
+    "reviewer": "0x4F63d0Ffb211d64eEf76f89FdCeb6bdF2EFf3eEB",
+    "mission": {
+      "id": "runtime-867e709e52a2a29ac13d47684f6e9ac86e97b0af",
+      "title": "$AGIALPHA repository readiness review",
+      "objective": "Produce a useful release-readiness brief from actual repository evidence: what is demonstrated, what remains open, and concrete next acceptance experiments. Distinguish tested code from deployed operation. The zero-dollar screening values grant analytical admission only; they are not economic forecasts.",
+      "sources": [
+        {
+          "id": "S1",
+          "title": "evidence/v3.0.0/validation.json",
+          "text": "{\"results\":{\"backend\":{\"passed\":524,\"skipped\":11},\"standalone\":{\"passed\":81,\"skipped\":0},\"frontend\":{\"passed\":1},\"coverage\":{\"lines\":{\"total\":3846,\"covered\":3392,\"skipped\":0,\"pct\":88.19},\"statements\":{\"total\":4277,\"covered\":3668,\"skipped\":0,\"pct\":85.76},\"functions\":{\"total\":701,\"covered\":644,\"skipped\":0,\"pct\":91.86},\"branches\":{\"total\":4057,\"covered\":3049,\"skipped\":0,\"pct\":75.15},\"branchesTrue\":{\"total\":0,\"covered\":0,\"skipped\":0,\"pct\":100}},\"rootDependencyAdvisories\":0,\"subgraphDependencyAdvisories\":0},\"limitations\":[\"No owner mainnet ENS/key/deployment/funding commissioning\",\"Role-separated fixture keys are not independent people\",\"Synthetic economic inputs/outcomes are not measured profitability\",\"One real local-model run is an integration check, not general intelligence certification\",\"11 inherited environment-dependent skips; mandatory standalone token tests execute in a local EVM\",\"Coverage scope is alpha (excluding CLI/web), network and telemetry; other surfaces have regression tests\",\"Branch protection settings and independent source/contract security audit are not established\"]}"
+        },
+        {
+          "id": "S2",
+          "title": "docs/completion-contract.md",
+          "text": "# Completion contract for the standalone $AGIALPHA node\n\n<!-- markdownlint-disable MD013 -->\n\nThe owner requested completion of the repository's concrete original node architecture, separate from AGI Jobs. A passing narrow demonstration is insufficient. This checklist keeps the remaining engineering work in scope; release claims must follow executable evidence.\n\n| Original pillar | Required completed behavior | Evidence required |\n| --- | --- | --- |\n| World-model planner | Build a task-scoped model from observations and signed outcomes; generate and stress-test candidate plans; select only actions admitted by owner policy | Tests of learning, uncertainty, adverse scenarios, abstention, policy bounds and deterministic replay |\n| Specialist mesh | Discover configured signed specialist offers; authenticate requests/results; route by capabilities and bounded price; survive interruption without duplicate work | Real HTTP exchanges between separately keyed processes, signature/replay/expiry/authorization tests and persisted receipts |\n| Antifragile sentinel | Enforce budgets, capacity, pause, timeouts, execution permissions and failure backoff; tighten behavior after adverse outcomes | Failure injection, conservative adaptation and recovery tests |\n| Compliance ledger | Bind inputs, plans, specialist outputs, executed changes, reviews, outcomes and transactions in a verifiable durable record | Tamper detection, identity binding, restart and rollback evidence |\n| Autopilot evolution | Update bounded strategy parameters from accepted measured outcomes; execute authorized changes; settle accepted work and reinvest only verified receipts within explicit owner limits | End-to-end closed-loop execution, receipt validation, nonce/idempotency recovery, treasury conservation and capped reinvestment tests |\n| Identity and token mechanics | ENS-controlled live identity, canonical $AGIALPHA, funded escrow, stake conservation and separate review authority | Local VM and RPC integration evidence plus an explicit live commissioning report |\n| Operator experience | Guided configuration, observable phase/status, operator controls, private keys outside UI, backup/restore and platform service configuration | CLI/API/UI tests, clean-install checks and recovery drills |\n| Release engineering | Reproducible source package, clean dependency installation, security review and gated publication | Published CI and archive/manifest verification |\n\nGeneral intelligence, inevitable profitability, guaranteed market outperformance and unlimited scale are research or outcome claims, not software acceptance criteria. Implementing the concrete pillars does not establish those claims. Live commissioning additionally requires an actual owner deployment, authorized keys, funds, independent reviewers and measured operation; absent evidence must remain marked unverified.\n\nA next release is gated on the integrated software behavior above, not on silently dropping unfinished pillars from scope.\n"
+        },
+        {
+          "id": "input-observation",
+          "title": "Observation envelope",
+          "text": "{\"observedAt\":\"2026-09-24T16:14:55.292Z\",\"inputDigest\":\"0x7eed942b0847a1f17975bb204bf3e385c884df8e4841c1bc9a1bdf13c3077ac1\"}"
+        },
+        {
+          "id": "adaptive-model",
+          "title": "Owner-bounded outcome model",
+          "text": "{\"modelsDigest\":\"0xa0304f69476b5a6d74fec1d39896881dffd403badcb06fce11c4c213cc5f1dff\",\"models\":[{\"recommendation\":\"readiness-review\",\"samples\":0,\"successes\":0,\"losses\":0,\"meanBenefitRatio\":1}],\"reason\":\"Owner risk policy passed\"}"
+        }
+      ],
+      "opportunities": [
+        {
+          "id": "readiness-review",
+          "title": "Analyze the recorded release evidence",
+          "benefit": 0,
+          "cost": 0,
+          "probability": 1,
+          "downside": 0,
+          "sourceIds": [
+            "S1",
+            "S2"
+          ],
+          "rationale": "Read-only analysis, no forecasted economic benefit or external action."
+        }
+      ],
+      "policy": {
+        "maxCost": 0,
+        "maxDownside": 0,
+        "minExpectedNet": 0,
+        "stressBenefitBps": 10000
+      },
+      "unit": "USD, no benefit forecast"
+    },
+    "identity": {
+      "verified": false,
+      "mode": "local",
+      "ensName": "model.alpha.node.agi.eth",
+      "address": "0x7a343AE55ad4c50469E334dfFe1218370a93D578"
+    },
+    "analysis": {
+      "kind": "deterministic-evidence-analysis",
+      "missionDigest": "0x0d0835d38dade18bf1b8238069b6497a98fa2d7e360a494d067309b83ccd4089",
+      "unit": "USD, no benefit forecast",
+      "recommendation": "readiness-review",
+      "rankings": [
+        {
+          "id": "readiness-review",
+          "title": "Analyze the recorded release evidence",
+          "benefit": 0,
+          "cost": 0,
+          "probability": 1,
+          "downside": 0,
+          "sourceIds": [
+            "S1",
+            "S2"
+          ],
+          "rationale": "Read-only analysis, no forecasted economic benefit or external action.",
+          "expectedNet": 0,
+          "stressedNet": 0,
+          "admitted": true
+        }
+      ],
+      "sources": [
+        {
+          "id": "S1",
+          "title": "evidence/v3.0.0/validation.json",
+          "digest": "0x54ba3a4229b7f2bb19a304ee8f97a14e63c2399fbb7a1e2cd6129be822fa2de2",
+          "url": null
+        },
+        {
+          "id": "S2",
+          "title": "docs/completion-contract.md",
+          "digest": "0x7cc707233ae154c4287671f0bb71b851686d1ca4fab002c867a7226c7b5f978a",
+          "url": null
+        },
+        {
+          "id": "input-observation",
+          "title": "Observation envelope",
+          "digest": "0x65dad43c51407aa1fb5089673f5fcc77b7b8eb91358068f5f5cd32eeab3f708b",
+          "url": null
+        },
+        {
+          "id": "adaptive-model",
+          "title": "Owner-bounded outcome model",
+          "digest": "0x7641347f850f6dda2fcbbe4b673f23b14336b6cd5bb75afa2e07881ca50b774d",
+          "url": null
+        }
+      ],
+      "limitations": [
+        "Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.",
+        "Source hashes establish integrity, not truth. Independent review is required.",
+        "No trades, external actions, token earnings or AGI capability are implied by this report."
+      ]
+    },
+    "provider": null,
+    "report": "# $AGIALPHA repository readiness review\n\n<!-- markdownlint-disable MD013 -->\n\nProduce a useful release-readiness brief from actual repository evidence: what is demonstrated, what remains open, and concrete next acceptance experiments. Distinguish tested code from deployed operation. The zero-dollar screening values grant analytical admission only; they are not economic forecasts.\n\nAnalysis: deterministic-evidence-analysis\nInput digest: 0x0d0835d38dade18bf1b8238069b6497a98fa2d7e360a494d067309b83ccd4089\nUnits: USD, no benefit forecast\nRecommendation: readiness-review\n\n| Opportunity | Expected net | Stressed net | Admitted | Evidence |\n| --- | ---: | ---: | --- | --- |\n| Analyze the recorded release evidence | 0.00 | 0.00 | Yes | S1, S2 |\n\n## Evidence and assumptions\n\n- readiness-review: Read-only analysis, no forecasted economic benefit or external action.\n\n- S1 — evidence/v3.0.0/validation.json — SHA-256 0x54ba3a4229b7f2bb19a304ee8f97a14e63c2399fbb7a1e2cd6129be822fa2de2\n- S2 — docs/completion-contract.md — SHA-256 0x7cc707233ae154c4287671f0bb71b851686d1ca4fab002c867a7226c7b5f978a\n- input-observation — Observation envelope — SHA-256 0x65dad43c51407aa1fb5089673f5fcc77b7b8eb91358068f5f5cd32eeab3f708b\n- adaptive-model — Owner-bounded outcome model — SHA-256 0x7641347f850f6dda2fcbbe4b673f23b14336b6cd5bb75afa2e07881ca50b774d\n\n## Runtime authorization\n\nAcceptance authorizes only the exact action below. Model text and specialist responses cannot authorize additional actions.\n\nPlan digest: 0xaea922ecd1c8211ddda4db56e5c811ad0940cf20d4285208298ed4a5b33d8217\n\nAuthenticated specialist receipts: 2\n\n### Specialist evidence\n\nSignatures authenticate the peer. Exact-quote validation checks citation presence, not truth or entailment. Review these results before acceptance.\n\nPeer: 0x1a9c16ae53d7c67c5c36530e8d12803d7ea3c2eb · Capability: research-synthesis\n\n```json\n{\n  \"inputDigest\": \"0x0d0835d38dade18bf1b8238069b6497a98fa2d7e360a494d067309b83ccd4089\",\n  \"capability\": \"research-synthesis\",\n  \"synthesis\": {\n    \"summary\": \"The $AGIALPHA repository demonstrates partial technical readiness with strong test coverage in backend and standalone components, but critical operational and deployment conditions remain unverified. Release readiness is gated on concrete, executable evidence for live commissioning, including owner-controlled ENS keys, funding, and independent verification. The current evidence does not support claims of general intelligence, profitability, or market outperformance. A next-step experiment is required to validate live operation under owner-controlled conditions.\",\n    \"abstain\": false,\n    \"findings\": [\n      {\n        \"claim\": \"The repository has passed 524 backend and 81 standalone tests, with 88.19% line coverage and 91.86% function coverage, indicating robust code quality in core components.\",\n        \"citations\": [\n          {\n            \"sourceId\": \"S1\",\n            \"quote\": \"{\\\"results\\\":{\\\"backend\\\":{\\\"passed\\\":524,\\\"skipped\\\":11},\\\"standalone\\\":{\\\"passed\\\":81,\\\"skipped\\\":0},\\\"frontend\\\":{\\\"passed\\\":1},\\\"coverage\\\":{\\\"lines\\\":{\\\"total\\\":3846,\\\"covered\\\":3392,\\\"skipped\\\":0,\\\"pct\\\":88.19},\\\"statements\\\":{\\\"total\\\":4277,\\\"covered\\\":3668,\\\"skipped\\\":0,\\\"pct\\\":85.76},\\\"functions\\\":{\\\"total\\\":701,\\\"covered\\\":644,\\\"skipped\\\":0,\\\"pct\\\":91.86},\\\"branches\\\":{\\\"total\\\":4057,\\\"covered\\\":3049,\\\"skipped\\\":0,\\\"pct\\\":75.15},\\\"branchesTrue\\\":{\\\"\"\n          }\n        ]\n      }\n    ],\n    \"counterarguments\": [\n      {\n        \"text\": \"The absence of live mainnet deployment, owner-controlled ENS keys, funding, and independent security audits means that demonstrated test passes do not equate to operational readiness or real-world functionality.\",\n        \"sourceIds\": [\n          \"S1\"\n        ]\n      },\n      {\n        \"text\": \"General intelligence, profitability, and market outperformance are not software acceptance criteria and cannot be validated from test results alone.\",\n        \"sourceIds\": [\n          \"S2\"\n        ]\n      }\n    ],\n    \"experiments\": [\n      {\n        \"action\": \"Deploy the standalone $AGIALPHA node on mainnet using owner-controlled ENS keys, fund the escrow, and execute a real-world task with verified specialist routing and outcome recording.\",\n        \"successCriterion\": \"A verifiable, tamper-evident record of a completed task with signed inputs, specialist outputs, and owner-authorized outcome confirmation, including a replayable audit trail and independent verification of execution parameters.\",\n        \"sourceIds\": [\n          \"S2\"\n        ]\n      }\n    ]\n  },\n  \"provider\": {\n    \"model\": \"/tmp/alpha-model/Qwen3-4B-Instruct-2507-Q4_K_M.gguf\",\n    \"usage\": {\n      \"completion_tokens\": 587,\n      \"prompt_tokens\": 2236,\n      \"total_tokens\": 2823,\n      \"prompt_tokens_details\": {\n        \"cached_tokens\": 0\n      }\n    },\n    \"endpointOrigin\": \"http://127.0.0.1:18081\"\n  },\n  \"validation\": \"schema-and-exact-source-quotes\",\n  \"limitation\": \"Model-produced analysis; quoted text presence does not prove entailment or source truth. No execution authority or independent acceptance.\"\n}\n```\n\nPeer: 0xc7601a8440b530d589773f5c956f6ad2759badec · Capability: adversarial-review\n\n```json\n{\n  \"inputDigest\": \"0x0d0835d38dade18bf1b8238069b6497a98fa2d7e360a494d067309b83ccd4089\",\n  \"capability\": \"adversarial-review\",\n  \"synthesis\": {\n    \"summary\": \"The repository demonstrates partial technical readiness with high code coverage and passed test cases in backend and standalone components, but critical release conditions remain unmet. Key gaps include absence of live mainnet deployment, independent ownership keys, funded escrow, and verified operator experience. The completion contract explicitly requires real-world execution and live commissioning, which are not demonstrated. The owner-bounded outcome model confirms risk policy passage but provides no evidence of actual profitability or market performance. No measurable economic outcomes or operational data exist to validate claims of general intelligence or profitability.\",\n    \"abstain\": false,\n    \"findings\": [\n      {\n        \"claim\": \"The standalone node architecture has passed 81 tests with no skips, indicating functional integration, but this does not constitute live commissioning or operational validation.\",\n        \"citations\": [\n          {\n            \"sourceId\": \"S1\",\n            \"quote\": \"{\\\"results\\\":{\\\"backend\\\":{\\\"passed\\\":524,\\\"skipped\\\":11},\\\"standalone\\\":{\\\"passed\\\":81,\\\"skipped\\\":0},\\\"frontend\\\":{\\\"passed\\\":1},\\\"coverage\\\":{\\\"lines\\\":{\\\"total\\\":3846,\\\"covered\\\":3392,\\\"skipped\\\":0,\\\"pct\\\":88.19},\\\"statements\\\":{\\\"total\\\":4277,\\\"covered\\\":3668,\\\"skipped\\\":0,\\\"pct\\\":85.76},\\\"functions\\\":{\\\"total\\\":701,\\\"covered\\\":644,\\\"skipped\\\":0,\\\"pct\\\":91.86},\\\"branches\\\":{\\\"total\\\":4057,\\\"covered\\\":3049,\\\"skipped\\\":0,\\\"pct\\\":75.15},\\\"branchesTrue\\\":{\\\"\"\n          }\n        ]\n      }\n    ],\n    \"counterarguments\": [\n      {\n        \"text\": \"The standalone node tests pass and cover core behaviors like authentication, routing, and execution, which may satisfy the technical baseline for a release, especially if the owner accepts narrow demonstrations as sufficient.\",\n        \"sourceIds\": [\n          \"S2\"\n        ]\n      }\n    ],\n    \"experiments\": [\n      {\n        \"action\": \"Deploy a live, independently funded $AGIALPHA node on mainnet with ENS-controlled keys, funded escrow, and verified operator access; record observable execution of a real-world task with measurable outcomes and audit trail.\",\n        \"successCriterion\": \"A verifiable, tamper-evident record of a completed task with signed inputs, executed changes, and outcome binding to a known policy boundary.\",\n        \"sourceIds\": [\n          \"S2\"\n        ]\n      }\n    ]\n  },\n  \"provider\": {\n    \"model\": \"/tmp/alpha-model/Qwen3-4B-Instruct-2507-Q4_K_M.gguf\",\n    \"usage\": {\n      \"completion_tokens\": 540,\n      \"prompt_tokens\": 2239,\n      \"total_tokens\": 2779,\n      \"prompt_tokens_details\": {\n        \"cached_tokens\": 0\n      }\n    },\n    \"endpointOrigin\": \"http://127.0.0.1:18081\"\n  },\n  \"validation\": \"schema-and-exact-source-quotes\",\n  \"limitation\": \"Model-produced analysis; quoted text presence does not prove entailment or source truth. No execution authority or independent acceptance.\"\n}\n```\n\nNo external action is proposed.\n\n## Limits\n\n- Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.\n- Source hashes establish integrity, not truth. Independent review is required.\n- No trades, external actions, token earnings or AGI capability are implied by this report.\n",
+    "status": "awaiting-review",
+    "reward": "unfunded-unverified",
+    "runtimeContext": {
+      "schema": 2,
+      "planDigest": "0xaea922ecd1c8211ddda4db56e5c811ad0940cf20d4285208298ed4a5b33d8217",
+      "action": null,
+      "specialists": [
+        {
+          "domain": "agialpha:specialist:v1",
+          "kind": "result",
+          "sender": "0x1a9c16ae53d7c67c5c36530e8d12803d7ea3c2eb",
+          "recipient": "0x7a343ae55ad4c50469e334dffe1218370a93d578",
+          "issuedAt": 1790266608542,
+          "expiresAt": 1790266668542,
+          "payload": {
+            "requestId": "0x4e690f35d4a2cc2034397a0c33509b0444ac12f2df047fed5ad093d2a40fcd1c",
+            "capability": "research-synthesis",
+            "priceMicroUsd": 1,
+            "inputDigest": "0x0d0835d38dade18bf1b8238069b6497a98fa2d7e360a494d067309b83ccd4089",
+            "result": {
+              "inputDigest": "0x0d0835d38dade18bf1b8238069b6497a98fa2d7e360a494d067309b83ccd4089",
+              "capability": "research-synthesis",
+              "synthesis": {
+                "summary": "The $AGIALPHA repository demonstrates partial technical readiness with strong test coverage in backend and standalone components, but critical operational and deployment conditions remain unverified. Release readiness is gated on concrete, executable evidence for live commissioning, including owner-controlled ENS keys, funding, and independent verification. The current evidence does not support claims of general intelligence, profitability, or market outperformance. A next-step experiment is required to validate live operation under owner-controlled conditions.",
+                "abstain": false,
+                "findings": [
+                  {
+                    "claim": "The repository has passed 524 backend and 81 standalone tests, with 88.19% line coverage and 91.86% function coverage, indicating robust code quality in core components.",
+                    "citations": [
+                      {
+                        "sourceId": "S1",
+                        "quote": "{\"results\":{\"backend\":{\"passed\":524,\"skipped\":11},\"standalone\":{\"passed\":81,\"skipped\":0},\"frontend\":{\"passed\":1},\"coverage\":{\"lines\":{\"total\":3846,\"covered\":3392,\"skipped\":0,\"pct\":88.19},\"statements\":{\"total\":4277,\"covered\":3668,\"skipped\":0,\"pct\":85.76},\"functions\":{\"total\":701,\"covered\":644,\"skipped\":0,\"pct\":91.86},\"branches\":{\"total\":4057,\"covered\":3049,\"skipped\":0,\"pct\":75.15},\"branchesTrue\":{\""
+                      }
+                    ]
+                  }
+                ],
+                "counterarguments": [
+                  {
+                    "text": "The absence of live mainnet deployment, owner-controlled ENS keys, funding, and independent security audits means that demonstrated test passes do not equate to operational readiness or real-world functionality.",
+                    "sourceIds": [
+                      "S1"
+                    ]
+                  },
+                  {
+                    "text": "General intelligence, profitability, and market outperformance are not software acceptance criteria and cannot be validated from test results alone.",
+                    "sourceIds": [
+                      "S2"
+                    ]
+                  }
+                ],
+                "experiments": [
+                  {
+                    "action": "Deploy the standalone $AGIALPHA node on mainnet using owner-controlled ENS keys, fund the escrow, and execute a real-world task with verified specialist routing and outcome recording.",
+                    "successCriterion": "A verifiable, tamper-evident record of a completed task with signed inputs, specialist outputs, and owner-authorized outcome confirmation, including a replayable audit trail and independent verification of execution parameters.",
+                    "sourceIds": [
+                      "S2"
+                    ]
+                  }
+                ]
+              },
+              "provider": {
+                "model": "/tmp/alpha-model/Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+                "usage": {
+                  "completion_tokens": 587,
+                  "prompt_tokens": 2236,
+                  "total_tokens": 2823,
+                  "prompt_tokens_details": {
+                    "cached_tokens": 0
+                  }
+                },
+                "endpointOrigin": "http://127.0.0.1:18081"
+              },
+              "validation": "schema-and-exact-source-quotes",
+              "limitation": "Model-produced analysis; quoted text presence does not prove entailment or source truth. No execution authority or independent acceptance."
+            }
+          },
+          "hash": "0xd3b51abe9ef30a8227741f195cfb623d72fbe39cee7244e6009b9694ebb64849",
+          "signature": "0xdcbb6cad29ebfa52959f18d663f85e3c3155ea2ca1df9a6b3d49ce23898ac0cb3fb85a437b17e6640d497bdd34a8e41656bdfaffc4f0ecc6e792e2543797ed451c"
+        },
+        {
+          "domain": "agialpha:specialist:v1",
+          "kind": "result",
+          "sender": "0xc7601a8440b530d589773f5c956f6ad2759badec",
+          "recipient": "0x7a343ae55ad4c50469e334dffe1218370a93d578",
+          "issuedAt": 1790266694907,
+          "expiresAt": 1790266754907,
+          "payload": {
+            "requestId": "0x156c3498d3e0104e0257750bfe7e2d624cba0404b22897aea4e341b54fbcab25",
+            "capability": "adversarial-review",
+            "priceMicroUsd": 1,
+            "inputDigest": "0x0d0835d38dade18bf1b8238069b6497a98fa2d7e360a494d067309b83ccd4089",
+            "result": {
+              "inputDigest": "0x0d0835d38dade18bf1b8238069b6497a98fa2d7e360a494d067309b83ccd4089",
+              "capability": "adversarial-review",
+              "synthesis": {
+                "summary": "The repository demonstrates partial technical readiness with high code coverage and passed test cases in backend and standalone components, but critical release conditions remain unmet. Key gaps include absence of live mainnet deployment, independent ownership keys, funded escrow, and verified operator experience. The completion contract explicitly requires real-world execution and live commissioning, which are not demonstrated. The owner-bounded outcome model confirms risk policy passage but provides no evidence of actual profitability or market performance. No measurable economic outcomes or operational data exist to validate claims of general intelligence or profitability.",
+                "abstain": false,
+                "findings": [
+                  {
+                    "claim": "The standalone node architecture has passed 81 tests with no skips, indicating functional integration, but this does not constitute live commissioning or operational validation.",
+                    "citations": [
+                      {
+                        "sourceId": "S1",
+                        "quote": "{\"results\":{\"backend\":{\"passed\":524,\"skipped\":11},\"standalone\":{\"passed\":81,\"skipped\":0},\"frontend\":{\"passed\":1},\"coverage\":{\"lines\":{\"total\":3846,\"covered\":3392,\"skipped\":0,\"pct\":88.19},\"statements\":{\"total\":4277,\"covered\":3668,\"skipped\":0,\"pct\":85.76},\"functions\":{\"total\":701,\"covered\":644,\"skipped\":0,\"pct\":91.86},\"branches\":{\"total\":4057,\"covered\":3049,\"skipped\":0,\"pct\":75.15},\"branchesTrue\":{\""
+                      }
+                    ]
+                  }
+                ],
+                "counterarguments": [
+                  {
+                    "text": "The standalone node tests pass and cover core behaviors like authentication, routing, and execution, which may satisfy the technical baseline for a release, especially if the owner accepts narrow demonstrations as sufficient.",
+                    "sourceIds": [
+                      "S2"
+                    ]
+                  }
+                ],
+                "experiments": [
+                  {
+                    "action": "Deploy a live, independently funded $AGIALPHA node on mainnet with ENS-controlled keys, funded escrow, and verified operator access; record observable execution of a real-world task with measurable outcomes and audit trail.",
+                    "successCriterion": "A verifiable, tamper-evident record of a completed task with signed inputs, executed changes, and outcome binding to a known policy boundary.",
+                    "sourceIds": [
+                      "S2"
+                    ]
+                  }
+                ]
+              },
+              "provider": {
+                "model": "/tmp/alpha-model/Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+                "usage": {
+                  "completion_tokens": 540,
+                  "prompt_tokens": 2239,
+                  "total_tokens": 2779,
+                  "prompt_tokens_details": {
+                    "cached_tokens": 0
+                  }
+                },
+                "endpointOrigin": "http://127.0.0.1:18081"
+              },
+              "validation": "schema-and-exact-source-quotes",
+              "limitation": "Model-produced analysis; quoted text presence does not prove entailment or source truth. No execution authority or independent acceptance."
+            }
+          },
+          "hash": "0xa7035aafc68e20308aeb7547de7c2ccb5589dd8b993af9814156556b543d374a",
+          "signature": "0x35695b9db129360caab9607fe89540e01e4fdd57c86eaa741b4b107e491b89362f634f5682c74d768cacdeaaaebb10d297b6d0847d82440b94fe6cebdf71c6511b"
+        }
+      ]
+    },
+    "previous": "0x4527528584fa2806fb82ec0b664d32e9271f25372496a78b4f56581b9ccb753c",
+    "at": "2026-09-24T16:18:14.991Z",
+    "hash": "0x3cf047767f5483b849e37f60b6f65d43df2691fce8e5b475a3f7f4d05cdd9945",
+    "signature": "0x2874b8f07c19978b9da1f75f26798d4df59da0ed582d7e96a89a1cdd6b88f302632d8f07abd3f2de856e487a8e489354872bd28d8801ae7157c208ba227b12d81b",
+    "review": null
+  }
+}

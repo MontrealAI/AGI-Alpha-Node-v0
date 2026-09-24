@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "observedAt": "2026-09-24T00:00:00.000Z",
+  "mission": {
+    "id": "illustrative-invoice-review",
+    "title": "Illustrative invoice discrepancy review",
+    "objective": "Analyze this fictional invoice discrepancy and propose evidence needed before contacting a supplier. No actual provider or invoice is represented; do not send messages or make payments.",
+    "sources": [
+      { "id": "S1", "title": "Fictional invoice", "text": "Synthetic example: the invoice lists 120 units at one dollar per unit. The total is 120 dollars." },
+      { "id": "S2", "title": "Fictional usage record", "text": "Synthetic example: a local usage log contains 80 units for the same stated period. Completeness and billing definitions have not been independently checked." }
+    ],
+    "opportunities": [
+      { "id": "invoice-check", "title": "Investigate the apparent billing discrepancy", "benefit": 40, "cost": 5, "probability": 0.5, "downside": 5, "sourceIds": ["S1", "S2"], "rationale": "Illustrative assumptions only. A discrepancy is not proof of overbilling; definitions, missing records, taxes and billing periods require review." }
+    ],
+    "policy": { "maxCost": 10, "maxDownside": 5, "minExpectedNet": 0, "stressBenefitBps": 7000 },
+    "unit": "USD illustrative total"
+  }
+}

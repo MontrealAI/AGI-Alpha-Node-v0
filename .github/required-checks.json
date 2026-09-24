@@ -7,6 +7,7 @@
     "Solidity Lint & Compile",
     "Subgraph TypeScript Build",
     "Dependency Security Scan",
-    "Full CI Verification"
+    "Full CI Verification",
+    "macOS Standalone Clean Install"
   ]
 }

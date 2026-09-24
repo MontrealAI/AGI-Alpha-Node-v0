@@ -1,0 +1,20 @@
+{
+  "assessmentRole": "release-builder review; not independent human assessment",
+  "disposition": "reviewable analytical draft; rejected for unreviewed operational reliance",
+  "supported": [
+    "Correctly extracts recorded test counts and coverage percentages.",
+    "Identifies missing evidence of live commissioning and distinguishes test passes from production operation.",
+    "Proposes a concrete owner-deployment experiment with signed, inspectable records."
+  ],
+  "correctionsRequired": [
+    "Coverage percentages and test counts do not establish robust code quality or general functional completeness.",
+    "Missing deployment evidence in these supplied sources is not proof no deployment exists anywhere.",
+    "The draft blurs software publication with live commissioning; these acceptance questions must remain separate.",
+    "The suggestion that narrow demonstrations might suffice contradicts the completion contract, which explicitly says a passing narrow demonstration is insufficient.",
+    "The task was a review of v3.0 evidence; its test counts must not be described as the new v3.1 results.",
+    "The two role prompts use one model controlled by one harness, not independent assessors."
+  ],
+  "executionChecks": "Schema, exact quote presence, signatures, replay and encrypted recovery passed. These checks do not prove semantic entailment.",
+  "modelSha256": "3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597",
+  "reviewedRunHash": "0x3cf047767f5483b849e37f60b6f65d43df2691fce8e5b475a3f7f4d05cdd9945"
+}

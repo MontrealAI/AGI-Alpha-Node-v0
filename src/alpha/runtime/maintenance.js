@@ -34,6 +34,7 @@ const locks = new Set([
   'engine.lock',
   'action.lock',
   'transaction.lock',
+  'specialist.lock',
 ]);
 function password(value) {
   if (typeof value !== 'string' || value.length < 16)

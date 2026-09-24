@@ -1,0 +1,276 @@
+{
+  "schema": 2,
+  "ledgerHead": "0x977b6a4aa805ca76b9c4e09d1a3a0286febcbe03d985452fdb76a4516911c231",
+  "identity": {
+    "ensName": "model.alpha.node.agi.eth",
+    "address": "0x608A687eC857C4E8cD9f6FA4CB76C6Dd4850D2BB",
+    "reviewer": "0x7e91868d8e424e6Ac362b8E2A59dde66d9e013F6"
+  },
+  "run": {
+    "type": "run",
+    "workId": "0x31eed9e4b6b6816fde405d9d2e954da8075fb7a6e1050933231c9f518682e3a8",
+    "mission": {
+      "id": "runtime-5c353ff8cda59cef994390822b2514d163a078ba",
+      "title": "$AGIALPHA repository readiness review",
+      "objective": "Produce a useful release-readiness brief from actual repository evidence: what is demonstrated, what remains open, and concrete next acceptance experiments. Distinguish tested code from deployed operation. The zero-dollar screening values grant analytical admission only; they are not economic forecasts.",
+      "sources": [
+        {
+          "id": "S1",
+          "title": "evidence/v3.0.0/validation.json",
+          "text": "{\"results\":{\"backend\":{\"passed\":524,\"skipped\":11},\"standalone\":{\"passed\":81,\"skipped\":0},\"frontend\":{\"passed\":1},\"coverage\":{\"lines\":{\"total\":3846,\"covered\":3392,\"skipped\":0,\"pct\":88.19},\"statements\":{\"total\":4277,\"covered\":3668,\"skipped\":0,\"pct\":85.76},\"functions\":{\"total\":701,\"covered\":644,\"skipped\":0,\"pct\":91.86},\"branches\":{\"total\":4057,\"covered\":3049,\"skipped\":0,\"pct\":75.15},\"branchesTrue\":{\"total\":0,\"covered\":0,\"skipped\":0,\"pct\":100}},\"rootDependencyAdvisories\":0,\"subgraphDependencyAdvisories\":0},\"limitations\":[\"No owner mainnet ENS/key/deployment/funding commissioning\",\"Role-separated fixture keys are not independent people\",\"Synthetic economic inputs/outcomes are not measured profitability\",\"One real local-model run is an integration check, not general intelligence certification\",\"11 inherited environment-dependent skips; mandatory standalone token tests execute in a local EVM\",\"Coverage scope is alpha (excluding CLI/web), network and telemetry; other surfaces have regression tests\",\"Branch protection settings and independent source/contract security audit are not established\"]}"
+        },
+        {
+          "id": "S2",
+          "title": "docs/completion-contract.md",
+          "text": "# Completion contract for the standalone $AGIALPHA node\n\n<!-- markdownlint-disable MD013 -->\n\nThe owner requested completion of the repository's concrete original node architecture, separate from AGI Jobs. A passing narrow demonstration is insufficient. This checklist keeps the remaining engineering work in scope; release claims must follow executable evidence.\n\n| Original pillar | Required completed behavior | Evidence required |\n| --- | --- | --- |\n| World-model planner | Build a task-scoped model from observations and signed outcomes; generate and stress-test candidate plans; select only actions admitted by owner policy | Tests of learning, uncertainty, adverse scenarios, abstention, policy bounds and deterministic replay |\n| Specialist mesh | Discover configured signed specialist offers; authenticate requests/results; route by capabilities and bounded price; survive interruption without duplicate work | Real HTTP exchanges between separately keyed processes, signature/replay/expiry/authorization tests and persisted receipts |\n| Antifragile sentinel | Enforce budgets, capacity, pause, timeouts, execution permissions and failure backoff; tighten behavior after adverse outcomes | Failure injection, conservative adaptation and recovery tests |\n| Compliance ledger | Bind inputs, plans, specialist outputs, executed changes, reviews, outcomes and transactions in a verifiable durable record | Tamper detection, identity binding, restart and rollback evidence |\n| Autopilot evolution | Update bounded strategy parameters from accepted measured outcomes; execute authorized changes; settle accepted work and reinvest only verified receipts within explicit owner limits | End-to-end closed-loop execution, receipt validation, nonce/idempotency recovery, treasury conservation and capped reinvestment tests |\n| Identity and token mechanics | ENS-controlled live identity, canonical $AGIALPHA, funded escrow, stake conservation and separate review authority | Local VM and RPC integration evidence plus an explicit live commissioning report |\n| Operator experience | Guided configuration, observable phase/status, operator controls, private keys outside UI, backup/restore and platform service configuration | CLI/API/UI tests, clean-install checks and recovery drills |\n| Release engineering | Reproducible source package, clean dependency installation, security review and gated publication | Published CI and archive/manifest verification |\n\nGeneral intelligence, inevitable profitability, guaranteed market outperformance and unlimited scale are research or outcome claims, not software acceptance criteria. Implementing the concrete pillars does not establish those claims. Live commissioning additionally requires an actual owner deployment, authorized keys, funds, independent reviewers and measured operation; absent evidence must remain marked unverified.\n\nA next release is gated on the integrated software behavior above, not on silently dropping unfinished pillars from scope.\n"
+        },
+        {
+          "id": "input-observation",
+          "title": "Observation envelope",
+          "text": "{\"observedAt\":\"2026-09-24T15:46:25.631Z\",\"inputDigest\":\"0x53a3d47524ae828a75a3be7f4de54d855eb611b8c22cc6b638fb771f3ce817a1\"}"
+        },
+        {
+          "id": "adaptive-model",
+          "title": "Owner-bounded outcome model",
+          "text": "{\"modelsDigest\":\"0xa0304f69476b5a6d74fec1d39896881dffd403badcb06fce11c4c213cc5f1dff\",\"models\":[{\"recommendation\":\"readiness-review\",\"samples\":0,\"successes\":0,\"losses\":0,\"meanBenefitRatio\":1}],\"reason\":\"Owner risk policy passed\"}"
+        }
+      ],
+      "opportunities": [
+        {
+          "id": "readiness-review",
+          "title": "Analyze the recorded release evidence",
+          "benefit": 0,
+          "cost": 0,
+          "probability": 1,
+          "downside": 0,
+          "sourceIds": [
+            "S1",
+            "S2"
+          ],
+          "rationale": "Read-only analysis, no forecasted economic benefit or external action."
+        }
+      ],
+      "policy": {
+        "maxCost": 0,
+        "maxDownside": 0,
+        "minExpectedNet": 0,
+        "stressBenefitBps": 10000
+      },
+      "unit": "USD, no benefit forecast"
+    },
+    "identity": {
+      "verified": false,
+      "mode": "local",
+      "ensName": "model.alpha.node.agi.eth",
+      "address": "0x608A687eC857C4E8cD9f6FA4CB76C6Dd4850D2BB"
+    },
+    "analysis": {
+      "kind": "deterministic-evidence-analysis",
+      "missionDigest": "0x19e005f95a5adb8a1cda00b862bc100b31305cb6668855cb0a10b3a9bcb0cb00",
+      "unit": "USD, no benefit forecast",
+      "recommendation": "readiness-review",
+      "rankings": [
+        {
+          "id": "readiness-review",
+          "title": "Analyze the recorded release evidence",
+          "benefit": 0,
+          "cost": 0,
+          "probability": 1,
+          "downside": 0,
+          "sourceIds": [
+            "S1",
+            "S2"
+          ],
+          "rationale": "Read-only analysis, no forecasted economic benefit or external action.",
+          "expectedNet": 0,
+          "stressedNet": 0,
+          "admitted": true
+        }
+      ],
+      "sources": [
+        {
+          "id": "S1",
+          "title": "evidence/v3.0.0/validation.json",
+          "digest": "0x54ba3a4229b7f2bb19a304ee8f97a14e63c2399fbb7a1e2cd6129be822fa2de2",
+          "url": null
+        },
+        {
+          "id": "S2",
+          "title": "docs/completion-contract.md",
+          "digest": "0x7cc707233ae154c4287671f0bb71b851686d1ca4fab002c867a7226c7b5f978a",
+          "url": null
+        },
+        {
+          "id": "input-observation",
+          "title": "Observation envelope",
+          "digest": "0xa878b0102c431ceeb8279418ba17039f8f054fa0df399f94406fc80d4953c51d",
+          "url": null
+        },
+        {
+          "id": "adaptive-model",
+          "title": "Owner-bounded outcome model",
+          "digest": "0x7641347f850f6dda2fcbbe4b673f23b14336b6cd5bb75afa2e07881ca50b774d",
+          "url": null
+        }
+      ],
+      "limitations": [
+        "Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.",
+        "Source hashes establish integrity, not truth. Independent review is required.",
+        "No trades, external actions, token earnings or AGI capability are implied by this report."
+      ]
+    },
+    "provider": null,
+    "report": "# $AGIALPHA repository readiness review\n\n<!-- markdownlint-disable MD013 -->\n\nProduce a useful release-readiness brief from actual repository evidence: what is demonstrated, what remains open, and concrete next acceptance experiments. Distinguish tested code from deployed operation. The zero-dollar screening values grant analytical admission only; they are not economic forecasts.\n\nAnalysis: deterministic-evidence-analysis\nInput digest: 0x19e005f95a5adb8a1cda00b862bc100b31305cb6668855cb0a10b3a9bcb0cb00\nUnits: USD, no benefit forecast\nRecommendation: readiness-review\n\n| Opportunity | Expected net | Stressed net | Admitted | Evidence |\n| --- | ---: | ---: | --- | --- |\n| Analyze the recorded release evidence | 0.00 | 0.00 | Yes | S1, S2 |\n\n## Evidence and assumptions\n\n- readiness-review: Read-only analysis, no forecasted economic benefit or external action.\n\n- S1 — evidence/v3.0.0/validation.json — SHA-256 0x54ba3a4229b7f2bb19a304ee8f97a14e63c2399fbb7a1e2cd6129be822fa2de2\n- S2 — docs/completion-contract.md — SHA-256 0x7cc707233ae154c4287671f0bb71b851686d1ca4fab002c867a7226c7b5f978a\n- input-observation — Observation envelope — SHA-256 0xa878b0102c431ceeb8279418ba17039f8f054fa0df399f94406fc80d4953c51d\n- adaptive-model — Owner-bounded outcome model — SHA-256 0x7641347f850f6dda2fcbbe4b673f23b14336b6cd5bb75afa2e07881ca50b774d\n\n## Runtime authorization\n\nAcceptance authorizes only the exact action below. Model text and specialist responses cannot authorize additional actions.\n\nPlan digest: 0x2a6f4a06dc48f811e76dacce0b127430c20027631f179a946945c3ef7eb86f58\n\nAuthenticated specialist receipts: 2\n\n### Specialist evidence\n\nSignatures authenticate the peer. Exact-quote validation checks citation presence, not truth or entailment. Review these results before acceptance.\n\nPeer: 0x46d3741683277a405229df92a4c656b78200a428 · Capability: research-synthesis\n\n```json\n{\n  \"inputDigest\": \"0x19e005f95a5adb8a1cda00b862bc100b31305cb6668855cb0a10b3a9bcb0cb00\",\n  \"capability\": \"research-synthesis\",\n  \"synthesis\": {\n    \"summary\": \"The $AGIALPHA repository has passed all required tests, demonstrating readiness for deployment. The owner-bounded outcome model indicates that the owner's risk policy has been passed, suggesting that the repository is ready for further development.\",\n    \"abstain\": false,\n    \"findings\": [\n      {\n        \"claim\": \"The repository has passed all required tests.\",\n        \"citations\": [\n          {\n            \"sourceId\": \"S1\",\n            \"quote\": \"{\\\"results\\\":{\\\"backend\\\":{\\\"passed\\\":524,\\\"skipped\\\":11},\\\"standalone\\\":{\\\"passed\\\":81,\\\"skipped\\\":0},\\\"frontend\\\":{\\\"passed\\\":1},\\\"coverage\\\":{\\\"lines\\\":{\\\"total\\\":3846,\\\"covered\\\":3392,\\\"skipped\\\":0,\\\"pct\\\":88.19},\\\"statements\\\":{\\\"total\\\":4277,\\\"covered\\\":3668,\\\"skipped\\\":0,\\\"pct\\\":85.76},\\\"functions\\\":{\\\"total\\\":701,\\\"covered\\\":644,\\\"skipped\\\":0,\\\"pct\\\":91.86},\\\"branches\\\":{\\\"total\\\":4057,\\\"covered\\\":3049,\\\"skipped\\\":0,\\\"pct\\\":75.15},\\\"branchesTrue\\\":{\\\"\"\n          },\n          {\n            \"sourceId\": \"S2\",\n            \"quote\": \"# Completion contract for the standalone $AGIALPHA node\"\n          }\n        ]\n      }\n    ],\n    \"counterarguments\": [\n      {\n        \"text\": \"The repository has passed all required tests, but some of the tests are not fully implemented.\",\n        \"sourceIds\": [\n          \"S1\"\n        ]\n      }\n    ],\n    \"experiments\": [\n      {\n        \"action\": \"Run a full integration test\",\n        \"successCriterion\": \"The integration test passes all required tests and demonstrates the repository's readiness for deployment.\",\n        \"sourceIds\": [\n          \"S1\"\n        ]\n      }\n    ]\n  },\n  \"provider\": {\n    \"model\": \"/tmp/alpha-model/Qwen3-0.6B-Q8_0.gguf\",\n    \"usage\": {\n      \"completion_tokens\": 396,\n      \"prompt_tokens\": 2240,\n      \"total_tokens\": 2636,\n      \"prompt_tokens_details\": {\n        \"cached_tokens\": 0\n      }\n    },\n    \"endpointOrigin\": \"http://127.0.0.1:18081\"\n  },\n  \"validation\": \"schema-and-exact-source-quotes\",\n  \"limitation\": \"Model-produced analysis; quoted text presence does not prove entailment or source truth. No execution authority or independent acceptance.\"\n}\n```\n\nPeer: 0x9bcb168603fd721210cb4d1538427250a5b09ed8 · Capability: adversarial-review\n\n```json\n{\n  \"inputDigest\": \"0x19e005f95a5adb8a1cda00b862bc100b31305cb6668855cb0a10b3a9bcb0cb00\",\n  \"capability\": \"adversarial-review\",\n  \"synthesis\": {\n    \"summary\": \"The evidence presented in the $AGIALPHA repository readiness review shows that the backend and frontend systems passed certain tests, with coverage and performance metrics indicating a strong foundation. The owner-bounded outcome model confirms that the owner's risk policy was passed. However, the analysis does not provide any evidence for the economic benefits or external action claims mentioned in the review.\",\n    \"abstain\": false,\n    \"findings\": [\n      {\n        \"claim\": \"The repository has passed the backend and frontend tests with high coverage and performance metrics.\",\n        \"citations\": [\n          {\n            \"sourceId\": \"S1\",\n            \"quote\": \"{\\\"results\\\":{\\\"backend\\\":{\\\"passed\\\":524,\\\"skipped\\\":11},\\\"standalone\\\":{\\\"passed\\\":81,\\\"skipped\\\":0},\\\"frontend\\\":{\\\"passed\\\":1},\\\"coverage\\\":{\\\"lines\\\":{\\\"total\\\":3846,\\\"covered\\\":3392,\\\"skipped\\\":0,\\\"pct\\\":88.19},\\\"statements\\\":{\\\"total\\\":4277,\\\"covered\\\":3668,\\\"skipped\\\":0,\\\"pct\\\":85.76},\\\"functions\\\":{\\\"total\\\":701,\\\"covered\\\":644,\\\"skipped\\\":0,\\\"pct\\\":91.86},\\\"branches\\\":{\\\"total\\\":4057,\\\"covered\\\":3049,\\\"skipped\\\":0,\\\"pct\\\":75.15},\\\"branchesTrue\\\":{\\\"\"\n          }\n        ]\n      }\n    ],\n    \"counterarguments\": [\n      {\n        \"text\": \"The analysis does not provide evidence for the economic benefits or external action claims mentioned in the review.\",\n        \"sourceIds\": [\n          \"S2\"\n        ]\n      }\n    ],\n    \"experiments\": [\n      {\n        \"action\": \"Analyze the recorded release evidence\",\n        \"successCriterion\": \"Read-only analysis, no forecasted economic benefit or external action.\",\n        \"sourceIds\": [\n          \"S1\",\n          \"S2\"\n        ]\n      }\n    ]\n  },\n  \"provider\": {\n    \"model\": \"/tmp/alpha-model/Qwen3-0.6B-Q8_0.gguf\",\n    \"usage\": {\n      \"completion_tokens\": 432,\n      \"prompt_tokens\": 2243,\n      \"total_tokens\": 2675,\n      \"prompt_tokens_details\": {\n        \"cached_tokens\": 0\n      }\n    },\n    \"endpointOrigin\": \"http://127.0.0.1:18081\"\n  },\n  \"validation\": \"schema-and-exact-source-quotes\",\n  \"limitation\": \"Model-produced analysis; quoted text presence does not prove entailment or source truth. No execution authority or independent acceptance.\"\n}\n```\n\nNo external action is proposed.\n\n## Limits\n\n- Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.\n- Source hashes establish integrity, not truth. Independent review is required.\n- No trades, external actions, token earnings or AGI capability are implied by this report.\n",
+    "status": "awaiting-review",
+    "reward": "unfunded-unverified",
+    "runtimeContext": {
+      "schema": 2,
+      "planDigest": "0x2a6f4a06dc48f811e76dacce0b127430c20027631f179a946945c3ef7eb86f58",
+      "action": null,
+      "specialists": [
+        {
+          "domain": "agialpha:specialist:v1",
+          "kind": "result",
+          "sender": "0x46d3741683277a405229df92a4c656b78200a428",
+          "recipient": "0x608a687ec857c4e8cd9f6fa4cb76c6dd4850d2bb",
+          "issuedAt": 1790264818449,
+          "expiresAt": 1790264878449,
+          "payload": {
+            "requestId": "0xbf56fd8dfe7ea19cdc83943af6b5613fd157c840ce767ef63dfc88b60071d787",
+            "capability": "research-synthesis",
+            "priceMicroUsd": 1,
+            "inputDigest": "0x19e005f95a5adb8a1cda00b862bc100b31305cb6668855cb0a10b3a9bcb0cb00",
+            "result": {
+              "inputDigest": "0x19e005f95a5adb8a1cda00b862bc100b31305cb6668855cb0a10b3a9bcb0cb00",
+              "capability": "research-synthesis",
+              "synthesis": {
+                "summary": "The $AGIALPHA repository has passed all required tests, demonstrating readiness for deployment. The owner-bounded outcome model indicates that the owner's risk policy has been passed, suggesting that the repository is ready for further development.",
+                "abstain": false,
+                "findings": [
+                  {
+                    "claim": "The repository has passed all required tests.",
+                    "citations": [
+                      {
+                        "sourceId": "S1",
+                        "quote": "{\"results\":{\"backend\":{\"passed\":524,\"skipped\":11},\"standalone\":{\"passed\":81,\"skipped\":0},\"frontend\":{\"passed\":1},\"coverage\":{\"lines\":{\"total\":3846,\"covered\":3392,\"skipped\":0,\"pct\":88.19},\"statements\":{\"total\":4277,\"covered\":3668,\"skipped\":0,\"pct\":85.76},\"functions\":{\"total\":701,\"covered\":644,\"skipped\":0,\"pct\":91.86},\"branches\":{\"total\":4057,\"covered\":3049,\"skipped\":0,\"pct\":75.15},\"branchesTrue\":{\""
+                      },
+                      {
+                        "sourceId": "S2",
+                        "quote": "# Completion contract for the standalone $AGIALPHA node"
+                      }
+                    ]
+                  }
+                ],
+                "counterarguments": [
+                  {
+                    "text": "The repository has passed all required tests, but some of the tests are not fully implemented.",
+                    "sourceIds": [
+                      "S1"
+                    ]
+                  }
+                ],
+                "experiments": [
+                  {
+                    "action": "Run a full integration test",
+                    "successCriterion": "The integration test passes all required tests and demonstrates the repository's readiness for deployment.",
+                    "sourceIds": [
+                      "S1"
+                    ]
+                  }
+                ]
+              },
+              "provider": {
+                "model": "/tmp/alpha-model/Qwen3-0.6B-Q8_0.gguf",
+                "usage": {
+                  "completion_tokens": 396,
+                  "prompt_tokens": 2240,
+                  "total_tokens": 2636,
+                  "prompt_tokens_details": {
+                    "cached_tokens": 0
+                  }
+                },
+                "endpointOrigin": "http://127.0.0.1:18081"
+              },
+              "validation": "schema-and-exact-source-quotes",
+              "limitation": "Model-produced analysis; quoted text presence does not prove entailment or source truth. No execution authority or independent acceptance."
+            }
+          },
+          "hash": "0x5d73bd08513f6fdcfc1a2655c0079f23d1279f8bd6426305b17e9f4f11eb1223",
+          "signature": "0x400669041ed0cbb775243877040e2d6790ec73e105772861e923e0063cc4f3723fb9185c0e6b6691fd6bf6d03da82ee04c0de39fb0a81b505c837108da6065e71c"
+        },
+        {
+          "domain": "agialpha:specialist:v1",
+          "kind": "result",
+          "sender": "0x9bcb168603fd721210cb4d1538427250a5b09ed8",
+          "recipient": "0x608a687ec857c4e8cd9f6fa4cb76c6dd4850d2bb",
+          "issuedAt": 1790264854829,
+          "expiresAt": 1790264914829,
+          "payload": {
+            "requestId": "0x2b3f4493e481f75d6f3228fd2cb68aa6406a9cce6ddafd5cd697a9e0982d84ab",
+            "capability": "adversarial-review",
+            "priceMicroUsd": 1,
+            "inputDigest": "0x19e005f95a5adb8a1cda00b862bc100b31305cb6668855cb0a10b3a9bcb0cb00",
+            "result": {
+              "inputDigest": "0x19e005f95a5adb8a1cda00b862bc100b31305cb6668855cb0a10b3a9bcb0cb00",
+              "capability": "adversarial-review",
+              "synthesis": {
+                "summary": "The evidence presented in the $AGIALPHA repository readiness review shows that the backend and frontend systems passed certain tests, with coverage and performance metrics indicating a strong foundation. The owner-bounded outcome model confirms that the owner's risk policy was passed. However, the analysis does not provide any evidence for the economic benefits or external action claims mentioned in the review.",
+                "abstain": false,
+                "findings": [
+                  {
+                    "claim": "The repository has passed the backend and frontend tests with high coverage and performance metrics.",
+                    "citations": [
+                      {
+                        "sourceId": "S1",
+                        "quote": "{\"results\":{\"backend\":{\"passed\":524,\"skipped\":11},\"standalone\":{\"passed\":81,\"skipped\":0},\"frontend\":{\"passed\":1},\"coverage\":{\"lines\":{\"total\":3846,\"covered\":3392,\"skipped\":0,\"pct\":88.19},\"statements\":{\"total\":4277,\"covered\":3668,\"skipped\":0,\"pct\":85.76},\"functions\":{\"total\":701,\"covered\":644,\"skipped\":0,\"pct\":91.86},\"branches\":{\"total\":4057,\"covered\":3049,\"skipped\":0,\"pct\":75.15},\"branchesTrue\":{\""
+                      }
+                    ]
+                  }
+                ],
+                "counterarguments": [
+                  {
+                    "text": "The analysis does not provide evidence for the economic benefits or external action claims mentioned in the review.",
+                    "sourceIds": [
+                      "S2"
+                    ]
+                  }
+                ],
+                "experiments": [
+                  {
+                    "action": "Analyze the recorded release evidence",
+                    "successCriterion": "Read-only analysis, no forecasted economic benefit or external action.",
+                    "sourceIds": [
+                      "S1",
+                      "S2"
+                    ]
+                  }
+                ]
+              },
+              "provider": {
+                "model": "/tmp/alpha-model/Qwen3-0.6B-Q8_0.gguf",
+                "usage": {
+                  "completion_tokens": 432,
+                  "prompt_tokens": 2243,
+                  "total_tokens": 2675,
+                  "prompt_tokens_details": {
+                    "cached_tokens": 0
+                  }
+                },
+                "endpointOrigin": "http://127.0.0.1:18081"
+              },
+              "validation": "schema-and-exact-source-quotes",
+              "limitation": "Model-produced analysis; quoted text presence does not prove entailment or source truth. No execution authority or independent acceptance."
+            }
+          },
+          "hash": "0x45c4cb8f59b58a99347500a4c72a1d65267402cedca225974564ec9fb235c0d7",
+          "signature": "0x588cfb57e809b86e6f22aa3c0502d9acb0a82f032970929303803f2fef08658526fa38c040a838d1b25ad15348b649ee4c67dd1acf44842ff1892544e4edbf621b"
+        }
+      ]
+    },
+    "previous": "0x6207ceae0a73402793220c99f41365a288d0a2aabe1ec74f43cb4044a61416a1",
+    "at": "2026-09-24T15:47:34.876Z",
+    "hash": "0xb36110f9cfa6ae63eb527bf56b02cd75e6520ceafe3fb99ec71a9c96401f4046",
+    "signature": "0x0debf43042af665bb24ee993c550dfc2d93e191e570949910018ad6caa45e6d7128c4b9a90eced8c24f3658f93eb40c056ea84884a7545215c8ffbcfb1f521d01c",
+    "review": null
+  }
+}

@@ -585,3 +585,9 @@ AGI-Alpha-Node-v0/
 ---
 
 Deploy, monitor, and let the sovereign labor machine compound relentlessly—always under your absolute authority.
+
+## v3.1 mission and qualification guides
+
+- [Mission intelligence](alpha-intelligence.md)
+- [Measured work and operational qualification](alpha-qualification.md)
+- [Project status and remaining evidence](project-status.md)

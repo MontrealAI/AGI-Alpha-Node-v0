@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { digest, missionSchema, analyzeMission } from '../mission.js';
+import { comparableOutcome } from '../measurement.js';
 
 export const adaptivePolicySchema = z
   .object({
@@ -16,20 +17,36 @@ export const adaptivePolicySchema = z
 // The model is task-scoped: only the same recommendation ID supplies observations.
 // Outcome signatures have already been verified by loadNode. No source/model text can
 // change these controls or grant an execution capability.
-export function learnModel(node, recommendation, policy = {}) {
+export function learnModel(node, recommendation, policy = {}, mission = null) {
   const p = adaptivePolicySchema.parse(policy);
-  const observations = [...node.runs.values()]
+  const eligible = [...node.runs.values()]
     .filter(
       (r) =>
         r.review?.decision === 'accepted' &&
         r.outcome &&
-        r.analysis.recommendation === recommendation,
+        r.analysis.recommendation === recommendation &&
+        comparableOutcome(r, mission),
     )
     .sort(
       (a, b) =>
-        a.outcome.observedAt.localeCompare(b.outcome.observedAt) ||
-        a.hash.localeCompare(b.hash),
-    )
+        a.outcome.measurement.candidate.startedAt.localeCompare(
+          b.outcome.measurement.candidate.startedAt,
+        ) || a.hash.localeCompare(b.hash),
+    );
+  let lastEnd = -Infinity;
+  const artifacts = new Set();
+  const observations = eligible
+    .filter((r) => {
+      const measurement = r.outcome.measurement;
+      const artifactKey = digest(
+        measurement.artifacts.map((a) => a.sha256).sort(),
+      );
+      const start = Date.parse(measurement.candidate.startedAt);
+      if (start < lastEnd || artifacts.has(artifactKey)) return false;
+      lastEnd = Date.parse(measurement.candidate.endedAt);
+      artifacts.add(artifactKey);
+      return true;
+    })
     .slice(-p.window);
   let successes = 0,
     losses = 0;
@@ -38,16 +55,21 @@ export function learnModel(node, recommendation, policy = {}) {
     const o = run.outcome;
     const expected = run.analysis.rankings.find((x) => x.id === recommendation);
     const net = o.measuredBenefitUsd - o.measuredCostUsd;
-    if (net > 0) successes++;
+    if (net > 0 && o.assessment.qualityPassed) successes++;
     else losses++;
     if (expected?.benefit > 0)
       ratios.push(
-        Math.max(0, Math.min(1, o.measuredBenefitUsd / expected.benefit)),
+        o.assessment.qualityPassed
+          ? Math.max(0, Math.min(1, o.measuredBenefitUsd / expected.benefit))
+          : 0,
       );
   }
   let consecutiveLosses = 0;
   for (const r of [...observations].reverse()) {
-    if (r.outcome.measuredBenefitUsd <= r.outcome.measuredCostUsd)
+    if (
+      r.outcome.measuredBenefitUsd <= r.outcome.measuredCostUsd ||
+      !r.outcome.assessment.qualityPassed
+    )
       consecutiveLosses++;
     else break;
   }
@@ -56,6 +78,10 @@ export function learnModel(node, recommendation, policy = {}) {
     kind: 'task-scoped-beta-outcome-model',
     recommendation,
     samples: observations.length,
+    excludedOutcomes:
+      [...node.runs.values()].filter(
+        (r) => r.outcome && r.analysis.recommendation === recommendation,
+      ).length - observations.length,
     successes,
     losses,
     consecutiveLosses,
@@ -72,7 +98,9 @@ export function learnModel(node, recommendation, policy = {}) {
 export function planMission(input, node, policy = {}) {
   const original = missionSchema.parse(input);
   const p = adaptivePolicySchema.parse(policy);
-  const models = original.opportunities.map((o) => learnModel(node, o.id, p));
+  const models = original.opportunities.map((o) =>
+    learnModel(node, o.id, p, original),
+  );
   const opportunities = original.opportunities.map((o, i) => {
     const m = models[i];
     if (!p.enabled || m.samples < p.minSamples) return o;

@@ -1,32 +1,32 @@
-# AGI Alpha Node v3.0.0 — Integrated Node Edition
+# AGI Alpha Node v3.1.0 — Measured Work and Assurance Edition
 
 <!-- markdownlint-disable MD013 -->
 
-This major release completes the concrete standalone node workflow for **$AGIALPHA**, independently of AGI Jobs. The original planner, specialist, sentinel, evidence and evolution pillars now have connected executable implementations and explicit acceptance evidence.
+This release extends the standalone **$AGIALPHA** node beyond the caching demonstration and makes its evidence of useful operation more demanding. It remains separate from AGI Jobs.
 
 ## Delivered
 
-- Task-scoped planning from usage observations and accepted signed outcomes, conservative adaptation, adverse scenarios, loss abstention and durable plan replay.
-- Authenticated specialist offers/requests/results over real HTTP, capability/price routing, caller allowlists, capacity limits and persistent idempotency.
-- Exact reviewed JSON configuration actions with file preconditions, synchronized backups, health checks, rollback and pause. The signed report displays the proposed action.
-- Canonical-token transaction execution with fresh live identity checks, independently configured RPC origins, finalized block agreement, deployed-bytecode pins, durable signed intents, nonce recovery and gas limits.
-- EIP-712 reviewer acceptance relay in the escrow, verified payment receipts, exact allowances and capped staking with a liquid reserve.
-- Guided setup, integrated autopilot/operator controls, runtime activity, encrypted backup/restore and Linux/macOS service configuration.
-- Actual local-model inference evidence, a separate-process runtime demonstration and an integrated discovery/action/payment/outcome test that executes Solidity bytecode.
-- Updated development toolchain and lockfile, removal of unused Grafana toolkit dependencies, and a runtime/development dependency security gate covering both root and subgraph lockfiles. Also fixes a legacy monitor shutdown race and bounds verifier request bodies.
+- General evidence-backed missions with content-derived identities and owner policy intersection, alongside the existing usage adapter.
+- Two actual model specialist roles: research synthesis and adversarial analysis. Signed receipts expose findings, exact source quotations, counterarguments and experiments in the reviewed report. Model text has no execution or payment authority.
+- Persistent model spending reservations, replay, process locks and fail-closed handling of interrupted requests. Live identity is checked before specialist spending.
+- Paired measurement contracts with workload/acceptance hashes, equal observation windows, accepted-output counts, six overhead categories, human effort and artifact references. Learning admits only comparable observed economics and excludes modeled, legacy, duplicate and overlapping records.
+- Complete declared cost coverage in operational qualification: missing measurements block the gate; failed attempts require reviewer-signed expenses; rejected work cannot claim accepted outputs or positive qualification credit.
+- Expiring, owner-allowlisted security, recovery, operations and reviewer-independence assessments bound to software and configuration. A configurable admission gate checks measured work, total net value, loss rate, human effort, review capacity, recovery, fresh ENS identity and finalized canonical-token claim evidence.
+- Independent bundle verification, byte-level measurement artifact checks, signed reviewer binding, qualification controls in the operator interface, and installation/recovery/commissioning instructions.
+- An actual reviewed algorithm-switch demonstration with equal output checks and measured CPU usage. Its dollar conversion is explicitly modeled and cannot satisfy observed-economics qualification.
 
-## Qualification
+## Evidence and release gates
 
-See [the evidence report](evidence/v3.0.0/validation.md) and the GitHub Actions run on the release commit. Publication requires Linux tests, coverage, documentation, security, Solidity compilation, subgraph build, non-root Docker smoke tests and a clean macOS standalone run. Source archives include a per-file manifest and SHA-256 checksum.
+See [validation evidence](evidence/v3.1.0/validation.md) and the GitHub Actions run on the tagged commit. Publication requires Linux tests, unchanged coverage thresholds, documentation and security checks, Solidity compilation, subgraph build, Docker execution and macOS clean-install qualification. The source ZIP includes a per-file SHA-256 manifest; model weights are downloaded separately.
 
-Evidence distinguishes real HTTP/file/model execution, synthetic economic observations, fixture ENS/RPC responses, local EVM token transfers and unperformed production commissioning. The model run used pinned Qwen3-0.6B-Q8_0 bytes with llama.cpp b11146. No live mainnet deployment/payment, independently operated human review, target-host service installation or sustained profitable workload was performed by this release process.
+Real local inference used pinned Qwen3 model bytes and llama.cpp b11146, two separately keyed specialist processes, signed exports, replay without additional calls and encrypted recovery. Both the smaller rejected model draft and the larger model's remaining semantic errors are preserved. Correct quotations and signatures do not establish correct conclusions; model outputs require review.
 
 ## Upgrade
 
-Read [recovery and migration](docs/alpha-recovery.md) before upgrading. Stop workers and retain a complete encrypted backup plus an external trusted ledger-head checkpoint. v3 reads prior schema-2 history; older executables cannot read new runtime events. Rollback requires the corresponding pre-upgrade state and reconciliation of later external actions/transactions.
+Use Node.js 22.14+ and the committed lockfile. Stop workers, retain an encrypted backup and an external ledger-head checkpoint, then follow [recovery and migration](docs/alpha-recovery.md). Prior schema-2 history remains readable. New v2 outcomes, expense events and runtime reports require v3.1; rollback needs the corresponding pre-upgrade state and reconciliation of later external work.
 
-The default `npm start`, `agi-alpha-node` executable and Docker entrypoint now select the standalone runtime. Legacy infrastructure remains available as `npm run legacy`, `agi-alpha-infrastructure` and `deploy/docker/Dockerfile.legacy`. The test/build toolchain is upgraded to Vitest 5/Vite 8; use Node.js 22.14+ and the committed lockfile. Changed escrow bytecode requires a new verified deployment; installation does not upgrade existing contracts.
+Legacy outcomes remain visible but no longer qualify as comparable learning samples. Existing runs without measurement contracts cannot acquire them retroactively. Preserve the configured reviewer identity; new run signatures bind it. New model roles require explicit providers and spending reservations. Qualification is opt-in through `requireQualifiedAdmission`; the default pilot configuration does not assert readiness. Contracts are unchanged from v3.0.
 
-## Scope of the result
+## Remaining project outcomes
 
-The implemented planner is task-scoped; specialists offer three deterministic capabilities and do not receive automatic peer payments; external execution is an explicitly authorized scalar JSON change. Adaptation cannot expand owner permissions or supplied benefit/probability estimates. The release does not establish general AGI, guaranteed returns, a global permissionless marketplace, unlimited scale or an objectively perfect “10/10.” Mainnet commissioning requires the owner's actual ENS identity, dedicated funded signer, deployed contracts, independent reviewer and workload.
+[Project status](docs/project-status.md) separates implemented software from the original vision's open outcomes. This release process did not perform owner mainnet deployment/funding, live token payments, independent human assessments, sustained production operation or verified economic profit. It does not establish general intelligence, a global specialist payment marketplace or an objective “10/10.” The software exposes and enforces these missing evidence requirements instead of presenting simulations as completion.

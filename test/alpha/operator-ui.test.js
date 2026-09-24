@@ -4,25 +4,92 @@ import { JSDOM } from 'jsdom';
 it('renders evidence as text, removes the URL token, and sends authenticated pause controls', async () => {
   const html = await readFile('src/alpha/web/operator.html', 'utf8');
   const script = await readFile('src/alpha/web/operator-ui.js', 'utf8');
-  const dom = new JSDOM(html, { url: 'http://127.0.0.1:1234/#test-token', runScripts: 'outside-only' });
+  const dom = new JSDOM(html, {
+    url: 'http://127.0.0.1:1234/#test-token',
+    runScripts: 'outside-only',
+  });
   const calls = [];
-  const state = { mode: 'local', ens: 'fixture.alpha.node.agi.eth', address: '0xfixture', reviewer: '0xreviewer', paused: false, busy: false,
-    operations: { pendingReviews: 1, dailyReservedMicroUsd: 100000, dailyRuns: 1, unresolved: [] }, outcomes: { measuredMissions: 0, reviewerReportedNetUsd: 0, limitation: 'Not audited profit' },
-    missions: [{ id: 'fixture', title: '<img src=x onerror="window.pwned=true">', report: '<script>window.pwned=true</script>', decision: 'awaiting-review', recommendation: 'cache', hash: 'hash' }] };
-  dom.window.fetch = async (path, options) => { calls.push({ path, options }); return { ok: true, json: async () => state }; };
+  const state = {
+    mode: 'local',
+    ens: 'fixture.alpha.node.agi.eth',
+    address: '0xfixture',
+    reviewer: '0xreviewer',
+    paused: false,
+    busy: false,
+    operations: {
+      pendingReviews: 1,
+      dailyReservedMicroUsd: 100000,
+      dailyRuns: 1,
+      unresolved: [],
+    },
+    outcomes: {
+      measuredMissions: 0,
+      reviewerReportedNetUsd: 0,
+      limitation: 'Not audited profit',
+    },
+    missions: [
+      {
+        id: 'fixture',
+        title: '<img src=x onerror="window.pwned=true">',
+        report: '<script>window.pwned=true</script>',
+        decision: 'awaiting-review',
+        recommendation: 'cache',
+        hash: 'hash',
+      },
+    ],
+  };
+  dom.window.fetch = async (path, options) => {
+    calls.push({ path, options });
+    return {
+      ok: true,
+      json: async () =>
+        path === '/api/qualification'
+          ? {
+              gatePassed: false,
+              checks: [
+                {
+                  id: 'measured-work',
+                  passed: false,
+                  detail: 'No observed economic records',
+                },
+              ],
+              limitations: ['Evidence gate is incomplete'],
+            }
+          : state,
+    };
+  };
   try {
     dom.window.eval(script);
-    await new Promise(r => setTimeout(r, 20));
+    await new Promise((r) => setTimeout(r, 20));
     expect(dom.window.location.hash).toBe('');
     expect(dom.window.document.querySelector('#missions img')).toBe(null);
     expect(dom.window.document.querySelector('#missions script')).toBe(null);
-    expect(dom.window.document.querySelector('#missions').textContent).toContain('<img');
+    expect(
+      dom.window.document.querySelector('#missions').textContent,
+    ).toContain('<img');
     expect(dom.window.pwned).toBe(undefined);
-    dom.window.document.getElementById('pause').click(); await new Promise(r => setTimeout(r, 20));
-    const pause = calls.find(c => c.path === '/api/pause'); expect(pause.options.method).toBe('POST'); expect(pause.options.headers.Authorization).toBe('Bearer test-token');
-    expect(dom.window.document.getElementById('outcomes').textContent).toContain('Not audited profit');
-    state.paused = true; dom.window.document.getElementById('operate').click(); await new Promise(r => setTimeout(r, 20));
+    dom.window.document.getElementById('pause').click();
+    await new Promise((r) => setTimeout(r, 20));
+    const pause = calls.find((c) => c.path === '/api/pause');
+    expect(pause.options.method).toBe('POST');
+    expect(pause.options.headers.Authorization).toBe('Bearer test-token');
+    expect(
+      dom.window.document.getElementById('outcomes').textContent,
+    ).toContain('Not audited profit');
+    dom.window.document.getElementById('qualify').click();
+    await new Promise((r) => setTimeout(r, 20));
+    expect(
+      dom.window.document.getElementById('qualification').textContent,
+    ).toContain('Qualification incomplete');
+    expect(
+      dom.window.document.getElementById('qualification').textContent,
+    ).toContain('No observed economic records');
+    state.paused = true;
+    dom.window.document.getElementById('operate').click();
+    await new Promise((r) => setTimeout(r, 20));
     expect(dom.window.document.getElementById('operate').disabled).toBe(true);
     expect(dom.window.document.getElementById('cycle').disabled).toBe(true);
-  } finally { dom.window.close(); }
+  } finally {
+    dom.window.close();
+  }
 });

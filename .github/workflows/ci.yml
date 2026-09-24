@@ -222,6 +222,7 @@ jobs:
           docker run --rm --entrypoint node agi-alpha-node:${{ github.sha }} scripts/demo-alpha.mjs /tmp/alpha-demo
           docker run --rm --entrypoint node agi-alpha-node:${{ github.sha }} scripts/demo-operations.mjs /tmp/alpha-demo
           docker run --rm --entrypoint node agi-alpha-node:${{ github.sha }} scripts/demo-runtime.mjs /tmp/alpha-demo
+          docker run --rm --entrypoint node agi-alpha-node:${{ github.sha }} scripts/demo-measured-work.mjs /tmp/alpha-measured
 
   macos-standalone:
     name: macOS Standalone Clean Install
@@ -242,6 +243,7 @@ jobs:
           npm run demo:alpha
           npm run demo:operations
           npm run demo:runtime
+          npm run demo:measured
 
   verify:
     name: Full CI Verification
@@ -388,5 +390,5 @@ jobs:
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Release $TAG already exists; leaving it unchanged."
           else
-            gh release create "$TAG" "dist/AGI_Alpha_Node_v${VERSION}.zip" dist/SHA256SUMS.txt --target "$GITHUB_SHA" --title "AGI Alpha Node $TAG — Integrated Node Edition" --notes-file RELEASE_NOTES.md
+            gh release create "$TAG" "dist/AGI_Alpha_Node_v${VERSION}.zip" dist/SHA256SUMS.txt --target "$GITHUB_SHA" --title "AGI Alpha Node $TAG — Measured Work and Assurance Edition" --notes-file RELEASE_NOTES.md
           fi

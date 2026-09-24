@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "lookbackDays": 30,
+  "minMeasuredMissions": 5,
+  "minNetUsd": 0,
+  "maxLossFraction": 0.2,
+  "maxHumanMinutesPerUsefulResult": 15,
+  "maxReviewAgeHours": 72,
+  "requireLiveIdentity": true,
+  "minConfirmedClaims": 1,
+  "assessors": {}
+}

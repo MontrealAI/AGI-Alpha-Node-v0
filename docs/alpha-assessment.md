@@ -79,3 +79,7 @@ The [completion contract](completion-contract.md) restores every concrete origin
 | Actual inference | Normal provider path executed against a pinned local Qwen GGUF and llama.cpp build; narrative and token usage archived | One real-model integration run on synthetic economics; no paid-provider or broad intelligence certification |
 
 See [v3 qualification](../evidence/v3.0.0/validation.md) for actual results and [runtime operations](alpha-runtime.md) for reproducible setup. Current software behavior is assessed against explicit acceptance criteria. Mainnet contracts, live owner ENS, external human reviewers, a real workload and a sustained economic outcome cannot be supplied by a release number; their commissioning record remains open.
+
+## v3.1 follow-through
+
+The recovered vision above remains the scope reference. v3.1 adds general mission sources, two real model specialist roles, paired observed measurement contracts, conservative comparable learning, failed-attempt cost accounting, independently verifiable bundles and an owner-configured qualification gate. See [current project status](project-status.md) for implemented capabilities and the remaining external and research outcomes. Neither CI success nor a release number establishes live commissioning, profitable autonomy or a perfect score.

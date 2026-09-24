@@ -23,6 +23,10 @@ import {
   signOutcome,
   importOutcome,
 } from '../../src/alpha/node.js';
+import {
+  measurementContract,
+  measurementFixture,
+} from './fixtures/measurement.js';
 import { planMission } from '../../src/alpha/runtime/planner.js';
 import {
   specialistServer,
@@ -258,9 +262,11 @@ describe('integrated runtime', () => {
       }),
     ).toThrow('signature');
   });
-  it('learns from authenticated outcomes, tightens estimates and abstains after repeated losses', async () => {
+  it('learns only from comparable authenticated measurements and abstains after repeated losses', async () => {
+    const measuredFixture = { ...fixture, measurement: measurementContract };
+    const now = Date.now();
     for (let i = 0; i < 3; i++) {
-      const mission = { ...fixture, id: `learning-${i}` };
+      const mission = { ...measuredFixture, id: `learning-${i}` };
       await runMission(dir, mission);
       await review(mission.id);
       const out = await exportMission(dir, mission.id, join(dir, 'out'));
@@ -269,17 +275,12 @@ describe('integrated runtime', () => {
         dir,
         await signOutcome(
           bundle,
-          {
-            measuredBenefitUsd: 1,
-            measuredCostUsd: 20,
-            observedAt: new Date(Date.now() + i).toISOString(),
-            evidence: 'Synthetic adverse outcome',
-          },
+          measurementFixture(i, { now, baselineCost: 0, candidateCost: 20 }),
           reviewer.privateKey,
         ),
       );
     }
-    const plan = planMission(fixture, await loadNode(dir), {
+    const plan = planMission(measuredFixture, await loadNode(dir), {
       enabled: true,
       minSamples: 3,
       lossPauseCount: 3,
@@ -294,7 +295,8 @@ describe('integrated runtime', () => {
     expect(plan.scenarios).toHaveLength(4);
     expect(plan.selected).not.toBe('cache');
     expect(
-      planMission(fixture, await loadNode(dir), { enabled: false }).selected,
+      planMission(measuredFixture, await loadNode(dir), { enabled: false })
+        .selected,
     ).toBe('cache');
   });
 });

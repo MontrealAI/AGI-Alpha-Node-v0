@@ -1,4 +1,4 @@
 {
   // Signed generated reports are immutable evidence, not hand-authored documentation.
-  "ignores": ["evidence/**", "coverage/**", "dist/**", "alpha-output/**", "alpha-runtime-output/**", "alpha-operations-output/**"]
+  "ignores": ["evidence/**", "coverage/**", "dist/**", "alpha-output/**", "alpha-runtime-output/**", "alpha-measured-output/**", "alpha-operations-output/**"]
 }

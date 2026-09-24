@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "actualCpuMeasurement": true,
+  "inputKind": "generated reproducible workload",
+  "workloadHash": "0x96a09dec566888e89a5ecabe21c74e94b1b64f55e5746b6787116027f34d5d9c",
+  "records": 5000,
+  "expectedUnique": 2500,
+  "baseline": {
+    "algorithm": "baseline",
+    "cpuSeconds": 0.011137,
+    "wallMs": 11.145255999999904,
+    "outputHash": "0x3092fc9dade7fb8b35ddf14b9c1abc78aa446ccbdd36b1497385f862d5f604da",
+    "correct": true,
+    "startedAt": "2026-09-24T16:17:01.000Z",
+    "endedAt": "2026-09-24T16:17:02.000Z"
+  },
+  "candidate": {
+    "algorithm": "set",
+    "cpuSeconds": 0.000391,
+    "wallMs": 0.3715500000002976,
+    "outputHash": "0x3092fc9dade7fb8b35ddf14b9c1abc78aa446ccbdd36b1497385f862d5f604da",
+    "correct": true,
+    "startedAt": "2026-09-24T16:17:03.000Z",
+    "endedAt": "2026-09-24T16:17:04.000Z"
+  },
+  "rateUsdPerCpuHour": 1,
+  "pricingBasis": "modeled",
+  "limitation": "Supplied implementations and generated data; one paired local measurement is not a causal production benchmark or measured financial return."
+}

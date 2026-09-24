@@ -1,6 +1,6 @@
 {
   "name": "agi-alpha-node-v0",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Owner-controlled $AGIALPHA node with adaptive planning, authenticated specialists, reviewed execution and bounded settlement/reinvestment",
   "license": "MIT",
   "private": true,
@@ -58,7 +58,8 @@
     "demo:alpha": "node scripts/demo-alpha.mjs",
     "demo:operations": "node scripts/demo-operations.mjs",
     "legacy": "node src/index.js",
-    "demo:runtime": "node scripts/demo-runtime.mjs"
+    "demo:runtime": "node scripts/demo-runtime.mjs",
+    "demo:measured": "node scripts/demo-measured-work.mjs"
   },
   "engines": {
     "node": ">=22.14.0",

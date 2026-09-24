@@ -1,4 +1,4 @@
-# Start here — AGI Alpha Node v3.0.0
+# Start here — AGI Alpha Node v3.1.0
 
 <!-- markdownlint-disable MD013 -->
 
@@ -13,7 +13,9 @@ npm run demo:runtime
 
 Read `alpha-runtime-output/report.md` and `runtime.json`. This runs the actual planner, a separate specialist process, signed review, a file change, health verification and outcome recording. Its economic values and reviewer role are synthetic. Token execution is qualified separately by mandatory local EVM tests; nothing here spends money.
 
-For a single supplied mission without the runtime, use `npm run demo:alpha`.
+For an actual local CPU comparison with a reviewed algorithm change, run `npm run demo:measured` and read `alpha-measured-output/report.md` and `measurement.json`. Inputs are generated; dollar equivalents are explicitly modeled and cannot qualify as observed economic value. Use an empty output directory for each measurement.
+
+For a single supplied mission without the runtime, use `npm run demo:alpha`. General evidence-backed missions use `setup --mission source.json` as described in [mission intelligence](docs/alpha-intelligence.md).
 
 ## 2. Configure your own node
 
@@ -75,7 +77,7 @@ Stop workers and edit the `provider` field in the private `config.json`:
 
 Use a chat-completions compatible endpoint. Remote endpoints require HTTPS. Add `"keyEnv": "ALPHA_MODEL_API_KEY"` when authentication is needed and provide that variable securely. Mission sources are transmitted to the configured provider. Model prose is unverified analysis and has no execution authority.
 
-Requests have a 60-second timeout, 1 MB response limit, output-token cap and no automatic inference retry. Failure does not become simulated success. Set provider-side monetary limits as well: tokens and local reservations cannot guarantee external billing. The [model qualification procedure](docs/alpha-runtime.md#real-model-qualification) reproduces this release's local Qwen/llama.cpp run.
+Requests default to a 60-second timeout, with optional `timeoutMs` between 1,000 and 180,000 for slower local inference. They have a 2 MB request limit, 1 MB response limit, output-token cap and no automatic inference retry. Failure does not become simulated success. Set provider-side monetary limits as well: tokens and local reservations cannot guarantee external billing. The [model qualification procedure](docs/alpha-runtime.md#real-model-qualification) reproduces this release's local Qwen/llama.cpp run.
 
 ## 5. Operate continuously and protect recovery
 
@@ -87,3 +89,7 @@ npm run alpha -- --home /absolute/private/node pause
 Run the worker in one terminal and controls in another. It waits for review, applies authorized actions, reconciles enabled settlement, then considers fresh observations. Five consecutive errors pause it. Stop with Ctrl+C before maintenance.
 
 Follow [backup and recovery](docs/alpha-recovery.md). Generate a reviewed Linux or macOS service configuration with `service-config`. Live ENS, funded settlement and capped reinvestment are configured explicitly in the [runtime guide](docs/alpha-runtime.md#live-identity-and-token-execution).
+
+## 6. Qualify actual operation
+
+Run `npm run alpha -- --home /absolute/private/node qualify` or click **Check qualification** in the operator interface. Missing measurements, payment proof and external assessments remain visible. Follow [measurement and qualification](docs/alpha-qualification.md) to establish the evidence. You can require a passing gate before admitting new work with `requireQualifiedAdmission: true` in `engine.json`; existing obligations continue to reconcile.

@@ -2,7 +2,7 @@
 
 <!-- markdownlint-disable MD013 -->
 
-This guide describes v3.0.0. Begin with [START HERE](../START_HERE.md). All examples with placeholder addresses, paths or hashes require owner configuration; no transaction policy is enabled by default.
+This guide describes v3.1.0. Begin with [START HERE](../START_HERE.md). All examples with placeholder addresses, paths or hashes require owner configuration; no transaction policy is enabled by default.
 
 ## The operating loop
 
@@ -22,7 +22,7 @@ An optional `collector` object in `engine.json` can fetch an authorized JSON usa
 
 The endpoint must return the usage schema within 15 seconds and 100 KB. HTTPS or explicit loopback HTTP is required; redirects and credentials/query/fragment in URLs are rejected. An authenticated upstream should be exposed through your own protected local collector. The runtime validates freshness before atomically updating the pipeline source.
 
-The adaptive model groups accepted reviewer-signed outcomes by recommendation ID, uses a bounded rolling window and a weighted prior, and only reduces probability/benefit estimates. It never changes owner spending or action permissions. At the configured consecutive-loss threshold it abstains. Use comparable observation periods, workloads and attribution methods; signed measurements are not causal proof. A cached plan for an existing observation remains unchanged while waiting for review. Fresh observations produce a new plan.
+The adaptive model groups accepted reviewer-signed observed paired outcomes by recommendation ID and identical signed measurement contract, uses a bounded rolling window and a weighted prior, and only reduces probability/benefit estimates. Legacy, modeled, fixture, overlapping and duplicate-artifact observations cannot drive adaptation. It never changes owner spending or action permissions. At the configured consecutive-loss threshold it abstains. Use comparable observation periods, workloads and attribution methods; signed measurements are not causal proof. A cached plan for an existing observation remains unchanged while waiting for review. Fresh observations produce a new plan.
 
 After measuring an accepted mission, export its latest bundle. On the reviewer machine:
 
@@ -30,7 +30,7 @@ After measuring an accepted mission, export its latest bundle. On the reviewer m
 npm run alpha -- outcome-sign evidence.json measurement.json --out outcome.json
 ```
 
-The measurement contains `measuredBenefitUsd`, `measuredCostUsd`, an ISO `observedAt` and a meaningful `evidence` description. On the node, import it with `outcome-import outcome.json`. One outcome per mission is accepted; preserve corrections separately and use a new mission rather than editing signed history.
+That simple legacy measurement format remains readable but no longer drives learning. New measured outcomes use the signed paired-value contract, explicit evidence class, equal workload/period, full cost categories and artifact hashes described in [measurement and qualification](alpha-qualification.md). On the node, import it with `outcome-import outcome.json`. One outcome per mission is accepted; preserve corrections separately and use a new mission rather than editing signed history.
 
 ## Authenticated specialists
 
@@ -149,3 +149,7 @@ The script verifies model bytes, starts an authenticated loopback server, runs a
 ## Commissioning record
 
 Before a funded deployment, retain the owner/ENS identity verification, dedicated signer policy, independently verified deployed bytecode, funding and reviewer addresses, RPC operator identities, actual provider spending limits, authorized service target and health semantics, backup/restore drill, and first finalized payment/stake receipts. Observe comparable real outcomes over a defined operating period before expanding budgets. None of these owner-specific facts should be substituted with demo results.
+
+## General mission intelligence and qualification
+
+The [intelligence guide](alpha-intelligence.md) configures arbitrary mission evidence, research and adversarial model specialists. The [qualification guide](alpha-qualification.md) covers comparable measurements, external signed assessments, fresh claim auditing and admission controls. `requireQualifiedAdmission` defaults to false for explicit commissioning; an enabled gate blocks new missions while preserving reconciliation of existing accepted obligations.

@@ -1,0 +1,162 @@
+{
+  "schema": 1,
+  "actualCpuMeasurement": true,
+  "inputKind": "generated reproducible workload",
+  "workloadHash": "0x96a09dec566888e89a5ecabe21c74e94b1b64f55e5746b6787116027f34d5d9c",
+  "records": 5000,
+  "expectedUnique": 2500,
+  "baseline": {
+    "algorithm": "baseline",
+    "cpuSeconds": 0.011137,
+    "wallMs": 11.145255999999904,
+    "outputHash": "0x3092fc9dade7fb8b35ddf14b9c1abc78aa446ccbdd36b1497385f862d5f604da",
+    "correct": true,
+    "startedAt": "2026-09-24T16:17:01.000Z",
+    "endedAt": "2026-09-24T16:17:02.000Z"
+  },
+  "candidate": {
+    "algorithm": "set",
+    "cpuSeconds": 0.000391,
+    "wallMs": 0.3715500000002976,
+    "outputHash": "0x3092fc9dade7fb8b35ddf14b9c1abc78aa446ccbdd36b1497385f862d5f604da",
+    "correct": true,
+    "startedAt": "2026-09-24T16:17:03.000Z",
+    "endedAt": "2026-09-24T16:17:04.000Z"
+  },
+  "rateUsdPerCpuHour": 1,
+  "pricingBasis": "modeled",
+  "limitation": "Supplied implementations and generated data; one paired local measurement is not a causal production benchmark or measured financial return.",
+  "actionApplied": true,
+  "signedOutcome": true,
+  "verification": {
+    "verified": true,
+    "missionId": "runtime-576f62da53799d6551491ae7719bd4dff4a9f36c",
+    "runHash": "0xc767e0c5f1d232d34861b29a7d387c5ebb8dd13ca10b0d39fb85450fa5ca4a1c",
+    "node": "0xB357517C3F5de4C8fC6E959797bcE02c89566A2D",
+    "reviewer": "0x7F143aBA3c39EC066A0900ABcc633dCc7a3eDA88",
+    "reviewVerified": true,
+    "outcomeVerified": true,
+    "reviewerBinding": "signed-node-choice",
+    "specialistReceipts": 0,
+    "limitation": "Checks signatures, arithmetic, report integrity and v2 specialist receipts. Does not prove the complete ledger, ENS ownership, source truth or reviewer independence."
+  },
+  "artifactsVerified": 1,
+  "cpuReductionFraction": 0.9648918021011044,
+  "qualification": {
+    "schema": 1,
+    "scope": "live-owner-policy-evidence",
+    "gatePassed": false,
+    "observedAt": "2026-09-24T16:17:04.230Z",
+    "ledgerHead": "0xe7a1ac2ccc0417d06b464585074168d7fd701fd63a741783b2661760f5de348b",
+    "softwareDigest": "0xd896c5f37368b9a485d18e7689877c67de1328f5e4ff9297997d394674f49123",
+    "configurationDigest": "0xe652f93ac0a60561caa8abc1b72467aeee7976f9374757a8f41370750b76d71a",
+    "policy": {
+      "schema": 1,
+      "lookbackDays": 30,
+      "minMeasuredMissions": 5,
+      "minNetUsd": 0,
+      "maxLossFraction": 0.2,
+      "maxHumanMinutesPerUsefulResult": 15,
+      "maxReviewAgeHours": 72,
+      "requireLiveIdentity": true,
+      "minConfirmedClaims": 1,
+      "assessors": {}
+    },
+    "checks": [
+      {
+        "id": "live-identity",
+        "passed": false,
+        "detail": "Live identity not freshly verified"
+      },
+      {
+        "id": "measured-work",
+        "passed": false,
+        "detail": "0/5 comparable post-admission measurements"
+      },
+      {
+        "id": "cost-coverage",
+        "passed": false,
+        "detail": "1 runs without eligible observed measurements; 0 failed attempts without expenses; 0 unresolved attempts"
+      },
+      {
+        "id": "net-value",
+        "passed": false,
+        "detail": "0 USD reviewer-attested net, including declared overhead and failed-attempt expenses; complete coverage: false"
+      },
+      {
+        "id": "loss-rate",
+        "passed": false,
+        "detail": "0/0 loss, quality-failure or failed attempts"
+      },
+      {
+        "id": "human-effort",
+        "passed": false,
+        "detail": "No useful measured result"
+      },
+      {
+        "id": "review-capacity",
+        "passed": true,
+        "detail": "0 reviews exceed the owner deadline"
+      },
+      {
+        "id": "recovery",
+        "passed": true,
+        "detail": "0 interrupted operations; 0 unresolved transactions"
+      },
+      {
+        "id": "settlement",
+        "passed": false,
+        "detail": "0/1 freshly audited finalized claims for useful measured work"
+      },
+      {
+        "id": "assurance-security",
+        "passed": false,
+        "detail": "Current owner-allowlisted security assessment bound to this software and configuration"
+      },
+      {
+        "id": "assurance-recovery",
+        "passed": false,
+        "detail": "Current owner-allowlisted recovery assessment bound to this software and configuration"
+      },
+      {
+        "id": "assurance-operations",
+        "passed": false,
+        "detail": "Current owner-allowlisted operations assessment bound to this software and configuration"
+      },
+      {
+        "id": "assurance-reviewer-independence",
+        "passed": false,
+        "detail": "Current owner-allowlisted reviewer-independence assessment bound to this software and configuration"
+      }
+    ],
+    "verifiedAssurances": [],
+    "rejectedAssurances": [],
+    "paidClaims": [],
+    "metrics": {
+      "measuredMissions": 0,
+      "excludedMeasurements": 1,
+      "usefulResults": 0,
+      "losses": 0,
+      "failedAttempts": 0,
+      "failedAttemptCostUsd": 0,
+      "costCoverageComplete": false,
+      "uncoveredRuns": 1,
+      "uncoveredFailedAttempts": 0,
+      "netUsd": 0,
+      "humanMinutes": 0,
+      "humanMinutesPerUsefulResult": null,
+      "confirmedClaims": 0
+    },
+    "evidence": [],
+    "expenseEvidence": [],
+    "limitations": [
+      "This is a configurable evidence admission gate, not certification of general intelligence, profitability or complete project fulfillment.",
+      "Assessor signatures identify authorized keys. Their assertions, organizational independence and artifact contents require external verification.",
+      "Cost completeness and measurement truth remain reviewer attestations. Matched windows do not prove causality.",
+      "Legacy, pre-admission, future, duplicate and overlapping measurements do not count. RPC agreement does not establish independent provider operators."
+    ]
+  },
+  "productionQualified": false,
+  "independentPeople": false,
+  "tokenPayments": false
+}
