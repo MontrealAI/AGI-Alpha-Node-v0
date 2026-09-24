@@ -7,6 +7,7 @@ export default defineConfig({
     include: ['test/**/*.test.*', 'spec/**/*.test.*'],
     environment: 'node',
     globals: true,
+    clearMocks: false,
     exclude: [
       '**/node_modules/**',
       'subgraph/**/node_modules/**',
@@ -15,7 +16,6 @@ export default defineConfig({
     // Forked pool keeps native modules like better-sqlite3 stable during ESM transforms
     pool: 'forks',
     maxWorkers: 2,
-    minWorkers: 1,
     deps: {
       optimizer: {
         ssr: {
@@ -26,8 +26,8 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'json-summary'],
-      include: ['src/network/**', 'src/telemetry/**', 'src/alpha/*.js'],
-      exclude: ['src/alpha/cli.js'],
+      include: ['src/network/**', 'src/telemetry/**', 'src/alpha/**/*.js'],
+      exclude: ['src/alpha/cli.js', 'src/alpha/web/**'],
       thresholds: {
         lines: 85,
         functions: 85,

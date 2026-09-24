@@ -181,11 +181,11 @@ Owner sovereignty is enforced in code as a first-class primitive. Every high-imp
 
 | Control Vector | Solidity Surface | CLI Builder | Result |
 | --- | --- | --- | --- |
-| Global safeguard relay | `pauseAll()`, `resumeAll()`, `unpauseAll()` on `SystemPause` | `node src/index.js governance system-pause --action <pause|resume|unpause> --execute --confirm` | Freezes or re-enables every protocol entrypoint with a single owner signature, mirroring the on-chain pause events.【F:src/services/governance.js†L324-L352】【F:src/index.js†L2490-L2507】 |
-| Node registry custody | `setNodeStatus(bytes32,bool)`, `setOperator(address,bool)`, `setNodeMetadata(bytes32,string)` on `NodeRegistry` | `node src/index.js governance node-status|node-operator|node-metadata … --execute --confirm` | Rotates controllers, toggles active nodes, and refreshes metadata while emitting immutable registry updates.【F:src/services/governance.js†L355-L521】【F:src/index.js†L2135-L2241】 |
-| WorkMeter validator orbit | `setValidator(address,bool)`, `setOracle(address,bool)`, `setSubmissionWindow(uint256)` on `WorkMeter` | `node src/index.js governance workmeter-validator|workmeter-oracle|workmeter-window … --execute --confirm` | Curates validator/oracle access and telemetry cadence for α‑work proofs with deterministic payloads.【F:src/services/governance.js†L540-L668】【F:src/index.js†L2243-L2388】 |
-| Reward and treasury shaping | `setRoleShare`, `setGlobalShares` on `RewardEngine`; `setTreasury(address)` on `PlatformIncentives` | `node src/index.js governance role-share|global-shares|incentives-treasury … --execute --confirm` | Rebalances operator/validator/treasury flows and redirects capital under owner control with full ledger emission.【F:src/services/governance.js†L620-L1662】【F:src/index.js†L2389-L2985】 |
-| α‑Work accounting | `submitUsage(bytes32,…)`, `recordEpoch(uint256,…)` surfaces | `node src/index.js governance workmeter-submit|productivity-record … --execute --confirm` | Records workload attestations, emission routing, and treasury hooks for replayable audit trails.【F:src/services/governance.js†L602-L835】【F:src/index.js†L2389-L2477】 |
+| Global safeguard relay | `pauseAll()`, `resumeAll()`, `unpauseAll()` on `SystemPause` | `node src/index.js governance system-pause --action <pause\|resume\|unpause> --execute --confirm` | Freezes or re-enables every protocol entrypoint with a single owner signature, mirroring the on-chain pause events.【F:src/services/governance.js†L324-L352】【F:src/index.js†L2490-L2507】 |
+| Node registry custody | `setNodeStatus(bytes32,bool)`, `setOperator(address,bool)`, `setNodeMetadata(bytes32,string)` on `NodeRegistry` | `node src/index.js governance node-status\|node-operator\|node-metadata … --execute --confirm` | Rotates controllers, toggles active nodes, and refreshes metadata while emitting immutable registry updates.【F:src/services/governance.js†L355-L521】【F:src/index.js†L2135-L2241】 |
+| WorkMeter validator orbit | `setValidator(address,bool)`, `setOracle(address,bool)`, `setSubmissionWindow(uint256)` on `WorkMeter` | `node src/index.js governance workmeter-validator\|workmeter-oracle\|workmeter-window … --execute --confirm` | Curates validator/oracle access and telemetry cadence for α‑work proofs with deterministic payloads.【F:src/services/governance.js†L540-L668】【F:src/index.js†L2243-L2388】 |
+| Reward and treasury shaping | `setRoleShare`, `setGlobalShares` on `RewardEngine`; `setTreasury(address)` on `PlatformIncentives` | `node src/index.js governance role-share\|global-shares\|incentives-treasury … --execute --confirm` | Rebalances operator/validator/treasury flows and redirects capital under owner control with full ledger emission.【F:src/services/governance.js†L620-L1662】【F:src/index.js†L2389-L2985】 |
+| α‑Work accounting | `submitUsage(bytes32,…)`, `recordEpoch(uint256,…)` surfaces | `node src/index.js governance workmeter-submit\|productivity-record … --execute --confirm` | Records workload attestations, emission routing, and treasury hooks for replayable audit trails.【F:src/services/governance.js†L602-L835】【F:src/index.js†L2389-L2477】 |
 
 Deterministic governance manifests written to `.governance-ledger/v1` make every executed action reproducible by auditors and downstream automation.【F:src/services/governanceLedger.js†L1-L123】【F:src/services/governanceLedger.js†L182-L244】
 
@@ -317,8 +317,8 @@ stateDiagram-v2
 
 ### Field Constraints
 
-| Field | Requirement | Notes |
-| --- | --- | --- |
+| Field | Requirement |
+| --- | --- |
 | `schema` | MUST equal `agi-alpha/health-attestation-v1`; future revisions MUST bump the version. |
 | `ens` | MUST match the ENS identity under management. Lowercase punycode only. |
 | `peer_id` | MUST be a libp2p peer ID encoded in base58/base36. |
@@ -362,7 +362,7 @@ stateDiagram-v2
 ### Signature Requirements
 
 - Algorithm: `secp256k1-keccak256` (ECDSA over the canonical payload hash).
-- Signature: 0x-prefixed `r || s` (accept 65-byte `rsv` or 64-byte EIP-2098 form).
+- Signature: 0x-prefixed `r \|\| s` (accept 65-byte `rsv` or 64-byte EIP-2098 form).
 - Public key: Provide both `pubkey_x` and `pubkey_y` to ease offline verification and cross-check with ENS `pubkey()`.
 - Verifiers MUST ensure the derived address is the controller registered in `AlphaNodeManager` and matches resolver records.
 

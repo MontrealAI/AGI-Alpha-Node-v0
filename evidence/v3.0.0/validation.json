@@ -1,0 +1,115 @@
+{
+  "version": "3.0.0",
+  "date": "2026-09-24",
+  "localEnvironment": {
+    "platform": "linux",
+    "arch": "x64",
+    "node": "22.14.0"
+  },
+  "results": {
+    "backend": {
+      "passed": 524,
+      "skipped": 11
+    },
+    "standalone": {
+      "passed": 81,
+      "skipped": 0
+    },
+    "frontend": {
+      "passed": 1
+    },
+    "coverage": {
+      "lines": {
+        "total": 3846,
+        "covered": 3392,
+        "skipped": 0,
+        "pct": 88.19
+      },
+      "statements": {
+        "total": 4277,
+        "covered": 3668,
+        "skipped": 0,
+        "pct": 85.76
+      },
+      "functions": {
+        "total": 701,
+        "covered": 644,
+        "skipped": 0,
+        "pct": 91.86
+      },
+      "branches": {
+        "total": 4057,
+        "covered": 3049,
+        "skipped": 0,
+        "pct": 75.15
+      },
+      "branchesTrue": {
+        "total": 0,
+        "covered": 0,
+        "skipped": 0,
+        "pct": 100
+      }
+    },
+    "rootDependencyAdvisories": 0
+  },
+  "passedCommands": [
+    "npm ci",
+    "npm run ci:verify",
+    "npm run coverage",
+    "npm run test:alpha",
+    "npm run typecheck",
+    "npm run dashboard:build",
+    "npm run demo:runtime",
+    "ALPHA_QUALIFICATION_OUTPUT=evidence/v3.0.0/closed-loop npx vitest run test/alpha/transactions.test.js",
+    "node scripts/qualify-local-model.mjs (pinned inputs documented in docs/alpha-runtime.md)"
+  ],
+  "sourceSha256": {
+    "contracts/AlphaMissionEscrow.sol": "1882f79fa175427bcac7356cc66ce398624b3467d4f7403f867973b8cc2eae21",
+    "contracts/AlphaNodeManager.sol": "abb98e776233d4d19ccf1ff7d8c88bc786865ad1f3350504fb30785e8cf1aec2",
+    "contracts/TreasuryExecutor.sol": "5a32a71ef3ef37d21264402c15baec913e5be702fb39a33c2a3e6b0a3a976535",
+    "contracts/access/Ownable.sol": "9117a43ef28972493a9467f70e53e2b3b748ffc0b967dcbfcee9d8496056f925",
+    "contracts/interfaces/IAlphaWorkUnitEvents.sol": "5b22a0b5a3ba68b4213915ff60e3ebc2a72bd117143838a97bed936b82c5accf",
+    "scripts/check-ajv-version.mjs": "905029a60cbca043389f2ec15aff09c709c36d962b1234554fd9fdaa253d5b7f",
+    "scripts/demo-alpha.mjs": "31c68f3565561dbc2e786271e6e2ddcfe655c060ad19f46209dd605e0c5d6f11",
+    "scripts/demo-operations.mjs": "0f377f82b861b0f14ddc48d865099f3537285377c480cd2bd3f2bb2f8d0a3c14",
+    "scripts/demo-runtime.mjs": "cbf1b608a2c63a6fbd7c27f06216b8a34da724b6079eee2fb9aa6a61224b2570",
+    "scripts/lib/vitest-runner.js": "08676f20177fbc415f64de756f52236af7eded54e4d99bee24d49570bb0d0d38",
+    "scripts/lint-grafana-dashboard.mjs": "ce7028fb691263c65ccb82522695eb17ea70ddc057bcef24f96ae709bba1b47c",
+    "scripts/local_cluster.mjs": "5d133df0082561466be58e101532695c1d8fcb3c11092cd111fa7a03a4f5a330",
+    "scripts/p2p-simulator.mjs": "d6b5f797966852c94a0b5b2e99b7b92b91e48d10b3d3e391d376dc7a8721a9aa",
+    "scripts/package-alpha-release.py": "ab8df226c982c06970e1624ef8195070d232d2fd5367215e9c662e4f21be484b",
+    "scripts/publish-badges.mjs": "0401322385656530bcd5b95e21a4c4aa55eebd12f104687d24b925409c72353a",
+    "scripts/qualify-local-model.mjs": "95a24dcbb369f591fc5d200cd0cfac9ba5637ecfff111685eb1af08f03a7cd8a",
+    "scripts/render-subgraph-manifest.mjs": "90ae541b0ec9a80a08664169ab234d447c653d52d1f566ca35beb86f2554abea",
+    "scripts/run-solc.mjs": "beace28268aaf016a4600066a687dfb4b54939bab16b374c20e4a85d4bc8f126",
+    "scripts/subgraph-simulation.js": "33b0c8b6bfecc20ee9ca6be87d3f8e9ef604fe48154e83f7664d2531a3484b28",
+    "scripts/verify-branch-gate.mjs": "c3f2d068449edcf12f032fa2f227e49b500a1fa0f04888572427bd87008ab651",
+    "scripts/verify-health-gate.mjs": "0d7528d3a8d6e4d4677d5d0728eac7add91041ba8ba7126797ff52a0b7e18929",
+    "scripts/vitest-runner.mjs": "07b0960106ac93f6f04399636972d039eddfedfe7d0fa2a2d4b743999382fab0",
+    "src/alpha/cli.js": "fd708275ead05e9f8ad0eb237e1e527c87d6ec07ba8d659587b6e644a4129f2b",
+    "src/alpha/mission.js": "47a25bad57949203b03e87021b956e8906ba95895b35d8a82a235f855fc24f87",
+    "src/alpha/node.js": "d2af320b52b8a5d12347331d0d3e4c0614f8d74b63666534b3c79249425e4763",
+    "src/alpha/operations.js": "85e1fc40cbd63d4f523184a70ee4e7ece79171b1d005f9d308158386983ec8bd",
+    "src/alpha/operator.js": "047aff841f4ec1638225c72c16f297122e1bd93c23cc3d70ffad80ebaca45062",
+    "src/alpha/runtime/actions.js": "b51c6b4ee9b6ef08a472798c25765873e8ff8bb968aa9bd2ee6023a47d4c6296",
+    "src/alpha/runtime/engine.js": "8094e22e9469cd4e0541b3bb24089b2e7650f030c3052974ac2b73d9d60a02ab",
+    "src/alpha/runtime/maintenance.js": "570dfe47a33c580b0b5497df2b45288ffb7bcdc42b2cf3ff3ad95d8de1693f73",
+    "src/alpha/runtime/planner.js": "c4ed12555b4eb9fe04cd2fe601634b195a80cbf41a86984650461648b986d63e",
+    "src/alpha/runtime/review-approval.js": "30efea48bc284b414ae270ebd46aae0715974e7cbca44f93c8c07d7ea66afe2a",
+    "src/alpha/runtime/rpc.js": "b113cf814601b4e70e9a4d5441614727489fd4e6ed8c8c05e1b726722760de3b",
+    "src/alpha/runtime/specialists.js": "96b8cf95612899efcafc6df75de8f8d245890459dbd0f4e508725e29b836dd56",
+    "src/alpha/runtime/transactions.js": "39d5616cfff93df2b1fc643927fd9e74ee1fab4fdb38d216856f2cba75dc979b",
+    "src/alpha/settlement.js": "06e6fa5add055cb2462b49f00f32592f24263c9bb32abcd21209ac16d9e70411",
+    "src/alpha/web/operator-ui.js": "64067e373d9c94d6ce73e0cbe981dee4d67842466f6ecaa9bcccc09d88309a16"
+  },
+  "releaseGates": "GitHub Actions workflow on the exact release commit includes macOS, Docker and Linux; the release job depends on full verification. Consult that workflow for remote results.",
+  "limitations": [
+    "No owner mainnet ENS/key/deployment/funding commissioning",
+    "Role-separated fixture keys are not independent people",
+    "Synthetic economic inputs/outcomes are not measured profitability",
+    "One real local-model run is an integration check, not general intelligence certification",
+    "11 inherited environment-dependent skips; mandatory standalone token tests execute in a local EVM",
+    "Coverage scope is alpha (excluding CLI/web), network and telemetry; other surfaces have regression tests",
+    "Branch protection settings and independent source/contract security audit are not established"
+  ]
+}

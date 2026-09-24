@@ -145,7 +145,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Audit production dependencies
+      - name: Audit runtime and development dependencies
         env:
           CI: true
         run: npm run ci:security
@@ -215,21 +215,40 @@ jobs:
       - name: Build container image
         run: docker build --tag agi-alpha-node:${{ github.sha }} .
 
-      - name: Smoke test runtime help output
+      - name: Smoke test standalone runtime
         run: |
           set -euo pipefail
-          docker run --rm \
-            -e NODE_LABEL=smoke-test \
-            -e OPERATOR_ADDRESS=0x0000000000000000000000000000000000000001 \
-            -e RPC_URL=https://rpc.invalid \
-            agi-alpha-node:${{ github.sha }} \
-            --help | tee docker-smoke-help.txt
+          docker run --rm agi-alpha-node:${{ github.sha }} --help | tee docker-smoke-help.txt
+          docker run --rm --entrypoint node agi-alpha-node:${{ github.sha }} scripts/demo-alpha.mjs /tmp/alpha-demo
+          docker run --rm --entrypoint node agi-alpha-node:${{ github.sha }} scripts/demo-operations.mjs /tmp/alpha-demo
+          docker run --rm --entrypoint node agi-alpha-node:${{ github.sha }} scripts/demo-runtime.mjs /tmp/alpha-demo
+
+  macos-standalone:
+    name: macOS Standalone Clean Install
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install from lockfile
+        run: npm ci
+      - name: Qualify standalone runtime on macOS
+        run: |
+          node -p 'JSON.stringify({platform:process.platform,arch:process.arch,node:process.version})'
+          npm run test:alpha
+          npm run demo:alpha
+          npm run demo:operations
+          npm run demo:runtime
 
   verify:
     name: Full CI Verification
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs:
+      - macos-standalone
       - lint
       - test
       - solidity
@@ -369,5 +388,5 @@ jobs:
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Release $TAG already exists; leaving it unchanged."
           else
-            gh release create "$TAG" "dist/AGI_Alpha_Node_v${VERSION}.zip" dist/SHA256SUMS.txt --target "$GITHUB_SHA" --title "AGI Alpha Node $TAG — Bounded Operations Edition" --notes-file RELEASE_NOTES.md
+            gh release create "$TAG" "dist/AGI_Alpha_Node_v${VERSION}.zip" dist/SHA256SUMS.txt --target "$GITHUB_SHA" --title "AGI Alpha Node $TAG — Integrated Node Edition" --notes-file RELEASE_NOTES.md
           fi

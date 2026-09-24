@@ -16,7 +16,7 @@ describe('vitest runner', () => {
 
   it('translates runInBand flag into thread pool override', () => {
     const args = translateArgs(['--runInBand', '--config', 'custom.config.js']);
-    expect(args).toEqual(['--config', 'custom.config.js', '--pool=threads', '--poolOptions.threads.singleThread=true']);
+    expect(args).toEqual(['--config', 'custom.config.js', '--maxWorkers=1', '--no-file-parallelism']);
   });
 
   it('propagates spawn failures with a helpful rejection', async () => {

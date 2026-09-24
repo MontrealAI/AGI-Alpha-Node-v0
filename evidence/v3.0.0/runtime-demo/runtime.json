@@ -1,0 +1,357 @@
+{
+  "schema": 1,
+  "realFileChange": true,
+  "separateSpecialistProcess": true,
+  "realHttpExchange": true,
+  "signedReview": true,
+  "missionId": "runtime-2bc9616737f395e7550f67ad4e36a7674881ed05",
+  "actionStatus": "applied",
+  "replay": "replayed",
+  "outcomes": {
+    "acceptedMissions": 1,
+    "measuredMissions": 1,
+    "reviewerReportedNetUsd": 70,
+    "outcomes": [
+      {
+        "missionId": "runtime-2bc9616737f395e7550f67ad4e36a7674881ed05",
+        "projectedExpectedNet": 187,
+        "measuredNetUsd": 70,
+        "observedAt": "2026-09-24T14:26:09.984Z"
+      }
+    ],
+    "limitation": "Reviewer-attested measurements, not independently audited profit. Compare only equivalent observation periods. The integrated runtime adapts and reinvests only within explicit owner policy; this summary executes nothing."
+  },
+  "limitations": [
+    "Synthetic usage and outcome values",
+    "Reviewer role controlled by the demo, not an independent person",
+    "No live ENS, model inference or token transfers in this demo"
+  ],
+  "runtime": [
+    {
+      "type": "runtime",
+      "topic": "plan",
+      "id": "plan:0xa7d8c2bc220d6709ef4675219f75ee76a10576aff3ee4a3d040ddba24be05585",
+      "data": {
+        "plan": {
+          "schema": 1,
+          "originalDigest": "0x60e573edc162d24f1428d8dbb08d06769c250a18723032a9e03ae81cc5d7c048",
+          "mission": {
+            "id": "usage-0x00d385d18b04ea489029330dabb81c5837f963",
+            "title": "Usage-derived caching opportunities",
+            "objective": "Discover and rank caching experiments from supplied usage measurements. Produce a reviewable analysis; do not modify production systems.",
+            "sources": [
+              {
+                "id": "inference",
+                "title": "Example inference: Synthetic example period",
+                "text": "{\"id\":\"inference\",\"name\":\"Example inference\",\"requests\":1000,\"repeatedRequests\":600,\"costUsd\":500,\"observedAt\":\"2026-09-24T14:26:09.525Z\",\"period\":\"Synthetic example period\"}"
+              }
+            ],
+            "opportunities": [
+              {
+                "id": "cache-inference",
+                "title": "Evaluate caching for Example inference",
+                "benefit": 300,
+                "cost": 20,
+                "probability": 0.7,
+                "downside": 10,
+                "sourceIds": [
+                  "inference"
+                ],
+                "rationale": "Observed repeated-request share multiplied by total cost estimates a savings ceiling, not measured savings. Assumes uniform request cost and cache eligibility. Validate privacy, correctness, freshness and implementation cost before deployment."
+              }
+            ],
+            "policy": {
+              "maxCost": 100,
+              "maxDownside": 50,
+              "minExpectedNet": 5,
+              "stressBenefitBps": 7000
+            },
+            "unit": "USD per observation period"
+          },
+          "analysis": {
+            "kind": "deterministic-evidence-analysis",
+            "missionDigest": "0x60e573edc162d24f1428d8dbb08d06769c250a18723032a9e03ae81cc5d7c048",
+            "unit": "USD per observation period",
+            "recommendation": "cache-inference",
+            "rankings": [
+              {
+                "id": "cache-inference",
+                "title": "Evaluate caching for Example inference",
+                "benefit": 300,
+                "cost": 20,
+                "probability": 0.7,
+                "downside": 10,
+                "sourceIds": [
+                  "inference"
+                ],
+                "rationale": "Observed repeated-request share multiplied by total cost estimates a savings ceiling, not measured savings. Assumes uniform request cost and cache eligibility. Validate privacy, correctness, freshness and implementation cost before deployment.",
+                "expectedNet": 187,
+                "stressedNet": 124,
+                "admitted": true
+              }
+            ],
+            "sources": [
+              {
+                "id": "inference",
+                "title": "Example inference: Synthetic example period",
+                "digest": "0x28ed5b5f7052e0e40875ad2119378f4d0f420c17c6d1c59248ccb368c016fd8e",
+                "url": null
+              }
+            ],
+            "limitations": [
+              "Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.",
+              "Source hashes establish integrity, not truth. Independent review is required.",
+              "No trades, external actions, token earnings or AGI capability are implied by this report."
+            ]
+          },
+          "models": [
+            {
+              "schema": 1,
+              "kind": "task-scoped-beta-outcome-model",
+              "recommendation": "cache-inference",
+              "samples": 0,
+              "successes": 0,
+              "losses": 0,
+              "consecutiveLosses": 0,
+              "meanBenefitRatio": 1,
+              "evidence": [],
+              "policy": {
+                "enabled": true,
+                "minSamples": 3,
+                "window": 30,
+                "priorWeight": 4,
+                "maxProbability": 0.9,
+                "maxBenefitMultiplier": 1,
+                "lossPauseCount": 3
+              }
+            }
+          ],
+          "scenarios": [
+            {
+              "benefitFactor": 1,
+              "rankings": [
+                {
+                  "id": "cache-inference",
+                  "net": 187
+                }
+              ]
+            },
+            {
+              "benefitFactor": 0.75,
+              "rankings": [
+                {
+                  "id": "cache-inference",
+                  "net": 134.5
+                }
+              ]
+            },
+            {
+              "benefitFactor": 0.5,
+              "rankings": [
+                {
+                  "id": "cache-inference",
+                  "net": 82
+                }
+              ]
+            },
+            {
+              "benefitFactor": 0,
+              "rankings": [
+                {
+                  "id": "cache-inference",
+                  "net": -23
+                }
+              ]
+            }
+          ],
+          "selected": "cache-inference",
+          "status": "admitted",
+          "reason": "Owner risk policy passed",
+          "steps": [
+            {
+              "capability": "evidence-analysis",
+              "requires": [],
+              "opportunity": "cache-inference"
+            },
+            {
+              "capability": "risk-review",
+              "requires": [
+                "evidence-analysis"
+              ],
+              "opportunity": "cache-inference"
+            },
+            {
+              "capability": "owner-authorized-action",
+              "requires": [
+                "risk-review"
+              ],
+              "opportunity": "cache-inference"
+            }
+          ],
+          "limitation": "Task-scoped inference from reviewer-attested measurements; not a general world model, causal proof or guaranteed forecast. Adaptation can only tighten supplied probability and benefit."
+        },
+        "action": {
+          "action": {
+            "kind": "json-set",
+            "root": "/tmp/alpha-runtime-demo-YAC9dM",
+            "file": "service.json",
+            "pointer": [
+              "cacheEnabled"
+            ],
+            "value": true,
+            "healthUrl": "http://127.0.0.1:42465/health",
+            "healthField": "healthy",
+            "healthValue": true,
+            "timeoutMs": 1000
+          },
+          "beforeHash": "0x421ae6438e43bf56ce6d03c6bb7a1b2b4593ca9eaa6efcb4187f486f7a8420ad",
+          "afterHash": "0x92ed3c4a9d67fa4de5f39c7aaf5d7aca0d94b9b6c77dc5cd44e52fa35e502178",
+          "target": "/tmp/alpha-runtime-demo-YAC9dM/service.json",
+          "mode": 420,
+          "unchanged": false
+        },
+        "mission": {
+          "id": "runtime-2bc9616737f395e7550f67ad4e36a7674881ed05",
+          "title": "Usage-derived caching opportunities",
+          "objective": "Discover and rank caching experiments from supplied usage measurements. After independent acceptance, execute only the exact execution-policy descriptor and rollback on failed health verification.",
+          "sources": [
+            {
+              "id": "inference",
+              "title": "Example inference: Synthetic example period",
+              "text": "{\"id\":\"inference\",\"name\":\"Example inference\",\"requests\":1000,\"repeatedRequests\":600,\"costUsd\":500,\"observedAt\":\"2026-09-24T14:26:09.525Z\",\"period\":\"Synthetic example period\"}"
+            },
+            {
+              "id": "adaptive-model",
+              "title": "Owner-bounded outcome model",
+              "text": "{\"modelsDigest\":\"0x7ee8a4b1e48771b9f2f9dc0d23ba91f34c531b890307bec58550440a5fe1430e\",\"models\":[{\"recommendation\":\"cache-inference\",\"samples\":0,\"successes\":0,\"losses\":0,\"meanBenefitRatio\":1}],\"reason\":\"Owner risk policy passed\"}"
+            },
+            {
+              "id": "execution-policy",
+              "title": "Exact owner-authorized action reviewed with this mission",
+              "text": "{\"action\":{\"kind\":\"json-set\",\"root\":\"/tmp/alpha-runtime-demo-YAC9dM\",\"file\":\"service.json\",\"pointer\":[\"cacheEnabled\"],\"value\":true,\"healthUrl\":\"http://127.0.0.1:42465/health\",\"healthField\":\"healthy\",\"healthValue\":true,\"timeoutMs\":1000},\"beforeHash\":\"0x421ae6438e43bf56ce6d03c6bb7a1b2b4593ca9eaa6efcb4187f486f7a8420ad\",\"afterHash\":\"0x92ed3c4a9d67fa4de5f39c7aaf5d7aca0d94b9b6c77dc5cd44e52fa35e502178\",\"target\":\"/tmp/alpha-runtime-demo-YAC9dM/service.json\",\"mode\":420,\"unchanged\":false}"
+            }
+          ],
+          "opportunities": [
+            {
+              "id": "cache-inference",
+              "title": "Evaluate caching for Example inference",
+              "benefit": 300,
+              "cost": 20,
+              "probability": 0.7,
+              "downside": 10,
+              "sourceIds": [
+                "inference"
+              ],
+              "rationale": "Observed repeated-request share multiplied by total cost estimates a savings ceiling, not measured savings. Assumes uniform request cost and cache eligibility. Validate privacy, correctness, freshness and implementation cost before deployment."
+            }
+          ],
+          "policy": {
+            "maxCost": 100,
+            "maxDownside": 50,
+            "minExpectedNet": 5,
+            "stressBenefitBps": 7000
+          },
+          "unit": "USD per observation period"
+        }
+      },
+      "previous": null,
+      "at": "2026-09-24T14:26:09.546Z",
+      "hash": "0x95cc4f72f6dc6fa8c70600aff049f897ad8400014b03b1111e63c96747f9947d",
+      "signature": "0xeeb93e2459e8578a8ad79bfdea39493d43c8ef35c561d16aa4ab1c367f2737cc7d93324a966a2ee9169efd49f7b95c7d33442cebc69d24cf9fa6653f677fcee01c"
+    },
+    {
+      "type": "runtime",
+      "topic": "specialist",
+      "id": "peer:0xca379cc7e4cbb46b75cf54b87a6a72394c528e6a9935a4d46e94f02bd6b1ae5a",
+      "data": {
+        "envelope": {
+          "domain": "agialpha:specialist:v1",
+          "kind": "result",
+          "sender": "0x8dea1a5503fc17307b863a507631aa837ad09e0b",
+          "recipient": "0xc314c12039c6ec14b165a4eb37bc6938e4a9d226",
+          "issuedAt": 1790259969631,
+          "expiresAt": 1790260029631,
+          "payload": {
+            "requestId": "0xca379cc7e4cbb46b75cf54b87a6a72394c528e6a9935a4d46e94f02bd6b1ae5a",
+            "capability": "risk-review",
+            "priceMicroUsd": 0,
+            "inputDigest": "0x71cfe2f3c2bee3f029f916d8991f3837345fbec682eb2ed74b09235d4f011373",
+            "result": {
+              "inputDigest": "0x71cfe2f3c2bee3f029f916d8991f3837345fbec682eb2ed74b09235d4f011373",
+              "recommendation": "cache-inference",
+              "findings": [
+                {
+                  "id": "cache-inference",
+                  "admitted": true,
+                  "stressedNet": 124,
+                  "lossIfNoBenefit": 30
+                }
+              ],
+              "requiredChecks": [
+                "Source truth",
+                "Uniform cost assumption",
+                "Privacy and correctness",
+                "Independent observed outcome"
+              ]
+            }
+          },
+          "hash": "0xa07aa3aefeb2ced50c17fbbd970c4d50cdb35fa0f462703a65dfada2c0052165",
+          "signature": "0xda0581f9058dc7b2ee658f132370e90cb1d3530fdffdba69dc9814e5f639a581405b539b64b360b1e60454bb40f42634d715108cdaf16106cbd657c7e95ff8a81c"
+        },
+        "peer": "0x8dea1a5503fc17307b863a507631aa837ad09e0b"
+      },
+      "previous": "0xbb762ceaf0a227ab5d4de5d803ddb82034b8d9636feb56bb6626bca6b34cc2c9",
+      "at": "2026-09-24T14:26:09.656Z",
+      "hash": "0xfe1c9cd7882c7e84a6a2b0d94e180d478fa98250c806ba63a00973e5d71e5726",
+      "signature": "0x1eaef3bfe350b4e07cb9a92a5d113f62821ca75a3437329cb16211e026a932292a80e6e2cde7640a12a304e8a732a75d903853d908b17ddf9c1feeee8dbd72131b"
+    },
+    {
+      "type": "runtime",
+      "topic": "action-prepared",
+      "id": "action:0x56bfb8d7c4414dc5360f888d7eea180e816799c6600ab1c4ade4c6785019df2e:prepared",
+      "data": {
+        "missionId": "runtime-2bc9616737f395e7550f67ad4e36a7674881ed05",
+        "descriptor": {
+          "action": {
+            "kind": "json-set",
+            "root": "/tmp/alpha-runtime-demo-YAC9dM",
+            "file": "service.json",
+            "pointer": [
+              "cacheEnabled"
+            ],
+            "value": true,
+            "healthUrl": "http://127.0.0.1:42465/health",
+            "healthField": "healthy",
+            "healthValue": true,
+            "timeoutMs": 1000
+          },
+          "beforeHash": "0x421ae6438e43bf56ce6d03c6bb7a1b2b4593ca9eaa6efcb4187f486f7a8420ad",
+          "afterHash": "0x92ed3c4a9d67fa4de5f39c7aaf5d7aca0d94b9b6c77dc5cd44e52fa35e502178",
+          "target": "/tmp/alpha-runtime-demo-YAC9dM/service.json",
+          "mode": 420,
+          "unchanged": false
+        }
+      },
+      "previous": "0x0a5921884d8ac254b1fd8e14af9024786bc14e9092217f1a638dc6618963f811",
+      "at": "2026-09-24T14:26:09.825Z",
+      "hash": "0x853977a62fc5983e9d8d6901c212eb51920928cbb308a5424eb9abde788b40e6",
+      "signature": "0x17a327685d44a3ea9fa7eec2925723a184f8bf29e5417b60e6046fc7cb2e966f098e7f30a7edb1f6b9d05883f562ffbdf793fe1a59a7544e9fffed7578f8a6e21c"
+    },
+    {
+      "type": "runtime",
+      "topic": "action-result",
+      "id": "action:0x56bfb8d7c4414dc5360f888d7eea180e816799c6600ab1c4ade4c6785019df2e:result",
+      "data": {
+        "missionId": "runtime-2bc9616737f395e7550f67ad4e36a7674881ed05",
+        "status": "applied",
+        "beforeHash": "0x421ae6438e43bf56ce6d03c6bb7a1b2b4593ca9eaa6efcb4187f486f7a8420ad",
+        "afterHash": "0x92ed3c4a9d67fa4de5f39c7aaf5d7aca0d94b9b6c77dc5cd44e52fa35e502178",
+        "recovered": false
+      },
+      "previous": "0x853977a62fc5983e9d8d6901c212eb51920928cbb308a5424eb9abde788b40e6",
+      "at": "2026-09-24T14:26:09.904Z",
+      "hash": "0x7aea17256d2464a8d30d2d8200c8e840011b0fa4ab1be976b21545ffd4755816",
+      "signature": "0xaa29d6b0d73a60c93d2db204d59a7fd6d119d1e67ef4383b3430e39ada29cfca39af8752e0e27164f687e2353bb39ed8b510aa1f612b96b89902f0033385098e1b"
+    }
+  ]
+}

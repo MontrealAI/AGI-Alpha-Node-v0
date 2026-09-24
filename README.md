@@ -2,98 +2,76 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Version 2.1.0 · Bounded Operations Edition
+Version 3.0.0 · Integrated Node Edition
 
-An owner-controlled node for turning supplied evidence into ranked opportunities, signed analytical deliverables, independently signed reviews, and explicitly funded $AGIALPHA rewards.
+An owner-controlled economic intelligence node: collect authorized observations, plan and stress-test opportunities, coordinate authenticated specialists, obtain signed review, execute an exact authorized change, settle funded $AGIALPHA work, and reinvest verified receipts within owner limits.
 
-This is the **$AGIALPHA project**. The standalone node does not require AGI Jobs, USDC, OpenClaw, or a job registry. Older registry adapters remain available as legacy integrations.
+This is the **$AGIALPHA project**. The default runtime requires no AGI Jobs registry, USDC or OpenClaw. Older infrastructure adapters remain separately accessible through `npm run legacy -- --help`.
 
 ## Start in five minutes
 
-Install Node.js 22.14 or newer, then run from this repository:
+Install Node.js 22.14+ and npm 10+, extract the release ZIP and run:
 
 ```bash
 npm ci
-npm run alpha -- init --ens demo.alpha.node.agi.eth
-npm run alpha -- run examples/alpha/opportunity-scan.json
-npm run alpha -- status
-npm run alpha -- export alpha-opportunity-001 --out alpha-output
+npm run demo:runtime
 ```
 
-Open `alpha-output/report.md`. The example compares caching, batching, and speculative capacity expansion. It calculates expected and stressed net benefit, applies your spending and downside limits, and can abstain. The sample inputs are explicitly synthetic; the calculations, files, signatures, and integrity checks are real.
+Open `alpha-runtime-output/report.md` and `runtime.json`. The demonstration starts a separately keyed specialist process, exchanges signed HTTP messages, produces a reviewable plan, changes a real configuration file after signed acceptance, checks health, records an outcome and verifies replay. Usage and outcome values are synthetic; the reviewer is a demonstration role. It spends no funds.
 
-Local mode generates a private signing key in `.alpha-node/`. Its ENS name is an **unverified label**, and it cannot produce a live settlement plan. Never share this directory or fund a demonstration key.
+For your own node, follow [START HERE](START_HERE.md) and the [integrated runtime guide](docs/alpha-runtime.md).
 
-## What the node does
+## Implemented architecture
 
-| Capability | Behavior in this release |
+| Pillar | Working behavior |
 | --- | --- |
-| Intelligence | Deterministic, evidence-linked opportunity ranking; optional real HTTP model inference with bounded output and no action tools |
-| Identity | Locally generated signing identity, or Ethereum mainnet ENS address verification against an operator-supplied key |
-| Evidence | Signed report and input hashes in a verified, atomic, hash-linked local ledger |
-| Independent review | Separate designated reviewer signs acceptance or rejection; detached review works without exposing the node key |
-| Owner controls | Risk policy, pause/resume, sequential inbox processing, model configuration, export, and recovery |
-| $AGIALPHA mechanics | Canonical-token, prefunded mission escrow with submission, review, claim, rejection and timeout refunds |
-| Existing infrastructure | Legacy dashboard, telemetry, ENS attestation, persistence, treasury tools and registry adapters retained |
+| Task-scoped intelligence | Usage-derived candidates, explicit economic assumptions, scenario stress tests, abstention and conservative adaptation from accepted signed outcomes; optional actual model inference |
+| Specialist mesh | Configured peer discovery, signed offers/requests/results, capability and price selection, caller allowlists, capacity bounds and persistent replay protection |
+| Sentinel and owner control | Cost reservations, pending-review admission, exact action permissions, pause, backoff, loss thresholds, health verification and rollback |
+| Evidence ledger | Signed hash-linked records bind observations, plans, specialist results, reports, reviews, actions, outcomes and transaction receipts |
+| Execution and evolution | Reviewed scalar JSON configuration changes; subsequent comparable signed measurements tighten future estimates |
+| Identity | Local signing identity or mainnet ENS address verification, repeated before live work and settlement |
+| $AGIALPHA | Prefunded canonical-token escrow, signature-relayed reviewer acceptance, exact-once claims, finalized receipt checks and capped staking of verified receipts |
+| Operator experience | Guided setup, authenticated loopback interface, CLI, encrypted backup/restore and Linux/macOS service configuration |
 
-The model narrative is unverified analysis. Source hashes prove integrity, not truth. Separate signing keys prove role separation, not organizational independence. No guaranteed earnings, autonomous investment returns, token minting, general intelligence or deployed network scale are claimed.
+Each capability has explicit limits. Specialists currently offer three deterministic analytical capabilities; their quote is not an automatic peer payment. The adaptive model is task-scoped and can only tighten supplied estimates. Execution is an owner-selected configuration change with health checks. These concrete implementations do not establish general intelligence, guaranteed financial alpha, a permissionless global marketplace or unlimited scale.
 
-## Operate your node
+## Run and control
 
 ```bash
-npm run alpha -- doctor
-npm run alpha -- pause
-npm run alpha -- resume
-npm run alpha -- watch ./my-mission-inbox
+npm run alpha -- --home /absolute/private/node operate
+npm run alpha -- --home /absolute/private/node serve
+npm run alpha -- --home /absolute/private/node autopilot --runtime
+npm run alpha -- --home /absolute/private/node pause
 ```
 
-Use `--home /absolute/private/directory` before the command for a separate node. Each mission ID is bound to its inputs: unchanged inputs replay safely, while changed inputs require a new ID. Stop `watch` with Ctrl+C. In-flight inference is bounded to 60 seconds; pause prevents its result from being committed if observed before the commit.
+`operate` performs one integrated cycle. `autopilot --runtime` repeats it with conservative failure handling. `serve` prints a private browser URL and exposes status, review import and controls. External actions require exact owner configuration plus signed acceptance. Transactions require live identity and an explicitly enabled, bytecode-pinned spending policy.
 
-Follow [START HERE](START_HERE.md) for real inputs, providers, independent review, live identity and settlement. See the [recovery guide](docs/alpha-recovery.md) before moving or restoring a node.
+The node directory contains private keys and potentially broadcastable signed transactions. Keep it private. Give reviewers only exported mission bundles. Separate keys establish role separation; organizational independence must be arranged operationally.
 
-## Funded rewards
-
-`AlphaMissionEscrow.sol` implements a standalone funded reward lifecycle:
-
-1. The owner approves the canonical $AGIALPHA token and funds a work ID for a named node, a different reviewer, and a deadline.
-2. The node submits its signed evidence hash.
-3. The designated reviewer approves that exact hash or rejects it.
-4. Accepted work can be claimed exactly once to the named node. Rejected or expired unaccepted work can be refunded to its original funder.
-
-Claims and refunds remain available when admission is paused. Owner surplus sweeps cannot consume reserved rewards. The escrow does not mint tokens and is **not deployed by installing this package**.
-
-The revised `AlphaNodeManager.sol` now debits stake on withdrawal and slashing and clears stale identity routes. Its event-only work-unit hooks are not a funded reward system. New contract deployments and migration planning are required to adopt changed contract logic; an existing deployment is not upgraded automatically.
-
-## Validate
+## Validate and recover
 
 ```bash
-npm run test:alpha
-npm test -- --maxWorkers 2 --minWorkers 1
-npm run ci:solidity
+npm run ci:verify
 npm run typecheck
 npm run dashboard:build
-npm run ci:security
+npm run demo:runtime
 ```
 
-Read the [vision and implementation assessment](docs/alpha-assessment.md), [release evidence](evidence/v2.1.0/validation.md), and [release notes](RELEASE_NOTES.md). Local EVM token tests are not mainnet settlements; fixture HTTP tests are not paid-provider validation. Live ENS, operator keys, real reviewers and actual treasury funding must be commissioned in the operator's environment.
+See [qualification evidence](evidence/v3.0.0/validation.md), [recovered vision and assessment](docs/alpha-assessment.md), [release notes](RELEASE_NOTES.md) and [backup/recovery](docs/alpha-recovery.md). The package contains real local-model inference evidence, real HTTP/file execution evidence, and local EVM execution of the token lifecycle. Mainnet deployment, ENS commissioning, independent human review and sustained production economics remain operator-specific commissioning work.
 
 ## Repository atlas
 
 | Location | Purpose |
 | --- | --- |
-| `src/alpha/` | Standalone node, CLI, analysis, signatures, review and settlement plans |
-| `examples/alpha/` | Editable mission input example |
-| `contracts/AlphaMissionEscrow.sol` | Funded $AGIALPHA mission settlement |
+| `src/alpha/` | Standalone CLI, operator interface, missions, review and evidence |
+| `src/alpha/runtime/` | Adaptive planner, specialist transport, controlled actions, transaction executor and recovery |
+| `examples/alpha/` | Mission, usage, pipeline and runtime configuration examples |
+| `contracts/AlphaMissionEscrow.sol` | Canonical $AGIALPHA funded mission settlement |
 | `contracts/AlphaNodeManager.sol` | Owner-administered identity and stake custody |
-| `test/alpha/` | Node, HTTP transport and executable local EVM tests |
-| `src/index.js` | Legacy infrastructure CLI |
-| `dashboard/`, `observability/` | Legacy operator dashboard and telemetry |
-| `docs/archive/README-v1.1.0.md` | Historical presentation, preserved for context |
+| `test/alpha/` | Mandatory standalone integration, failure and executable EVM tests |
+| `scripts/demo-runtime.mjs` | Reproducible multi-process local runtime demonstration |
+| `src/index.js`, `dashboard/` | Retained legacy infrastructure CLI and dashboard |
+| `docs/manifesto.md`, `docs/archive/` | Original vision and historical material |
 
-The [original manifesto](docs/manifesto.md) is a vision document. The implementation assessment and release evidence govern capability claims for this version. GitHub workflow definitions are included; branch-protection enforcement is a repository setting and is not inferred from badges.
-
-## Bounded operations in v2.1
-
-The node can now discover caching experiments from fresh usage measurements, reserve daily execution capacity, deliver signed reports, accept asynchronous reviews, and track reviewer-attested outcomes. A loopback operator interface exposes controls and evidence without exposing signing keys. See [operations and recovery](docs/alpha-operations.md).
-
-This release does not complete the repository’s open-ended AGI vision. It does not autonomously deploy optimizations, prove profitability, operate a specialist peer marketplace, or reinvest funds. Model inference and mainnet settlement require separately configured live services.
+Installing this release does not deploy or upgrade contracts. Adoption of changed contract logic requires new deployments and explicit migration. Current release evidence governs capability claims; historical manifesto language is not validation.

@@ -1,8 +1,9 @@
 import { createRequire } from 'node:module';
 import { spawn } from 'node:child_process';
+import { dirname, resolve } from 'node:path';
 
 const require = createRequire(import.meta.url);
-export const vitestBin = require.resolve('vitest/vitest.mjs');
+export const vitestBin = resolve(dirname(require.resolve('vitest/package.json')), require('vitest/package.json').bin.vitest);
 
 export function translateArgs(args = []) {
   const forwarded = [];
@@ -17,7 +18,7 @@ export function translateArgs(args = []) {
   }
 
   if (runInBand) {
-    forwarded.push('--pool=threads', '--poolOptions.threads.singleThread=true');
+    forwarded.push('--maxWorkers=1', '--no-file-parallelism');
   }
 
   return forwarded;

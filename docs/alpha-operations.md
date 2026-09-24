@@ -1,6 +1,8 @@
-# Bounded operations — v2.1
+# Bounded operations — v2.1 compatibility guide
 
 <!-- markdownlint-disable MD013 -->
+
+For the v3 integrated planner, specialist mesh, reviewed execution and token reinvestment, use [the runtime guide](alpha-runtime.md). This page documents the retained analysis-only `cycle` workflow.
 
 This release extends the standalone **$AGIALPHA** node. It does not depend on AGI Jobs. It delivers a bounded usage-analysis service, not the full sovereign AGI described by the historical manifesto.
 
@@ -91,7 +93,7 @@ npm run alpha -- outcome-import outcome.json
 npm run alpha -- outcomes
 ```
 
-Only one signed measurement is accepted per accepted mission. The report compares projected expected net with reviewer-reported net; use equivalent periods and avoid overlapping attribution. This is an immutable audit record, not independently audited profit. Automatic learning, policy mutation and reinvestment are not implemented.
+Only one signed measurement is accepted per accepted mission. The report compares projected expected net with reviewer-reported net; use equivalent periods and avoid overlapping attribution. This is an immutable audit record, not independently audited profit. The analysis-only `cycle` command does not execute learning or reinvestment. The v3 `operate` command applies explicitly configured adaptive and transaction policies.
 
 ## Finalized settlement observation
 

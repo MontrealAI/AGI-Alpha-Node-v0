@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { outcomeSummary, loadNode, pauseNode, importDetachedReview } from './node.js';
+import { operate } from './runtime/engine.js';
 import { cycle, operationStatus } from './operations.js';
 
 export async function operatorServer(dir, { port = 0 } = {}) {
@@ -27,7 +28,7 @@ export async function operatorServer(dir, { port = 0 } = {}) {
       if (req.method === 'GET' && path === '/api/status') {
         const n = await loadNode(dir);
         return send(200, { mode: n.config.mode, ens: n.config.ensName, address: n.config.address, reviewer: n.config.reviewer,
-          paused: n.paused, busy, head: n.head, ledgerVerified: true, operations: operationStatus(n), outcomes: outcomeSummary(n),
+          paused: n.paused, busy, head: n.head, ledgerVerified: true, operations: operationStatus(n), outcomes: outcomeSummary(n), runtime: [...n.runtime.values()].slice(-100).reverse().map(e => ({ id: e.id, topic: e.topic, at: e.at, status: e.data.status ?? e.data.plan?.status ?? 'recorded', transactionHash: e.data.transactionHash ?? e.data.hash ?? null, purpose: e.data.purpose ?? null })),
           missions: [...n.runs.values()].reverse().map(r => ({ id: r.mission.id, title: r.mission.title, decision: r.review?.decision ?? 'awaiting-review', recommendation: r.analysis.recommendation, hash: r.hash, report: r.report, reward: r.reward })) });
       }
       if (req.method === 'GET' && path === '/api/evidence') {
@@ -43,9 +44,9 @@ export async function operatorServer(dir, { port = 0 } = {}) {
       if (path === '/api/pause') return send(200, await pauseNode(dir, true));
       if (path === '/api/resume') return send(200, await pauseNode(dir, false));
       if (path === '/api/review') return send(200, await importDetachedReview(dir, body));
-      if (path === '/api/cycle') {
+      if (path === '/api/cycle' || path === '/api/operate') {
         if (busy) return send(409, { error: 'Cycle already running' });
-        busy = true; try { return send(200, await cycle(dir)); } finally { busy = false; }
+        busy = true; try { return send(200, path === '/api/operate' ? await operate(dir, { rpcUrls: [process.env.ALPHA_RPC_URL, process.env.ALPHA_SECOND_RPC_URL] }) : await cycle(dir)); } finally { busy = false; }
       }
       return send(404, { error: 'Unknown endpoint' });
     } catch (e) { return send(400, { error: e.message }); }

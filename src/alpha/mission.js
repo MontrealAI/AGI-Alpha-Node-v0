@@ -39,7 +39,7 @@ export function analyzeMission(input) {
       'No trades, external actions, token earnings or AGI capability are implied by this report.'] };
 }
 
-export function renderReport(mission, result, provider = null) {
+export function renderReport(mission, result, provider = null, runtimeContext = null) {
   const esc = s => String(s).replace(/[\r\n|]/g, ' ');
   return [`# ${esc(mission.title)}`, '', '<!-- markdownlint-disable MD013 -->', '', mission.objective, '', `Analysis: ${result.kind}`,
     `Input digest: ${result.missionDigest}`, `Units: ${esc(result.unit)}`,
@@ -49,6 +49,11 @@ export function renderReport(mission, result, provider = null) {
     '## Evidence and assumptions', '', ...mission.opportunities.map(o => `- ${esc(o.id)}: ${esc(o.rationale)}`), '',
     ...result.sources.map(s => `- ${esc(s.id)} — ${esc(s.title)} — SHA-256 ${s.digest}`), '',
     ...(provider ? ['## Model analysis (unverified narrative)', '', provider.text, ''] : []),
+    ...(runtimeContext ? ['## Runtime authorization', '',
+      'Acceptance authorizes only the exact action below. Model text and specialist responses cannot authorize additional actions.', '',
+      `Plan digest: ${runtimeContext.planDigest}`, '',
+      `Authenticated specialist receipts: ${runtimeContext.specialists.length}`, '',
+      ...(runtimeContext.action ? ['Proposed action (not yet executed):', '', '```json', JSON.stringify(runtimeContext.action, null, 2), '```', ''] : ['No external action is proposed.', ''])] : []),
     '## Limits', '', ...result.limitations.map(s => `- ${s}`), ''].join('\n');
 }
 

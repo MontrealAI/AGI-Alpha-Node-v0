@@ -70,6 +70,7 @@ describe('standalone $AGIALPHA node', () => {
   });
   it('rejects chain and ENS mismatches in live identity checks', async () => {
     const n = await loadNode(dir); const c = { ...n.config, mode: 'live' };
+    await expect(verifyIdentity({ ...c, ensName: 'unrelated.eth' })).rejects.toThrow('direct subname');
     await expect(verifyIdentity(c, { provider: { getNetwork: async () => ({ chainId: 2n }) } })).rejects.toThrow('mainnet');
     await expect(verifyIdentity(c, { provider: { getNetwork: async () => ({ chainId: 1n }), resolveName: async () => reviewer.address } })).rejects.toThrow('ENS address');
   });

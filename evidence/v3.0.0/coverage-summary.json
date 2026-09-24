@@ -1,0 +1,892 @@
+{
+  "total": {
+    "lines": {
+      "total": 3846,
+      "covered": 3392,
+      "skipped": 0,
+      "pct": 88.19
+    },
+    "statements": {
+      "total": 4277,
+      "covered": 3668,
+      "skipped": 0,
+      "pct": 85.76
+    },
+    "functions": {
+      "total": 701,
+      "covered": 644,
+      "skipped": 0,
+      "pct": 91.86
+    },
+    "branches": {
+      "total": 4057,
+      "covered": 3049,
+      "skipped": 0,
+      "pct": 75.15
+    },
+    "branchesTrue": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "src/alpha/mission.js": {
+    "lines": {
+      "total": 38,
+      "covered": 38,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 18,
+      "covered": 18,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 62,
+      "covered": 62,
+      "skipped": 0,
+      "pct": 100
+    },
+    "branches": {
+      "total": 70,
+      "covered": 64,
+      "skipped": 0,
+      "pct": 91.42
+    }
+  },
+  "src/alpha/node.js": {
+    "lines": {
+      "total": 226,
+      "covered": 214,
+      "skipped": 0,
+      "pct": 94.69
+    },
+    "functions": {
+      "total": 39,
+      "covered": 39,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 320,
+      "covered": 258,
+      "skipped": 0,
+      "pct": 80.62
+    },
+    "branches": {
+      "total": 295,
+      "covered": 224,
+      "skipped": 0,
+      "pct": 75.93
+    }
+  },
+  "src/alpha/operations.js": {
+    "lines": {
+      "total": 60,
+      "covered": 60,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 21,
+      "covered": 21,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 97,
+      "covered": 91,
+      "skipped": 0,
+      "pct": 93.81
+    },
+    "branches": {
+      "total": 60,
+      "covered": 54,
+      "skipped": 0,
+      "pct": 90
+    }
+  },
+  "src/alpha/operator.js": {
+    "lines": {
+      "total": 43,
+      "covered": 43,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 6,
+      "covered": 6,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 69,
+      "covered": 68,
+      "skipped": 0,
+      "pct": 98.55
+    },
+    "branches": {
+      "total": 59,
+      "covered": 56,
+      "skipped": 0,
+      "pct": 94.91
+    }
+  },
+  "src/alpha/settlement.js": {
+    "lines": {
+      "total": 41,
+      "covered": 41,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 12,
+      "covered": 12,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 69,
+      "covered": 61,
+      "skipped": 0,
+      "pct": 88.4
+    },
+    "branches": {
+      "total": 62,
+      "covered": 53,
+      "skipped": 0,
+      "pct": 85.48
+    }
+  },
+  "src/alpha/runtime/actions.js": {
+    "lines": {
+      "total": 147,
+      "covered": 130,
+      "skipped": 0,
+      "pct": 88.43
+    },
+    "functions": {
+      "total": 10,
+      "covered": 10,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 152,
+      "covered": 132,
+      "skipped": 0,
+      "pct": 86.84
+    },
+    "branches": {
+      "total": 105,
+      "covered": 82,
+      "skipped": 0,
+      "pct": 78.09
+    }
+  },
+  "src/alpha/runtime/engine.js": {
+    "lines": {
+      "total": 81,
+      "covered": 80,
+      "skipped": 0,
+      "pct": 98.76
+    },
+    "functions": {
+      "total": 5,
+      "covered": 5,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 86,
+      "covered": 85,
+      "skipped": 0,
+      "pct": 98.83
+    },
+    "branches": {
+      "total": 53,
+      "covered": 50,
+      "skipped": 0,
+      "pct": 94.33
+    }
+  },
+  "src/alpha/runtime/maintenance.js": {
+    "lines": {
+      "total": 115,
+      "covered": 104,
+      "skipped": 0,
+      "pct": 90.43
+    },
+    "functions": {
+      "total": 15,
+      "covered": 14,
+      "skipped": 0,
+      "pct": 93.33
+    },
+    "statements": {
+      "total": 122,
+      "covered": 109,
+      "skipped": 0,
+      "pct": 89.34
+    },
+    "branches": {
+      "total": 70,
+      "covered": 61,
+      "skipped": 0,
+      "pct": 87.14
+    }
+  },
+  "src/alpha/runtime/planner.js": {
+    "lines": {
+      "total": 41,
+      "covered": 40,
+      "skipped": 0,
+      "pct": 97.56
+    },
+    "functions": {
+      "total": 12,
+      "covered": 12,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 46,
+      "covered": 44,
+      "skipped": 0,
+      "pct": 95.65
+    },
+    "branches": {
+      "total": 32,
+      "covered": 23,
+      "skipped": 0,
+      "pct": 71.87
+    }
+  },
+  "src/alpha/runtime/review-approval.js": {
+    "lines": {
+      "total": 13,
+      "covered": 10,
+      "skipped": 0,
+      "pct": 76.92
+    },
+    "functions": {
+      "total": 3,
+      "covered": 3,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 14,
+      "covered": 11,
+      "skipped": 0,
+      "pct": 78.57
+    },
+    "branches": {
+      "total": 15,
+      "covered": 12,
+      "skipped": 0,
+      "pct": 80
+    }
+  },
+  "src/alpha/runtime/rpc.js": {
+    "lines": {
+      "total": 44,
+      "covered": 44,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 11,
+      "covered": 11,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 48,
+      "covered": 48,
+      "skipped": 0,
+      "pct": 100
+    },
+    "branches": {
+      "total": 44,
+      "covered": 43,
+      "skipped": 0,
+      "pct": 97.72
+    }
+  },
+  "src/alpha/runtime/specialists.js": {
+    "lines": {
+      "total": 130,
+      "covered": 122,
+      "skipped": 0,
+      "pct": 93.84
+    },
+    "functions": {
+      "total": 17,
+      "covered": 16,
+      "skipped": 0,
+      "pct": 94.11
+    },
+    "statements": {
+      "total": 139,
+      "covered": 126,
+      "skipped": 0,
+      "pct": 90.64
+    },
+    "branches": {
+      "total": 119,
+      "covered": 105,
+      "skipped": 0,
+      "pct": 88.23
+    }
+  },
+  "src/alpha/runtime/transactions.js": {
+    "lines": {
+      "total": 181,
+      "covered": 156,
+      "skipped": 0,
+      "pct": 86.18
+    },
+    "functions": {
+      "total": 24,
+      "covered": 24,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 186,
+      "covered": 159,
+      "skipped": 0,
+      "pct": 85.48
+    },
+    "branches": {
+      "total": 193,
+      "covered": 160,
+      "skipped": 0,
+      "pct": 82.9
+    }
+  },
+  "src/network/apiServer.js": {
+    "lines": {
+      "total": 1147,
+      "covered": 913,
+      "skipped": 0,
+      "pct": 79.59
+    },
+    "functions": {
+      "total": 192,
+      "covered": 159,
+      "skipped": 0,
+      "pct": 82.81
+    },
+    "statements": {
+      "total": 1187,
+      "covered": 938,
+      "skipped": 0,
+      "pct": 79.02
+    },
+    "branches": {
+      "total": 1157,
+      "covered": 809,
+      "skipped": 0,
+      "pct": 69.92
+    }
+  },
+  "src/network/dialerPolicy.js": {
+    "lines": {
+      "total": 32,
+      "covered": 28,
+      "skipped": 0,
+      "pct": 87.5
+    },
+    "functions": {
+      "total": 7,
+      "covered": 6,
+      "skipped": 0,
+      "pct": 85.71
+    },
+    "statements": {
+      "total": 32,
+      "covered": 28,
+      "skipped": 0,
+      "pct": 87.5
+    },
+    "branches": {
+      "total": 20,
+      "covered": 15,
+      "skipped": 0,
+      "pct": 75
+    }
+  },
+  "src/network/libp2pHostConfig.js": {
+    "lines": {
+      "total": 152,
+      "covered": 145,
+      "skipped": 0,
+      "pct": 95.39
+    },
+    "functions": {
+      "total": 41,
+      "covered": 35,
+      "skipped": 0,
+      "pct": 85.36
+    },
+    "statements": {
+      "total": 179,
+      "covered": 157,
+      "skipped": 0,
+      "pct": 87.7
+    },
+    "branches": {
+      "total": 206,
+      "covered": 142,
+      "skipped": 0,
+      "pct": 68.93
+    }
+  },
+  "src/network/pubsubConfig.js": {
+    "lines": {
+      "total": 19,
+      "covered": 19,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 6,
+      "covered": 6,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 19,
+      "covered": 19,
+      "skipped": 0,
+      "pct": 100
+    },
+    "branches": {
+      "total": 33,
+      "covered": 27,
+      "skipped": 0,
+      "pct": 81.81
+    }
+  },
+  "src/network/resourceManagerConfig.js": {
+    "lines": {
+      "total": 343,
+      "covered": 317,
+      "skipped": 0,
+      "pct": 92.41
+    },
+    "functions": {
+      "total": 74,
+      "covered": 73,
+      "skipped": 0,
+      "pct": 98.64
+    },
+    "statements": {
+      "total": 370,
+      "covered": 331,
+      "skipped": 0,
+      "pct": 89.45
+    },
+    "branches": {
+      "total": 423,
+      "covered": 321,
+      "skipped": 0,
+      "pct": 75.88
+    }
+  },
+  "src/network/transportConfig.js": {
+    "lines": {
+      "total": 113,
+      "covered": 109,
+      "skipped": 0,
+      "pct": 96.46
+    },
+    "functions": {
+      "total": 30,
+      "covered": 29,
+      "skipped": 0,
+      "pct": 96.66
+    },
+    "statements": {
+      "total": 135,
+      "covered": 125,
+      "skipped": 0,
+      "pct": 92.59
+    },
+    "branches": {
+      "total": 109,
+      "covered": 90,
+      "skipped": 0,
+      "pct": 82.56
+    }
+  },
+  "src/network/verifierServer.js": {
+    "lines": {
+      "total": 84,
+      "covered": 69,
+      "skipped": 0,
+      "pct": 82.14
+    },
+    "functions": {
+      "total": 16,
+      "covered": 14,
+      "skipped": 0,
+      "pct": 87.5
+    },
+    "statements": {
+      "total": 89,
+      "covered": 73,
+      "skipped": 0,
+      "pct": 82.02
+    },
+    "branches": {
+      "total": 59,
+      "covered": 37,
+      "skipped": 0,
+      "pct": 62.71
+    }
+  },
+  "src/network/protocols/metrics.js": {
+    "lines": {
+      "total": 47,
+      "covered": 39,
+      "skipped": 0,
+      "pct": 82.97
+    },
+    "functions": {
+      "total": 12,
+      "covered": 11,
+      "skipped": 0,
+      "pct": 91.66
+    },
+    "statements": {
+      "total": 52,
+      "covered": 43,
+      "skipped": 0,
+      "pct": 82.69
+    },
+    "branches": {
+      "total": 50,
+      "covered": 35,
+      "skipped": 0,
+      "pct": 70
+    }
+  },
+  "src/telemetry/alphaMetrics.js": {
+    "lines": {
+      "total": 62,
+      "covered": 53,
+      "skipped": 0,
+      "pct": 85.48
+    },
+    "functions": {
+      "total": 6,
+      "covered": 6,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 70,
+      "covered": 58,
+      "skipped": 0,
+      "pct": 82.85
+    },
+    "branches": {
+      "total": 81,
+      "covered": 50,
+      "skipped": 0,
+      "pct": 61.72
+    }
+  },
+  "src/telemetry/alphaWuTelemetry.js": {
+    "lines": {
+      "total": 109,
+      "covered": 95,
+      "skipped": 0,
+      "pct": 87.15
+    },
+    "functions": {
+      "total": 20,
+      "covered": 18,
+      "skipped": 0,
+      "pct": 90
+    },
+    "statements": {
+      "total": 117,
+      "covered": 97,
+      "skipped": 0,
+      "pct": 82.9
+    },
+    "branches": {
+      "total": 165,
+      "covered": 116,
+      "skipped": 0,
+      "pct": 70.3
+    }
+  },
+  "src/telemetry/config.js": {
+    "lines": {
+      "total": 26,
+      "covered": 26,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 3,
+      "covered": 3,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 26,
+      "covered": 26,
+      "skipped": 0,
+      "pct": 100
+    },
+    "branches": {
+      "total": 37,
+      "covered": 37,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "src/telemetry/config.ts": {
+    "lines": {
+      "total": 3,
+      "covered": 3,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 1,
+      "covered": 1,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 3,
+      "covered": 3,
+      "skipped": 0,
+      "pct": 100
+    },
+    "branches": {
+      "total": 1,
+      "covered": 1,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "src/telemetry/monitoring.js": {
+    "lines": {
+      "total": 276,
+      "covered": 237,
+      "skipped": 0,
+      "pct": 85.86
+    },
+    "functions": {
+      "total": 38,
+      "covered": 36,
+      "skipped": 0,
+      "pct": 94.73
+    },
+    "statements": {
+      "total": 283,
+      "covered": 242,
+      "skipped": 0,
+      "pct": 85.51
+    },
+    "branches": {
+      "total": 236,
+      "covered": 159,
+      "skipped": 0,
+      "pct": 67.37
+    }
+  },
+  "src/telemetry/networkMetrics.js": {
+    "lines": {
+      "total": 174,
+      "covered": 162,
+      "skipped": 0,
+      "pct": 93.1
+    },
+    "functions": {
+      "total": 46,
+      "covered": 40,
+      "skipped": 0,
+      "pct": 86.95
+    },
+    "statements": {
+      "total": 204,
+      "covered": 179,
+      "skipped": 0,
+      "pct": 87.74
+    },
+    "branches": {
+      "total": 220,
+      "covered": 154,
+      "skipped": 0,
+      "pct": 70
+    }
+  },
+  "src/telemetry/otel.js": {
+    "lines": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 0
+    },
+    "functions": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 0
+    },
+    "statements": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 0
+    },
+    "branches": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 0
+    }
+  },
+  "src/telemetry/otel.ts": {
+    "lines": {
+      "total": 3,
+      "covered": 3,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 3,
+      "covered": 3,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 3,
+      "covered": 3,
+      "skipped": 0,
+      "pct": 100
+    },
+    "branches": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "src/telemetry/otelCore.d.ts": {
+    "lines": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 0
+    },
+    "functions": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 0
+    },
+    "statements": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 0
+    },
+    "branches": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 0
+    }
+  },
+  "src/telemetry/otelCore.js": {
+    "lines": {
+      "total": 36,
+      "covered": 35,
+      "skipped": 0,
+      "pct": 97.22
+    },
+    "functions": {
+      "total": 4,
+      "covered": 4,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 36,
+      "covered": 35,
+      "skipped": 0,
+      "pct": 97.22
+    },
+    "branches": {
+      "total": 29,
+      "covered": 27,
+      "skipped": 0,
+      "pct": 93.1
+    }
+  },
+  "src/telemetry/otelHeaders.js": {
+    "lines": {
+      "total": 10,
+      "covered": 10,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 4,
+      "covered": 4,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 10,
+      "covered": 10,
+      "skipped": 0,
+      "pct": 100
+    },
+    "branches": {
+      "total": 8,
+      "covered": 7,
+      "skipped": 0,
+      "pct": 87.5
+    }
+  },
+  "src/telemetry/peerScoreMetrics.js": {
+    "lines": {
+      "total": 50,
+      "covered": 47,
+      "skipped": 0,
+      "pct": 94
+    },
+    "functions": {
+      "total": 5,
+      "covered": 5,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 52,
+      "covered": 47,
+      "skipped": 0,
+      "pct": 90.38
+    },
+    "branches": {
+      "total": 46,
+      "covered": 35,
+      "skipped": 0,
+      "pct": 76.08
+    }
+  }
+}

@@ -16,9 +16,22 @@ function jsonResponse(res, statusCode, payload) {
 function parseJsonBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
+    let bytes = 0;
+    let failed = false;
     req
-      .on('data', (chunk) => chunks.push(chunk))
+      .on('data', (chunk) => {
+        if (failed) return;
+        bytes += chunk.length;
+        if (bytes > 256000) {
+          failed = true;
+          chunks.length = 0;
+          reject(Object.assign(new Error('Verifier body exceeds 256 KB'), { statusCode: 413 }));
+          return;
+        }
+        chunks.push(chunk);
+      })
       .on('end', () => {
+        if (failed) return;
         if (!chunks.length) {
           resolve(null);
           return;
@@ -125,7 +138,7 @@ export function startVerifierServer({
       } catch (error) {
         serverMetrics.failures += 1;
         serverMetrics.lastError = error.message ?? 'Invalid JSON payload';
-        jsonResponse(res, 400, { error: 'Invalid JSON payload' });
+        jsonResponse(res, error.statusCode ?? 400, { error: error.statusCode === 413 ? 'Body too large' : 'Invalid JSON payload' });
         return;
       }
 
@@ -149,6 +162,9 @@ export function startVerifierServer({
     jsonResponse(res, 404, { error: 'Not found' });
   });
 
+  server.requestTimeout = 10000;
+  server.headersTimeout = 10000;
+  server.maxConnections = 32;
   const listenPromise = new Promise((resolve, reject) => {
     server.once('error', (error) => {
       logger.error(error, 'Verifier server failed to start');

@@ -2,8 +2,9 @@
 
 > Historical infrastructure/vision document. For current $AGIALPHA behavior
 > and tested limitations, start with
-> [the v2.0.0 assessment](alpha-assessment.md) and
-> [START HERE](../START_HERE.md).
+> [the current implementation assessment](alpha-assessment.md) and
+> [START HERE](../START_HERE.md), then the
+> [v3 integrated runtime guide](alpha-runtime.md).
 
 <!-- markdownlint-disable MD013 MD033 -->
 <p align="center">

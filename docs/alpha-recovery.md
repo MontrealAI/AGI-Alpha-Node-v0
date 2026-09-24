@@ -42,3 +42,42 @@ If initialization was interrupted before `config.json` was committed, preserve t
 | Corrupt or shortened ledger | Restore a verified backup and compare the trusted head |
 
 The local ledger has a 32 MB limit. Archive completed nodes and create a new identity/directory before reaching it; this release is a single-writer node, not a high-volume distributed database.
+
+## v3 encrypted backup and restore
+
+Pause the node and stop all workers/services, including specialists. Set `ALPHA_BACKUP_PASSWORD` through a protected environment to a strong secret of at least 16 characters; retain it separately from the encrypted archive.
+
+```bash
+npm run alpha -- --home /absolute/private/node pause
+npm run alpha -- --home /absolute/private/node backup /absolute/backup/node-backup.json
+npm run alpha -- --home /absolute/private/restored-node restore /absolute/backup/node-backup.json
+```
+
+Restore requires a new destination. It authenticates the AES-256-GCM/scrypt archive, validates paths/content hashes, verifies the signed ledger and always leaves the restored node paused. Compare its head with your external checkpoint. The backup includes private identity, configuration, action backups and raw signed transaction intents; the public evidence export does not replace it. Maximum plaintext backup size is 64 MiB/4096 files. Archive deliverables separately before reaching capacity.
+
+Restoring an old backup does not undo external file changes or blockchain transactions. Keep the original directory quarantined, inspect later receipts and retain later evidence. Never run both restored and original nodes with the same signer. Backups cannot recover a forgotten password or lost key.
+
+## v3 interrupted operations
+
+Stop every worker and service before removing a verified stale lock. Locks include `writer.lock`, `pipeline.lock`, `engine.lock`, `action.lock` and `transaction.lock`; do not remove an active lock. A process ID is a diagnostic aid, not proof that an identically numbered current process owns a stale lock. Preserve a copy and verify committed state first.
+
+| Interrupted phase | Recovery |
+| --- | --- |
+| Inference or specialist admission reservation | Inspect possible provider billing and peer receipts. Use `operations`, then the paused `recover-reservation CYCLE_HASH` command to close an unresolved reservation conservatively. It remains charged and is not retried as new work |
+| Action prepared, target unchanged | Preserve the private action backup, restore the original reviewed owner configuration and rerun `operate` after inspection/resume |
+| Action written, completion record absent | The executor compares before/after hashes, checks health and records completion or rollback without applying a new unrelated change |
+| Action health failed | Original bytes are restored, result becomes terminal and the runtime pauses. Fix the service; a fresh observation and new reviewed mission are required |
+| Target differs from both hashes | Do not overwrite an external edit. Reconcile the actual service manually and obtain a new reviewed plan |
+| Signed transaction prepared or broadcast response lost | Keep its raw intent private. Retry the same `settle MISSION_ID`/`operate` to query both endpoints and rebroadcast the identical signed bytes if needed. Do not delete the intent or allocate a new nonce |
+| Pending transaction or fee too low | Wait or use an explicit owner recovery procedure with both RPCs and a trusted wallet. Automatic fee replacement/cancellation is deliberately absent; do not concurrently use the dedicated signer |
+| RPC disagreement, bytecode change or noncanonical receipt | Pause, investigate both operators/deployment records, and resume only after consistency is independently established |
+| Transaction reverted | The recorded step is terminal. Diagnose contract state/funding/deadline and preserve the evidence. A new mission/funding flow may be required; never rewrite the signed journal to retry |
+| Owner policy changed with an unresolved transaction | Restore the exact previously authorized policy to reconcile it, or handle the existing transaction explicitly. A new policy cannot rebind persisted transaction data |
+
+An already broadcast transaction can mine while the node is paused or offline. Backups and pause do not revoke signatures. If keys are compromised, reconcile existing escrow obligations and rotate identity using the owner’s separate recovery process.
+
+## Upgrade and rollback
+
+Stop v2 workers, retain code/version/lockfile, record the trusted head, and back up the complete private directory before using v3. Existing schema-2 v2 records remain readable; new runtime records require v3. Once v3 has written them, older binaries cannot read the expanded event vocabulary. Rollback therefore needs the matching pre-upgrade directory plus reconciliation of every later external action/transaction. Preserve newer evidence; never silently discard obligations.
+
+The default `npm start`, `agi-alpha-node` executable and Docker entrypoint now use the standalone node. Legacy users must choose `npm run legacy`, `agi-alpha-infrastructure` or `deploy/docker/Dockerfile.legacy` explicitly. New review-relay contract logic requires a new verified deployment; no proxy upgrade is assumed.

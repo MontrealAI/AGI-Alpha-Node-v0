@@ -35,7 +35,7 @@ Ten legacy contract cases require Anvil and were skipped because Anvil is absent
 
 The initial production dependency audit reported 1 critical, 2 high and 12 moderate findings. Dependency updates and a regenerated lockfile address runtime advisories; see the final machine-readable audit and validation summary for the resulting count.
 
-## Completed release boundary
+## Historical v2.0.0 release boundary
 
 The completed vertical slice is: authorized source inputs → policy-constrained analysis → optional model narrative → signed deliverable → persisted and restart-verified evidence → independent signed review → explicit funded escrow submission/review/claim or refund. The CLI also supports sequential inbox processing, pause/resume, diagnostics and export.
 
@@ -47,9 +47,9 @@ This release does not complete the manifesto's open-ended research aspirations: 
 
 Use `evidence/v2.0.0/validation.json` for commands, counts, limitations and qualification status. The sample report is an analytical deliverable, not a claim that a buyer paid for it. Model HTTP fixtures test integration behavior rather than model quality. Token fixtures at the canonical address exist only inside the local VM; they are not mainnet $AGIALPHA balances.
 
-## v2.1.0 reassessment
+## Historical v2.1.0 reassessment
 
-The next release adds usage-derived discovery, a bounded scheduler, durable reservations, asynchronous review attestations, reviewer-signed outcome records, finalized multi-endpoint escrow observations, and a local operator interface. See [operations](alpha-operations.md) and [v2.1 qualification](../evidence/v2.1.0/validation.md).
+That release added usage-derived discovery, a bounded scheduler, durable reservations, asynchronous review attestations, reviewer-signed outcome records, finalized multi-endpoint escrow observations, and a local operator interface. See [operations](alpha-operations.md) and [v2.1 qualification](../evidence/v2.1.0/validation.md).
 
 | Original goal | Current evidence and remaining gap |
 | --- | --- |
@@ -62,3 +62,20 @@ The next release adds usage-derived discovery, a bounded scheduler, durable rese
 | Operator experience | Real CLI and authenticated local interface tested through HTTP and DOM; Mac installation, visual browser qualification and long-running service commissioning remain unperformed |
 
 The project remains short of the full original vision. A release number and passing tests cannot establish general intelligence, independent people, profitability or production readiness without the corresponding external evidence.
+
+## v3.0.0 integrated completion assessment
+
+The [completion contract](completion-contract.md) restores every concrete original pillar to the engineering scope. The standalone path now joins observations, adaptive planning, specialist coordination, reviewed execution, signed outcomes and bounded token reinvestment. The retained AGI Jobs adapters are optional legacy infrastructure and do not run in this path.
+
+| Original pillar | v3 implementation and qualification | Evidence boundary |
+| --- | --- | --- |
+| World-model planner | Task-scoped outcome model, prior-weighted probability, conservative benefit adjustment, four adverse scenarios, loss abstention and durable plan replay | Measured input validity and causal forecasting are not established by arithmetic or signatures |
+| Specialist mesh | Real separately keyed HTTP service, authenticated offers/requests/results, deterministic validation, price/capability routing, reservations and replay | Configured peers and three implemented capabilities; not a deployed global permissionless market or automatic peer billing |
+| Antifragile sentinel | Daily run/action/gas limits, review capacity, pause, timeouts, loss thresholds, failure backoff, file health checks and rollback | External provider billing and host security require operator controls |
+| Compliance ledger | Signed plans, reports, exact action descriptors, peer receipts, outcomes and transaction lifecycle; encrypted recovery | Integrity and role separation do not prove source truth, human independence or statutory compliance |
+| Autopilot evolution | Conservative adaptation from accepted signed outcomes; actual reviewed configuration execution; verified payment receipt followed by bounded allowance/stake | Task-scoped strategy adaptation, not autonomous general self-improvement or proven profitability |
+| Identity and token mechanics | Fresh live ENS gate, canonical token, bytecode pins, dual-origin finalized reads, EIP-712 review relay and five signed transactions executed against Solidity in a local VM | Fixture ENS/RPC/finality and mock token inside the VM; no claim of live mainnet earnings |
+| Operator experience | Guided setup, explicit report authorization, private loopback interface, runtime activity, encrypted backup/restore and platform service files | Target-host service installation and sustained operation still need owner commissioning |
+| Actual inference | Normal provider path executed against a pinned local Qwen GGUF and llama.cpp build; narrative and token usage archived | One real-model integration run on synthetic economics; no paid-provider or broad intelligence certification |
+
+See [v3 qualification](../evidence/v3.0.0/validation.md) for actual results and [runtime operations](alpha-runtime.md) for reproducible setup. Current software behavior is assessed against explicit acceptance criteria. Mainnet contracts, live owner ENS, external human reviewers, a real workload and a sustained economic outcome cannot be supplied by a release number; their commissioning record remains open.

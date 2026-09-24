@@ -1,0 +1,31 @@
+{
+  "actualInference": true,
+  "syntheticMission": true,
+  "paidProvider": false,
+  "elapsedMs": 22522,
+  "provider": {
+    "text": "The analysis identifies the following opportunities, evidence gaps, counterarguments, and next experiments:\n\n### Opportunities:\n1. **Cache Repeated Analysis**  \n   - **Benefit**: 1000 USD/month  \n   - **Cost**: 150 USD/month  \n   - **Downside**: 100 USD/month  \n   - **Expected Net**: 630 USD/month  \n   - **Probability**: 80%  \n   - **Rationale**: Assumed savings require a seven-day cache hit-rate experiment.  \n   - **Source**: S1  \n\n2. **Batch Low-Urgency Requests**  \n   - **Benefit**: 700 USD/month  \n   - **Cost**: 100 USD/month  \n   - **Downside**: 120 USD/month  \n   - **Expected Net**: 354 USD/month  \n   - **Probability**: 70%  \n   - **Rationale**: Assumed savings depend on acceptable latency and measured idle time.  \n   - **Source**: S2  \n\n3. **Expand Speculative Capacity**  \n   - **Benefit**: 9000 USD/month  \n   - **Cost**: 3000 USD/month  \n   - **Downside**: 4000 USD/month  \n   - **Expected Net**: -3100 USD/month  \n   - **Probability**: 30%  \n   - **Rationale**: Large assumed upside is offset by capital exposure and uncertain demand.  \n   - **Sources**: S1, S2  \n\n### Evidence Gaps:\n- No independent review of the source data.  \n- No explicit claims about trades, token earnings, or AGI capabilities.  \n\n### Counterarguments:\n- **Benefits, costs, and probabilities are assumptions, not forecasts**.  \n- **Source hashes establish integrity, not truth**.  \n- **No trades, external actions, token earnings, or AGI capability are implied**.  \n\n### Next Experiments:\n- **Cache Repeated Analysis**: Conduct a seven-day cache hit-rate experiment.  \n- **Batch Low-Urgency Requests**: Measure idle time and latency.  \n- **Expand Speculative Capacity**: Test capital exposure and demand uncertainty.  \n\n**Recommendation**: Cache.",
+    "model": "/tmp/alpha-model/Qwen3-0.6B-Q8_0.gguf",
+    "usage": {
+      "completion_tokens": 464,
+      "prompt_tokens": 994,
+      "total_tokens": 1458,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "endpointOrigin": "http://127.0.0.1:18081",
+    "kind": "provider-response"
+  },
+  "provenance": {
+    "revision": "23749fefcc72300e3a2ad315e1317431b06b590a",
+    "sha256": "9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031",
+    "bytes": 639446688,
+    "runtime": "llama.cpp b11146"
+  },
+  "limitations": [
+    "Single real-model integration run; not a general intelligence or model-quality certification",
+    "Economic source assumptions are synthetic",
+    "No production deployment or payment"
+  ]
+}

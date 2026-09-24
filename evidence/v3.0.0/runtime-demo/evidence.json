@@ -1,0 +1,204 @@
+{
+  "schema": 2,
+  "ledgerHead": "0x48412ad8f3cee711992ce643716efb8f56a74e1c99c8749e84a06cb105949073",
+  "identity": {
+    "ensName": "runtime.alpha.node.agi.eth",
+    "address": "0xC314c12039C6EC14B165a4Eb37bc6938e4a9d226",
+    "reviewer": "0x809Ed42CB4683f6A5b10f689080DC3DE25657F63"
+  },
+  "run": {
+    "type": "run",
+    "workId": "0xa158178617158f820240f624d094c8d2c0ee591eecfd17bac7f75a7cb255c865",
+    "mission": {
+      "id": "runtime-2bc9616737f395e7550f67ad4e36a7674881ed05",
+      "title": "Usage-derived caching opportunities",
+      "objective": "Discover and rank caching experiments from supplied usage measurements. After independent acceptance, execute only the exact execution-policy descriptor and rollback on failed health verification.",
+      "sources": [
+        {
+          "id": "inference",
+          "title": "Example inference: Synthetic example period",
+          "text": "{\"id\":\"inference\",\"name\":\"Example inference\",\"requests\":1000,\"repeatedRequests\":600,\"costUsd\":500,\"observedAt\":\"2026-09-24T14:26:09.525Z\",\"period\":\"Synthetic example period\"}"
+        },
+        {
+          "id": "adaptive-model",
+          "title": "Owner-bounded outcome model",
+          "text": "{\"modelsDigest\":\"0x7ee8a4b1e48771b9f2f9dc0d23ba91f34c531b890307bec58550440a5fe1430e\",\"models\":[{\"recommendation\":\"cache-inference\",\"samples\":0,\"successes\":0,\"losses\":0,\"meanBenefitRatio\":1}],\"reason\":\"Owner risk policy passed\"}"
+        },
+        {
+          "id": "execution-policy",
+          "title": "Exact owner-authorized action reviewed with this mission",
+          "text": "{\"action\":{\"kind\":\"json-set\",\"root\":\"/tmp/alpha-runtime-demo-YAC9dM\",\"file\":\"service.json\",\"pointer\":[\"cacheEnabled\"],\"value\":true,\"healthUrl\":\"http://127.0.0.1:42465/health\",\"healthField\":\"healthy\",\"healthValue\":true,\"timeoutMs\":1000},\"beforeHash\":\"0x421ae6438e43bf56ce6d03c6bb7a1b2b4593ca9eaa6efcb4187f486f7a8420ad\",\"afterHash\":\"0x92ed3c4a9d67fa4de5f39c7aaf5d7aca0d94b9b6c77dc5cd44e52fa35e502178\",\"target\":\"/tmp/alpha-runtime-demo-YAC9dM/service.json\",\"mode\":420,\"unchanged\":false}"
+        }
+      ],
+      "opportunities": [
+        {
+          "id": "cache-inference",
+          "title": "Evaluate caching for Example inference",
+          "benefit": 300,
+          "cost": 20,
+          "probability": 0.7,
+          "downside": 10,
+          "sourceIds": [
+            "inference"
+          ],
+          "rationale": "Observed repeated-request share multiplied by total cost estimates a savings ceiling, not measured savings. Assumes uniform request cost and cache eligibility. Validate privacy, correctness, freshness and implementation cost before deployment."
+        }
+      ],
+      "policy": {
+        "maxCost": 100,
+        "maxDownside": 50,
+        "minExpectedNet": 5,
+        "stressBenefitBps": 7000
+      },
+      "unit": "USD per observation period"
+    },
+    "identity": {
+      "verified": false,
+      "mode": "local",
+      "ensName": "runtime.alpha.node.agi.eth",
+      "address": "0xC314c12039C6EC14B165a4Eb37bc6938e4a9d226"
+    },
+    "analysis": {
+      "kind": "deterministic-evidence-analysis",
+      "missionDigest": "0x71cfe2f3c2bee3f029f916d8991f3837345fbec682eb2ed74b09235d4f011373",
+      "unit": "USD per observation period",
+      "recommendation": "cache-inference",
+      "rankings": [
+        {
+          "id": "cache-inference",
+          "title": "Evaluate caching for Example inference",
+          "benefit": 300,
+          "cost": 20,
+          "probability": 0.7,
+          "downside": 10,
+          "sourceIds": [
+            "inference"
+          ],
+          "rationale": "Observed repeated-request share multiplied by total cost estimates a savings ceiling, not measured savings. Assumes uniform request cost and cache eligibility. Validate privacy, correctness, freshness and implementation cost before deployment.",
+          "expectedNet": 187,
+          "stressedNet": 124,
+          "admitted": true
+        }
+      ],
+      "sources": [
+        {
+          "id": "inference",
+          "title": "Example inference: Synthetic example period",
+          "digest": "0x28ed5b5f7052e0e40875ad2119378f4d0f420c17c6d1c59248ccb368c016fd8e",
+          "url": null
+        },
+        {
+          "id": "adaptive-model",
+          "title": "Owner-bounded outcome model",
+          "digest": "0x77786998b3a7604d3aa2892e872c48cea421f406737258cab37e737aab4526af",
+          "url": null
+        },
+        {
+          "id": "execution-policy",
+          "title": "Exact owner-authorized action reviewed with this mission",
+          "digest": "0xe297104498c95e9abfa5303a48f648df339b0afc51c2acbb9410f11f99043350",
+          "url": null
+        }
+      ],
+      "limitations": [
+        "Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.",
+        "Source hashes establish integrity, not truth. Independent review is required.",
+        "No trades, external actions, token earnings or AGI capability are implied by this report."
+      ]
+    },
+    "provider": null,
+    "report": "# Usage-derived caching opportunities\n\n<!-- markdownlint-disable MD013 -->\n\nDiscover and rank caching experiments from supplied usage measurements. After independent acceptance, execute only the exact execution-policy descriptor and rollback on failed health verification.\n\nAnalysis: deterministic-evidence-analysis\nInput digest: 0x71cfe2f3c2bee3f029f916d8991f3837345fbec682eb2ed74b09235d4f011373\nUnits: USD per observation period\nRecommendation: cache-inference\n\n| Opportunity | Expected net | Stressed net | Admitted | Evidence |\n| --- | ---: | ---: | --- | --- |\n| Evaluate caching for Example inference | 187.00 | 124.00 | Yes | inference |\n\n## Evidence and assumptions\n\n- cache-inference: Observed repeated-request share multiplied by total cost estimates a savings ceiling, not measured savings. Assumes uniform request cost and cache eligibility. Validate privacy, correctness, freshness and implementation cost before deployment.\n\n- inference — Example inference: Synthetic example period — SHA-256 0x28ed5b5f7052e0e40875ad2119378f4d0f420c17c6d1c59248ccb368c016fd8e\n- adaptive-model — Owner-bounded outcome model — SHA-256 0x77786998b3a7604d3aa2892e872c48cea421f406737258cab37e737aab4526af\n- execution-policy — Exact owner-authorized action reviewed with this mission — SHA-256 0xe297104498c95e9abfa5303a48f648df339b0afc51c2acbb9410f11f99043350\n\n## Runtime authorization\n\nAcceptance authorizes only the exact action below. Model text and specialist responses cannot authorize additional actions.\n\nPlan digest: 0xd5c34323ac69a63e52d54d85144460aa6a24956af7b69192ca28fef185e181e7\n\nAuthenticated specialist receipts: 1\n\nProposed action (not yet executed):\n\n```json\n{\n  \"action\": {\n    \"kind\": \"json-set\",\n    \"root\": \"/tmp/alpha-runtime-demo-YAC9dM\",\n    \"file\": \"service.json\",\n    \"pointer\": [\n      \"cacheEnabled\"\n    ],\n    \"value\": true,\n    \"healthUrl\": \"http://127.0.0.1:42465/health\",\n    \"healthField\": \"healthy\",\n    \"healthValue\": true,\n    \"timeoutMs\": 1000\n  },\n  \"beforeHash\": \"0x421ae6438e43bf56ce6d03c6bb7a1b2b4593ca9eaa6efcb4187f486f7a8420ad\",\n  \"afterHash\": \"0x92ed3c4a9d67fa4de5f39c7aaf5d7aca0d94b9b6c77dc5cd44e52fa35e502178\",\n  \"target\": \"/tmp/alpha-runtime-demo-YAC9dM/service.json\",\n  \"mode\": 420,\n  \"unchanged\": false\n}\n```\n\n## Limits\n\n- Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.\n- Source hashes establish integrity, not truth. Independent review is required.\n- No trades, external actions, token earnings or AGI capability are implied by this report.\n",
+    "status": "awaiting-review",
+    "reward": "unfunded-unverified",
+    "runtimeContext": {
+      "schema": 1,
+      "planDigest": "0xd5c34323ac69a63e52d54d85144460aa6a24956af7b69192ca28fef185e181e7",
+      "action": {
+        "action": {
+          "kind": "json-set",
+          "root": "/tmp/alpha-runtime-demo-YAC9dM",
+          "file": "service.json",
+          "pointer": [
+            "cacheEnabled"
+          ],
+          "value": true,
+          "healthUrl": "http://127.0.0.1:42465/health",
+          "healthField": "healthy",
+          "healthValue": true,
+          "timeoutMs": 1000
+        },
+        "beforeHash": "0x421ae6438e43bf56ce6d03c6bb7a1b2b4593ca9eaa6efcb4187f486f7a8420ad",
+        "afterHash": "0x92ed3c4a9d67fa4de5f39c7aaf5d7aca0d94b9b6c77dc5cd44e52fa35e502178",
+        "target": "/tmp/alpha-runtime-demo-YAC9dM/service.json",
+        "mode": 420,
+        "unchanged": false
+      },
+      "specialists": [
+        {
+          "domain": "agialpha:specialist:v1",
+          "kind": "result",
+          "sender": "0x8dea1a5503fc17307b863a507631aa837ad09e0b",
+          "recipient": "0xc314c12039c6ec14b165a4eb37bc6938e4a9d226",
+          "issuedAt": 1790259969631,
+          "expiresAt": 1790260029631,
+          "payload": {
+            "requestId": "0xca379cc7e4cbb46b75cf54b87a6a72394c528e6a9935a4d46e94f02bd6b1ae5a",
+            "capability": "risk-review",
+            "priceMicroUsd": 0,
+            "inputDigest": "0x71cfe2f3c2bee3f029f916d8991f3837345fbec682eb2ed74b09235d4f011373",
+            "result": {
+              "inputDigest": "0x71cfe2f3c2bee3f029f916d8991f3837345fbec682eb2ed74b09235d4f011373",
+              "recommendation": "cache-inference",
+              "findings": [
+                {
+                  "id": "cache-inference",
+                  "admitted": true,
+                  "stressedNet": 124,
+                  "lossIfNoBenefit": 30
+                }
+              ],
+              "requiredChecks": [
+                "Source truth",
+                "Uniform cost assumption",
+                "Privacy and correctness",
+                "Independent observed outcome"
+              ]
+            }
+          },
+          "hash": "0xa07aa3aefeb2ced50c17fbbd970c4d50cdb35fa0f462703a65dfada2c0052165",
+          "signature": "0xda0581f9058dc7b2ee658f132370e90cb1d3530fdffdba69dc9814e5f639a581405b539b64b360b1e60454bb40f42634d715108cdaf16106cbd657c7e95ff8a81c"
+        }
+      ]
+    },
+    "previous": "0xfe1c9cd7882c7e84a6a2b0d94e180d478fa98250c806ba63a00973e5d71e5726",
+    "at": "2026-09-24T14:26:09.676Z",
+    "hash": "0x56bfb8d7c4414dc5360f888d7eea180e816799c6600ab1c4ade4c6785019df2e",
+    "signature": "0x1bc20146b201513173c2820d7e8097e0a80e37fe722a72a0049b49bdf2d301e72bddc14d5fcb6254721dd4f5a87c14f5dbbd18ec2e0280881751da14723ae7061b",
+    "review": {
+      "type": "review-attestation-v3",
+      "node": "0xc314c12039c6ec14b165a4eb37bc6938e4a9d226",
+      "ensName": "runtime.alpha.node.agi.eth",
+      "missionId": "runtime-2bc9616737f395e7550f67ad4e36a7674881ed05",
+      "runHash": "0x56bfb8d7c4414dc5360f888d7eea180e816799c6600ab1c4ade4c6785019df2e",
+      "decision": "accepted",
+      "notes": "Synthetic reviewer role approved exact file change and assumptions for this demonstration.",
+      "at": "2026-09-24T14:26:09.738Z",
+      "hash": "0x275138bc4510fe00dfa5b40828273c43d61dfcdc51d26aebaabdd853279d5eb0",
+      "signature": "0x16844a88fc6daa51c8e8f96682445a2ce6b109fe50fa20454b9c3e30a6ad512b11da8ddebf60fb0a72bdf5846519f09123b00485affa831f4704f8c7d4026e971c",
+      "envelopeHash": "0x0a5921884d8ac254b1fd8e14af9024786bc14e9092217f1a638dc6618963f811"
+    },
+    "outcome": {
+      "measuredBenefitUsd": 90,
+      "measuredCostUsd": 20,
+      "observedAt": "2026-09-24T14:26:09.984Z",
+      "evidence": "Synthetic measurement to demonstrate the signed outcome path; not measured savings.",
+      "type": "outcome-attestation-v1",
+      "node": "0xc314c12039c6ec14b165a4eb37bc6938e4a9d226",
+      "ensName": "runtime.alpha.node.agi.eth",
+      "missionId": "runtime-2bc9616737f395e7550f67ad4e36a7674881ed05",
+      "runHash": "0x56bfb8d7c4414dc5360f888d7eea180e816799c6600ab1c4ade4c6785019df2e",
+      "hash": "0x0fd2a6d411a2b37c7a5d58a7a5d72d360c6bca3d7f88de73c3576c574b1001b4",
+      "signature": "0xb125c70adb7c0522f5418ff47b72a70451c22af59661dd71feb0cfceaf837f3e40be5671651d578a11c5294630ce8b74c1cfde7d0338bda5709d6d10dbbeda261b"
+    }
+  }
+}

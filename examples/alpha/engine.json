@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "adaptive": {
+    "enabled": true,
+    "minSamples": 3,
+    "window": 30,
+    "priorWeight": 4,
+    "maxProbability": 0.9,
+    "maxBenefitMultiplier": 1,
+    "lossPauseCount": 3
+  },
+  "peers": [],
+  "specialistCapabilities": [],
+  "maxSpecialistPriceMicroUsd": 0,
+  "actions": {},
+  "maxDailyActions": 1
+}

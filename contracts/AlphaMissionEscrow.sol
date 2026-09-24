@@ -18,6 +18,7 @@ contract AlphaMissionEscrow is Ownable {
     error TransferFailed();
     error Paused();
     error Reentrant();
+    error InvalidSignature();
 
     address public constant TOKEN = 0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA;
     enum Status { None, Funded, Submitted, Accepted, Rejected, Paid, Refunded }
@@ -80,6 +81,35 @@ contract AlphaMissionEscrow is Ownable {
         Mission storage mission = missions[workId];
         if (msg.sender != mission.reviewer) revert Unauthorized();
         if (mission.status != Status.Submitted || block.timestamp > mission.deadline || evidenceHash != mission.evidenceHash) revert WrongState();
+        mission.status = accepted ? Status.Accepted : Status.Rejected;
+        emit MissionReviewed(workId, evidenceHash, accepted);
+    }
+
+    /// @notice Relay an independently signed, domain-separated reviewer decision.
+    function reviewWithSignature(bytes32 workId, bytes32 evidenceHash, bool accepted, uint256 expiresAt, bytes calldata signature) external {
+        if (paused) revert Paused();
+        Mission storage mission = missions[workId];
+        if (mission.status != Status.Submitted || block.timestamp > mission.deadline || block.timestamp > expiresAt || evidenceHash != mission.evidenceHash) revert WrongState();
+        if (signature.length != 65) revert InvalidSignature();
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            r := calldataload(signature.offset)
+            s := calldataload(add(signature.offset, 32))
+            v := byte(0, calldataload(add(signature.offset, 64)))
+        }
+        if (uint256(s) > 0x7fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a0 || (v != 27 && v != 28)) revert InvalidSignature();
+        bytes32 domain = keccak256(abi.encode(
+            keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+            keccak256("AGIALPHA Mission Escrow"), keccak256("1"), block.chainid, address(this)
+        ));
+        bytes32 decision = keccak256(abi.encode(
+            keccak256("Review(bytes32 workId,bytes32 evidenceHash,bool accepted,uint256 expiresAt)"), workId, evidenceHash, accepted, expiresAt
+        ));
+        address signer = ecrecover(keccak256(abi.encodePacked("\x19\x01", domain, decision)), v, r, s);
+        if (signer == address(0) || signer != mission.reviewer) revert InvalidSignature();
         mission.status = accepted ? Status.Accepted : Status.Rejected;
         emit MissionReviewed(workId, evidenceHash, accepted);
     }

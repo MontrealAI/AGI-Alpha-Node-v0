@@ -1,0 +1,177 @@
+{
+  "schema": 2,
+  "ledgerHead": "0x107a421235712eb9e074d02078c1d23357aeaecac60bfd7d72165c044be17a5e",
+  "identity": {
+    "ensName": "model.alpha.node.agi.eth",
+    "address": "0x126da6Ab4B0a1E3a8a756f80c3E4c015dB4f7f43",
+    "reviewer": "0x9E16831ec65F01ef04B02927507acF39B6CF907F"
+  },
+  "run": {
+    "type": "run",
+    "workId": "0x54052e040e1c81b71a2c2658595fc6d4b7c7678ed08d9755825985d771a8f6c7",
+    "mission": {
+      "id": "alpha-opportunity-001",
+      "title": "$AGIALPHA — infrastructure efficiency opportunity scan",
+      "objective": "Compare three proposed node infrastructure improvements and identify the strongest bounded experiment. All inputs in this example are synthetic assumptions.",
+      "sources": [
+        {
+          "id": "S1",
+          "title": "Illustrative compute invoice",
+          "text": "Synthetic example: monthly compute spend is $2000. An operator proposes caching repeated analytical requests."
+        },
+        {
+          "id": "S2",
+          "title": "Illustrative operator interview",
+          "text": "Synthetic example: a batch scheduling change may reduce idle capacity. The estimates have not been independently measured."
+        }
+      ],
+      "opportunities": [
+        {
+          "id": "cache",
+          "title": "Cache repeated analysis",
+          "benefit": 1000,
+          "cost": 150,
+          "probability": 0.8,
+          "downside": 100,
+          "sourceIds": [
+            "S1"
+          ],
+          "rationale": "Assumed savings require a seven-day cache hit-rate experiment."
+        },
+        {
+          "id": "batch",
+          "title": "Batch low-urgency requests",
+          "benefit": 700,
+          "cost": 100,
+          "probability": 0.7,
+          "downside": 120,
+          "sourceIds": [
+            "S2"
+          ],
+          "rationale": "Assumed savings depend on acceptable latency and measured idle time."
+        },
+        {
+          "id": "expand",
+          "title": "Expand speculative capacity",
+          "benefit": 9000,
+          "cost": 3000,
+          "probability": 0.3,
+          "downside": 4000,
+          "sourceIds": [
+            "S1",
+            "S2"
+          ],
+          "rationale": "Large assumed upside is offset by capital exposure and uncertain demand."
+        }
+      ],
+      "policy": {
+        "maxCost": 500,
+        "maxDownside": 250,
+        "minExpectedNet": 0,
+        "stressBenefitBps": 7000
+      },
+      "unit": "USD per month (assumed)"
+    },
+    "identity": {
+      "verified": false,
+      "mode": "local",
+      "ensName": "model.alpha.node.agi.eth",
+      "address": "0x126da6Ab4B0a1E3a8a756f80c3E4c015dB4f7f43"
+    },
+    "analysis": {
+      "kind": "deterministic-evidence-analysis",
+      "missionDigest": "0x2f62ca652360f2c5460156df6211cbbcabdeb0e42f6a9bf63b070e1cc538c153",
+      "unit": "USD per month (assumed)",
+      "recommendation": "cache",
+      "rankings": [
+        {
+          "id": "cache",
+          "title": "Cache repeated analysis",
+          "benefit": 1000,
+          "cost": 150,
+          "probability": 0.8,
+          "downside": 100,
+          "sourceIds": [
+            "S1"
+          ],
+          "rationale": "Assumed savings require a seven-day cache hit-rate experiment.",
+          "expectedNet": 630,
+          "stressedNet": 390,
+          "admitted": true
+        },
+        {
+          "id": "batch",
+          "title": "Batch low-urgency requests",
+          "benefit": 700,
+          "cost": 100,
+          "probability": 0.7,
+          "downside": 120,
+          "sourceIds": [
+            "S2"
+          ],
+          "rationale": "Assumed savings depend on acceptable latency and measured idle time.",
+          "expectedNet": 353.99999999999994,
+          "stressedNet": 206.99999999999994,
+          "admitted": true
+        },
+        {
+          "id": "expand",
+          "title": "Expand speculative capacity",
+          "benefit": 9000,
+          "cost": 3000,
+          "probability": 0.3,
+          "downside": 4000,
+          "sourceIds": [
+            "S1",
+            "S2"
+          ],
+          "rationale": "Large assumed upside is offset by capital exposure and uncertain demand.",
+          "expectedNet": -3100,
+          "stressedNet": -3910,
+          "admitted": false
+        }
+      ],
+      "sources": [
+        {
+          "id": "S1",
+          "title": "Illustrative compute invoice",
+          "digest": "0x01b61f496dd36246a01592d37c78c80dc36f4c700fa7192d1152259b688baf7b",
+          "url": null
+        },
+        {
+          "id": "S2",
+          "title": "Illustrative operator interview",
+          "digest": "0xb6bbf3448363e40fee1537c9c5e9130c9520530ae53b350d73c2fa9665b46b75",
+          "url": null
+        }
+      ],
+      "limitations": [
+        "Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.",
+        "Source hashes establish integrity, not truth. Independent review is required.",
+        "No trades, external actions, token earnings or AGI capability are implied by this report."
+      ]
+    },
+    "provider": {
+      "text": "The analysis identifies the following opportunities, evidence gaps, counterarguments, and next experiments:\n\n### Opportunities:\n1. **Cache Repeated Analysis**  \n   - **Benefit**: 1000 USD/month  \n   - **Cost**: 150 USD/month  \n   - **Downside**: 100 USD/month  \n   - **Expected Net**: 630 USD/month  \n   - **Probability**: 80%  \n   - **Rationale**: Assumed savings require a seven-day cache hit-rate experiment.  \n   - **Source**: S1  \n\n2. **Batch Low-Urgency Requests**  \n   - **Benefit**: 700 USD/month  \n   - **Cost**: 100 USD/month  \n   - **Downside**: 120 USD/month  \n   - **Expected Net**: 354 USD/month  \n   - **Probability**: 70%  \n   - **Rationale**: Assumed savings depend on acceptable latency and measured idle time.  \n   - **Source**: S2  \n\n3. **Expand Speculative Capacity**  \n   - **Benefit**: 9000 USD/month  \n   - **Cost**: 3000 USD/month  \n   - **Downside**: 4000 USD/month  \n   - **Expected Net**: -3100 USD/month  \n   - **Probability**: 30%  \n   - **Rationale**: Large assumed upside is offset by capital exposure and uncertain demand.  \n   - **Sources**: S1, S2  \n\n### Evidence Gaps:\n- No independent review of the source data.  \n- No explicit claims about trades, token earnings, or AGI capabilities.  \n\n### Counterarguments:\n- **Benefits, costs, and probabilities are assumptions, not forecasts**.  \n- **Source hashes establish integrity, not truth**.  \n- **No trades, external actions, token earnings, or AGI capability are implied**.  \n\n### Next Experiments:\n- **Cache Repeated Analysis**: Conduct a seven-day cache hit-rate experiment.  \n- **Batch Low-Urgency Requests**: Measure idle time and latency.  \n- **Expand Speculative Capacity**: Test capital exposure and demand uncertainty.  \n\n**Recommendation**: Cache.",
+      "model": "/tmp/alpha-model/Qwen3-0.6B-Q8_0.gguf",
+      "usage": {
+        "completion_tokens": 464,
+        "prompt_tokens": 994,
+        "total_tokens": 1458,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "endpointOrigin": "http://127.0.0.1:18081",
+      "kind": "provider-response"
+    },
+    "report": "# $AGIALPHA — infrastructure efficiency opportunity scan\n\n<!-- markdownlint-disable MD013 -->\n\nCompare three proposed node infrastructure improvements and identify the strongest bounded experiment. All inputs in this example are synthetic assumptions.\n\nAnalysis: deterministic-evidence-analysis\nInput digest: 0x2f62ca652360f2c5460156df6211cbbcabdeb0e42f6a9bf63b070e1cc538c153\nUnits: USD per month (assumed)\nRecommendation: cache\n\n| Opportunity | Expected net | Stressed net | Admitted | Evidence |\n| --- | ---: | ---: | --- | --- |\n| Cache repeated analysis | 630.00 | 390.00 | Yes | S1 |\n| Batch low-urgency requests | 354.00 | 207.00 | Yes | S2 |\n| Expand speculative capacity | -3100.00 | -3910.00 | No | S1, S2 |\n\n## Evidence and assumptions\n\n- cache: Assumed savings require a seven-day cache hit-rate experiment.\n- batch: Assumed savings depend on acceptable latency and measured idle time.\n- expand: Large assumed upside is offset by capital exposure and uncertain demand.\n\n- S1 — Illustrative compute invoice — SHA-256 0x01b61f496dd36246a01592d37c78c80dc36f4c700fa7192d1152259b688baf7b\n- S2 — Illustrative operator interview — SHA-256 0xb6bbf3448363e40fee1537c9c5e9130c9520530ae53b350d73c2fa9665b46b75\n\n## Model analysis (unverified narrative)\n\nThe analysis identifies the following opportunities, evidence gaps, counterarguments, and next experiments:\n\n### Opportunities:\n1. **Cache Repeated Analysis**  \n   - **Benefit**: 1000 USD/month  \n   - **Cost**: 150 USD/month  \n   - **Downside**: 100 USD/month  \n   - **Expected Net**: 630 USD/month  \n   - **Probability**: 80%  \n   - **Rationale**: Assumed savings require a seven-day cache hit-rate experiment.  \n   - **Source**: S1  \n\n2. **Batch Low-Urgency Requests**  \n   - **Benefit**: 700 USD/month  \n   - **Cost**: 100 USD/month  \n   - **Downside**: 120 USD/month  \n   - **Expected Net**: 354 USD/month  \n   - **Probability**: 70%  \n   - **Rationale**: Assumed savings depend on acceptable latency and measured idle time.  \n   - **Source**: S2  \n\n3. **Expand Speculative Capacity**  \n   - **Benefit**: 9000 USD/month  \n   - **Cost**: 3000 USD/month  \n   - **Downside**: 4000 USD/month  \n   - **Expected Net**: -3100 USD/month  \n   - **Probability**: 30%  \n   - **Rationale**: Large assumed upside is offset by capital exposure and uncertain demand.  \n   - **Sources**: S1, S2  \n\n### Evidence Gaps:\n- No independent review of the source data.  \n- No explicit claims about trades, token earnings, or AGI capabilities.  \n\n### Counterarguments:\n- **Benefits, costs, and probabilities are assumptions, not forecasts**.  \n- **Source hashes establish integrity, not truth**.  \n- **No trades, external actions, token earnings, or AGI capability are implied**.  \n\n### Next Experiments:\n- **Cache Repeated Analysis**: Conduct a seven-day cache hit-rate experiment.  \n- **Batch Low-Urgency Requests**: Measure idle time and latency.  \n- **Expand Speculative Capacity**: Test capital exposure and demand uncertainty.  \n\n**Recommendation**: Cache.\n\n## Limits\n\n- Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.\n- Source hashes establish integrity, not truth. Independent review is required.\n- No trades, external actions, token earnings or AGI capability are implied by this report.\n",
+    "status": "awaiting-review",
+    "reward": "unfunded-unverified",
+    "previous": null,
+    "at": "2026-09-24T14:24:48.424Z",
+    "hash": "0x107a421235712eb9e074d02078c1d23357aeaecac60bfd7d72165c044be17a5e",
+    "signature": "0x034ce931481e97063d07ee629646b80eae266e1b9c8bd5c5962d5dcc13e79ce50831eb0dbb6fc7aafa53024283cadf91f79309d04750ec8b242b907a5fc7fc291c",
+    "review": null
+  }
+}

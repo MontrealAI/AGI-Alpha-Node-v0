@@ -1,12 +1,17 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
+import { fileURLToPath } from 'node:url';
 import { resolve, join } from 'node:path';
 import { readdir, writeFile } from 'node:fs/promises';
-import { signOutcome, importOutcome, outcomeSummary, recordOperation, initializeNode, loadNode, readJson, runMission, reviewMission, pauseNode, exportMission, settlementPlan, verifyIdentity, signDetachedReview, importDetachedReview } from './node.js';
-import { cycle, operationStatus } from './operations.js';
+import { signOutcome, importOutcome, outcomeSummary, recordOperation, atomicJson, initializeNode, loadNode, readJson, runMission, reviewMission, pauseNode, exportMission, settlementPlan, verifyIdentity, signDetachedReview, importDetachedReview } from './node.js';
+import { operate, engineSchema } from './runtime/engine.js';
+import { specialistServer } from './runtime/specialists.js';
+import { backupNode, restoreNode, serviceConfiguration } from './runtime/maintenance.js';
+import { settleAndReinvest } from './runtime/transactions.js';
+import { cycle, operationStatus, usageSchema } from './operations.js';
 import { observeSettlement } from './settlement.js';
 import { operatorServer } from './operator.js';
-const cli = new Command().name('alpha-node').description('$AGIALPHA standalone opportunity and evidence node').version('2.1.0');
+const cli = new Command().name('alpha-node').description('$AGIALPHA standalone opportunity and evidence node').version('3.0.0');
 cli.option('--home <directory>', 'Private node data directory', '.alpha-node');
 const home = () => resolve(cli.opts().home);
 const print = x => console.log(JSON.stringify(x, null, 2));
@@ -18,9 +23,9 @@ cli.command('pause').action(async () => print(await pauseNode(home(), true)));
 cli.command('resume').action(async () => print(await pauseNode(home(), false)));
 cli.command('review <missionId>').requiredOption('--decision <decision>', 'accepted or rejected').requiredOption('--notes <notes>', 'Review evidence and limitations').action(async (missionId, o) => { if (!process.env.ALPHA_REVIEWER_PRIVATE_KEY) throw new Error('Set ALPHA_REVIEWER_PRIVATE_KEY in the reviewer environment'); const r = await reviewMission(home(), missionId, o.decision, o.notes, process.env.ALPHA_REVIEWER_PRIVATE_KEY); print({ decision: r.decision, reviewHash: r.hash }); });
 cli.command('export <missionId>').requiredOption('--out <directory>', 'Deliverable directory').action(async (missionId, o) => print(await exportMission(home(), missionId, resolve(o.out))));
-cli.command('review-sign <evidence>').requiredOption('--decision <decision>', 'accepted or rejected').requiredOption('--notes <notes>', 'Independent review findings').requiredOption('--out <file>', 'Signed review file').action(async (file, o) => {
+cli.command('review-sign <evidence>').requiredOption('--decision <decision>', 'accepted or rejected').requiredOption('--notes <notes>', 'Independent review findings').requiredOption('--out <file>', 'Signed review file').option('--escrow <address>', 'Also authorize a domain-bound on-chain acceptance relay').option('--expires-at <seconds>', 'Settlement approval expiry, Unix seconds').action(async (file, o) => {
   if (!process.env.ALPHA_REVIEWER_PRIVATE_KEY) throw new Error('Set ALPHA_REVIEWER_PRIVATE_KEY on the reviewer machine');
-  const signed = await signDetachedReview(await readJson(resolve(file)), o.decision, o.notes, process.env.ALPHA_REVIEWER_PRIVATE_KEY);
+  const signed = await signDetachedReview(await readJson(resolve(file)), o.decision, o.notes, process.env.ALPHA_REVIEWER_PRIVATE_KEY, o.escrow ? { escrow: o.escrow, expiresAt: Number(o.expiresAt) } : null);
   await writeFile(resolve(o.out), JSON.stringify(signed, null, 2), { flag: 'wx', mode: 0o600 }); print({ review: resolve(o.out) });
 });
 cli.command('review-import <file>').action(async file => print(await importDetachedReview(home(), await readJson(resolve(file), 10000))));
@@ -61,15 +66,42 @@ cli.command('serve').description('Open the authenticated loopback operator inter
   const stop = () => { server.close(); server.closeIdleConnections(); };
   process.once('SIGINT', stop); process.once('SIGTERM', stop);
 });
-cli.command('autopilot').description('Run configured usage discovery sequentially, with backoff on failure').option('--interval <seconds>', 'Cycle interval, 10–3600 seconds', '60').action(async o => {
+cli.command('autopilot').option('--runtime', 'Run the integrated planner, specialists, execution and settlement loop').description('Run configured usage discovery sequentially, with backoff on failure').option('--interval <seconds>', 'Cycle interval, 10–3600 seconds', '60').action(async o => {
   const interval = Number(o.interval); if (!Number.isInteger(interval) || interval < 10 || interval > 3600) throw new Error('Interval must be 10–3600 seconds');
   let stopped = false; let failures = 0; const stop = () => { stopped = true; }; process.once('SIGINT', stop); process.once('SIGTERM', stop);
   try { while (!stopped) {
-    try { if (!(await loadNode(home())).paused) print(await cycle(home())); failures = 0; }
+    try { if (!(await loadNode(home())).paused) print(o.runtime ? await operate(home(), { rpcUrls: [process.env.ALPHA_RPC_URL, process.env.ALPHA_SECOND_RPC_URL] }) : await cycle(home())); failures = 0; }
     catch (e) { failures++; console.error(JSON.stringify({ error: e.message, consecutiveFailures: failures })); }
     if (failures >= 5) { await pauseNode(home(), true); console.error('Paused after five consecutive failures; inspect and resume explicitly.'); failures = 0; }
     const delay = Math.min(3600, interval * 2 ** Math.min(failures, 5));
     for (let i = 0; i < delay * 4 && !stopped; i++) await new Promise(r => setTimeout(r, 250));
   } } finally { process.removeListener('SIGINT', stop); process.removeListener('SIGTERM', stop); }
+});
+cli.command('setup').requiredOption('--ens <name>', 'Node ENS label').requiredOption('--reviewer <address>', 'Separate reviewer address').requiredOption('--usage <file>', 'Authorized structured usage file').action(async o => {
+  usageSchema.parse(await readJson(resolve(o.usage), 100000));
+  const initialized = await initializeNode(home(), { ensName: o.ens, reviewer: o.reviewer });
+  const pipeline = await readJson(new URL('../../examples/alpha/pipeline.json', import.meta.url));
+  pipeline.source = resolve(o.usage);
+  await atomicJson(join(home(), 'pipeline.json'), pipeline);
+  await atomicJson(join(home(), 'engine.json'), engineSchema.parse({ schema: 1, adaptive: { enabled: true } }));
+  print({ ...initialized, configured: true, transactionsEnabled: false, next: 'Review pipeline assumptions, then use operate or serve. Add explicit owner-authorized actions and peers to engine.json.' });
+});
+cli.command('operate').action(async () => print(await operate(home(), { rpcUrls: [process.env.ALPHA_RPC_URL, process.env.ALPHA_SECOND_RPC_URL] })));
+cli.command('specialist').option('--port <port>', 'Loopback listener port', '0').action(async o => {
+  const port = Number(o.port); if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error('Invalid port');
+  const result = await specialistServer(home(), await readJson(join(home(), 'specialist.json'), 20000), { port });
+  print({ url: result.url, address: result.address });
+  const stop = () => { result.server.close(); result.server.closeIdleConnections(); }; process.once('SIGINT', stop); process.once('SIGTERM', stop);
+});
+cli.command('settle <missionId>').description('Execute only the enabled, pinned and bounded engine.json token policy').action(async missionId => {
+  const config = engineSchema.parse(await readJson(join(home(), 'engine.json')));
+  if (!config.transactions) throw new Error('Configure an explicit transaction policy first');
+  print(await settleAndReinvest(home(), missionId, config.transactions, [process.env.ALPHA_RPC_URL, process.env.ALPHA_SECOND_RPC_URL]));
+});
+cli.command('backup <file>').action(async file => print(await backupNode(home(), resolve(file), process.env.ALPHA_BACKUP_PASSWORD)));
+cli.command('restore <file>').description('Restore an encrypted backup into a new --home directory; keep it paused').action(async file => print(await restoreNode(resolve(file), home(), process.env.ALPHA_BACKUP_PASSWORD)));
+cli.command('service-config <platform>').requiredOption('--out <file>', 'New launchd plist or systemd user service').action(async (platform, o) => {
+  await loadNode(home()); const content = serviceConfiguration(platform, { nodePath: process.execPath, cliPath: fileURLToPath(import.meta.url), home: home() });
+  await writeFile(resolve(o.out), content, { flag: 'wx', mode: 0o600 }); print({ file: resolve(o.out), installed: false, note: 'Review and install with your platform service manager; provide secrets through its protected environment.' });
 });
 cli.parseAsync().catch(e => { console.error(`Alpha Node: ${e.message}`); process.exitCode = 1; });

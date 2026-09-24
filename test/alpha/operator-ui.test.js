@@ -21,5 +21,8 @@ it('renders evidence as text, removes the URL token, and sends authenticated pau
     dom.window.document.getElementById('pause').click(); await new Promise(r => setTimeout(r, 20));
     const pause = calls.find(c => c.path === '/api/pause'); expect(pause.options.method).toBe('POST'); expect(pause.options.headers.Authorization).toBe('Bearer test-token');
     expect(dom.window.document.getElementById('outcomes').textContent).toContain('Not audited profit');
+    state.paused = true; dom.window.document.getElementById('operate').click(); await new Promise(r => setTimeout(r, 20));
+    expect(dom.window.document.getElementById('operate').disabled).toBe(true);
+    expect(dom.window.document.getElementById('cycle').disabled).toBe(true);
   } finally { dom.window.close(); }
 });

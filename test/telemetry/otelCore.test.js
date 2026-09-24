@@ -7,7 +7,7 @@ const mockGetTracer = vi.fn(() => tracerStub);
 const providerOptions = [];
 
 vi.mock('@opentelemetry/sdk-trace-node', () => ({
-  NodeTracerProvider: vi.fn((options) => {
+  NodeTracerProvider: vi.fn(function (options) {
     providerOptions.push(options);
     return {
       register: mockRegister,
@@ -23,15 +23,15 @@ vi.mock('@opentelemetry/resources', () => ({
 const exporterOptions = [];
 
 vi.mock('@opentelemetry/exporter-trace-otlp-http', () => ({
-  OTLPTraceExporter: vi.fn((options) => {
+  OTLPTraceExporter: vi.fn(function (options) {
     exporterOptions.push(options);
     return {};
   })
 }));
 
 vi.mock('@opentelemetry/sdk-trace-base', () => ({
-  BatchSpanProcessor: vi.fn((exporter) => ({ exporter })),
-  SimpleSpanProcessor: vi.fn((exporter) => ({ exporter })),
+  BatchSpanProcessor: vi.fn(function (exporter) { return { exporter }; }),
+  SimpleSpanProcessor: vi.fn(function (exporter) { return { exporter }; }),
   ParentBasedSampler: vi.fn(),
   TraceIdRatioBasedSampler: vi.fn()
 }));

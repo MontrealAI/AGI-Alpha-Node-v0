@@ -222,6 +222,9 @@ export async function startMonitorLoop({
   const stop = async () => {
     shuttingDown = true;
     clearTimer();
+    // A monitoring server may still be starting when shutdown is requested.
+    // Wait for that iteration before closing the final server reference.
+    await loop;
     if (telemetryServer?.server) {
       await new Promise((resolve) => {
         telemetryServer.server.close(() => resolve());

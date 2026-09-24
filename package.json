@@ -1,16 +1,17 @@
 {
   "name": "agi-alpha-node-v0",
-  "version": "2.1.0",
-  "description": "Owner-controlled $AGIALPHA mission analysis, signed evidence, independent review and funded settlement toolkit",
+  "version": "3.0.0",
+  "description": "Owner-controlled $AGIALPHA node with adaptive planning, authenticated specialists, reviewed execution and bounded settlement/reinvestment",
   "license": "MIT",
   "private": true,
   "type": "module",
   "bin": {
-    "agi-alpha-node": "./src/index.js",
-    "alpha-node": "./src/alpha/cli.js"
+    "agi-alpha-node": "./src/alpha/cli.js",
+    "alpha-node": "./src/alpha/cli.js",
+    "agi-alpha-infrastructure": "./src/index.js"
   },
   "scripts": {
-    "start": "node src/index.js",
+    "start": "node src/alpha/cli.js serve",
     "build": "npm run build:subgraph && npm run dashboard:build",
     "build:subgraph": "node scripts/render-subgraph-manifest.mjs && npm --prefix subgraph ci --no-audit --no-fund && npm --prefix subgraph run codegen:ci && npm --prefix subgraph run build:ci",
     "demo:local": "node scripts/local_cluster.mjs",
@@ -33,7 +34,7 @@
     "ci:coverage": "npm run coverage",
     "ci:solidity": "npm run lint:sol && npm run test:sol",
     "ci:ts": "node scripts/render-subgraph-manifest.mjs && npm --prefix subgraph ci --no-audit --no-fund && npm --prefix subgraph run codegen:ci && npm --prefix subgraph run build:ci",
-    "ci:security": "npm audit --omit=dev --audit-level=high",
+    "ci:security": "npm audit --audit-level=high",
     "ci:policy": "node scripts/verify-health-gate.mjs",
     "ci:branch": "node scripts/verify-branch-gate.mjs",
     "ci:verify": "npm run ci:lint && npm run ci:test && npm run ci:coverage && npm run ci:solidity && npm run ci:ts && npm run ci:security && npm run ci:policy && npm run ci:branch",
@@ -52,10 +53,12 @@
     "observability:dcutr-harness": "tsx scripts/dcutr-harness.ts",
     "prepare": "node -e \"const { existsSync } = require('node:fs'); const { join } = require('node:path'); const script = join(process.cwd(), 'scripts/prepare-husky.cjs'); if (!existsSync(script)) { console.log('husky prepare script missing; skipping'); process.exit(0); } require(script);\"",
     "alpha": "node src/alpha/cli.js",
-    "test:alpha": "vitest run test/alpha/ --pool forks --maxWorkers 2 --minWorkers 1",
+    "test:alpha": "vitest run test/alpha/ --pool forks --maxWorkers 2",
     "release:package": "python3 scripts/package-alpha-release.py",
     "demo:alpha": "node scripts/demo-alpha.mjs",
-    "demo:operations": "node scripts/demo-operations.mjs"
+    "demo:operations": "node scripts/demo-operations.mjs",
+    "legacy": "node src/index.js",
+    "demo:runtime": "node scripts/demo-runtime.mjs"
   },
   "engines": {
     "node": ">=22.14.0",
@@ -85,20 +88,19 @@
     "@ethereumjs/common": "^10.1.0",
     "@ethereumjs/util": "^10.1.0",
     "@ethereumjs/vm": "^10.1.0",
-    "@grafana/toolkit": "^9.5.21",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.0.1",
     "@testing-library/user-event": "^14.6.1",
-    "@types/node": "^20.14.10",
-    "@vitejs/plugin-react": "^5.1.1",
-    "@vitest/coverage-v8": "^1.6.0",
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "@vitest/coverage-v8": "^5.0.1",
     "c8": "^9.1.0",
     "chart.js": "^4.5.1",
     "cross-env": "^7.0.3",
     "husky": "^9.1.6",
     "jsdom": "^24.1.0",
     "markdown-link-check": "^3.10.3",
-    "markdownlint-cli2": "^0.8.1",
+    "markdownlint-cli2": "^0.23.3",
     "markdownlint-cli2-formatter-pretty": "^0.0.9",
     "prettier": "^3.3.3",
     "react": "^18.3.1",
@@ -108,7 +110,12 @@
     "solhint": "^5.0.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4",
-    "vite": "^5.4.7",
-    "vitest": "^1.6.0"
+    "vite": "^8.3.1",
+    "vitest": "^5.0.1"
+  },
+  "overrides": {
+    "solc": {
+      "tmp": "0.2.7"
+    }
   }
 }

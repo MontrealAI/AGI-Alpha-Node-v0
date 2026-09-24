@@ -1,6 +1,7 @@
 import { mkdir, writeFile, rename, open, unlink, stat } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { Wallet, verifyMessage, getAddress, JsonRpcProvider, Contract, Interface, namehash, FetchRequest, id as ethersId } from 'ethers';
+import { signSettlementApproval } from './runtime/review-approval.js';
 import { canonicalJson } from '../utils/canonicalize.js';
 import { AGIALPHA_TOKEN_ADDRESS } from '../constants/token.js';
 import { analyzeMission, missionSchema, renderReport, inferNarrative, digest } from './mission.js';
@@ -63,6 +64,7 @@ export async function initializeNode(dir, { ensName, reviewer = null, mode = 'lo
 }
 
 export async function verifyIdentity(config, { provider: supplied } = {}) {
+  if (!/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.alpha\.node\.agi\.eth$/.test(config.ensName ?? '')) throw new Error('Use a direct subname of alpha.node.agi.eth');
   if (config.mode === 'local') return { verified: false, mode: 'local', ensName: config.ensName, address: config.address };
   if (config.mode !== 'live' || config.chainId !== 1 || address(config.token) !== address(AGIALPHA_TOKEN_ADDRESS)) throw new Error('Invalid live identity configuration');
   const request = new FetchRequest(config.rpcUrl);
@@ -94,6 +96,7 @@ export function verifyState(config, state) {
   let previous = null;
   const runs = new Map();
   const operations = new Map();
+  const runtime = new Map();
   for (const event of state.events) {
     const { signature, hash, ...payload } = event;
     if (payload.previous !== previous || digest(payload) !== hash) throw new Error('Ledger integrity failure');
@@ -101,7 +104,7 @@ export function verifyState(config, state) {
     if (payload.type === 'run') {
       if (signer !== address(config.address) || runs.has(payload.mission.id)) throw new Error('Invalid run signer or duplicate mission');
       const recomputed = analyzeMission(payload.mission);
-      if (canonicalJson(recomputed) !== canonicalJson(payload.analysis) || payload.report !== renderReport(payload.mission, recomputed, payload.provider)) throw new Error('Artifact verification failure');
+      if (canonicalJson(recomputed) !== canonicalJson(payload.analysis) || payload.report !== renderReport(payload.mission, recomputed, payload.provider, payload.runtimeContext)) throw new Error('Artifact verification failure');
       if (payload.workId !== workId(config, payload.mission.id)) throw new Error('Work identity mismatch');
       runs.set(payload.mission.id, { ...payload, hash, signature, review: null });
     } else if (payload.type === 'review-v3') {
@@ -110,6 +113,9 @@ export function verifyState(config, state) {
       const run = runs.get(attestation.missionId);
       verifyReview(config, run, attestation);
       run.review = { ...attestation, envelopeHash: hash };
+    } else if (payload.type === 'runtime') {
+      if (signer !== address(config.address) || typeof payload.id !== 'string' || payload.id.length > 200 || runtime.has(payload.id) || !['plan', 'specialist', 'action-prepared', 'action-result', 'transaction-prepared', 'transaction-result', 'adaptation', 'settlement', 'source'].includes(payload.topic) || !payload.data || typeof payload.data !== 'object') throw new Error('Invalid runtime event');
+      runtime.set(payload.id, { ...payload, hash, signature });
     } else if (payload.type === 'outcome') {
       if (signer !== address(config.address)) throw new Error('Invalid outcome envelope signer');
       const run = runs.get(payload.attestation.missionId);
@@ -134,7 +140,7 @@ export function verifyState(config, state) {
     } else throw new Error('Unknown ledger event');
     previous = hash;
   }
-  return { runs, head: previous };
+  return { runs, runtime, head: previous };
 }
 async function appendEvent(dir, loaded, payload, wallet) {
   const full = { ...payload, previous: loaded.head, at: new Date().toISOString() };
@@ -146,7 +152,7 @@ async function appendEvent(dir, loaded, payload, wallet) {
   await atomicJson(join(dir, 'state.json'), loaded.state);
   return event;
 }
-export async function runMission(dir, input) {
+export async function runMission(dir, input, { runtimeContext = null, identityProvider } = {}) {
   const mission = missionSchema.parse(input);
   return locked(dir, async () => {
     const loaded = await loadNode(dir);
@@ -158,12 +164,12 @@ export async function runMission(dir, input) {
     }
     const wallet = new Wallet((await readJson(join(dir, 'identity.key.json'))).privateKey);
     if (address(wallet.address) !== address(loaded.config.address)) throw new Error('Node signing key mismatch');
-    const identity = await verifyIdentity(loaded.config);
+    const identity = await verifyIdentity(loaded.config, { provider: identityProvider });
     const analysis = analyzeMission(mission);
     const provider = loaded.config.provider ? await inferNarrative(mission, analysis, loaded.config.provider) : null;
     if (await exists(join(dir, 'PAUSED'))) throw new Error('Node paused during execution; result not committed');
     return appendEvent(dir, loaded, { type: 'run', workId: workId(loaded.config, mission.id), mission, identity, analysis, provider,
-      report: renderReport(mission, analysis, provider), status: 'awaiting-review', reward: 'unfunded-unverified' }, wallet);
+      report: renderReport(mission, analysis, provider, runtimeContext), status: 'awaiting-review', reward: 'unfunded-unverified', ...(runtimeContext ? { runtimeContext } : {}) }, wallet);
   });
 }
 export async function reviewMission(dir, missionId, decision, notes, privateKey) {
@@ -204,13 +210,17 @@ export function settlementPlan(config, run, treasuryAddress) {
     ] };
 }
 
-export async function signDetachedReview(bundle, decision, notes, privateKey) {
+export async function signDetachedReview(bundle, decision, notes, privateKey, settlement = null) {
   const wallet = new Wallet(privateKey);
   const { signature, hash, review, outcome, ...run } = bundle.run;
   if (digest(run) !== hash || address(verifyMessage(hash, signature)) !== address(bundle.identity.address)) throw new Error('Exported run signature is invalid');
   if (address(wallet.address) !== address(bundle.identity.reviewer) || address(wallet.address) === address(bundle.identity.address)) throw new Error('Not the designated independent reviewer');
   if (!['accepted', 'rejected'].includes(decision) || !notes?.trim() || notes.length > 4000) throw new Error('Decision and review notes required');
   const payload = { type: 'review-attestation-v3', node: address(bundle.identity.address), ensName: bundle.identity.ensName, missionId: run.mission.id, runHash: hash, decision, notes, at: new Date().toISOString() };
+  if (settlement) {
+    if (decision !== 'accepted') throw new Error('Settlement approval requires acceptance');
+    payload.settlementApproval = await signSettlementApproval({ ...run, hash }, settlement.escrow, settlement.expiresAt, true, privateKey);
+  }
   const reviewHash = digest(payload);
   return { ...payload, hash: reviewHash, signature: await wallet.signMessage(reviewHash) };
 }
@@ -284,5 +294,20 @@ export function outcomeSummary(node) {
     reviewerReportedNetUsd: measured.reduce((sum, r) => sum + r.outcome.measuredBenefitUsd - r.outcome.measuredCostUsd, 0),
     outcomes: measured.map(r => ({ missionId: r.mission.id, projectedExpectedNet: r.analysis.rankings.find(x => x.id === r.analysis.recommendation)?.expectedNet ?? null,
       measuredNetUsd: r.outcome.measuredBenefitUsd - r.outcome.measuredCostUsd, observedAt: r.outcome.observedAt })),
-    limitation: 'Reviewer-attested measurements, not independently audited profit. Compare only equivalent observation periods. No automatic policy mutation or reinvestment.' };
+    limitation: 'Reviewer-attested measurements, not independently audited profit. Compare only equivalent observation periods. The integrated runtime adapts and reinvests only within explicit owner policy; this summary executes nothing.' };
+}
+
+export async function recordRuntime(dir, topic, id, data, check = () => {}) {
+  return locked(dir, async () => {
+    const loaded = await loadNode(dir);
+    const previous = loaded.runtime.get(id);
+    if (previous) {
+      if (previous.topic !== topic || digest(previous.data) !== digest(data)) throw new Error('Runtime ID already bound to different data');
+      return previous;
+    }
+    await check(loaded);
+    const wallet = new Wallet((await readJson(join(dir, 'identity.key.json'))).privateKey);
+    if (address(wallet.address) !== address(loaded.config.address)) throw new Error('Node signing key mismatch');
+    return appendEvent(dir, loaded, { type: 'runtime', topic, id, data }, wallet);
+  });
 }

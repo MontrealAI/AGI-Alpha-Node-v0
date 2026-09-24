@@ -14,7 +14,8 @@ from [`./.github/required-checks.json`](../../.github/required-checks.json):
 3. **Coverage Report** – produces LCOV output and a coverage badge payload.
 4. **Docker Build & Smoke Test** – builds the production image and
    captures CLI health output.
-5. **Solidity Lint & Compile** – runs `solhint` plus `solcjs` to keep contracts deploy-ready.
+5. **Solidity Lint & Compile** – runs `solhint` plus `solcjs`
+   to keep contracts deploy-ready.
 6. **Subgraph TypeScript Build** – runs `graph build` against the subgraph mappings.
 7. **Dependency Security Scan** – executes `npm audit --audit-level=high`.
 

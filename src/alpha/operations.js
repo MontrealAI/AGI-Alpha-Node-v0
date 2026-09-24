@@ -52,7 +52,7 @@ export function operationStatus(node, now = Date.now()) {
     unresolved: reservations.filter(e => !finished.has(e.cycle)).map(e => ({ cycle: e.cycle, missionId: e.missionId })),
     pendingReviews: [...node.runs.values()].filter(r => !r.review).length };
 }
-export async function cycle(dir, pipelineFile = join(dir, 'pipeline.json')) {
+export async function cycle(dir, pipelineFile = join(dir, 'pipeline.json'), { prepareMission, afterReserved, identityProvider } = {}) {
   const lockPath = join(dir, 'pipeline.lock');
   let handle;
   try { handle = await open(lockPath, 'wx', 0o600); } catch (e) { if (e.code === 'EEXIST') throw new Error('Pipeline busy or interrupted; consult recovery guide'); throw e; }
@@ -62,10 +62,12 @@ export async function cycle(dir, pipelineFile = join(dir, 'pipeline.json')) {
     const source = resolve(resolve(pipelineFile, '..'), p.source);
     if (!(await stat(source)).isFile()) throw new Error('Usage source must be a regular file');
     const input = await readJson(source, 100000);
-    const mission = discoverUsage(input, p);
+    let mission = discoverUsage(input, p);
     const loaded = await loadNode(dir);
     if (loaded.paused) throw new Error('Node paused');
     if (!mission) return { status: 'abstained', reason: 'No repeated-request savings candidates' };
+    if (prepareMission) mission = await prepareMission(mission, loaded);
+    if (!mission) return { status: 'abstained', reason: 'Adaptive planner or sentinel declined the opportunity' };
     const cycleId = digest({ mission, provider: loaded.config.provider });
     const previous = loaded.state.events.find(e => e.type === 'operation' && e.cycle === cycleId && e.phase === 'reserved');
     const existing = loaded.runs.get(mission.id);
@@ -85,7 +87,8 @@ export async function cycle(dir, pipelineFile = join(dir, 'pipeline.json')) {
       if (node.config.provider && p.reserveMicroUsdPerRun === 0) throw new Error('Provider runs require a positive cost reservation');
     });
     try {
-      const result = await runMission(dir, mission);
+      const runtimeContext = afterReserved ? await afterReserved(mission) : null;
+      const result = await runMission(dir, mission, { runtimeContext, identityProvider });
       await exportMission(dir, mission.id, join(dir, 'deliverables', mission.id));
       await recordOperation(dir, { phase: 'completed', cycle: cycleId, missionId: mission.id, reservedMicroUsd: 0 });
       return { status: 'awaiting-review', missionId: mission.id, evidenceHash: result.hash, recommendation: result.analysis.recommendation };

@@ -93,4 +93,11 @@ describe('verifier server', () => {
     expect(payload.node_ens_name).toBe('verifier.alpha.eth');
     expect(payload.validator_address.toLowerCase()).toBe(validatorWallet.address.toLowerCase());
   });
+  it('bounds malformed and oversized bodies and keeps the health endpoint available', async () => {
+    const invalid = await fetch(`${baseUrl}/verifier/validate`, { method: 'POST', body: '{' }); expect(invalid.status).toBe(400);
+    const oversized = await fetch(`${baseUrl}/verifier/validate`, { method: 'POST', body: 'x'.repeat(256001) }); expect(oversized.status).toBe(413);
+    const empty = await fetch(`${baseUrl}/verifier/validate`, { method: 'POST' }); expect([200, 422]).toContain(empty.status);
+    expect((await fetch(`${baseUrl}/absent`)).status).toBe(404);
+    const health = await (await fetch(`${baseUrl}/verifier/health`)).json(); expect(health.total_failures).toBeGreaterThanOrEqual(2); expect(health.status).toBe('ok');
+  });
 });
