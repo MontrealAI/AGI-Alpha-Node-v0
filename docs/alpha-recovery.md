@@ -95,3 +95,11 @@ Changes to source, dependency lockfiles, node configuration, pipeline, engine or
 v3.1 writes failed-attempt expense events and v2 measured outcomes. Prior executables cannot interpret those records. Retain the pre-upgrade backup for rollback and reconcile any later work first. Preserve the configured reviewer identity: new run signatures bind the node's reviewer choice, so silently replacing that address invalidates history. Use a separately commissioned node and retained archives when changing review authority; in-place key rotation is not implemented.
 
 Use `operations` and the [failure accounting procedure](alpha-qualification.md#account-for-failures-and-missing-measurements) after resolving interrupted work. Do not delete reservations to reclaim budgets. A signed expense closes an uncommitted failed mission permanently; start a new mission for a deliberate retry.
+
+### v3.2 work results and review reservations
+
+Stop workers and retain a complete encrypted backup and external trusted ledger-head checkpoint before upgrading. Existing schema-2 history remains readable. Structured work fields and computed-fact briefs require v3.2 to verify; older executables cannot read those new missions. Rollback requires the pre-upgrade state and reconciliation of any subsequent external work.
+
+New operation reservations include reviewer minutes. Existing reservations and manual pending missions use a 15-minute compatibility estimate. Review the explicit time limits before resuming a previously configured pipeline. Daily reservations remain charged after failure or review; do not delete them to reclaim budget. Rejected outcomes now influence learning, so a previously selected plan may abstain on a fresh observation. Previously signed plans and reviews retain their exact input/action binding.
+
+Structured exports can be regenerated from a verified journal. `verify-bundle --work-dir` recomputes the signed result and verifies both JSON and CSV. Restore demonstrations in v3.2 include all three work families, their peer receipts and review records, and resume in a paused state.

@@ -1,0 +1,71 @@
+{
+  "schema": 1,
+  "kind": "invoice-reconciliation",
+  "inputDigest": "0xd66439d8c44a93e416cf9a16123a7b7bd2a1c290ddf8a9a07157924c1951e34d",
+  "summary": {
+    "services": 2,
+    "knownRateOverbillingMicroUsd": "11000000",
+    "netKnownRateVarianceMicroUsd": "11000000",
+    "unknownRateServices": [],
+    "duplicateInvoiceReferences": [
+      "invoice-1-line-2"
+    ]
+  },
+  "rows": [
+    {
+      "serviceId": "compute",
+      "usageUnits": "10",
+      "billedUnits": "12",
+      "quantityVarianceUnits": "2",
+      "expectedMicroUsd": "20000000",
+      "billedMicroUsd": "24000000",
+      "varianceMicroUsd": "4000000",
+      "priceMismatchLineIds": [],
+      "usageIds": [
+        "u1"
+      ],
+      "invoiceIds": [
+        "i1"
+      ]
+    },
+    {
+      "serviceId": "storage",
+      "usageUnits": "5",
+      "billedUnits": "10",
+      "quantityVarianceUnits": "5",
+      "expectedMicroUsd": "5000000",
+      "billedMicroUsd": "12000000",
+      "varianceMicroUsd": "7000000",
+      "priceMismatchLineIds": [
+        "i2",
+        "i3"
+      ],
+      "usageIds": [
+        "u2"
+      ],
+      "invoiceIds": [
+        "i2",
+        "i3"
+      ]
+    }
+  ],
+  "facts": [
+    {
+      "id": "total",
+      "text": "Supplied invoices exceed usage priced at supplied rates by 11000000 micro-USD across positive-variance services. This is a discrepancy to investigate, not a confirmed refund or measured profit."
+    },
+    {
+      "id": "service-0",
+      "text": "Service compute: quantity variance 2; billed 24000000 micro-USD; expected 20000000; monetary variance 4000000."
+    },
+    {
+      "id": "service-1",
+      "text": "Service storage: quantity variance 5; billed 12000000 micro-USD; expected 5000000; monetary variance 7000000."
+    },
+    {
+      "id": "duplicates",
+      "text": "1 repeated invoice references require review; their amounts are already included in totals."
+    }
+  ],
+  "limitation": "Exact arithmetic over supplied records and rates. Missing usage, taxes, credits, contract terms and dishonest inputs can change the interpretation. Discrepancies are not confirmed receivables."
+}

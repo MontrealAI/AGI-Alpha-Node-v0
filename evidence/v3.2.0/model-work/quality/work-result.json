@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "kind": "data-quality",
+  "inputDigest": "0x509c2652219e1bff17988139d651757bfddc4defabe5e5300a71837b20163ba2",
+  "summary": {
+    "inputRows": 3,
+    "rules": 4,
+    "violations": 4,
+    "affectedRows": 2,
+    "passingRows": 1
+  },
+  "rows": [
+    {
+      "rowId": "r3",
+      "ruleId": "account-required",
+      "field": "account",
+      "issue": "missing",
+      "actual": ""
+    },
+    {
+      "rowId": "r2",
+      "ruleId": "account-unique",
+      "field": "account",
+      "issue": "duplicate-of:r1",
+      "actual": "acct-a"
+    },
+    {
+      "rowId": "r2",
+      "ruleId": "quantity-range",
+      "field": "quantity",
+      "issue": "outside-range-or-not-number",
+      "actual": -1
+    },
+    {
+      "rowId": "r2",
+      "ruleId": "status-known",
+      "field": "status",
+      "issue": "not-allowed",
+      "actual": "unknown"
+    }
+  ],
+  "facts": [
+    {
+      "id": "quality",
+      "text": "4 rule violations affect 2 of 3 supplied rows under 4 explicit rules. Passing these rules does not establish overall data truth or completeness."
+    },
+    {
+      "id": "rule-0",
+      "text": "Rule account-required (required, field account) found 1 violations."
+    },
+    {
+      "id": "rule-1",
+      "text": "Rule account-unique (unique, field account) found 1 violations."
+    },
+    {
+      "id": "rule-2",
+      "text": "Rule quantity-range (range, field quantity) found 1 violations."
+    },
+    {
+      "id": "rule-3",
+      "text": "Rule status-known (one-of, field status) found 1 violations."
+    }
+  ],
+  "limitation": "Evaluates only supplied rows and explicit rules. Uniqueness is type-sensitive and marks subsequent occurrences; missing values require a required rule. No external source authenticity or regulatory compliance is certified."
+}

@@ -7,6 +7,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { Command } from 'commander';
 import { Wallet } from 'ethers';
 import { qualifyResearch } from './lib/research-qualification.mjs';
+import { demonstrateWork } from './lib/work-demonstration.mjs';
 import {
   initializeNode,
   runMission,
@@ -26,6 +27,10 @@ const options = new Command()
   )
   .option('--threads <number>', 'Model CPU threads', '4')
   .option(
+    '--work',
+    'Qualify computed-fact model briefs for all three structured work families',
+  )
+  .option(
     '--timeout-ms <number>',
     'Bounded inference timeout, 1000–180000 ms',
     '60000',
@@ -34,6 +39,8 @@ const options = new Command()
   .parse()
   .opts();
 const port = Number(options.port);
+if (options.work && options.research)
+  throw new Error('Choose work or research qualification');
 const threads = Number(options.threads),
   timeoutMs = Number(options.timeoutMs);
 if (
@@ -122,7 +129,30 @@ try {
     keyEnv: 'ALPHA_QUALIFICATION_MODEL_KEY',
   };
   await writeFile(join(dir, 'config.json'), JSON.stringify(config));
-  if (options.research) {
+  if (options.work) {
+    const result = await demonstrateWork(join(dir, 'work-qualification'), out, {
+      provider: config.provider,
+    });
+    result.provenance = {
+      revision: options.revision,
+      sha256: options.modelSha256,
+      bytes,
+      runtime: options.runtime,
+    };
+    await writeFile(
+      join(out, 'execution.json'),
+      JSON.stringify(result, null, 2) + '\n',
+    );
+    console.log(
+      JSON.stringify({
+        actualInference: true,
+        modelCalls: result.modelCalls,
+        elapsedMs: result.elapsedMs,
+        recovery: result.recovery,
+        evidenceGatePassed: result.qualification.gatePassed,
+      }),
+    );
+  } else if (options.research) {
     const result = await qualifyResearch(dir, config.provider, out);
     result.provenance = {
       revision: options.revision,

@@ -30,6 +30,7 @@ it('renders evidence as text, removes the URL token, and sends authenticated pau
     missions: [
       {
         id: 'fixture',
+        workKind: 'data-quality',
         title: '<img src=x onerror="window.pwned=true">',
         report: '<script>window.pwned=true</script>',
         decision: 'awaiting-review',
@@ -38,24 +39,32 @@ it('renders evidence as text, removes the URL token, and sends authenticated pau
       },
     ],
   };
+  const downloads = [];
+  dom.window.URL.createObjectURL = () => 'blob:test';
+  dom.window.URL.revokeObjectURL = () => {};
+  dom.window.HTMLAnchorElement.prototype.click = function () {
+    downloads.push(this.download);
+  };
   dom.window.fetch = async (path, options) => {
     calls.push({ path, options });
     return {
       ok: true,
       json: async () =>
-        path === '/api/qualification'
-          ? {
-              gatePassed: false,
-              checks: [
-                {
-                  id: 'measured-work',
-                  passed: false,
-                  detail: 'No observed economic records',
-                },
-              ],
-              limitations: ['Evidence gate is incomplete'],
-            }
-          : state,
+        path.startsWith('/api/work')
+          ? { result: { kind: 'data-quality' }, csv: 'a,b' }
+          : path === '/api/qualification'
+            ? {
+                gatePassed: false,
+                checks: [
+                  {
+                    id: 'measured-work',
+                    passed: false,
+                    detail: 'No observed economic records',
+                  },
+                ],
+                limitations: ['Evidence gate is incomplete'],
+              }
+            : state,
     };
   };
   try {
@@ -84,6 +93,13 @@ it('renders evidence as text, removes the URL token, and sends authenticated pau
     expect(
       dom.window.document.getElementById('qualification').textContent,
     ).toContain('No observed economic records');
+    for (const button of dom.window.document.querySelectorAll(
+      '#missions button',
+    ))
+      if (button.textContent.startsWith('Download work')) button.click();
+    await new Promise((r) => setTimeout(r, 20));
+    expect(downloads).toContain('fixture-work.json');
+    expect(downloads).toContain('fixture-work.csv');
     state.paused = true;
     dom.window.document.getElementById('operate').click();
     await new Promise((r) => setTimeout(r, 20));

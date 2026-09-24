@@ -1,0 +1,61 @@
+{
+  "schema": 1,
+  "observedAt": "2026-09-24T00:00:00.000Z",
+  "work": {
+    "kind": "data-quality",
+    "rows": [
+      {
+        "id": "r1",
+        "values": {
+          "account": "acct-a",
+          "quantity": 10,
+          "status": "active"
+        }
+      },
+      {
+        "id": "r2",
+        "values": {
+          "account": "acct-a",
+          "quantity": -1,
+          "status": "unknown"
+        }
+      },
+      {
+        "id": "r3",
+        "values": {
+          "account": "",
+          "quantity": 3,
+          "status": "active"
+        }
+      }
+    ],
+    "rules": [
+      {
+        "id": "account-required",
+        "kind": "required",
+        "field": "account"
+      },
+      {
+        "id": "account-unique",
+        "kind": "unique",
+        "field": "account"
+      },
+      {
+        "id": "quantity-range",
+        "kind": "range",
+        "field": "quantity",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "id": "status-known",
+        "kind": "one-of",
+        "field": "status",
+        "values": [
+          "active",
+          "inactive"
+        ]
+      }
+    ]
+  }
+}

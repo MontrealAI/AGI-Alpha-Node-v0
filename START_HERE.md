@@ -1,4 +1,4 @@
-# Start here — AGI Alpha Node v3.1.0
+# Start here — AGI Alpha Node v3.2.0
 
 <!-- markdownlint-disable MD013 -->
 
@@ -17,6 +17,8 @@ For an actual local CPU comparison with a reviewed algorithm change, run `npm ru
 
 For a single supplied mission without the runtime, use `npm run demo:alpha`. General evidence-backed missions use `setup --mission source.json` as described in [mission intelligence](docs/alpha-intelligence.md).
 
+For the new complete analytical workflow, run `npm run demo:work` and open its three reports under `alpha-work-output/`. [Verified work](docs/alpha-verified-work.md) explains the invoice, allocation and data-quality formats, independent recomputation and model-selected facts. Use `setup --work /absolute/source.json` to configure your own structured work source. The operator interface provides JSON and CSV result downloads.
+
 ## 2. Configure your own node
 
 Prepare an authorized usage JSON file in the format of `examples/alpha/usage.json`. Its timestamp must describe a real observation, its period must be explicit, and service costs/repeated requests must come from your measurement process. Do not relabel example data as measurements.
@@ -29,7 +31,7 @@ npm run alpha -- --home /absolute/private/node setup --ens yourname.alpha.node.a
 
 Replace placeholders before running. `setup` validates the input format, generates a local signer, and writes `pipeline.json` and `engine.json`. It does not enable transactions or external changes. Local ENS names are unverified labels. Never fund demonstration keys.
 
-Review the pipeline's cost, probability, downside, freshness and daily limits. These are owner assumptions, not established forecasts. The [runtime guide](docs/alpha-runtime.md) explains peers, collectors, authorized actions, learning and live token policy.
+Review the pipeline's cost, probability, downside, freshness and daily limits, including per-mission, pending and daily reviewer minutes and the review-age deadline. These are owner assumptions, not established forecasts. The [runtime guide](docs/alpha-runtime.md) explains peers, collectors, authorized actions, learning and live token policy.
 
 ```bash
 npm run alpha -- --home /absolute/private/node operate

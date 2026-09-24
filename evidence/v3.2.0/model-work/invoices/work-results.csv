@@ -1,0 +1,3 @@
+"serviceId","usageUnits","billedUnits","quantityVarianceUnits","expectedMicroUsd","billedMicroUsd","varianceMicroUsd","priceMismatchLineIds","usageIds","invoiceIds"
+"compute","10","12","2","20000000","24000000","4000000","[]","[""u1""]","[""i1""]"
+"storage","5","10","5","5000000","12000000","7000000","[""i2"",""i3""]","[""u2""]","[""i2"",""i3""]"

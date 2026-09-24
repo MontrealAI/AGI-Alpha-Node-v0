@@ -1,0 +1,360 @@
+{
+  "fixture": true,
+  "sourceKind": "usage",
+  "workResult": null,
+  "actualLocalOperations": [
+    "HTTP specialist exchange",
+    "signed review",
+    "file change and health check",
+    "signed raw transactions",
+    "EVM escrow/token/stake execution",
+    "signed outcome"
+  ],
+  "notLive": [
+    "ENS provider",
+    "RPC consensus providers",
+    "token balances",
+    "economic outcome measurements",
+    "reviewer human independence"
+  ],
+  "first": {
+    "status": "operated",
+    "discovery": {
+      "status": "awaiting-review",
+      "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+      "evidenceHash": "0x0ed61d4fe4ef587da28f9d8e6b3b2f950cfe60919bfea02be7f623e7ea03a607",
+      "recommendation": "cache-inference"
+    },
+    "progress": []
+  },
+  "progress": [
+    {
+      "status": "operated",
+      "discovery": {
+        "status": "replayed",
+        "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+        "evidenceHash": "0x0ed61d4fe4ef587da28f9d8e6b3b2f950cfe60919bfea02be7f623e7ea03a607"
+      },
+      "progress": [
+        {
+          "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+          "status": "applied",
+          "beforeHash": "0x421ae6438e43bf56ce6d03c6bb7a1b2b4593ca9eaa6efcb4187f486f7a8420ad",
+          "afterHash": "0x92ed3c4a9d67fa4de5f39c7aaf5d7aca0d94b9b6c77dc5cd44e52fa35e502178",
+          "recovered": false
+        },
+        {
+          "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+          "settlement": {
+            "phase": "submit",
+            "status": "pending",
+            "transactionHash": "0x469909291eac1648ab3d7a6ffe06f52319754bc8dc226fdf2410dcb1fe120946"
+          }
+        }
+      ]
+    },
+    {
+      "status": "operated",
+      "discovery": {
+        "status": "replayed",
+        "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+        "evidenceHash": "0x0ed61d4fe4ef587da28f9d8e6b3b2f950cfe60919bfea02be7f623e7ea03a607"
+      },
+      "progress": [
+        {
+          "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+          "status": "applied",
+          "beforeHash": "0x421ae6438e43bf56ce6d03c6bb7a1b2b4593ca9eaa6efcb4187f486f7a8420ad",
+          "afterHash": "0x92ed3c4a9d67fa4de5f39c7aaf5d7aca0d94b9b6c77dc5cd44e52fa35e502178",
+          "recovered": false
+        },
+        {
+          "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+          "settlement": {
+            "phase": "submit",
+            "status": "confirmed",
+            "transactionHash": "0x469909291eac1648ab3d7a6ffe06f52319754bc8dc226fdf2410dcb1fe120946",
+            "blockNumber": "0x2",
+            "blockHash": "0x93a2fce91c232267421f0139d431fa5754355988b80609f49d855b13b0395713",
+            "purpose": "submit",
+            "amountBaseUnits": null
+          }
+        }
+      ]
+    },
+    {
+      "status": "operated",
+      "discovery": {
+        "status": "replayed",
+        "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+        "evidenceHash": "0x0ed61d4fe4ef587da28f9d8e6b3b2f950cfe60919bfea02be7f623e7ea03a607"
+      },
+      "progress": [
+        {
+          "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+          "status": "applied",
+          "beforeHash": "0x421ae6438e43bf56ce6d03c6bb7a1b2b4593ca9eaa6efcb4187f486f7a8420ad",
+          "afterHash": "0x92ed3c4a9d67fa4de5f39c7aaf5d7aca0d94b9b6c77dc5cd44e52fa35e502178",
+          "recovered": false
+        },
+        {
+          "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+          "settlement": {
+            "phase": "review",
+            "status": "pending",
+            "transactionHash": "0x152b033ee31e1f8cc91004ebdbe5dd1a7adae7beb70b4c01476a4337d6fd81fd"
+          }
+        }
+      ]
+    },
+    {
+      "status": "operated",
+      "discovery": {
+        "status": "replayed",
+        "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+        "evidenceHash": "0x0ed61d4fe4ef587da28f9d8e6b3b2f950cfe60919bfea02be7f623e7ea03a607"
+      },
+      "progress": [
+        {
+          "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+          "status": "applied",
+          "beforeHash": "0x421ae6438e43bf56ce6d03c6bb7a1b2b4593ca9eaa6efcb4187f486f7a8420ad",
+          "afterHash": "0x92ed3c4a9d67fa4de5f39c7aaf5d7aca0d94b9b6c77dc5cd44e52fa35e502178",
+          "recovered": false
+        },
+        {
+          "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+          "settlement": {
+            "phase": "review",
+            "status": "confirmed",
+            "transactionHash": "0x152b033ee31e1f8cc91004ebdbe5dd1a7adae7beb70b4c01476a4337d6fd81fd",
+            "blockNumber": "0x3",
+            "blockHash": "0xa4b04e537acbf6a9efb555b7e9de435f4f13614498658bf3aa400e66234d7a6e",
+            "purpose": "review",
+            "amountBaseUnits": null
+          }
+        }
+      ]
+    },
+    {
+      "status": "operated",
+      "discovery": {
+        "status": "replayed",
+        "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+        "evidenceHash": "0x0ed61d4fe4ef587da28f9d8e6b3b2f950cfe60919bfea02be7f623e7ea03a607"
+      },
+      "progress": [
+        {
+          "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+          "status": "applied",
+          "beforeHash": "0x421ae6438e43bf56ce6d03c6bb7a1b2b4593ca9eaa6efcb4187f486f7a8420ad",
+          "afterHash": "0x92ed3c4a9d67fa4de5f39c7aaf5d7aca0d94b9b6c77dc5cd44e52fa35e502178",
+          "recovered": false
+        },
+        {
+          "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+          "settlement": {
+            "phase": "claim",
+            "status": "pending",
+            "transactionHash": "0x22061f35273a7162af22406e2f085af45d466f75eab9b663f936e4bf2ce773e4"
+          }
+        }
+      ]
+    },
+    {
+      "status": "operated",
+      "discovery": {
+        "status": "replayed",
+        "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+        "evidenceHash": "0x0ed61d4fe4ef587da28f9d8e6b3b2f950cfe60919bfea02be7f623e7ea03a607"
+      },
+      "progress": [
+        {
+          "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+          "status": "applied",
+          "beforeHash": "0x421ae6438e43bf56ce6d03c6bb7a1b2b4593ca9eaa6efcb4187f486f7a8420ad",
+          "afterHash": "0x92ed3c4a9d67fa4de5f39c7aaf5d7aca0d94b9b6c77dc5cd44e52fa35e502178",
+          "recovered": false
+        },
+        {
+          "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+          "settlement": {
+            "phase": "claim",
+            "status": "confirmed",
+            "transactionHash": "0x22061f35273a7162af22406e2f085af45d466f75eab9b663f936e4bf2ce773e4",
+            "blockNumber": "0x4",
+            "blockHash": "0x12e657c61f62045336d0991772fd1dfd642b623ec91f4f70377de1a29a7a602d",
+            "purpose": "claim",
+            "amountBaseUnits": null
+          }
+        }
+      ]
+    },
+    {
+      "status": "operated",
+      "discovery": {
+        "status": "replayed",
+        "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+        "evidenceHash": "0x0ed61d4fe4ef587da28f9d8e6b3b2f950cfe60919bfea02be7f623e7ea03a607"
+      },
+      "progress": [
+        {
+          "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+          "status": "applied",
+          "beforeHash": "0x421ae6438e43bf56ce6d03c6bb7a1b2b4593ca9eaa6efcb4187f486f7a8420ad",
+          "afterHash": "0x92ed3c4a9d67fa4de5f39c7aaf5d7aca0d94b9b6c77dc5cd44e52fa35e502178",
+          "recovered": false
+        },
+        {
+          "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+          "settlement": {
+            "phase": "approve",
+            "status": "pending",
+            "transactionHash": "0xabdafcbc53c6de5049e48097a07b98881d34771a8d4519d44afa2109ec1f6cf9"
+          }
+        }
+      ]
+    },
+    {
+      "status": "operated",
+      "discovery": {
+        "status": "replayed",
+        "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+        "evidenceHash": "0x0ed61d4fe4ef587da28f9d8e6b3b2f950cfe60919bfea02be7f623e7ea03a607"
+      },
+      "progress": [
+        {
+          "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+          "status": "applied",
+          "beforeHash": "0x421ae6438e43bf56ce6d03c6bb7a1b2b4593ca9eaa6efcb4187f486f7a8420ad",
+          "afterHash": "0x92ed3c4a9d67fa4de5f39c7aaf5d7aca0d94b9b6c77dc5cd44e52fa35e502178",
+          "recovered": false
+        },
+        {
+          "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+          "settlement": {
+            "phase": "approve",
+            "status": "confirmed",
+            "transactionHash": "0xabdafcbc53c6de5049e48097a07b98881d34771a8d4519d44afa2109ec1f6cf9",
+            "blockNumber": "0x5",
+            "blockHash": "0x74a91fd2900fb003794d86c02506b5dad25e94a2eefb1d5ef818efa52448c59a",
+            "purpose": "approve",
+            "amountBaseUnits": null
+          }
+        }
+      ]
+    },
+    {
+      "status": "operated",
+      "discovery": {
+        "status": "replayed",
+        "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+        "evidenceHash": "0x0ed61d4fe4ef587da28f9d8e6b3b2f950cfe60919bfea02be7f623e7ea03a607"
+      },
+      "progress": [
+        {
+          "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+          "status": "applied",
+          "beforeHash": "0x421ae6438e43bf56ce6d03c6bb7a1b2b4593ca9eaa6efcb4187f486f7a8420ad",
+          "afterHash": "0x92ed3c4a9d67fa4de5f39c7aaf5d7aca0d94b9b6c77dc5cd44e52fa35e502178",
+          "recovered": false
+        },
+        {
+          "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+          "settlement": {
+            "phase": "stake",
+            "status": "pending",
+            "transactionHash": "0xae3139a90cd77255ab575158d643d0dffee77a483e3aab57d0bb4084b85f9a9c",
+            "reinvestedBaseUnits": "0"
+          }
+        }
+      ]
+    },
+    {
+      "status": "operated",
+      "discovery": {
+        "status": "replayed",
+        "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+        "evidenceHash": "0x0ed61d4fe4ef587da28f9d8e6b3b2f950cfe60919bfea02be7f623e7ea03a607"
+      },
+      "progress": [
+        {
+          "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+          "status": "applied",
+          "beforeHash": "0x421ae6438e43bf56ce6d03c6bb7a1b2b4593ca9eaa6efcb4187f486f7a8420ad",
+          "afterHash": "0x92ed3c4a9d67fa4de5f39c7aaf5d7aca0d94b9b6c77dc5cd44e52fa35e502178",
+          "recovered": false
+        },
+        {
+          "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+          "settlement": {
+            "phase": "stake",
+            "status": "confirmed",
+            "transactionHash": "0xae3139a90cd77255ab575158d643d0dffee77a483e3aab57d0bb4084b85f9a9c",
+            "blockNumber": "0x6",
+            "blockHash": "0xc3def285767dd0ae33aeebcf62a28a4f1f7249337a6e9d81418307e23afa5cee",
+            "purpose": "stake",
+            "amountBaseUnits": "40",
+            "reinvestedBaseUnits": "40"
+          }
+        }
+      ]
+    },
+    {
+      "status": "operated",
+      "discovery": {
+        "status": "replayed",
+        "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+        "evidenceHash": "0x0ed61d4fe4ef587da28f9d8e6b3b2f950cfe60919bfea02be7f623e7ea03a607"
+      },
+      "progress": [
+        {
+          "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+          "status": "applied",
+          "beforeHash": "0x421ae6438e43bf56ce6d03c6bb7a1b2b4593ca9eaa6efcb4187f486f7a8420ad",
+          "afterHash": "0x92ed3c4a9d67fa4de5f39c7aaf5d7aca0d94b9b6c77dc5cd44e52fa35e502178",
+          "recovered": false
+        },
+        {
+          "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+          "settlement": {
+            "phase": "reinvestment",
+            "status": "confirmed",
+            "transactionHash": "0xae3139a90cd77255ab575158d643d0dffee77a483e3aab57d0bb4084b85f9a9c",
+            "blockNumber": "0x6",
+            "blockHash": "0xc3def285767dd0ae33aeebcf62a28a4f1f7249337a6e9d81418307e23afa5cee",
+            "purpose": "stake",
+            "amountBaseUnits": "40",
+            "reinvestedBaseUnits": "40"
+          }
+        }
+      ]
+    }
+  ],
+  "outcomes": {
+    "acceptedMissions": 2,
+    "measuredMissions": 1,
+    "observedPairedMissions": 0,
+    "modeledOrFixtureMissions": 0,
+    "observedPairedNetUsd": 0,
+    "reviewerReportedNetUsd": 70,
+    "outcomes": [
+      {
+        "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+        "projectedExpectedNet": 187,
+        "measuredNetUsd": 70,
+        "observedAt": "2026-09-24T16:57:26.158Z"
+      }
+    ],
+    "limitation": "Reviewer-attested measurements, not independently audited profit. Compare only equivalent observation periods. The integrated runtime adapts and reinvests only within explicit owner policy; this summary executes nothing."
+  },
+  "transactionHashes": [
+    "0x469909291eac1648ab3d7a6ffe06f52319754bc8dc226fdf2410dcb1fe120946",
+    "0x152b033ee31e1f8cc91004ebdbe5dd1a7adae7beb70b4c01476a4337d6fd81fd",
+    "0x22061f35273a7162af22406e2f085af45d466f75eab9b663f936e4bf2ce773e4",
+    "0xabdafcbc53c6de5049e48097a07b98881d34771a8d4519d44afa2109ec1f6cf9",
+    "0xae3139a90cd77255ab575158d643d0dffee77a483e3aab57d0bb4084b85f9a9c"
+  ],
+  "stakedBaseUnits": "40",
+  "liquidBaseUnits": "60"
+}

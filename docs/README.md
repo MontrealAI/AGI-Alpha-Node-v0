@@ -591,3 +591,7 @@ Deploy, monitor, and let the sovereign labor machine compound relentlessly—alw
 - [Mission intelligence](alpha-intelligence.md)
 - [Measured work and operational qualification](alpha-qualification.md)
 - [Project status and remaining evidence](project-status.md)
+
+## Verified work in v3.2
+
+[Verified work](alpha-verified-work.md) covers invoice reconciliation, finite resource allocation, data-quality audits, computed-fact model briefs, reviewer-time reservations and independent JSON/CSV verification. See [v3.2 release evidence](../evidence/v3.2.0/validation.md).

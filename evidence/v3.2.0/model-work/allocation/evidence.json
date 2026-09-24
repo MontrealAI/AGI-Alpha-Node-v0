@@ -1,0 +1,387 @@
+{
+  "schema": 2,
+  "ledgerHead": "0x12faa234ab666034dd990083eb7034c444e6434f4593a828df6fec1902c7c8a9",
+  "identity": {
+    "ensName": "work.alpha.node.agi.eth",
+    "address": "0x41ae61a2af0a7D95Aa8eeDF41bdaBb7ebc8EdBC2",
+    "reviewer": "0x60dbAC95a9d4A16Be4c0dAa0B1f7B6ddEC7f895f"
+  },
+  "run": {
+    "type": "run",
+    "workId": "0x657daebfd5e84ea44982e2b6520ca0836680054b8043bab13daa48058a39c16f",
+    "reviewer": "0x60dbAC95a9d4A16Be4c0dAa0B1f7B6ddEC7f895f",
+    "mission": {
+      "id": "runtime-52fd7f992722a8e0b1ecd1a55f2c438945229935",
+      "title": "Verified resource-allocation work",
+      "objective": "Produce a reproducible analytical deliverable over the supplied records. Independently recompute the results before acceptance. No external change, refund or profit is authorized or established.",
+      "work": {
+        "kind": "resource-allocation",
+        "capacity": {
+          "capitalMicroUsd": "120000000",
+          "computeUnits": 10,
+          "reviewMinutes": 20
+        },
+        "candidates": [
+          {
+            "id": "a",
+            "benefitMicroUsd": "150000000",
+            "costMicroUsd": "80000000",
+            "riskReserveMicroUsd": "10000000",
+            "computeUnits": 8,
+            "reviewMinutes": 18
+          },
+          {
+            "id": "b",
+            "benefitMicroUsd": "90000000",
+            "costMicroUsd": "40000000",
+            "riskReserveMicroUsd": "10000000",
+            "computeUnits": 4,
+            "reviewMinutes": 8
+          },
+          {
+            "id": "c",
+            "benefitMicroUsd": "90000000",
+            "costMicroUsd": "40000000",
+            "riskReserveMicroUsd": "10000000",
+            "computeUnits": 4,
+            "reviewMinutes": 8
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "work-input",
+          "title": "Authorized work observation",
+          "text": "{\"observedAt\":\"2026-09-24T16:57:33.562Z\",\"inputDigest\":\"0xbe5d1a08e4b894f8e79311eac649f05bd0977a31b3611bd0720df6964c17294b\",\"kind\":\"resource-allocation\"}"
+        },
+        {
+          "id": "input-observation",
+          "title": "Observation envelope",
+          "text": "{\"observedAt\":\"2026-09-24T16:57:33.562Z\",\"inputDigest\":\"0x1842f2bd976568a37a3a1a6388cacf345bd7cdd618f30ed189e0e1d8cdf4d724\"}"
+        },
+        {
+          "id": "adaptive-model",
+          "title": "Owner-bounded outcome model",
+          "text": "{\"modelsDigest\":\"0x485265cac5f1c5bc3bffe3851d186e9329e6661f56c361277769423d45440ceb\",\"models\":[{\"recommendation\":\"verified-analysis\",\"samples\":0,\"successes\":0,\"losses\":0,\"meanBenefitRatio\":1}],\"reason\":\"Owner risk policy passed\"}"
+        }
+      ],
+      "opportunities": [
+        {
+          "id": "verified-analysis",
+          "title": "Compute and independently review the analytical result",
+          "benefit": 0,
+          "cost": 0,
+          "probability": 1,
+          "downside": 0,
+          "sourceIds": [
+            "work-input"
+          ],
+          "rationale": "Zero-dollar screening values grant analytical admission only. Actual provider/review costs require owner reservations and measurement; this analysis claims no financial benefit."
+        }
+      ],
+      "policy": {
+        "maxCost": 0,
+        "maxDownside": 0,
+        "minExpectedNet": 0,
+        "stressBenefitBps": 7000
+      },
+      "unit": "USD; no benefit forecast"
+    },
+    "identity": {
+      "verified": false,
+      "mode": "local",
+      "ensName": "work.alpha.node.agi.eth",
+      "address": "0x41ae61a2af0a7D95Aa8eeDF41bdaBb7ebc8EdBC2"
+    },
+    "analysis": {
+      "kind": "deterministic-evidence-analysis",
+      "missionDigest": "0x46641b90024eb2006758f5b04498caf00fc75b364a256e2c306e4e0784685b27",
+      "unit": "USD; no benefit forecast",
+      "recommendation": "verified-analysis",
+      "rankings": [
+        {
+          "id": "verified-analysis",
+          "title": "Compute and independently review the analytical result",
+          "benefit": 0,
+          "cost": 0,
+          "probability": 1,
+          "downside": 0,
+          "sourceIds": [
+            "work-input"
+          ],
+          "rationale": "Zero-dollar screening values grant analytical admission only. Actual provider/review costs require owner reservations and measurement; this analysis claims no financial benefit.",
+          "expectedNet": 0,
+          "stressedNet": 0,
+          "admitted": true
+        }
+      ],
+      "work": {
+        "schema": 1,
+        "kind": "resource-allocation",
+        "inputDigest": "0xbe5d1a08e4b894f8e79311eac649f05bd0977a31b3611bd0720df6964c17294b",
+        "summary": {
+          "selectedIds": [
+            "b",
+            "c"
+          ],
+          "declaredNetMicroUsd": "80000000",
+          "capitalMicroUsd": "100000000",
+          "computeUnits": 8,
+          "reviewMinutes": 16,
+          "optimalWithinSuppliedCandidates": true,
+          "examinedSubsets": 8
+        },
+        "rows": [
+          {
+            "id": "a",
+            "benefitMicroUsd": "150000000",
+            "costMicroUsd": "80000000",
+            "riskReserveMicroUsd": "10000000",
+            "computeUnits": 8,
+            "reviewMinutes": 18,
+            "selected": false,
+            "declaredNetMicroUsd": "60000000"
+          },
+          {
+            "id": "b",
+            "benefitMicroUsd": "90000000",
+            "costMicroUsd": "40000000",
+            "riskReserveMicroUsd": "10000000",
+            "computeUnits": 4,
+            "reviewMinutes": 8,
+            "selected": true,
+            "declaredNetMicroUsd": "40000000"
+          },
+          {
+            "id": "c",
+            "benefitMicroUsd": "90000000",
+            "costMicroUsd": "40000000",
+            "riskReserveMicroUsd": "10000000",
+            "computeUnits": 4,
+            "reviewMinutes": 8,
+            "selected": true,
+            "declaredNetMicroUsd": "40000000"
+          }
+        ],
+        "facts": [
+          {
+            "id": "selection",
+            "text": "Selected feasible subset: b, c, with declared net 80000000 micro-USD. These benefits are supplied estimates, not realized returns."
+          },
+          {
+            "id": "capacity",
+            "text": "Selected capacity: 100000000 micro-USD capital, 8 compute units, 16 review minutes."
+          },
+          {
+            "id": "search",
+            "text": "All 8 subsets of the 3 supplied candidates were evaluated. Optimality applies only to this finite candidate set and its declared objective and constraints."
+          }
+        ],
+        "limitation": "Exact finite optimization of owner-supplied estimates, not a forecast or execution authorization. At most 16 indivisible candidates; no scheduling, market access or external payments are implied."
+      },
+      "sources": [
+        {
+          "id": "work-input",
+          "title": "Authorized work observation",
+          "digest": "0x94ff37b1de0a081d9935205cfc2469ada66ac688009cc1ebf9b01f5f4d26ccc0",
+          "url": null
+        },
+        {
+          "id": "input-observation",
+          "title": "Observation envelope",
+          "digest": "0xade6e04aefa87c1bdc35264814619c371d2da36eddf4bd776519c92fa620137e",
+          "url": null
+        },
+        {
+          "id": "adaptive-model",
+          "title": "Owner-bounded outcome model",
+          "digest": "0x8376e006fa12b8eecb1fb71b19f17aff6c03532e0d8c3d3fc85e79faa8fc000d",
+          "url": null
+        }
+      ],
+      "limitations": [
+        "Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.",
+        "Source hashes establish integrity, not truth. Independent review is required.",
+        "No trades, external actions, token earnings or AGI capability are implied by this report."
+      ]
+    },
+    "provider": {
+      "text": "- Selected feasible subset: b, c, with declared net 80000000 micro-USD. These benefits are supplied estimates, not realized returns.\n- Selected capacity: 100000000 micro-USD capital, 8 compute units, 16 review minutes.\n- All 8 subsets of the 3 supplied candidates were evaluated. Optimality applies only to this finite candidate set and its declared objective and constraints.",
+      "model": "/tmp/alpha-model/Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+      "usage": {
+        "completion_tokens": 11,
+        "prompt_tokens": 193,
+        "total_tokens": 204,
+        "prompt_tokens_details": {
+          "cached_tokens": 68
+        }
+      },
+      "endpointOrigin": "http://127.0.0.1:18081",
+      "kind": "verified-work-brief",
+      "factIds": [
+        "selection",
+        "capacity",
+        "search"
+      ],
+      "factsDigest": "0x84fd8a843894d0c4dc8d55f3cb08d44da8d8926a9b06d023ff45bba2dc102a61"
+    },
+    "report": "# Verified resource-allocation work\n\n<!-- markdownlint-disable MD013 -->\n\nProduce a reproducible analytical deliverable over the supplied records. Independently recompute the results before acceptance. No external change, refund or profit is authorized or established.\n\nAnalysis: deterministic-evidence-analysis\nInput digest: 0x46641b90024eb2006758f5b04498caf00fc75b364a256e2c306e4e0784685b27\nUnits: USD; no benefit forecast\nRecommendation: verified-analysis\n\n| Opportunity | Expected net | Stressed net | Admitted | Evidence |\n| --- | ---: | ---: | --- | --- |\n| Compute and independently review the analytical result | 0.00 | 0.00 | Yes | work-input |\n\n## Evidence and assumptions\n\n- verified-analysis: Zero-dollar screening values grant analytical admission only. Actual provider/review costs require owner reservations and measurement; this analysis claims no financial benefit.\n\n- work-input — Authorized work observation — SHA-256 0x94ff37b1de0a081d9935205cfc2469ada66ac688009cc1ebf9b01f5f4d26ccc0\n- input-observation — Observation envelope — SHA-256 0xade6e04aefa87c1bdc35264814619c371d2da36eddf4bd776519c92fa620137e\n- adaptive-model — Owner-bounded outcome model — SHA-256 0x8376e006fa12b8eecb1fb71b19f17aff6c03532e0d8c3d3fc85e79faa8fc000d\n\n## Verified computation over supplied data\n\nWork result SHA-256: 0x86c998ba7ca39055ff2207e010fc465736692e3b2f1bf5c902608245c2d623df\n\n```json\n{\n  \"selectedIds\": [\n    \"b\",\n    \"c\"\n  ],\n  \"declaredNetMicroUsd\": \"80000000\",\n  \"capitalMicroUsd\": \"100000000\",\n  \"computeUnits\": 8,\n  \"reviewMinutes\": 16,\n  \"optimalWithinSuppliedCandidates\": true,\n  \"examinedSubsets\": 8\n}\n```\n\nExact finite optimization of owner-supplied estimates, not a forecast or execution authorization. At most 16 indivisible candidates; no scheduling, market access or external payments are implied.\n\nComplete rows are exported as work-result.json and work-results.csv. Source authenticity still requires review.\n\n## Model-selected computed facts (priority is unverified)\n\n- Selected feasible subset: b, c, with declared net 80000000 micro-USD. These benefits are supplied estimates, not realized returns.\n- Selected capacity: 100000000 micro-USD capital, 8 compute units, 16 review minutes.\n- All 8 subsets of the 3 supplied candidates were evaluated. Optimality applies only to this finite candidate set and its declared objective and constraints.\n\n## Runtime authorization\n\nAcceptance authorizes only the exact action below. Model text and specialist responses cannot authorize additional actions.\n\nPlan digest: 0xf08a55645d04002a27ee71a7f89d759ed203b4ef094b33c9c4ac4dd28f84e50b\n\nAuthenticated specialist receipts: 1\n\n### Specialist evidence\n\nSignatures authenticate the peer. Exact-quote validation checks citation presence, not truth or entailment. Review these results before acceptance.\n\nPeer: 0x1cb499e8d9d4c8da5757f2b653c47754647ac66b · Capability: evidence-analysis\n\n```json\n{\n  \"inputDigest\": \"0x46641b90024eb2006758f5b04498caf00fc75b364a256e2c306e4e0784685b27\",\n  \"analysis\": {\n    \"kind\": \"deterministic-evidence-analysis\",\n    \"missionDigest\": \"0x46641b90024eb2006758f5b04498caf00fc75b364a256e2c306e4e0784685b27\",\n    \"unit\": \"USD; no benefit forecast\",\n    \"recommendation\": \"verified-analysis\",\n    \"rankings\": [\n      {\n        \"id\": \"verified-analysis\",\n        \"title\": \"Compute and independently review the analytical result\",\n        \"benefit\": 0,\n        \"cost\": 0,\n        \"probability\": 1,\n        \"downside\": 0,\n        \"sourceIds\": [\n          \"work-input\"\n        ],\n        \"rationale\": \"Zero-dollar screening values grant analytical admission only. Actual provider/review costs require owner reservations and measurement; this analysis claims no financial benefit.\",\n        \"expectedNet\": 0,\n        \"stressedNet\": 0,\n        \"admitted\": true\n      }\n    ],\n    \"work\": {\n      \"schema\": 1,\n      \"kind\": \"resource-allocation\",\n      \"inputDigest\": \"0xbe5d1a08e4b894f8e79311eac649f05bd0977a31b3611bd0720df6964c17294b\",\n      \"summary\": {\n        \"selectedIds\": [\n          \"b\",\n          \"c\"\n        ],\n        \"declaredNetMicroUsd\": \"80000000\",\n        \"capitalMicroUsd\": \"100000000\",\n        \"computeUnits\": 8,\n        \"reviewMinutes\": 16,\n        \"optimalWithinSuppliedCandidates\": true,\n        \"examinedSubsets\": 8\n      },\n      \"rows\": [\n        {\n          \"id\": \"a\",\n          \"benefitMicroUsd\": \"150000000\",\n          \"costMicroUsd\": \"80000000\",\n          \"riskReserveMicroUsd\": \"10000000\",\n          \"computeUnits\": 8,\n          \"reviewMinutes\": 18,\n          \"selected\": false,\n          \"declaredNetMicroUsd\": \"60000000\"\n        },\n        {\n          \"id\": \"b\",\n          \"benefitMicroUsd\": \"90000000\",\n          \"costMicroUsd\": \"40000000\",\n          \"riskReserveMicroUsd\": \"10000000\",\n          \"computeUnits\": 4,\n          \"reviewMinutes\": 8,\n          \"selected\": true,\n          \"declaredNetMicroUsd\": \"40000000\"\n        },\n        {\n          \"id\": \"c\",\n          \"benefitMicroUsd\": \"90000000\",\n          \"costMicroUsd\": \"40000000\",\n          \"riskReserveMicroUsd\": \"10000000\",\n          \"computeUnits\": 4,\n          \"reviewMinutes\": 8,\n          \"selected\": true,\n          \"declaredNetMicroUsd\": \"40000000\"\n        }\n      ],\n      \"facts\": [\n        {\n          \"id\": \"selection\",\n          \"text\": \"Selected feasible subset: b, c, with declared net 80000000 micro-USD. These benefits are supplied estimates, not realized returns.\"\n        },\n        {\n          \"id\": \"capacity\",\n          \"text\": \"Selected capacity: 100000000 micro-USD capital, 8 compute units, 16 review minutes.\"\n        },\n        {\n          \"id\": \"search\",\n          \"text\": \"All 8 subsets of the 3 supplied candidates were evaluated. Optimality applies only to this finite candidate set and its declared objective and constraints.\"\n        }\n      ],\n      \"limitation\": \"Exact finite optimization of owner-supplied estimates, not a forecast or execution authorization. At most 16 indivisible candidates; no scheduling, market access or external payments are implied.\"\n    },\n    \"sources\": [\n      {\n        \"id\": \"work-input\",\n        \"title\": \"Authorized work observation\",\n        \"digest\": \"0x94ff37b1de0a081d9935205cfc2469ada66ac688009cc1ebf9b01f5f4d26ccc0\",\n        \"url\": null\n      },\n      {\n        \"id\": \"input-observation\",\n        \"title\": \"Observation envelope\",\n        \"digest\": \"0xade6e04aefa87c1bdc35264814619c371d2da36eddf4bd776519c92fa620137e\",\n        \"url\": null\n      },\n      {\n        \"id\": \"adaptive-model\",\n        \"title\": \"Owner-bounded outcome model\",\n        \"digest\": \"0x8376e006fa12b8eecb1fb71b19f17aff6c03532e0d8c3d3fc85e79faa8fc000d\",\n        \"url\": null\n      }\n    ],\n    \"limitations\": [\n      \"Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.\",\n      \"Source hashes establish integrity, not truth. Independent review is required.\",\n      \"No trades, external actions, token earnings or AGI capability are implied by this report.\"\n    ]\n  }\n}\n```\n\nNo external action is proposed.\n\n## Limits\n\n- Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.\n- Source hashes establish integrity, not truth. Independent review is required.\n- No trades, external actions, token earnings or AGI capability are implied by this report.\n",
+    "status": "awaiting-review",
+    "reward": "unfunded-unverified",
+    "runtimeContext": {
+      "schema": 2,
+      "planDigest": "0xf08a55645d04002a27ee71a7f89d759ed203b4ef094b33c9c4ac4dd28f84e50b",
+      "action": null,
+      "specialists": [
+        {
+          "domain": "agialpha:specialist:v1",
+          "kind": "result",
+          "sender": "0x1cb499e8d9d4c8da5757f2b653c47754647ac66b",
+          "recipient": "0x41ae61a2af0a7d95aa8eedf41bdabb7ebc8edbc2",
+          "issuedAt": 1790269053813,
+          "expiresAt": 1790269113813,
+          "payload": {
+            "requestId": "0xe7a7411dbe3b2dd948fee10341c850d61a27e72b5deec9ec8ac1f70d9e8c6b4f",
+            "capability": "evidence-analysis",
+            "priceMicroUsd": 1,
+            "inputDigest": "0x46641b90024eb2006758f5b04498caf00fc75b364a256e2c306e4e0784685b27",
+            "result": {
+              "inputDigest": "0x46641b90024eb2006758f5b04498caf00fc75b364a256e2c306e4e0784685b27",
+              "analysis": {
+                "kind": "deterministic-evidence-analysis",
+                "missionDigest": "0x46641b90024eb2006758f5b04498caf00fc75b364a256e2c306e4e0784685b27",
+                "unit": "USD; no benefit forecast",
+                "recommendation": "verified-analysis",
+                "rankings": [
+                  {
+                    "id": "verified-analysis",
+                    "title": "Compute and independently review the analytical result",
+                    "benefit": 0,
+                    "cost": 0,
+                    "probability": 1,
+                    "downside": 0,
+                    "sourceIds": [
+                      "work-input"
+                    ],
+                    "rationale": "Zero-dollar screening values grant analytical admission only. Actual provider/review costs require owner reservations and measurement; this analysis claims no financial benefit.",
+                    "expectedNet": 0,
+                    "stressedNet": 0,
+                    "admitted": true
+                  }
+                ],
+                "work": {
+                  "schema": 1,
+                  "kind": "resource-allocation",
+                  "inputDigest": "0xbe5d1a08e4b894f8e79311eac649f05bd0977a31b3611bd0720df6964c17294b",
+                  "summary": {
+                    "selectedIds": [
+                      "b",
+                      "c"
+                    ],
+                    "declaredNetMicroUsd": "80000000",
+                    "capitalMicroUsd": "100000000",
+                    "computeUnits": 8,
+                    "reviewMinutes": 16,
+                    "optimalWithinSuppliedCandidates": true,
+                    "examinedSubsets": 8
+                  },
+                  "rows": [
+                    {
+                      "id": "a",
+                      "benefitMicroUsd": "150000000",
+                      "costMicroUsd": "80000000",
+                      "riskReserveMicroUsd": "10000000",
+                      "computeUnits": 8,
+                      "reviewMinutes": 18,
+                      "selected": false,
+                      "declaredNetMicroUsd": "60000000"
+                    },
+                    {
+                      "id": "b",
+                      "benefitMicroUsd": "90000000",
+                      "costMicroUsd": "40000000",
+                      "riskReserveMicroUsd": "10000000",
+                      "computeUnits": 4,
+                      "reviewMinutes": 8,
+                      "selected": true,
+                      "declaredNetMicroUsd": "40000000"
+                    },
+                    {
+                      "id": "c",
+                      "benefitMicroUsd": "90000000",
+                      "costMicroUsd": "40000000",
+                      "riskReserveMicroUsd": "10000000",
+                      "computeUnits": 4,
+                      "reviewMinutes": 8,
+                      "selected": true,
+                      "declaredNetMicroUsd": "40000000"
+                    }
+                  ],
+                  "facts": [
+                    {
+                      "id": "selection",
+                      "text": "Selected feasible subset: b, c, with declared net 80000000 micro-USD. These benefits are supplied estimates, not realized returns."
+                    },
+                    {
+                      "id": "capacity",
+                      "text": "Selected capacity: 100000000 micro-USD capital, 8 compute units, 16 review minutes."
+                    },
+                    {
+                      "id": "search",
+                      "text": "All 8 subsets of the 3 supplied candidates were evaluated. Optimality applies only to this finite candidate set and its declared objective and constraints."
+                    }
+                  ],
+                  "limitation": "Exact finite optimization of owner-supplied estimates, not a forecast or execution authorization. At most 16 indivisible candidates; no scheduling, market access or external payments are implied."
+                },
+                "sources": [
+                  {
+                    "id": "work-input",
+                    "title": "Authorized work observation",
+                    "digest": "0x94ff37b1de0a081d9935205cfc2469ada66ac688009cc1ebf9b01f5f4d26ccc0",
+                    "url": null
+                  },
+                  {
+                    "id": "input-observation",
+                    "title": "Observation envelope",
+                    "digest": "0xade6e04aefa87c1bdc35264814619c371d2da36eddf4bd776519c92fa620137e",
+                    "url": null
+                  },
+                  {
+                    "id": "adaptive-model",
+                    "title": "Owner-bounded outcome model",
+                    "digest": "0x8376e006fa12b8eecb1fb71b19f17aff6c03532e0d8c3d3fc85e79faa8fc000d",
+                    "url": null
+                  }
+                ],
+                "limitations": [
+                  "Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.",
+                  "Source hashes establish integrity, not truth. Independent review is required.",
+                  "No trades, external actions, token earnings or AGI capability are implied by this report."
+                ]
+              }
+            }
+          },
+          "hash": "0xb9189bb932d38830de3934f05233c612ad02c30a5d57e8a44b5985f53a1c3ad5",
+          "signature": "0x5cf2bf8fe7e8fe8445f12c4ca74d2dd6dbe4a4855f7157e763a61911e83229296c84218bb99b3d291ec52733f08127427894e57dcd1f2fc8c65cbd45a1a0d7c81c"
+        }
+      ]
+    },
+    "previous": "0x71f8382e9def8178ba3907474bf12d6231c8d5f3783b876f501791ed7b70cb13",
+    "at": "2026-09-24T16:57:38.264Z",
+    "hash": "0xaa4e2a874768b69ae30fc4f4f7f97f772a6b65db3922f362b1372dc4211feed9",
+    "signature": "0xbf3be843e7a8bb15aef228032eb725c633025d6ef3f887b00f21401eb62ed282766f9ba57c092a89abe60a4f79157b9c0a564578c18b7e3b8489cb18902b1d6e1b",
+    "review": {
+      "type": "review-attestation-v3",
+      "node": "0x41ae61a2af0a7d95aa8eedf41bdabb7ebc8edbc2",
+      "ensName": "work.alpha.node.agi.eth",
+      "missionId": "runtime-52fd7f992722a8e0b1ecd1a55f2c438945229935",
+      "runHash": "0xaa4e2a874768b69ae30fc4f4f7f97f772a6b65db3922f362b1372dc4211feed9",
+      "decision": "accepted",
+      "notes": "Controlled demonstration role: recomputed structured work, checked supplied inputs and exported artifacts. Not independent human acceptance.",
+      "at": "2026-09-24T16:57:38.432Z",
+      "hash": "0xba91542b7914197d31d88dc6eb7c87602e9ae4dbe4d3a357d216fdfb137f69c7",
+      "signature": "0x64533cd89057a83fe49db0ba403439870fd6bfff9c027a0d072398f20e020f800922bc343dd5d7ab8ceb5dd4d6f7d7a49fdf86ab013ef0b6c7116513c255e0081b",
+      "envelopeHash": "0x12faa234ab666034dd990083eb7034c444e6434f4593a828df6fec1902c7c8a9"
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   mkdtemp,
   writeFile,
@@ -267,7 +267,10 @@ describe('integrated runtime', () => {
     const now = Date.now();
     for (let i = 0; i < 3; i++) {
       const mission = { ...measuredFixture, id: `learning-${i}` };
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(now - 200000);
       await runMission(dir, mission);
+      vi.useRealTimers();
       await review(mission.id);
       const out = await exportMission(dir, mission.id, join(dir, 'out'));
       const bundle = JSON.parse(await readFile(out.evidence));

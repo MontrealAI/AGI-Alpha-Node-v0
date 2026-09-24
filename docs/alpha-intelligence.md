@@ -81,3 +81,7 @@ Provider `timeoutMs` defaults to 60,000 and may be set between 1,000 and 180,000
 The [smaller model's rejected draft](../evidence/v3.1.0/model-quality-rejection/assessment.json) and [larger model assessment](../evidence/v3.1.0/repository-research/assessment.json) document semantic limitations. Both produced verifiable source quotations, but neither qualifies for unreviewed operational reliance. The larger model distinguishes testing from deployment more clearly while still overstating some implications. The release does not equate running inference with solving general intelligence.
 
 The harness checks replay without additional calls, verifies the exported receipts, performs encrypted recovery and confirms that production qualification remains incomplete. Model weights are downloaded separately. The schema transport follows the pinned runtime's [grammar documentation](https://github.com/ggml-org/llama.cpp/blob/b11146/grammars/README.md).
+
+## v3.2 computed-fact briefs
+
+For structured work missions, the normal narrative provider instead returns a strict list of existing computed fact IDs. The node renders the verified fact text and binds the complete result to the signed mission. This closes free-form factual overclaims in that specific path. General research/adversarial specialists retain unverified prose; they are not silently reclassified as correct. See [verified work](alpha-verified-work.md) and its reproducible three-family model run.

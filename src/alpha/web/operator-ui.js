@@ -42,6 +42,14 @@ async function refresh() {
       [s.missions.length, 'Signed missions'],
       [s.operations.pendingReviews, 'Awaiting independent review'],
       [
+        s.operations.pendingReviewMinutes ?? 0,
+        'Reserved pending review minutes',
+      ],
+      [
+        s.operations.dailyReservedReviewMinutes ?? 0,
+        'Review minutes reserved today',
+      ],
+      [
         `$${(s.operations.dailyReservedMicroUsd / 1e6).toFixed(2)}`,
         'Reserved today · estimate, not invoice',
       ],
@@ -115,6 +123,36 @@ async function refresh() {
           setTimeout(() => URL.revokeObjectURL(url), 1000);
         });
       card.append(button);
+      if (m.workKind)
+        for (const format of ['json', 'csv']) {
+          const download = element(
+            'button',
+            `Download work ${format.toUpperCase()}`,
+            'secondary',
+          );
+          download.onclick = () =>
+            action(async () => {
+              const work = await api(
+                `/api/work?id=${encodeURIComponent(m.id)}`,
+              );
+              const url = URL.createObjectURL(
+                new Blob(
+                  [
+                    format === 'json'
+                      ? JSON.stringify(work.result, null, 2)
+                      : work.csv,
+                  ],
+                  { type: format === 'json' ? 'application/json' : 'text/csv' },
+                ),
+              );
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `${m.id}-work.${format}`;
+              a.click();
+              setTimeout(() => URL.revokeObjectURL(url), 1000);
+            });
+          card.append(download);
+        }
       return card;
     }),
   );

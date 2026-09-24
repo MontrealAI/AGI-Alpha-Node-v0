@@ -1,0 +1,64 @@
+{
+  "schema": 1,
+  "kind": "resource-allocation",
+  "inputDigest": "0xbe5d1a08e4b894f8e79311eac649f05bd0977a31b3611bd0720df6964c17294b",
+  "summary": {
+    "selectedIds": [
+      "b",
+      "c"
+    ],
+    "declaredNetMicroUsd": "80000000",
+    "capitalMicroUsd": "100000000",
+    "computeUnits": 8,
+    "reviewMinutes": 16,
+    "optimalWithinSuppliedCandidates": true,
+    "examinedSubsets": 8
+  },
+  "rows": [
+    {
+      "id": "a",
+      "benefitMicroUsd": "150000000",
+      "costMicroUsd": "80000000",
+      "riskReserveMicroUsd": "10000000",
+      "computeUnits": 8,
+      "reviewMinutes": 18,
+      "selected": false,
+      "declaredNetMicroUsd": "60000000"
+    },
+    {
+      "id": "b",
+      "benefitMicroUsd": "90000000",
+      "costMicroUsd": "40000000",
+      "riskReserveMicroUsd": "10000000",
+      "computeUnits": 4,
+      "reviewMinutes": 8,
+      "selected": true,
+      "declaredNetMicroUsd": "40000000"
+    },
+    {
+      "id": "c",
+      "benefitMicroUsd": "90000000",
+      "costMicroUsd": "40000000",
+      "riskReserveMicroUsd": "10000000",
+      "computeUnits": 4,
+      "reviewMinutes": 8,
+      "selected": true,
+      "declaredNetMicroUsd": "40000000"
+    }
+  ],
+  "facts": [
+    {
+      "id": "selection",
+      "text": "Selected feasible subset: b, c, with declared net 80000000 micro-USD. These benefits are supplied estimates, not realized returns."
+    },
+    {
+      "id": "capacity",
+      "text": "Selected capacity: 100000000 micro-USD capital, 8 compute units, 16 review minutes."
+    },
+    {
+      "id": "search",
+      "text": "All 8 subsets of the 3 supplied candidates were evaluated. Optimality applies only to this finite candidate set and its declared objective and constraints."
+    }
+  ],
+  "limitation": "Exact finite optimization of owner-supplied estimates, not a forecast or execution authorization. At most 16 indivisible candidates; no scheduling, market access or external payments are implied."
+}

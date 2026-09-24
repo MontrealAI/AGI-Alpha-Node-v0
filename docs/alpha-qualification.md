@@ -121,3 +121,9 @@ Import on the node with `assurance-import security-assurance.json`. Repeat for t
 Commission the bounded pilot explicitly under owner limits. When evidence is established, set `requireQualifiedAdmission: true` in `engine.json` and obtain assessments bound to that final configuration. `operate` then requires a passing gate before admitting new missions. It continues reconciliation of already accepted actions and payments so an expired assessment cannot strand existing obligations. Use `pause` when you intend to stop all new execution.
 
 The gate never expands permissions, pays an assessor or signs an assessment on somebody else's behalf. Live credentials, funded contracts, actual reviewers and target-host access must come from the deployment owner.
+
+## v3.2 structured work and admission
+
+Structured work sources can include the same optional `measurement` contract before admission. Their recomputable invoice/audit/allocation outputs establish computational correctness over supplied data; they do not establish buyer value, source truth or observed profit. See [verified work](alpha-verified-work.md).
+
+The autonomous pipeline now reserves explicit reviewer minutes before inference and stops new work when review capacity or an age deadline is exhausted. Rejected measured work contributes to the learning loss history. Learning additionally excludes observations predating admission or dated in the future. General free-form model analysis remains unverified; work briefs instead select from independently computed facts.

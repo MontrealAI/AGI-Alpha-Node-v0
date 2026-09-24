@@ -2,6 +2,8 @@ import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { canonicalJson } from '../utils/canonicalize.js';
 import { measurementContractSchema } from './measurement.js';
+import { workSchema, executeWork, workDigest } from './work.js';
+import { inferWorkBrief } from './work-brief.js';
 
 export const digest = (value) =>
   '0x' +
@@ -15,6 +17,7 @@ export const missionSchema = z
     title: z.string().min(1).max(200),
     objective: z.string().min(1).max(4000),
     measurement: measurementContractSchema.optional(),
+    work: workSchema.optional(),
     sources: z
       .array(
         z
@@ -88,6 +91,7 @@ export function analyzeMission(input) {
     unit: mission.unit,
     recommendation: rankings.find((o) => o.admitted)?.id ?? null,
     rankings,
+    ...(mission.work ? { work: executeWork(mission.work) } : {}),
     sources: mission.sources.map((s) => ({
       id: s.id,
       title: s.title,
@@ -136,8 +140,31 @@ export function renderReport(
       (s) => `- ${esc(s.id)} — ${esc(s.title)} — SHA-256 ${s.digest}`,
     ),
     '',
+    ...(result.work
+      ? [
+          '## Verified computation over supplied data',
+          '',
+          `Work result SHA-256: ${workDigest(result.work)}`,
+          '',
+          '```json',
+          JSON.stringify(result.work.summary, null, 2),
+          '```',
+          '',
+          result.work.limitation,
+          '',
+          'Complete rows are exported as work-result.json and work-results.csv. Source authenticity still requires review.',
+          '',
+        ]
+      : []),
     ...(provider
-      ? ['## Model analysis (unverified narrative)', '', provider.text, '']
+      ? [
+          provider.kind === 'verified-work-brief'
+            ? '## Model-selected computed facts (priority is unverified)'
+            : '## Model analysis (unverified narrative)',
+          '',
+          provider.text,
+          '',
+        ]
       : []),
     ...(mission.measurement
       ? [
@@ -202,6 +229,10 @@ export async function inferNarrative(
   config,
   { fetchImpl = fetch, specialistEvidence = null } = {},
 ) {
+  if (mission.work)
+    return inferWorkBrief(analysis.work, config, requestInference, {
+      fetchImpl,
+    });
   return requestInference(
     [
       {

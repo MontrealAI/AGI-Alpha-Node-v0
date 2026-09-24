@@ -7,13 +7,69 @@ import { promisify } from 'node:util';
 import { once } from 'node:events';
 import { Wallet } from 'ethers';
 const execute = promisify(execFile);
+it('sets up structured work and verifies exported JSON and CSV through the real CLI', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'alpha-work-cli-')),
+    dir = join(root, 'node');
+  const cli = (...args) =>
+    execute(process.execPath, ['src/alpha/cli.js', '--home', dir, ...args]);
+  try {
+    const source = JSON.parse(
+      await readFile('examples/alpha/work-invoices.json'),
+    );
+    source.observedAt = new Date().toISOString();
+    await writeFile(join(root, 'source.json'), JSON.stringify(source));
+    await cli(
+      'setup',
+      '--ens',
+      'workcli.alpha.node.agi.eth',
+      '--reviewer',
+      Wallet.createRandom().address,
+      '--work',
+      join(root, 'source.json'),
+    );
+    const run = JSON.parse((await cli('operate')).stdout),
+      id = run.discovery.missionId;
+    const exported = JSON.parse(
+      (await cli('export', id, '--out', join(root, 'out'))).stdout,
+    );
+    expect(
+      JSON.parse(
+        (
+          await cli(
+            'verify-work',
+            join(root, 'source.json'),
+            exported.workResult,
+          )
+        ).stdout,
+      ).verified,
+    ).toBe(true);
+    expect(
+      JSON.parse(
+        (
+          await cli(
+            'verify-bundle',
+            exported.evidence,
+            '--work-dir',
+            join(root, 'out'),
+          )
+        ).stdout,
+      ).work.verified,
+    ).toBe(true);
+    await writeFile(exported.workResult, '{}');
+    await expect(
+      cli('verify-work', join(root, 'source.json'), exported.workResult),
+    ).rejects.toThrow('recomputation');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+}, 15000);
 it('operates through the real CLI and stops the HTTP service cleanly on SIGTERM', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'alpha-cli-'));
   let server;
   const cli = (...args) =>
     execute(process.execPath, ['src/alpha/cli.js', '--home', dir, ...args]);
   try {
-    expect((await cli('--version')).stdout.trim()).toBe('3.1.0');
+    expect((await cli('--version')).stdout.trim()).toBe('3.2.0');
     await cli(
       'init',
       '--ens',

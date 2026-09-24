@@ -1,0 +1,6461 @@
+{
+  "schema": 1,
+  "synthetic": true,
+  "seed": 77,
+  "reference": "Independent dynamic-programming implementation in test/alpha/work.test.js",
+  "cases": [
+    {
+      "trial": 0,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "8",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "21",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "14",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "13",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "6",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "8",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "50",
+      "actual": {
+        "selectedIds": [
+          "c1",
+          "c3",
+          "c4",
+          "c5"
+        ],
+        "declaredNetMicroUsd": "50",
+        "capitalMicroUsd": "13",
+        "computeUnits": 5,
+        "reviewMinutes": 7,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 1,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "21",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "10",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "15",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "22",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "25",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "20",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "5",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "79",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c3",
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "79",
+        "capitalMicroUsd": "14",
+        "computeUnits": 7,
+        "reviewMinutes": 7,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 2,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "24",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "7",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "0",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "9",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "6",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "27",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "28",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "66",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c5",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "66",
+        "capitalMicroUsd": "13",
+        "computeUnits": 5,
+        "reviewMinutes": 3,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 3,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "5",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "10",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "13",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "20",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "3",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "6",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "21",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "40",
+      "actual": {
+        "selectedIds": [
+          "c2",
+          "c3",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "40",
+        "capitalMicroUsd": "14",
+        "computeUnits": 7,
+        "reviewMinutes": 2,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 4,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "26",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "17",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "12",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "17",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "24",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "27",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "22",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "75",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c1",
+          "c4",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "75",
+        "capitalMicroUsd": "14",
+        "computeUnits": 5,
+        "reviewMinutes": 5,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 5,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "14",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "9",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "8",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "11",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "22",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "21",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "53",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c1",
+          "c2",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "53",
+        "capitalMicroUsd": "14",
+        "computeUnits": 4,
+        "reviewMinutes": 7,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 6,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "12",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "25",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "28",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "1",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "24",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "5",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "26",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 0
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "67",
+      "actual": {
+        "selectedIds": [
+          "c1",
+          "c2",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "67",
+        "capitalMicroUsd": "12",
+        "computeUnits": 8,
+        "reviewMinutes": 1,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 7,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "5",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "10",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "27",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "8",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "22",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "27",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "85",
+      "actual": {
+        "selectedIds": [
+          "c2",
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "85",
+        "capitalMicroUsd": "14",
+        "computeUnits": 7,
+        "reviewMinutes": 7,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 8,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "24",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "9",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "26",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "18",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "21",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "26",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 2
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "81",
+      "actual": {
+        "selectedIds": [
+          "c2",
+          "c3",
+          "c4",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "81",
+        "capitalMicroUsd": "12",
+        "computeUnits": 6,
+        "reviewMinutes": 5,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 9,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "3",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "8",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "5",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "4",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "19",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "6",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "21",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "37",
+      "actual": {
+        "selectedIds": [
+          "c3",
+          "c4",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "37",
+        "capitalMicroUsd": "7",
+        "computeUnits": 6,
+        "reviewMinutes": 6,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 10,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "22",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "17",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "20",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "29",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "6",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "13",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "12",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "56",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c1",
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "56",
+        "capitalMicroUsd": "14",
+        "computeUnits": 7,
+        "reviewMinutes": 6,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 11,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "28",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "17",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "6",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "17",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "14",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "21",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "64",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c2",
+          "c5",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "64",
+        "capitalMicroUsd": "11",
+        "computeUnits": 8,
+        "reviewMinutes": 7,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 12,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "22",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "3",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "6",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "7",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "10",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "27",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "2",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "43",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c3",
+          "c5",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "43",
+        "capitalMicroUsd": "15",
+        "computeUnits": 4,
+        "reviewMinutes": 6,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 13,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "5",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "12",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "17",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "18",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "19",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "8",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "7",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "45",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "declaredNetMicroUsd": "45",
+        "capitalMicroUsd": "14",
+        "computeUnits": 6,
+        "reviewMinutes": 7,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 14,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "18",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "8",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "27",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "12",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "0",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "69",
+      "actual": {
+        "selectedIds": [
+          "c1",
+          "c2",
+          "c3",
+          "c5"
+        ],
+        "declaredNetMicroUsd": "69",
+        "capitalMicroUsd": "12",
+        "computeUnits": 8,
+        "reviewMinutes": 5,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 15,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "3",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "24",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "1",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "12",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "5",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "14",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "21",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 1
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "56",
+      "actual": {
+        "selectedIds": [
+          "c1",
+          "c3",
+          "c5",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "56",
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 5,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 16,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "8",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "29",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "18",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "5",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "14",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "5",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "18",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "51",
+      "actual": {
+        "selectedIds": [
+          "c1",
+          "c2",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "51",
+        "capitalMicroUsd": "14",
+        "computeUnits": 6,
+        "reviewMinutes": 7,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 17,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "21",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "16",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "15",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "8",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "27",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "26",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "21",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "88",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c3",
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "88",
+        "capitalMicroUsd": "15",
+        "computeUnits": 3,
+        "reviewMinutes": 7,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 18,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "4",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "27",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "0",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "3",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "16",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "25",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "12",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "65",
+      "actual": {
+        "selectedIds": [
+          "c1",
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "65",
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 4,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 19,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "7",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "16",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "11",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "16",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "4",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "3",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "28",
+      "actual": {
+        "selectedIds": [
+          "c1",
+          "c4",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "28",
+        "capitalMicroUsd": "14",
+        "computeUnits": 8,
+        "reviewMinutes": 6,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 20,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "4",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "16",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "15",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "16",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "5",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "10",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 2
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "35",
+      "actual": {
+        "selectedIds": [
+          "c1",
+          "c2",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "35",
+        "capitalMicroUsd": "14",
+        "computeUnits": 8,
+        "reviewMinutes": 7,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 21,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "25",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "28",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "11",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "28",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "19",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "14",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "7",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "77",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "declaredNetMicroUsd": "77",
+        "capitalMicroUsd": "15",
+        "computeUnits": 6,
+        "reviewMinutes": 6,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 22,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "6",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "3",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "6",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "9",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "10",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "25",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "12",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "40",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c1",
+          "c3",
+          "c5",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "40",
+        "capitalMicroUsd": "15",
+        "computeUnits": 5,
+        "reviewMinutes": 7,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 23,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "3",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "12",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "21",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "16",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "13",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "16",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "9",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 1
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "53",
+      "actual": {
+        "selectedIds": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "declaredNetMicroUsd": "53",
+        "capitalMicroUsd": "9",
+        "computeUnits": 8,
+        "reviewMinutes": 6,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 24,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "0",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "7",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "28",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "19",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "14",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "19",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "18",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "65",
+      "actual": {
+        "selectedIds": [
+          "c2",
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "65",
+        "capitalMicroUsd": "14",
+        "computeUnits": 7,
+        "reviewMinutes": 7,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 25,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "3",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "16",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "7",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "20",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "7",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "28",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "1",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "56",
+      "actual": {
+        "selectedIds": [
+          "c1",
+          "c3",
+          "c4",
+          "c5"
+        ],
+        "declaredNetMicroUsd": "56",
+        "capitalMicroUsd": "15",
+        "computeUnits": 7,
+        "reviewMinutes": 3,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 26,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "22",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "5",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "22",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "21",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "6",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "29",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "18",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 0
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "64",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "64",
+        "capitalMicroUsd": "11",
+        "computeUnits": 8,
+        "reviewMinutes": 5,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 27,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "19",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "16",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "15",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "28",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "21",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "16",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "3",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "49",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c3",
+          "c5"
+        ],
+        "declaredNetMicroUsd": "49",
+        "capitalMicroUsd": "14",
+        "computeUnits": 3,
+        "reviewMinutes": 5,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 28,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "14",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "19",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "14",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "9",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "0",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "9",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "2",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 2
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "35",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c1",
+          "c2",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "35",
+        "capitalMicroUsd": "14",
+        "computeUnits": 7,
+        "reviewMinutes": 7,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 29,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "8",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "29",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "28",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "11",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "2",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "13",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 3
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "74",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "declaredNetMicroUsd": "74",
+        "capitalMicroUsd": "14",
+        "computeUnits": 4,
+        "reviewMinutes": 6,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 30,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "2",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "17",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "28",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "9",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "8",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "15",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "22",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "61",
+      "actual": {
+        "selectedIds": [
+          "c1",
+          "c2",
+          "c3",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "61",
+        "capitalMicroUsd": "15",
+        "computeUnits": 5,
+        "reviewMinutes": 4,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 31,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "17",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "14",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "21",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "12",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "19",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "24",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "7",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 1
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "61",
+      "actual": {
+        "selectedIds": [
+          "c2",
+          "c3",
+          "c4",
+          "c5"
+        ],
+        "declaredNetMicroUsd": "61",
+        "capitalMicroUsd": "15",
+        "computeUnits": 7,
+        "reviewMinutes": 6,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 32,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "12",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "24",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "17",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "8",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "9",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "26",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "61",
+      "actual": {
+        "selectedIds": [
+          "c2",
+          "c3",
+          "c4",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "61",
+        "capitalMicroUsd": "14",
+        "computeUnits": 8,
+        "reviewMinutes": 5,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 33,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "5",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "18",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "21",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "6",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "19",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "14",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "5",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 3
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "42",
+      "actual": {
+        "selectedIds": [
+          "c2",
+          "c4",
+          "c5"
+        ],
+        "declaredNetMicroUsd": "42",
+        "capitalMicroUsd": "12",
+        "computeUnits": 8,
+        "reviewMinutes": 4,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 34,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "22",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "16",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "0",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "29",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "10",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "70",
+      "actual": {
+        "selectedIds": [
+          "c1",
+          "c3",
+          "c5",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "70",
+        "capitalMicroUsd": "15",
+        "computeUnits": 6,
+        "reviewMinutes": 5,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 35,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "22",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "26",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "29",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "26",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "5",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 1
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "68",
+      "actual": {
+        "selectedIds": [
+          "c2",
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "68",
+        "capitalMicroUsd": "15",
+        "computeUnits": 6,
+        "reviewMinutes": 7,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 36,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "26",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "25",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "4",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "1",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "4",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "9",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "16",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 2
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "58",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c1",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "58",
+        "capitalMicroUsd": "9",
+        "computeUnits": 7,
+        "reviewMinutes": 5,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 37,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "1",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "8",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "9",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "0",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "3",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "22",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "5",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "19",
+      "actual": {
+        "selectedIds": [
+          "c2",
+          "c5"
+        ],
+        "declaredNetMicroUsd": "19",
+        "capitalMicroUsd": "12",
+        "computeUnits": 4,
+        "reviewMinutes": 3,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 38,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "4",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "15",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "16",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "7",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "16",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "1",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "16",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 0
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "39",
+      "actual": {
+        "selectedIds": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "declaredNetMicroUsd": "39",
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 6,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 39,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "3",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "28",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "25",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "6",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "9",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "2",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "29",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 1
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "81",
+      "actual": {
+        "selectedIds": [
+          "c1",
+          "c2",
+          "c4",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "81",
+        "capitalMicroUsd": "10",
+        "computeUnits": 7,
+        "reviewMinutes": 7,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 40,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "28",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "17",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "0",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "10",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "29",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "24",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 2
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "75",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c3",
+          "c4",
+          "c5"
+        ],
+        "declaredNetMicroUsd": "75",
+        "capitalMicroUsd": "15",
+        "computeUnits": 6,
+        "reviewMinutes": 4,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 41,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "17",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "22",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "19",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "0",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "5",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "2",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "27",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 3
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "57",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c1",
+          "c4",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "57",
+        "capitalMicroUsd": "14",
+        "computeUnits": 7,
+        "reviewMinutes": 5,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 42,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "20",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "8",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "17",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "14",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "3",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "26",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 0
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "54",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c1",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "54",
+        "capitalMicroUsd": "15",
+        "computeUnits": 6,
+        "reviewMinutes": 3,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 43,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "9",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "4",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "3",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "10",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "15",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "24",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "27",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "57",
+      "actual": {
+        "selectedIds": [
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "57",
+        "capitalMicroUsd": "9",
+        "computeUnits": 6,
+        "reviewMinutes": 6,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 44,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "28",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "9",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "8",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "3",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "4",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "29",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "4",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 2
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "53",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c1",
+          "c5"
+        ],
+        "declaredNetMicroUsd": "53",
+        "capitalMicroUsd": "13",
+        "computeUnits": 4,
+        "reviewMinutes": 6,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 45,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "13",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "6",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "25",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "16",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "7",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "10",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "9",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "46",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "declaredNetMicroUsd": "46",
+        "capitalMicroUsd": "15",
+        "computeUnits": 7,
+        "reviewMinutes": 7,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 46,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "2",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "29",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "4",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "8",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "21",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "14",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 0
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "66",
+      "actual": {
+        "selectedIds": [
+          "c1",
+          "c3",
+          "c4",
+          "c5"
+        ],
+        "declaredNetMicroUsd": "66",
+        "capitalMicroUsd": "15",
+        "computeUnits": 7,
+        "reviewMinutes": 7,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 47,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "3",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "16",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "27",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "18",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "19",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "10",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "17",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "72",
+      "actual": {
+        "selectedIds": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "declaredNetMicroUsd": "72",
+        "capitalMicroUsd": "8",
+        "computeUnits": 8,
+        "reviewMinutes": 6,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 48,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "10",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "7",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "28",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "5",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "22",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "27",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "26",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "88",
+      "actual": {
+        "selectedIds": [
+          "c2",
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "88",
+        "capitalMicroUsd": "15",
+        "computeUnits": 6,
+        "reviewMinutes": 7,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 49,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "5",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "16",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "27",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "26",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "7",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "12",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "11",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 3
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "51",
+      "actual": {
+        "selectedIds": [
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "declaredNetMicroUsd": "51",
+        "capitalMicroUsd": "9",
+        "computeUnits": 8,
+        "reviewMinutes": 6,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 50,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "10",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "19",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "10",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "5",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "12",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "6",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "35",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c4",
+          "c5"
+        ],
+        "declaredNetMicroUsd": "35",
+        "capitalMicroUsd": "10",
+        "computeUnits": 6,
+        "reviewMinutes": 5,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 51,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "25",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "24",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "15",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "2",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "3",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "26",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "9",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 1
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "65",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c2",
+          "c5",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "65",
+        "capitalMicroUsd": "10",
+        "computeUnits": 8,
+        "reviewMinutes": 7,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 52,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "22",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "3",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "20",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "18",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "27",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "8",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "44",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c5",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "44",
+        "capitalMicroUsd": "13",
+        "computeUnits": 2,
+        "reviewMinutes": 5,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 53,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "17",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "4",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "7",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "4",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "15",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "6",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "15",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 3
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "33",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c4",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "33",
+        "capitalMicroUsd": "14",
+        "computeUnits": 8,
+        "reviewMinutes": 5,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 54,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "14",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "26",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "21",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "16",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "1",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "24",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "79",
+      "actual": {
+        "selectedIds": [
+          "c1",
+          "c2",
+          "c3",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "79",
+        "capitalMicroUsd": "15",
+        "computeUnits": 3,
+        "reviewMinutes": 4,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 55,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "24",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "21",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "6",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "17",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "28",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "3",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 1
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "64",
+      "actual": {
+        "selectedIds": [
+          "c1",
+          "c2",
+          "c5"
+        ],
+        "declaredNetMicroUsd": "64",
+        "capitalMicroUsd": "9",
+        "computeUnits": 8,
+        "reviewMinutes": 5,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 56,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "20",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "27",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "6",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "9",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "12",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "7",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "2",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "42",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c1",
+          "c3"
+        ],
+        "declaredNetMicroUsd": "42",
+        "capitalMicroUsd": "14",
+        "computeUnits": 5,
+        "reviewMinutes": 4,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 57,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "19",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "28",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "11",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "20",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "10",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 3
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "81",
+      "actual": {
+        "selectedIds": [
+          "c1",
+          "c3",
+          "c4",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "81",
+        "capitalMicroUsd": "13",
+        "computeUnits": 6,
+        "reviewMinutes": 6,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 58,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "8",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "13",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "2",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "29",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "12",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "21",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "4",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 0
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "51",
+      "actual": {
+        "selectedIds": [
+          "c3",
+          "c4",
+          "c5"
+        ],
+        "declaredNetMicroUsd": "51",
+        "capitalMicroUsd": "11",
+        "computeUnits": 5,
+        "reviewMinutes": 6,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 59,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "1",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "12",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "11",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "28",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "15",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "14",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "9",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 1
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "51",
+      "actual": {
+        "selectedIds": [
+          "c3",
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "51",
+        "capitalMicroUsd": "15",
+        "computeUnits": 7,
+        "reviewMinutes": 6,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 60,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "0",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "10",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "29",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "8",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "2",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "48",
+      "actual": {
+        "selectedIds": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "declaredNetMicroUsd": "48",
+        "capitalMicroUsd": "14",
+        "computeUnits": 8,
+        "reviewMinutes": 6,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 61,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "15",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "22",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "24",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "13",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "20",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "5",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 3
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "60",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c1",
+          "c3",
+          "c4"
+        ],
+        "declaredNetMicroUsd": "60",
+        "capitalMicroUsd": "14",
+        "computeUnits": 8,
+        "reviewMinutes": 4,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 62,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "12",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "14",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "25",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "8",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "7",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "0",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 0
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "55",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c1",
+          "c3"
+        ],
+        "declaredNetMicroUsd": "55",
+        "capitalMicroUsd": "5",
+        "computeUnits": 6,
+        "reviewMinutes": 6,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 63,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "29",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "28",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "23",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "6",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "21",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "0",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "27",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 1
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "70",
+      "actual": {
+        "selectedIds": [
+          "c1",
+          "c2",
+          "c3",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "70",
+        "capitalMicroUsd": "14",
+        "computeUnits": 7,
+        "reviewMinutes": 4,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 64,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "2",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "13",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "2",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "11",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "4",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "17",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "10",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 2
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "28",
+      "actual": {
+        "selectedIds": [
+          "c1",
+          "c3",
+          "c5"
+        ],
+        "declaredNetMicroUsd": "28",
+        "capitalMicroUsd": "13",
+        "computeUnits": 5,
+        "reviewMinutes": 7,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 65,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "29",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "10",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "15",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "4",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "17",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "28",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "27",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 3
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "72",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c5",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "72",
+        "capitalMicroUsd": "12",
+        "computeUnits": 7,
+        "reviewMinutes": 4,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 66,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "14",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "1",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "28",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "21",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "8",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "27",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "24",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "75",
+      "actual": {
+        "selectedIds": [
+          "c2",
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "75",
+        "capitalMicroUsd": "12",
+        "computeUnits": 8,
+        "reviewMinutes": 3,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 67,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "5",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "16",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "5",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "8",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "7",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "16",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "25",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 1
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "47",
+      "actual": {
+        "selectedIds": [
+          "c1",
+          "c2",
+          "c5",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "47",
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 6,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 68,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "6",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "7",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "8",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "27",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "22",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "27",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "24",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 2
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "47",
+      "actual": {
+        "selectedIds": [
+          "c1",
+          "c3",
+          "c5"
+        ],
+        "declaredNetMicroUsd": "47",
+        "capitalMicroUsd": "14",
+        "computeUnits": 8,
+        "reviewMinutes": 7,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 69,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "13",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "14",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "1",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "12",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "27",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "20",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "15",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "46",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c4",
+          "c5"
+        ],
+        "declaredNetMicroUsd": "46",
+        "capitalMicroUsd": "14",
+        "computeUnits": 3,
+        "reviewMinutes": 2,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 70,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "26",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "7",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "22",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "3",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "18",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "1",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "12",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "54",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "declaredNetMicroUsd": "54",
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 71,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "17",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "18",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "25",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "2",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "27",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "6",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "11",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "67",
+      "actual": {
+        "selectedIds": [
+          "c1",
+          "c2",
+          "c4"
+        ],
+        "declaredNetMicroUsd": "67",
+        "capitalMicroUsd": "3",
+        "computeUnits": 7,
+        "reviewMinutes": 6,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 72,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "16",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "13",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "24",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "7",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "6",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "21",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "14",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "55",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c2",
+          "c3",
+          "c5"
+        ],
+        "declaredNetMicroUsd": "55",
+        "capitalMicroUsd": "13",
+        "computeUnits": 5,
+        "reviewMinutes": 6,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 73,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "29",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "4",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "1",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "24",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "15",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "6",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "17",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "76",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c3",
+          "c4",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "76",
+        "capitalMicroUsd": "9",
+        "computeUnits": 8,
+        "reviewMinutes": 7,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 74,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "0",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "17",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "18",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "1",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "28",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "9",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "10",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 0
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "49",
+      "actual": {
+        "selectedIds": [
+          "c1",
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "49",
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 4,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 75,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "29",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "0",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "5",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "2",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "19",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "20",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "1",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "44",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c5"
+        ],
+        "declaredNetMicroUsd": "44",
+        "capitalMicroUsd": "5",
+        "computeUnits": 5,
+        "reviewMinutes": 5,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 76,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "18",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "1",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "0",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 0,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "13",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "12",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "9",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "22",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 2
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "37",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c4",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "37",
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 2,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 77,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "13",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "26",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 0,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "27",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 4,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "22",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 3,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "11",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "4",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "7",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 4,
+          "reviewMinutes": 3
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "65",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c1",
+          "c2",
+          "c4"
+        ],
+        "declaredNetMicroUsd": "65",
+        "capitalMicroUsd": "12",
+        "computeUnits": 8,
+        "reviewMinutes": 5,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 78,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "20",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "9",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 3,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "8",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "1",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 3,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "8",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "19",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 0,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "8",
+          "costMicroUsd": "7",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 0
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "49",
+      "actual": {
+        "selectedIds": [
+          "c0",
+          "c1",
+          "c2",
+          "c4",
+          "c5"
+        ],
+        "declaredNetMicroUsd": "49",
+        "capitalMicroUsd": "15",
+        "computeUnits": 7,
+        "reviewMinutes": 6,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    },
+    {
+      "trial": 79,
+      "candidates": [
+        {
+          "id": "c0",
+          "benefitMicroUsd": "13",
+          "costMicroUsd": "6",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c1",
+          "benefitMicroUsd": "22",
+          "costMicroUsd": "1",
+          "riskReserveMicroUsd": "0",
+          "computeUnits": 1,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c2",
+          "benefitMicroUsd": "3",
+          "costMicroUsd": "0",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 2,
+          "reviewMinutes": 1
+        },
+        {
+          "id": "c3",
+          "benefitMicroUsd": "18",
+          "costMicroUsd": "3",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 0
+        },
+        {
+          "id": "c4",
+          "benefitMicroUsd": "19",
+          "costMicroUsd": "2",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 4,
+          "reviewMinutes": 3
+        },
+        {
+          "id": "c5",
+          "benefitMicroUsd": "26",
+          "costMicroUsd": "5",
+          "riskReserveMicroUsd": "1",
+          "computeUnits": 2,
+          "reviewMinutes": 2
+        },
+        {
+          "id": "c6",
+          "benefitMicroUsd": "29",
+          "costMicroUsd": "4",
+          "riskReserveMicroUsd": "2",
+          "computeUnits": 1,
+          "reviewMinutes": 1
+        }
+      ],
+      "capacity": {
+        "capitalMicroUsd": "15",
+        "computeUnits": 8,
+        "reviewMinutes": 7
+      },
+      "expectedNetMicroUsd": "65",
+      "actual": {
+        "selectedIds": [
+          "c1",
+          "c2",
+          "c5",
+          "c6"
+        ],
+        "declaredNetMicroUsd": "65",
+        "capitalMicroUsd": "15",
+        "computeUnits": 6,
+        "reviewMinutes": 6,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 128
+      }
+    }
+  ]
+}

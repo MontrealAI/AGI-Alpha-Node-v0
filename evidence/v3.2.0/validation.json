@@ -1,0 +1,214 @@
+{
+  "version": "3.2.0",
+  "date": "2026-09-24",
+  "localEnvironment": {
+    "platform": "linux",
+    "arch": "x64",
+    "node": "22.14.0"
+  },
+  "softwareFingerprint": {
+    "digest": "0x5809297a92d52f6c6b9088e0a5894d122c4450d18aec2a78fa52cd4df6e72087",
+    "files": 153
+  },
+  "results": {
+    "backend": {
+      "passed": 575,
+      "skipped": 11
+    },
+    "standalone": {
+      "passed": 132,
+      "skipped": 0,
+      "includedInBackend": true
+    },
+    "frontend": {
+      "passed": 1
+    },
+    "coverage": {
+      "lines": {
+        "total": 4664,
+        "covered": 4112,
+        "skipped": 0,
+        "pct": 88.16
+      },
+      "statements": {
+        "total": 4992,
+        "covered": 4328,
+        "skipped": 0,
+        "pct": 86.69
+      },
+      "functions": {
+        "total": 868,
+        "covered": 804,
+        "skipped": 0,
+        "pct": 92.62
+      },
+      "branches": {
+        "total": 4694,
+        "covered": 3626,
+        "skipped": 0,
+        "pct": 77.24
+      },
+      "branchesTrue": {
+        "total": 0,
+        "covered": 0,
+        "skipped": 0,
+        "pct": 100
+      }
+    },
+    "rootDependencyAdvisories": 0,
+    "subgraphDependencyAdvisories": 0
+  },
+  "passedCommands": [
+    "npm run ci:verify",
+    "npm run test:alpha",
+    "npm run typecheck",
+    "npm run dashboard:build",
+    "npm run lint:md (final documentation)",
+    "npm run lint:links",
+    "npm audit --json",
+    "npm audit --json --prefix subgraph",
+    "node scripts/qualify-local-model.mjs --work (pinned command in docs/alpha-verified-work.md)",
+    "Fresh ZIP extraction: npm ci --omit=dev, npm run demo:work, CLI --version"
+  ],
+  "allocationOracle": {
+    "cases": 80,
+    "seed": 77,
+    "reference": "Independent dynamic-programming implementation",
+    "evidence": "allocation-oracle.json",
+    "boundaryCandidateCount": 16,
+    "boundaryExaminedSubsets": 65536
+  },
+  "realModel": {
+    "modelCalls": 3,
+    "elapsedMs": 17999,
+    "provenance": {
+      "revision": "a06e946bb6b655725eafa393f4a9745d460374c9",
+      "sha256": "3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597",
+      "bytes": 2497281120,
+      "runtime": "llama.cpp b11146"
+    },
+    "workKinds": [
+      "invoice-reconciliation",
+      "resource-allocation",
+      "data-quality"
+    ],
+    "allArtifactsVerified": true,
+    "allReviewsVerified": true,
+    "allReplayed": true,
+    "specialistRequests": 3,
+    "separateSpecialistProcesses": 1,
+    "recovery": {
+      "ledgerHeadMatched": true,
+      "restoredPaused": true
+    },
+    "productionQualified": false,
+    "assessment": "All displayed fact text is recomputed from inputs. Fact selection quality, source truth and general reasoning are not established."
+  },
+  "localEvm": {
+    "sourceKinds": [
+      "usage",
+      "work"
+    ],
+    "transactionsPerKind": 5,
+    "paidTokenBaseUnitsPerKind": "100",
+    "stakedTokenBaseUnitsPerKind": "40",
+    "liquidTokenBaseUnitsPerKind": "60",
+    "fixture": true,
+    "productionEconomics": false
+  },
+  "sourceSha256": {
+    "contracts/AlphaMissionEscrow.sol": "1882f79fa175427bcac7356cc66ce398624b3467d4f7403f867973b8cc2eae21",
+    "contracts/AlphaNodeManager.sol": "abb98e776233d4d19ccf1ff7d8c88bc786865ad1f3350504fb30785e8cf1aec2",
+    "contracts/TreasuryExecutor.sol": "5a32a71ef3ef37d21264402c15baec913e5be702fb39a33c2a3e6b0a3a976535",
+    "contracts/access/Ownable.sol": "9117a43ef28972493a9467f70e53e2b3b748ffc0b967dcbfcee9d8496056f925",
+    "contracts/interfaces/IAlphaWorkUnitEvents.sol": "5b22a0b5a3ba68b4213915ff60e3ebc2a72bd117143838a97bed936b82c5accf",
+    "package-lock.json": "55276083f4cffad25a7ff5f1739e10f545055ce394a40b76b53a9a82a6ab8d41",
+    "package.json": "fb2423f0e1b66e8ddaf5781f44a7b24ac4f60616a9c892c87b18bae3c9813d53",
+    "scripts/attestation-verify.ts": "ae4ccd540db675845a1ac51b6fdd65eb9410e9205899281ff8c0aaef6c8d3159",
+    "scripts/check-ajv-version.mjs": "905029a60cbca043389f2ec15aff09c709c36d962b1234554fd9fdaa253d5b7f",
+    "scripts/check-subgraph-toolchain.mjs": "8b732adc7a497f518202c1cbe0d250b7d6c93acdec55a3750857d0c8747d613f",
+    "scripts/dcutr-harness.ts": "480790d9d6bf3473c495c1bad6d65e8089b8b4473aa679effc4cb177e34238d9",
+    "scripts/demo-alpha.mjs": "31c68f3565561dbc2e786271e6e2ddcfe655c060ad19f46209dd605e0c5d6f11",
+    "scripts/demo-measured-work.mjs": "89395e1941ccd2dc00ae19cc312d250d255302a9644f8c66bd8ebef95cc7c8bb",
+    "scripts/demo-operations.mjs": "0f377f82b861b0f14ddc48d865099f3537285377c480cd2bd3f2bb2f8d0a3c14",
+    "scripts/demo-runtime.mjs": "cbf1b608a2c63a6fbd7c27f06216b8a34da724b6079eee2fb9aa6a61224b2570",
+    "scripts/demo-verified-work.mjs": "d28fb1c272d199ab2a8610516bd40f49d0033623457a762a5a11c03d7fc6ab1f",
+    "scripts/ens-inspect.ts": "887788ebccf5befa449b5ad4a25ca5d7df30ae23fc2475a78a90893ab53c7611",
+    "scripts/lib/research-qualification.mjs": "17edca2357dc169236e66049ddf83ba78c103c558822245b3ba4ed9a1dcd0800",
+    "scripts/lib/vitest-runner.js": "08676f20177fbc415f64de756f52236af7eded54e4d99bee24d49570bb0d0d38",
+    "scripts/lib/work-demonstration.mjs": "fa4f2dbabd022f3723430416902628ed3d71b8712713d358ca1ddf314d67dd30",
+    "scripts/lint-grafana-dashboard.mjs": "ce7028fb691263c65ccb82522695eb17ea70ddc057bcef24f96ae709bba1b47c",
+    "scripts/local_cluster.mjs": "5d133df0082561466be58e101532695c1d8fcb3c11092cd111fa7a03a4f5a330",
+    "scripts/p2p-simulator.mjs": "d6b5f797966852c94a0b5b2e99b7b92b91e48d10b3d3e391d376dc7a8721a9aa",
+    "scripts/package-alpha-release.py": "ab8df226c982c06970e1624ef8195070d232d2fd5367215e9c662e4f21be484b",
+    "scripts/prepare-husky.cjs": "e4c04f546ee4c80a79f86ac8bcf6c5427663eec49fabff464a0da38381be5a37",
+    "scripts/publish-badges.mjs": "0401322385656530bcd5b95e21a4c4aa55eebd12f104687d24b925409c72353a",
+    "scripts/qualify-local-model.mjs": "8f1915016fac08c54df9b2bdf95404f8a43f6ec7b5106c5542aa04a7bcdefd98",
+    "scripts/render-subgraph-manifest.mjs": "90ae541b0ec9a80a08664169ab234d447c653d52d1f566ca35beb86f2554abea",
+    "scripts/run-solc.mjs": "beace28268aaf016a4600066a687dfb4b54939bab16b374c20e4a85d4bc8f126",
+    "scripts/subgraph-simulation.js": "33b0c8b6bfecc20ee9ca6be87d3f8e9ef604fe48154e83f7664d2531a3484b28",
+    "scripts/treasury/execute-intent.ts": "d5d24150088c4d41f93ae847dc3bdb6a974270117bdf8704c9e600aaa8c8215c",
+    "scripts/treasury/keygen.ts": "7f96e52922f13e6a576b17c7b1bfd4ef04f1a23e2018c7ba48c0480bfa2210e1",
+    "scripts/treasury/sign-intent.ts": "7a68665a7cda083f094ec14658153342aba82e3e840b7ef0648adb740afc5bc4",
+    "scripts/verify-branch-gate.mjs": "c3f2d068449edcf12f032fa2f227e49b500a1fa0f04888572427bd87008ab651",
+    "scripts/verify-health-gate.mjs": "0d7528d3a8d6e4d4677d5d0728eac7add91041ba8ba7126797ff52a0b7e18929",
+    "scripts/vitest-runner.mjs": "07b0960106ac93f6f04399636972d039eddfedfe7d0fa2a2d4b743999382fab0",
+    "src/alpha/cli.js": "0ec29bf9046d96116354f896877ee2297c35b52b46ee5822ea338d4cba228e59",
+    "src/alpha/expenses.js": "037108c56ff60c2208b8c598fbae2b336cbd402adb955842595196f1542426b9",
+    "src/alpha/measurement.js": "18c1dbb3e2b9ba7338edb6a66672fef4228b5851a2e7df7d0caa565edd5b0750",
+    "src/alpha/mission.js": "f55750b8f70ded771d758a6da06b894e61b1fc1cd8fa5bd43d9c6447fc878338",
+    "src/alpha/node.js": "7bbfba52a6ce9da7d50251fb7dffa1f9520737312098af054545c7fa2f2fc575",
+    "src/alpha/operations.js": "cc5aa6fe5e85a71aac199077ac7e1d631e166cfc8260a48d674473ca8bfa23c0",
+    "src/alpha/operator.js": "ac40cc6c16afaebbd55161f6ffc3af8d09f0f334b97dcfc87873d2d58381c58f",
+    "src/alpha/qualification.js": "17b369566fc354182e625a78b01de5132a0de2d575951c9b742e3a47d78ff021",
+    "src/alpha/runtime/actions.js": "b51c6b4ee9b6ef08a472798c25765873e8ff8bb968aa9bd2ee6023a47d4c6296",
+    "src/alpha/runtime/claim-audit.js": "c44b3a59156cda75fc9a9c0741a4c98894789ae0a33a7577e0f1a3d84d1aaac6",
+    "src/alpha/runtime/engine.js": "791796ba2c2a7bdd8fc6356c685ae83f1f037cd57b3422f504ddc54d75f43e4f",
+    "src/alpha/runtime/maintenance.js": "75ac9c96a72fdad7b16ece077e4e69eb9deb568c45067938b2b97ad24d74ed5b",
+    "src/alpha/runtime/planner.js": "f799ccbb9d0a95f82ee2febd853531f2d3af0ce5e9c09282b63bd7b309c2790d",
+    "src/alpha/runtime/review-approval.js": "30efea48bc284b414ae270ebd46aae0715974e7cbca44f93c8c07d7ea66afe2a",
+    "src/alpha/runtime/rpc.js": "b113cf814601b4e70e9a4d5441614727489fd4e6ed8c8c05e1b726722760de3b",
+    "src/alpha/runtime/specialist-protocol.js": "fe741f66b35c1adb83398f31f0b90f6289bbf9561459b73f363bfae5cb00eb0f",
+    "src/alpha/runtime/specialists.js": "a35783c7bbde83c30d4cbb9b1e07a892af29907d6add073d12f240137c87b2b4",
+    "src/alpha/runtime/synthesis.js": "423b83c03b272d66e278e0d99a3a662f89f2e758fc1fff317e10dcf790916588",
+    "src/alpha/runtime/transactions.js": "39d5616cfff93df2b1fc643927fd9e74ee1fab4fdb38d216856f2cba75dc979b",
+    "src/alpha/settlement.js": "06e6fa5add055cb2462b49f00f32592f24263c9bb32abcd21209ac16d9e70411",
+    "src/alpha/web/operator-ui.js": "d6da441f522dc028cc3028a641f1bb1721b05477af48ad07380e992e0403c2c1",
+    "src/alpha/web/operator.css": "f98290eda127bb813d4c93eb6b3f714f348fa5388755cc64b5f20d2b8d4f9b9b",
+    "src/alpha/web/operator.html": "c67aa0fdee5dff9d8b37ebf61cc6c21b0bd2e22f31d513468c1ebddb6368aa31",
+    "src/alpha/work-brief.js": "82b5c7fd0dac7d3c69e5266446d03459964a5c6eeea7912143440448f2ff76df",
+    "src/alpha/work.js": "909e00c3db2e60eecab8ce00d1d9a610d77bb3766178a1954dfd3028f082a4cf",
+    "subgraph/package-lock.json": "e658ccda6307799d517eee6f41407a3b1d1aada994df6533589870b61d8096a1",
+    "test/alpha/claim-audit.test.js": "022148339beb8a77480a6779dfe19f710e043e75c7f1636199e61d82733c4fad",
+    "test/alpha/cli.test.js": "250810a61054c2240274a7043abc6e70378996acd6f1459ad8253061a66ee21c",
+    "test/alpha/contracts.test.js": "e04fa32f52fdcc16a82903b6f14e1e5e1de3cc6a23601e0d00a1295ffbaa482f",
+    "test/alpha/expenses.test.js": "2e3111b9e0aa93e188617d7e1bccaa87c2f90e82cc37286cfe53d3866c61ffdb",
+    "test/alpha/fixtures/measurement.js": "b2d36efd9e4423bdbe6a76908e18ef07390db0454369842eab16f9c38f674c85",
+    "test/alpha/intelligence.test.js": "3bfe662319a084d33b0d357d0874877d5822582db56661e9568f5c69f09b4f0f",
+    "test/alpha/maintenance.test.js": "9ccc6be785aa0b423c864c5b857feffb82d9dd844f258dc9551e9d1677892452",
+    "test/alpha/measurement.test.js": "dafd8e2e226c9e06d33a25548dd1c9e55b306de849b9d67e23eaded364450dfa",
+    "test/alpha/mission.test.js": "7bfed7696bd610723bd04ea9921ddc0d30d86f2fe0e86009bbf7ff198b02b105",
+    "test/alpha/operations.test.js": "6738fb5e13177011a5d45e6494e8c4642d2f68ad39e709e239b7d263ca561ea3",
+    "test/alpha/operator-ui.test.js": "7b0a83bddd637f61b3ac018d895ba336a47b659929badc5e1dca2a76f1fc2616",
+    "test/alpha/qualification.test.js": "4b34f1e1c3f7ad2c3a0a6e1f1c5dce01b20d933a1239b0a2bccfd053fc0c64ee",
+    "test/alpha/runtime-boundaries.test.js": "968a4e59198cf2b110d869ca384ed3722affe5be5598de4c21a88c915c20e4c7",
+    "test/alpha/runtime.test.js": "0af10f9f2743fecaadbcd8b0290c738f87e66cf39a8300e06a01d75f858c54e7",
+    "test/alpha/settlement.test.js": "2c98d842df72b24810345262ecde95222cd7d75b0ae86a3cbbe369c06f64109d",
+    "test/alpha/transactions.test.js": "13b3351a85b327f22c0e013d717b0793183a236183af36283e11cd4be00ef7fc",
+    "test/alpha/work.test.js": "2b6dd633cb97ff7985ef034f2f7ecc9750a8ab8e12606c2fcc27c4233c18e06e"
+  },
+  "releaseGates": "Exact candidate and main commit must pass GitHub Actions Linux, macOS and Docker checks before automatic publication. Consult the tagged commit workflow for remote results.",
+  "limitations": [
+    "No owner mainnet deployment, funded live payments or live ENS commissioning.",
+    "No independent human assessment or target-host service installation.",
+    "Example source records, candidate estimates and reviewer roles are controlled; no buyer demand or measured production profit is established.",
+    "Model selection among computed facts does not establish prioritization quality or general reasoning; free-form research remains unverified.",
+    "Allocation optimality is confined to at most 16 supplied candidates and their declared objective and constraints.",
+    "Reviewer-time admission uses owner estimates, not measured staffing or attendance.",
+    "11 inherited environment-dependent skips; no standalone skips.",
+    "Coverage includes alpha (excluding CLI/web), network and telemetry. Other surfaces have regression checks.",
+    "Local branch gate skips without CI metadata; remote CI evaluates the branch.",
+    "No independent source/contract audit or repository branch-protection enforcement is established.",
+    "CSV literal text prefixes are tested as bytes; no spreadsheet application execution or save/reopen qualification was performed."
+  ]
+}

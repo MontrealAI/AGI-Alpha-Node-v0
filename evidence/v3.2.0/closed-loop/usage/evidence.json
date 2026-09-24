@@ -1,0 +1,220 @@
+{
+  "schema": 2,
+  "ledgerHead": "0x8f9b830e4bb9408a1c6edd7c46f0700a3799c9c45ea1998198d8b16ccbf0ea92",
+  "identity": {
+    "ensName": "tx.alpha.node.agi.eth",
+    "address": "0xa7a4D98456fa90664300b28a5ef0D8b3fBfdF9D3",
+    "reviewer": "0xe734A0708e8Ba1e1b57e41eA3518eFc0B6D4aEfe"
+  },
+  "run": {
+    "type": "run",
+    "workId": "0x55fb103fd771d9b15ff34d4a26efb614e753224bb73141dcd21352f9f43ca5b7",
+    "reviewer": "0xe734A0708e8Ba1e1b57e41eA3518eFc0B6D4aEfe",
+    "mission": {
+      "id": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+      "title": "Usage-derived caching opportunities",
+      "objective": "Discover and rank caching experiments from supplied usage measurements. Produce a reviewable analysis; do not modify production systems. After independent acceptance, execute only the exact execution-policy descriptor and rollback on failed health verification.",
+      "sources": [
+        {
+          "id": "inference",
+          "title": "Qualification service: Synthetic end-to-end qualification",
+          "text": "{\"id\":\"inference\",\"name\":\"Qualification service\",\"requests\":1000,\"repeatedRequests\":600,\"costUsd\":500,\"observedAt\":\"2026-09-24T16:57:21.113Z\",\"period\":\"Synthetic end-to-end qualification\"}"
+        },
+        {
+          "id": "adaptive-model",
+          "title": "Owner-bounded outcome model",
+          "text": "{\"modelsDigest\":\"0x287e9ee7e895bffd166b7d78653431c0ba267a9cc4383e8304bbca609fd77f3b\",\"models\":[{\"recommendation\":\"cache-inference\",\"samples\":0,\"successes\":0,\"losses\":0,\"meanBenefitRatio\":1}],\"reason\":\"Owner risk policy passed\"}"
+        },
+        {
+          "id": "execution-policy",
+          "title": "Exact owner-authorized action reviewed with this mission",
+          "text": "{\"action\":{\"kind\":\"json-set\",\"root\":\"/tmp/alpha-tx-Tch1QV\",\"file\":\"service.json\",\"pointer\":[\"cacheEnabled\"],\"value\":true,\"healthUrl\":\"http://127.0.0.1:36243/health\",\"healthField\":\"healthy\",\"healthValue\":true,\"timeoutMs\":1000},\"beforeHash\":\"0x421ae6438e43bf56ce6d03c6bb7a1b2b4593ca9eaa6efcb4187f486f7a8420ad\",\"afterHash\":\"0x92ed3c4a9d67fa4de5f39c7aaf5d7aca0d94b9b6c77dc5cd44e52fa35e502178\",\"target\":\"/tmp/alpha-tx-Tch1QV/service.json\",\"mode\":420,\"unchanged\":false}"
+        }
+      ],
+      "opportunities": [
+        {
+          "id": "cache-inference",
+          "title": "Evaluate caching for Qualification service",
+          "benefit": 300,
+          "cost": 20,
+          "probability": 0.7,
+          "downside": 10,
+          "sourceIds": [
+            "inference"
+          ],
+          "rationale": "Observed repeated-request share multiplied by total cost estimates a savings ceiling, not measured savings. Assumes uniform request cost and cache eligibility. Validate privacy, correctness, freshness and implementation cost before deployment."
+        }
+      ],
+      "policy": {
+        "maxCost": 100,
+        "maxDownside": 50,
+        "minExpectedNet": 5,
+        "stressBenefitBps": 7000
+      },
+      "unit": "USD per observation period"
+    },
+    "identity": {
+      "verified": true,
+      "mode": "live",
+      "chainId": 1,
+      "ensName": "tx.alpha.node.agi.eth",
+      "ensNode": "0x2fce234aa64bd559059117b3035ad499a8e81276f514ab4e3db3cf0cabc73d72",
+      "address": "0xa7a4D98456fa90664300b28a5ef0D8b3fBfdF9D3",
+      "token": "0xa61a3b3a130a9c20768eebf97e21515a6046a1fa",
+      "tokenBalance": "0",
+      "observedAt": "2026-09-24T16:57:21.334Z"
+    },
+    "analysis": {
+      "kind": "deterministic-evidence-analysis",
+      "missionDigest": "0x3337e4cc11ab3547d428ee5ce0c8c480a51f6ccdf97d992ad1b77141f18de9b0",
+      "unit": "USD per observation period",
+      "recommendation": "cache-inference",
+      "rankings": [
+        {
+          "id": "cache-inference",
+          "title": "Evaluate caching for Qualification service",
+          "benefit": 300,
+          "cost": 20,
+          "probability": 0.7,
+          "downside": 10,
+          "sourceIds": [
+            "inference"
+          ],
+          "rationale": "Observed repeated-request share multiplied by total cost estimates a savings ceiling, not measured savings. Assumes uniform request cost and cache eligibility. Validate privacy, correctness, freshness and implementation cost before deployment.",
+          "expectedNet": 187,
+          "stressedNet": 124,
+          "admitted": true
+        }
+      ],
+      "sources": [
+        {
+          "id": "inference",
+          "title": "Qualification service: Synthetic end-to-end qualification",
+          "digest": "0xdb196c0484f6ef54f7ba02f2b99db762eaef30de72399451f77d946762b780b9",
+          "url": null
+        },
+        {
+          "id": "adaptive-model",
+          "title": "Owner-bounded outcome model",
+          "digest": "0xeb59833af353137c4b7d94f106285a215bc7db3aab99cdd66ab8d2a6b0476b45",
+          "url": null
+        },
+        {
+          "id": "execution-policy",
+          "title": "Exact owner-authorized action reviewed with this mission",
+          "digest": "0x6fcd2d19d2b9a083760c419aced54bb9661157c8e7c8600b12df9a4a046eca3b",
+          "url": null
+        }
+      ],
+      "limitations": [
+        "Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.",
+        "Source hashes establish integrity, not truth. Independent review is required.",
+        "No trades, external actions, token earnings or AGI capability are implied by this report."
+      ]
+    },
+    "provider": null,
+    "report": "# Usage-derived caching opportunities\n\n<!-- markdownlint-disable MD013 -->\n\nDiscover and rank caching experiments from supplied usage measurements. Produce a reviewable analysis; do not modify production systems. After independent acceptance, execute only the exact execution-policy descriptor and rollback on failed health verification.\n\nAnalysis: deterministic-evidence-analysis\nInput digest: 0x3337e4cc11ab3547d428ee5ce0c8c480a51f6ccdf97d992ad1b77141f18de9b0\nUnits: USD per observation period\nRecommendation: cache-inference\n\n| Opportunity | Expected net | Stressed net | Admitted | Evidence |\n| --- | ---: | ---: | --- | --- |\n| Evaluate caching for Qualification service | 187.00 | 124.00 | Yes | inference |\n\n## Evidence and assumptions\n\n- cache-inference: Observed repeated-request share multiplied by total cost estimates a savings ceiling, not measured savings. Assumes uniform request cost and cache eligibility. Validate privacy, correctness, freshness and implementation cost before deployment.\n\n- inference — Qualification service: Synthetic end-to-end qualification — SHA-256 0xdb196c0484f6ef54f7ba02f2b99db762eaef30de72399451f77d946762b780b9\n- adaptive-model — Owner-bounded outcome model — SHA-256 0xeb59833af353137c4b7d94f106285a215bc7db3aab99cdd66ab8d2a6b0476b45\n- execution-policy — Exact owner-authorized action reviewed with this mission — SHA-256 0x6fcd2d19d2b9a083760c419aced54bb9661157c8e7c8600b12df9a4a046eca3b\n\n## Runtime authorization\n\nAcceptance authorizes only the exact action below. Model text and specialist responses cannot authorize additional actions.\n\nPlan digest: 0x98acfc48c909d2e4e7c2f714d847e767ad5b7c26ce3b3d1e2727f2805fc862f4\n\nAuthenticated specialist receipts: 1\n\n### Specialist evidence\n\nSignatures authenticate the peer. Exact-quote validation checks citation presence, not truth or entailment. Review these results before acceptance.\n\nPeer: 0xa2fef058091bbe909de5d1d608af4d4d633e24b5 · Capability: risk-review\n\n```json\n{\n  \"inputDigest\": \"0x3337e4cc11ab3547d428ee5ce0c8c480a51f6ccdf97d992ad1b77141f18de9b0\",\n  \"recommendation\": \"cache-inference\",\n  \"findings\": [\n    {\n      \"id\": \"cache-inference\",\n      \"admitted\": true,\n      \"stressedNet\": 124,\n      \"lossIfNoBenefit\": 30\n    }\n  ],\n  \"requiredChecks\": [\n    \"Source truth\",\n    \"Uniform cost assumption\",\n    \"Privacy and correctness\",\n    \"Independent observed outcome\"\n  ]\n}\n```\n\nProposed action (not yet executed):\n\n```json\n{\n  \"action\": {\n    \"kind\": \"json-set\",\n    \"root\": \"/tmp/alpha-tx-Tch1QV\",\n    \"file\": \"service.json\",\n    \"pointer\": [\n      \"cacheEnabled\"\n    ],\n    \"value\": true,\n    \"healthUrl\": \"http://127.0.0.1:36243/health\",\n    \"healthField\": \"healthy\",\n    \"healthValue\": true,\n    \"timeoutMs\": 1000\n  },\n  \"beforeHash\": \"0x421ae6438e43bf56ce6d03c6bb7a1b2b4593ca9eaa6efcb4187f486f7a8420ad\",\n  \"afterHash\": \"0x92ed3c4a9d67fa4de5f39c7aaf5d7aca0d94b9b6c77dc5cd44e52fa35e502178\",\n  \"target\": \"/tmp/alpha-tx-Tch1QV/service.json\",\n  \"mode\": 420,\n  \"unchanged\": false\n}\n```\n\n## Limits\n\n- Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.\n- Source hashes establish integrity, not truth. Independent review is required.\n- No trades, external actions, token earnings or AGI capability are implied by this report.\n",
+    "status": "awaiting-review",
+    "reward": "unfunded-unverified",
+    "runtimeContext": {
+      "schema": 2,
+      "planDigest": "0x98acfc48c909d2e4e7c2f714d847e767ad5b7c26ce3b3d1e2727f2805fc862f4",
+      "action": {
+        "action": {
+          "kind": "json-set",
+          "root": "/tmp/alpha-tx-Tch1QV",
+          "file": "service.json",
+          "pointer": [
+            "cacheEnabled"
+          ],
+          "value": true,
+          "healthUrl": "http://127.0.0.1:36243/health",
+          "healthField": "healthy",
+          "healthValue": true,
+          "timeoutMs": 1000
+        },
+        "beforeHash": "0x421ae6438e43bf56ce6d03c6bb7a1b2b4593ca9eaa6efcb4187f486f7a8420ad",
+        "afterHash": "0x92ed3c4a9d67fa4de5f39c7aaf5d7aca0d94b9b6c77dc5cd44e52fa35e502178",
+        "target": "/tmp/alpha-tx-Tch1QV/service.json",
+        "mode": 420,
+        "unchanged": false
+      },
+      "specialists": [
+        {
+          "domain": "agialpha:specialist:v1",
+          "kind": "result",
+          "sender": "0xa2fef058091bbe909de5d1d608af4d4d633e24b5",
+          "recipient": "0xa7a4d98456fa90664300b28a5ef0d8b3fbfdf9d3",
+          "issuedAt": 1790269041251,
+          "expiresAt": 1790269101251,
+          "payload": {
+            "requestId": "0x3a32a8e3d17c6d9f60f7bf021843106842e3ac2f20dac1171e453d65291fb37a",
+            "capability": "risk-review",
+            "priceMicroUsd": 10,
+            "inputDigest": "0x3337e4cc11ab3547d428ee5ce0c8c480a51f6ccdf97d992ad1b77141f18de9b0",
+            "result": {
+              "inputDigest": "0x3337e4cc11ab3547d428ee5ce0c8c480a51f6ccdf97d992ad1b77141f18de9b0",
+              "recommendation": "cache-inference",
+              "findings": [
+                {
+                  "id": "cache-inference",
+                  "admitted": true,
+                  "stressedNet": 124,
+                  "lossIfNoBenefit": 30
+                }
+              ],
+              "requiredChecks": [
+                "Source truth",
+                "Uniform cost assumption",
+                "Privacy and correctness",
+                "Independent observed outcome"
+              ]
+            }
+          },
+          "hash": "0x43a6afef68d672ab60aa685bdd72e7f76ae48527dddcaadcf0fabb9988ed173a",
+          "signature": "0xd1b74b4c5a5164ae4506ee3cc92b45379af4d8a0dd7db69cbe3d6e1465ea2c822e0b36774d1f7b1f1539b70cc34c7f6393594ecdd6591cec154482158106604b1b"
+        }
+      ]
+    },
+    "previous": "0xf978c3ba98e4a95465e56c66bb769974b6477609000ac72c33ce88485486cd29",
+    "at": "2026-09-24T16:57:21.334Z",
+    "hash": "0x0ed61d4fe4ef587da28f9d8e6b3b2f950cfe60919bfea02be7f623e7ea03a607",
+    "signature": "0xbcc0025fcec669ee8f87253e4f33887d31f0ed542e679fd9ba8e850cfaef98107eaa0f7135a09b6e7dfa451f6edd51b15f80472c9ef232deaaa3cc97a4fdae191c",
+    "review": {
+      "type": "review-attestation-v3",
+      "node": "0xa7a4d98456fa90664300b28a5ef0d8b3fbfdf9d3",
+      "ensName": "tx.alpha.node.agi.eth",
+      "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+      "runHash": "0x0ed61d4fe4ef587da28f9d8e6b3b2f950cfe60919bfea02be7f623e7ea03a607",
+      "decision": "accepted",
+      "notes": "Reviewed exact action and specialist report in the synthetic qualification",
+      "at": "2026-09-24T16:57:21.526Z",
+      "settlementApproval": {
+        "schema": 1,
+        "chainId": 1,
+        "escrow": "0xAab655E138844BDeb5563eFC851323b297eB2C21",
+        "workId": "0x55fb103fd771d9b15ff34d4a26efb614e753224bb73141dcd21352f9f43ca5b7",
+        "evidenceHash": "0x0ed61d4fe4ef587da28f9d8e6b3b2f950cfe60919bfea02be7f623e7ea03a607",
+        "accepted": true,
+        "expiresAt": 1790272641,
+        "signature": "0x2bd20dd13df0c466379c90060569d5dca69380367802442171db6529a1baca76246edcac35090997d8a7bf3cded9e54de85a6cc8655d2f0e6f2bfce95f5129eb1b"
+      },
+      "hash": "0x2390c1aabef2a630049e6fcaadd49631326912cf08bea7735cd18e28efbf6afa",
+      "signature": "0xc36517fec1dfab9841327e9a8b1d9e1893665e13263c831d4aa5837427aae74c59f3ec59eafb94b06c09b2c19b7d87e8c3c1e31eb9afd2fb0a73f433eb2e176a1b",
+      "envelopeHash": "0x324222a5fd26c26b86839a504eca7b59b1722c5eb18b07e69f213da15a7c64f1"
+    },
+    "outcome": {
+      "measuredBenefitUsd": 100,
+      "measuredCostUsd": 30,
+      "observedAt": "2026-09-24T16:57:26.158Z",
+      "evidence": "Synthetic economic measurements for the integrated local VM qualification; file execution and token state transitions were real local computations.",
+      "type": "outcome-attestation-v1",
+      "node": "0xa7a4d98456fa90664300b28a5ef0d8b3fbfdf9d3",
+      "ensName": "tx.alpha.node.agi.eth",
+      "missionId": "runtime-732c34f797844c848650df5ba78c9402873f29a2",
+      "runHash": "0x0ed61d4fe4ef587da28f9d8e6b3b2f950cfe60919bfea02be7f623e7ea03a607",
+      "hash": "0x08d95a6b6994ebfe3585540eb1aa6f544369041f4ff469f9ba598b4c358b8806",
+      "signature": "0x83f02d42f29ea18ba48b7ddd6fa028e2f2be4c1611c72beeb408227d9ea0ec2d40bfd445c51e546f73c71aa2b135772594c707dad32938ef5ceb1a33d2cfc0281c"
+    }
+  }
+}

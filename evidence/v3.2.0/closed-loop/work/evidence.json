@@ -1,0 +1,353 @@
+{
+  "schema": 2,
+  "ledgerHead": "0x6a5ca2199ed84086ca2b88d1fbf0f3d17a5256ed2968548d481df73db2595a6a",
+  "identity": {
+    "ensName": "tx.alpha.node.agi.eth",
+    "address": "0xdaa2666D70F2c570692839EA5f78173DA2A9aAbF",
+    "reviewer": "0xD5aD5DB014782C8924A30FFa17A280C2E515FE0D"
+  },
+  "run": {
+    "type": "run",
+    "workId": "0x2dc0691d0e192e6af18f40f4e085f26205da1150e2f470e03626cacc421cb78f",
+    "reviewer": "0xD5aD5DB014782C8924A30FFa17A280C2E515FE0D",
+    "mission": {
+      "id": "runtime-d28d93dab4b114ae076813105c760eb8f2a417f5",
+      "title": "Verified data-quality work",
+      "objective": "Produce a reproducible analytical deliverable over the supplied records. Independently recompute the results before acceptance. No external change, refund or profit is authorized or established. After independent acceptance, execute only the exact execution-policy descriptor and rollback on failed health verification.",
+      "work": {
+        "kind": "data-quality",
+        "rows": [
+          {
+            "id": "r1",
+            "values": {
+              "account": "acct-a",
+              "quantity": 10,
+              "status": "active"
+            }
+          },
+          {
+            "id": "r2",
+            "values": {
+              "account": "acct-a",
+              "quantity": -1,
+              "status": "unknown"
+            }
+          },
+          {
+            "id": "r3",
+            "values": {
+              "account": "",
+              "quantity": 3,
+              "status": "active"
+            }
+          }
+        ],
+        "rules": [
+          {
+            "id": "account-required",
+            "kind": "required",
+            "field": "account"
+          },
+          {
+            "id": "account-unique",
+            "kind": "unique",
+            "field": "account"
+          },
+          {
+            "id": "quantity-range",
+            "kind": "range",
+            "field": "quantity",
+            "min": 0,
+            "max": 1000
+          },
+          {
+            "id": "status-known",
+            "kind": "one-of",
+            "field": "status",
+            "values": [
+              "active",
+              "inactive"
+            ]
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "work-input",
+          "title": "Authorized work observation",
+          "text": "{\"observedAt\":\"2026-09-24T16:57:26.520Z\",\"inputDigest\":\"0x509c2652219e1bff17988139d651757bfddc4defabe5e5300a71837b20163ba2\",\"kind\":\"data-quality\"}"
+        },
+        {
+          "id": "input-observation",
+          "title": "Observation envelope",
+          "text": "{\"observedAt\":\"2026-09-24T16:57:26.520Z\",\"inputDigest\":\"0xfc1fda3617aa21ab9c8d95e9011b7634c6bd127a0c5422556bdef327d21ba117\"}"
+        },
+        {
+          "id": "adaptive-model",
+          "title": "Owner-bounded outcome model",
+          "text": "{\"modelsDigest\":\"0xbea74069a3ae45705b34a913d47cc787d368cea4bd60d07654209e3f59796c14\",\"models\":[{\"recommendation\":\"verified-analysis\",\"samples\":0,\"successes\":0,\"losses\":0,\"meanBenefitRatio\":1}],\"reason\":\"Owner risk policy passed\"}"
+        },
+        {
+          "id": "execution-policy",
+          "title": "Exact owner-authorized action reviewed with this mission",
+          "text": "{\"action\":{\"kind\":\"json-set\",\"root\":\"/tmp/alpha-tx-XxCfOz\",\"file\":\"service.json\",\"pointer\":[\"cacheEnabled\"],\"value\":true,\"healthUrl\":\"http://127.0.0.1:38095/health\",\"healthField\":\"healthy\",\"healthValue\":true,\"timeoutMs\":1000},\"beforeHash\":\"0x421ae6438e43bf56ce6d03c6bb7a1b2b4593ca9eaa6efcb4187f486f7a8420ad\",\"afterHash\":\"0x92ed3c4a9d67fa4de5f39c7aaf5d7aca0d94b9b6c77dc5cd44e52fa35e502178\",\"target\":\"/tmp/alpha-tx-XxCfOz/service.json\",\"mode\":420,\"unchanged\":false}"
+        }
+      ],
+      "opportunities": [
+        {
+          "id": "verified-analysis",
+          "title": "Compute and independently review the analytical result",
+          "benefit": 0,
+          "cost": 0,
+          "probability": 1,
+          "downside": 0,
+          "sourceIds": [
+            "work-input"
+          ],
+          "rationale": "Zero-dollar screening values grant analytical admission only. Actual provider/review costs require owner reservations and measurement; this analysis claims no financial benefit."
+        }
+      ],
+      "policy": {
+        "maxCost": 0,
+        "maxDownside": 0,
+        "minExpectedNet": 0,
+        "stressBenefitBps": 7000
+      },
+      "unit": "USD; no benefit forecast"
+    },
+    "identity": {
+      "verified": true,
+      "mode": "live",
+      "chainId": 1,
+      "ensName": "tx.alpha.node.agi.eth",
+      "ensNode": "0x2fce234aa64bd559059117b3035ad499a8e81276f514ab4e3db3cf0cabc73d72",
+      "address": "0xdaa2666D70F2c570692839EA5f78173DA2A9aAbF",
+      "token": "0xa61a3b3a130a9c20768eebf97e21515a6046a1fa",
+      "tokenBalance": "0",
+      "observedAt": "2026-09-24T16:57:26.729Z"
+    },
+    "analysis": {
+      "kind": "deterministic-evidence-analysis",
+      "missionDigest": "0x770711ef77c2c6fbfbc5cb3f5e6e5760c4939ecd6310f83337705c6d380c1913",
+      "unit": "USD; no benefit forecast",
+      "recommendation": "verified-analysis",
+      "rankings": [
+        {
+          "id": "verified-analysis",
+          "title": "Compute and independently review the analytical result",
+          "benefit": 0,
+          "cost": 0,
+          "probability": 1,
+          "downside": 0,
+          "sourceIds": [
+            "work-input"
+          ],
+          "rationale": "Zero-dollar screening values grant analytical admission only. Actual provider/review costs require owner reservations and measurement; this analysis claims no financial benefit.",
+          "expectedNet": 0,
+          "stressedNet": 0,
+          "admitted": true
+        }
+      ],
+      "work": {
+        "schema": 1,
+        "kind": "data-quality",
+        "inputDigest": "0x509c2652219e1bff17988139d651757bfddc4defabe5e5300a71837b20163ba2",
+        "summary": {
+          "inputRows": 3,
+          "rules": 4,
+          "violations": 4,
+          "affectedRows": 2,
+          "passingRows": 1
+        },
+        "rows": [
+          {
+            "rowId": "r3",
+            "ruleId": "account-required",
+            "field": "account",
+            "issue": "missing",
+            "actual": ""
+          },
+          {
+            "rowId": "r2",
+            "ruleId": "account-unique",
+            "field": "account",
+            "issue": "duplicate-of:r1",
+            "actual": "acct-a"
+          },
+          {
+            "rowId": "r2",
+            "ruleId": "quantity-range",
+            "field": "quantity",
+            "issue": "outside-range-or-not-number",
+            "actual": -1
+          },
+          {
+            "rowId": "r2",
+            "ruleId": "status-known",
+            "field": "status",
+            "issue": "not-allowed",
+            "actual": "unknown"
+          }
+        ],
+        "facts": [
+          {
+            "id": "quality",
+            "text": "4 rule violations affect 2 of 3 supplied rows under 4 explicit rules. Passing these rules does not establish overall data truth or completeness."
+          },
+          {
+            "id": "rule-0",
+            "text": "Rule account-required (required, field account) found 1 violations."
+          },
+          {
+            "id": "rule-1",
+            "text": "Rule account-unique (unique, field account) found 1 violations."
+          },
+          {
+            "id": "rule-2",
+            "text": "Rule quantity-range (range, field quantity) found 1 violations."
+          },
+          {
+            "id": "rule-3",
+            "text": "Rule status-known (one-of, field status) found 1 violations."
+          }
+        ],
+        "limitation": "Evaluates only supplied rows and explicit rules. Uniqueness is type-sensitive and marks subsequent occurrences; missing values require a required rule. No external source authenticity or regulatory compliance is certified."
+      },
+      "sources": [
+        {
+          "id": "work-input",
+          "title": "Authorized work observation",
+          "digest": "0x755edeaf869089220d5e8c352bceaff665904043547a0b424df9552fcb3aa172",
+          "url": null
+        },
+        {
+          "id": "input-observation",
+          "title": "Observation envelope",
+          "digest": "0x3f2ca085ac21a0d2b95b6d51605e47bd0b5dfaf7677702b3f29ceb206fea6640",
+          "url": null
+        },
+        {
+          "id": "adaptive-model",
+          "title": "Owner-bounded outcome model",
+          "digest": "0xc2eed280d942318af6a47472b6649761fda2cd6c486b3f1b0e44efa12f850bd3",
+          "url": null
+        },
+        {
+          "id": "execution-policy",
+          "title": "Exact owner-authorized action reviewed with this mission",
+          "digest": "0xc32e74b647df66671faa53c67548871b03af5eac159bd9d5c1aaa597136f222f",
+          "url": null
+        }
+      ],
+      "limitations": [
+        "Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.",
+        "Source hashes establish integrity, not truth. Independent review is required.",
+        "No trades, external actions, token earnings or AGI capability are implied by this report."
+      ]
+    },
+    "provider": null,
+    "report": "# Verified data-quality work\n\n<!-- markdownlint-disable MD013 -->\n\nProduce a reproducible analytical deliverable over the supplied records. Independently recompute the results before acceptance. No external change, refund or profit is authorized or established. After independent acceptance, execute only the exact execution-policy descriptor and rollback on failed health verification.\n\nAnalysis: deterministic-evidence-analysis\nInput digest: 0x770711ef77c2c6fbfbc5cb3f5e6e5760c4939ecd6310f83337705c6d380c1913\nUnits: USD; no benefit forecast\nRecommendation: verified-analysis\n\n| Opportunity | Expected net | Stressed net | Admitted | Evidence |\n| --- | ---: | ---: | --- | --- |\n| Compute and independently review the analytical result | 0.00 | 0.00 | Yes | work-input |\n\n## Evidence and assumptions\n\n- verified-analysis: Zero-dollar screening values grant analytical admission only. Actual provider/review costs require owner reservations and measurement; this analysis claims no financial benefit.\n\n- work-input — Authorized work observation — SHA-256 0x755edeaf869089220d5e8c352bceaff665904043547a0b424df9552fcb3aa172\n- input-observation — Observation envelope — SHA-256 0x3f2ca085ac21a0d2b95b6d51605e47bd0b5dfaf7677702b3f29ceb206fea6640\n- adaptive-model — Owner-bounded outcome model — SHA-256 0xc2eed280d942318af6a47472b6649761fda2cd6c486b3f1b0e44efa12f850bd3\n- execution-policy — Exact owner-authorized action reviewed with this mission — SHA-256 0xc32e74b647df66671faa53c67548871b03af5eac159bd9d5c1aaa597136f222f\n\n## Verified computation over supplied data\n\nWork result SHA-256: 0xd0136a3978f502d17ed5c34215a8085bc5c31c7d8e7f9d0dc2fc5397e4081084\n\n```json\n{\n  \"inputRows\": 3,\n  \"rules\": 4,\n  \"violations\": 4,\n  \"affectedRows\": 2,\n  \"passingRows\": 1\n}\n```\n\nEvaluates only supplied rows and explicit rules. Uniqueness is type-sensitive and marks subsequent occurrences; missing values require a required rule. No external source authenticity or regulatory compliance is certified.\n\nComplete rows are exported as work-result.json and work-results.csv. Source authenticity still requires review.\n\n## Runtime authorization\n\nAcceptance authorizes only the exact action below. Model text and specialist responses cannot authorize additional actions.\n\nPlan digest: 0x0d7a05ae608e805c0d1ed4745abcb090d58319b7ff4b2f8d9da8737c6c6fef00\n\nAuthenticated specialist receipts: 1\n\n### Specialist evidence\n\nSignatures authenticate the peer. Exact-quote validation checks citation presence, not truth or entailment. Review these results before acceptance.\n\nPeer: 0xfd3f8bf1a312429de7da798851e3882acdf8f1f6 · Capability: risk-review\n\n```json\n{\n  \"inputDigest\": \"0x770711ef77c2c6fbfbc5cb3f5e6e5760c4939ecd6310f83337705c6d380c1913\",\n  \"recommendation\": \"verified-analysis\",\n  \"findings\": [\n    {\n      \"id\": \"verified-analysis\",\n      \"admitted\": true,\n      \"stressedNet\": 0,\n      \"lossIfNoBenefit\": 0\n    }\n  ],\n  \"requiredChecks\": [\n    \"Source truth\",\n    \"Uniform cost assumption\",\n    \"Privacy and correctness\",\n    \"Independent observed outcome\"\n  ]\n}\n```\n\nProposed action (not yet executed):\n\n```json\n{\n  \"action\": {\n    \"kind\": \"json-set\",\n    \"root\": \"/tmp/alpha-tx-XxCfOz\",\n    \"file\": \"service.json\",\n    \"pointer\": [\n      \"cacheEnabled\"\n    ],\n    \"value\": true,\n    \"healthUrl\": \"http://127.0.0.1:38095/health\",\n    \"healthField\": \"healthy\",\n    \"healthValue\": true,\n    \"timeoutMs\": 1000\n  },\n  \"beforeHash\": \"0x421ae6438e43bf56ce6d03c6bb7a1b2b4593ca9eaa6efcb4187f486f7a8420ad\",\n  \"afterHash\": \"0x92ed3c4a9d67fa4de5f39c7aaf5d7aca0d94b9b6c77dc5cd44e52fa35e502178\",\n  \"target\": \"/tmp/alpha-tx-XxCfOz/service.json\",\n  \"mode\": 420,\n  \"unchanged\": false\n}\n```\n\n## Limits\n\n- Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.\n- Source hashes establish integrity, not truth. Independent review is required.\n- No trades, external actions, token earnings or AGI capability are implied by this report.\n",
+    "status": "awaiting-review",
+    "reward": "unfunded-unverified",
+    "runtimeContext": {
+      "schema": 2,
+      "planDigest": "0x0d7a05ae608e805c0d1ed4745abcb090d58319b7ff4b2f8d9da8737c6c6fef00",
+      "action": {
+        "action": {
+          "kind": "json-set",
+          "root": "/tmp/alpha-tx-XxCfOz",
+          "file": "service.json",
+          "pointer": [
+            "cacheEnabled"
+          ],
+          "value": true,
+          "healthUrl": "http://127.0.0.1:38095/health",
+          "healthField": "healthy",
+          "healthValue": true,
+          "timeoutMs": 1000
+        },
+        "beforeHash": "0x421ae6438e43bf56ce6d03c6bb7a1b2b4593ca9eaa6efcb4187f486f7a8420ad",
+        "afterHash": "0x92ed3c4a9d67fa4de5f39c7aaf5d7aca0d94b9b6c77dc5cd44e52fa35e502178",
+        "target": "/tmp/alpha-tx-XxCfOz/service.json",
+        "mode": 420,
+        "unchanged": false
+      },
+      "specialists": [
+        {
+          "domain": "agialpha:specialist:v1",
+          "kind": "result",
+          "sender": "0xfd3f8bf1a312429de7da798851e3882acdf8f1f6",
+          "recipient": "0xdaa2666d70f2c570692839ea5f78173da2a9aabf",
+          "issuedAt": 1790269046623,
+          "expiresAt": 1790269106623,
+          "payload": {
+            "requestId": "0xdecb39cad4ecd405951b90ecd448767ee3b5e015c31f4faf406e32016e45c334",
+            "capability": "risk-review",
+            "priceMicroUsd": 10,
+            "inputDigest": "0x770711ef77c2c6fbfbc5cb3f5e6e5760c4939ecd6310f83337705c6d380c1913",
+            "result": {
+              "inputDigest": "0x770711ef77c2c6fbfbc5cb3f5e6e5760c4939ecd6310f83337705c6d380c1913",
+              "recommendation": "verified-analysis",
+              "findings": [
+                {
+                  "id": "verified-analysis",
+                  "admitted": true,
+                  "stressedNet": 0,
+                  "lossIfNoBenefit": 0
+                }
+              ],
+              "requiredChecks": [
+                "Source truth",
+                "Uniform cost assumption",
+                "Privacy and correctness",
+                "Independent observed outcome"
+              ]
+            }
+          },
+          "hash": "0x7c9518a4d060d7cdb2c4821d710ea641403a6a5f6e1d060e33328c25245e8b3a",
+          "signature": "0xccebca05e6c7be3aa64c53b640b5fe662a48ccc6c9d093e6e7aea577224c241e17664fd8a39bcefc3aa57ca99573d0960274ed50fdeca9a34dfcf718835e13741b"
+        }
+      ]
+    },
+    "previous": "0x125425ef885d18b0e38ec9d20f3fd5b6017ba60935ec1b7cad1bbb336f6dc3ef",
+    "at": "2026-09-24T16:57:26.730Z",
+    "hash": "0x3c2c6f265cec52c6bd6082f793856f2fd0c64145957516da8ec2b6b170154803",
+    "signature": "0x4fe98a41d91f7ef5d4fea1ac22585123d24fd8cf9cbdab07dbe076b7885888163f9f950e46f2418153995d7b876a3757f8bd6898f8bc4c6e1e8ba78c12d205231c",
+    "review": {
+      "type": "review-attestation-v3",
+      "node": "0xdaa2666d70f2c570692839ea5f78173da2a9aabf",
+      "ensName": "tx.alpha.node.agi.eth",
+      "missionId": "runtime-d28d93dab4b114ae076813105c760eb8f2a417f5",
+      "runHash": "0x3c2c6f265cec52c6bd6082f793856f2fd0c64145957516da8ec2b6b170154803",
+      "decision": "accepted",
+      "notes": "Reviewed exact action and specialist report in the synthetic qualification",
+      "at": "2026-09-24T16:57:26.942Z",
+      "settlementApproval": {
+        "schema": 1,
+        "chainId": 1,
+        "escrow": "0x607f949327d2768915a788299d0bfa8d82c5550D",
+        "workId": "0x2dc0691d0e192e6af18f40f4e085f26205da1150e2f470e03626cacc421cb78f",
+        "evidenceHash": "0x3c2c6f265cec52c6bd6082f793856f2fd0c64145957516da8ec2b6b170154803",
+        "accepted": true,
+        "expiresAt": 1790272646,
+        "signature": "0x4377b5ca3788c3e593ade31b8ee4169786315dd30c3c5e469ffbacea6a2c0a7b34171ff937c5838d92dd340ce9f45ab1fc2960bd434dda047000cd8a50e42cae1b"
+      },
+      "hash": "0xd1d1c56a79d4c521a23444b04eb97a65f68d050c828a20c3fff7f75b95564db3",
+      "signature": "0x4b28c1bf4f908fc0c9ff153c16ec30b13a7b6ceabe9bb98bbe9e0d2dfdea0aac4df4e24f5b1c56f9e12359f5b13dc32d1567fd512063675c2aa9a9e152cae81c1c",
+      "envelopeHash": "0xd579d1a197dcd27095a08b15f4c20aec10f4e439c1283d47393ec2e3ed474815"
+    },
+    "outcome": {
+      "measuredBenefitUsd": 100,
+      "measuredCostUsd": 30,
+      "observedAt": "2026-09-24T16:57:34.247Z",
+      "evidence": "Synthetic economic measurements for the integrated local VM qualification; file execution and token state transitions were real local computations.",
+      "type": "outcome-attestation-v1",
+      "node": "0xdaa2666d70f2c570692839ea5f78173da2a9aabf",
+      "ensName": "tx.alpha.node.agi.eth",
+      "missionId": "runtime-d28d93dab4b114ae076813105c760eb8f2a417f5",
+      "runHash": "0x3c2c6f265cec52c6bd6082f793856f2fd0c64145957516da8ec2b6b170154803",
+      "hash": "0x6e99da176967f8308ba4ed658a03408edd0b701f1865c5d66979e3325f908870",
+      "signature": "0x5c82d5522aed8d37b7c0abcbd284e8606fa804b09a8e336877623b8c96c9f5d440725534d3c2cc6f103b5acbdbfdf020179c942d8a7e44dbd671b259cd4f76a91b"
+    }
+  }
+}

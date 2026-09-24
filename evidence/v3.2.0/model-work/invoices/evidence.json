@@ -1,0 +1,417 @@
+{
+  "schema": 2,
+  "ledgerHead": "0x09e1d3f4c4cd7cefa1638d5629e14340b85fcfb8dbaff9f08e36d3f218ed6737",
+  "identity": {
+    "ensName": "work.alpha.node.agi.eth",
+    "address": "0x41ae61a2af0a7D95Aa8eeDF41bdaBb7ebc8EdBC2",
+    "reviewer": "0x60dbAC95a9d4A16Be4c0dAa0B1f7B6ddEC7f895f"
+  },
+  "run": {
+    "type": "run",
+    "workId": "0x824cf7b6a294a4db194ed0f07ac10cb145edd43975424b079a00eb2a426804be",
+    "reviewer": "0x60dbAC95a9d4A16Be4c0dAa0B1f7B6ddEC7f895f",
+    "mission": {
+      "id": "runtime-81f5ad427c76216f70d4937059e9a31509e7cfef",
+      "title": "Verified invoice-reconciliation work",
+      "objective": "Produce a reproducible analytical deliverable over the supplied records. Independently recompute the results before acceptance. No external change, refund or profit is authorized or established.",
+      "work": {
+        "kind": "invoice-reconciliation",
+        "period": "Synthetic example; replace with authorized observations",
+        "rates": [
+          {
+            "id": "compute",
+            "unitPriceMicroUsd": "2000000"
+          },
+          {
+            "id": "storage",
+            "unitPriceMicroUsd": "1000000"
+          }
+        ],
+        "usage": [
+          {
+            "id": "u1",
+            "serviceId": "compute",
+            "units": "10"
+          },
+          {
+            "id": "u2",
+            "serviceId": "storage",
+            "units": "5"
+          }
+        ],
+        "invoices": [
+          {
+            "id": "i1",
+            "reference": "invoice-1-line-1",
+            "serviceId": "compute",
+            "units": "12",
+            "amountMicroUsd": "24000000"
+          },
+          {
+            "id": "i2",
+            "reference": "invoice-1-line-2",
+            "serviceId": "storage",
+            "units": "5",
+            "amountMicroUsd": "6000000"
+          },
+          {
+            "id": "i3",
+            "reference": "invoice-1-line-2",
+            "serviceId": "storage",
+            "units": "5",
+            "amountMicroUsd": "6000000"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "work-input",
+          "title": "Authorized work observation",
+          "text": "{\"observedAt\":\"2026-09-24T16:57:27.370Z\",\"inputDigest\":\"0xd66439d8c44a93e416cf9a16123a7b7bd2a1c290ddf8a9a07157924c1951e34d\",\"kind\":\"invoice-reconciliation\"}"
+        },
+        {
+          "id": "input-observation",
+          "title": "Observation envelope",
+          "text": "{\"observedAt\":\"2026-09-24T16:57:27.370Z\",\"inputDigest\":\"0xa16fbeda1cc18153f1e616de8dc9c95b7f188938d0d8e666f218dfe447726e38\"}"
+        },
+        {
+          "id": "adaptive-model",
+          "title": "Owner-bounded outcome model",
+          "text": "{\"modelsDigest\":\"0x485265cac5f1c5bc3bffe3851d186e9329e6661f56c361277769423d45440ceb\",\"models\":[{\"recommendation\":\"verified-analysis\",\"samples\":0,\"successes\":0,\"losses\":0,\"meanBenefitRatio\":1}],\"reason\":\"Owner risk policy passed\"}"
+        }
+      ],
+      "opportunities": [
+        {
+          "id": "verified-analysis",
+          "title": "Compute and independently review the analytical result",
+          "benefit": 0,
+          "cost": 0,
+          "probability": 1,
+          "downside": 0,
+          "sourceIds": [
+            "work-input"
+          ],
+          "rationale": "Zero-dollar screening values grant analytical admission only. Actual provider/review costs require owner reservations and measurement; this analysis claims no financial benefit."
+        }
+      ],
+      "policy": {
+        "maxCost": 0,
+        "maxDownside": 0,
+        "minExpectedNet": 0,
+        "stressBenefitBps": 7000
+      },
+      "unit": "USD; no benefit forecast"
+    },
+    "identity": {
+      "verified": false,
+      "mode": "local",
+      "ensName": "work.alpha.node.agi.eth",
+      "address": "0x41ae61a2af0a7D95Aa8eeDF41bdaBb7ebc8EdBC2"
+    },
+    "analysis": {
+      "kind": "deterministic-evidence-analysis",
+      "missionDigest": "0xa5d1dc1260be0a6caef02aa44395579f266b15f25e9cd8a283a19d06cfccd46a",
+      "unit": "USD; no benefit forecast",
+      "recommendation": "verified-analysis",
+      "rankings": [
+        {
+          "id": "verified-analysis",
+          "title": "Compute and independently review the analytical result",
+          "benefit": 0,
+          "cost": 0,
+          "probability": 1,
+          "downside": 0,
+          "sourceIds": [
+            "work-input"
+          ],
+          "rationale": "Zero-dollar screening values grant analytical admission only. Actual provider/review costs require owner reservations and measurement; this analysis claims no financial benefit.",
+          "expectedNet": 0,
+          "stressedNet": 0,
+          "admitted": true
+        }
+      ],
+      "work": {
+        "schema": 1,
+        "kind": "invoice-reconciliation",
+        "inputDigest": "0xd66439d8c44a93e416cf9a16123a7b7bd2a1c290ddf8a9a07157924c1951e34d",
+        "summary": {
+          "services": 2,
+          "knownRateOverbillingMicroUsd": "11000000",
+          "netKnownRateVarianceMicroUsd": "11000000",
+          "unknownRateServices": [],
+          "duplicateInvoiceReferences": [
+            "invoice-1-line-2"
+          ]
+        },
+        "rows": [
+          {
+            "serviceId": "compute",
+            "usageUnits": "10",
+            "billedUnits": "12",
+            "quantityVarianceUnits": "2",
+            "expectedMicroUsd": "20000000",
+            "billedMicroUsd": "24000000",
+            "varianceMicroUsd": "4000000",
+            "priceMismatchLineIds": [],
+            "usageIds": [
+              "u1"
+            ],
+            "invoiceIds": [
+              "i1"
+            ]
+          },
+          {
+            "serviceId": "storage",
+            "usageUnits": "5",
+            "billedUnits": "10",
+            "quantityVarianceUnits": "5",
+            "expectedMicroUsd": "5000000",
+            "billedMicroUsd": "12000000",
+            "varianceMicroUsd": "7000000",
+            "priceMismatchLineIds": [
+              "i2",
+              "i3"
+            ],
+            "usageIds": [
+              "u2"
+            ],
+            "invoiceIds": [
+              "i2",
+              "i3"
+            ]
+          }
+        ],
+        "facts": [
+          {
+            "id": "total",
+            "text": "Supplied invoices exceed usage priced at supplied rates by 11000000 micro-USD across positive-variance services. This is a discrepancy to investigate, not a confirmed refund or measured profit."
+          },
+          {
+            "id": "service-0",
+            "text": "Service compute: quantity variance 2; billed 24000000 micro-USD; expected 20000000; monetary variance 4000000."
+          },
+          {
+            "id": "service-1",
+            "text": "Service storage: quantity variance 5; billed 12000000 micro-USD; expected 5000000; monetary variance 7000000."
+          },
+          {
+            "id": "duplicates",
+            "text": "1 repeated invoice references require review; their amounts are already included in totals."
+          }
+        ],
+        "limitation": "Exact arithmetic over supplied records and rates. Missing usage, taxes, credits, contract terms and dishonest inputs can change the interpretation. Discrepancies are not confirmed receivables."
+      },
+      "sources": [
+        {
+          "id": "work-input",
+          "title": "Authorized work observation",
+          "digest": "0x5fea146e494608e8c2d149b0450ea80a782ade42455289bc18fc94492688922e",
+          "url": null
+        },
+        {
+          "id": "input-observation",
+          "title": "Observation envelope",
+          "digest": "0x4b7d9cef6d5b656627190412ff598ed9da0756591e7c657ae0ec69790d6d68fd",
+          "url": null
+        },
+        {
+          "id": "adaptive-model",
+          "title": "Owner-bounded outcome model",
+          "digest": "0x8376e006fa12b8eecb1fb71b19f17aff6c03532e0d8c3d3fc85e79faa8fc000d",
+          "url": null
+        }
+      ],
+      "limitations": [
+        "Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.",
+        "Source hashes establish integrity, not truth. Independent review is required.",
+        "No trades, external actions, token earnings or AGI capability are implied by this report."
+      ]
+    },
+    "provider": {
+      "text": "- Supplied invoices exceed usage priced at supplied rates by 11000000 micro-USD across positive-variance services. This is a discrepancy to investigate, not a confirmed refund or measured profit.\n- Service compute: quantity variance 2; billed 24000000 micro-USD; expected 20000000; monetary variance 4000000.\n- Service storage: quantity variance 5; billed 12000000 micro-USD; expected 5000000; monetary variance 7000000.\n- 1 repeated invoice references require review; their amounts are already included in totals.",
+      "model": "/tmp/alpha-model/Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+      "usage": {
+        "completion_tokens": 18,
+        "prompt_tokens": 258,
+        "total_tokens": 276,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "endpointOrigin": "http://127.0.0.1:18081",
+      "kind": "verified-work-brief",
+      "factIds": [
+        "total",
+        "service-0",
+        "service-1",
+        "duplicates"
+      ],
+      "factsDigest": "0xf4cd468c8daaf41211814401c55094510272a1f8037bf65d3d48395cd4ae7278"
+    },
+    "report": "# Verified invoice-reconciliation work\n\n<!-- markdownlint-disable MD013 -->\n\nProduce a reproducible analytical deliverable over the supplied records. Independently recompute the results before acceptance. No external change, refund or profit is authorized or established.\n\nAnalysis: deterministic-evidence-analysis\nInput digest: 0xa5d1dc1260be0a6caef02aa44395579f266b15f25e9cd8a283a19d06cfccd46a\nUnits: USD; no benefit forecast\nRecommendation: verified-analysis\n\n| Opportunity | Expected net | Stressed net | Admitted | Evidence |\n| --- | ---: | ---: | --- | --- |\n| Compute and independently review the analytical result | 0.00 | 0.00 | Yes | work-input |\n\n## Evidence and assumptions\n\n- verified-analysis: Zero-dollar screening values grant analytical admission only. Actual provider/review costs require owner reservations and measurement; this analysis claims no financial benefit.\n\n- work-input — Authorized work observation — SHA-256 0x5fea146e494608e8c2d149b0450ea80a782ade42455289bc18fc94492688922e\n- input-observation — Observation envelope — SHA-256 0x4b7d9cef6d5b656627190412ff598ed9da0756591e7c657ae0ec69790d6d68fd\n- adaptive-model — Owner-bounded outcome model — SHA-256 0x8376e006fa12b8eecb1fb71b19f17aff6c03532e0d8c3d3fc85e79faa8fc000d\n\n## Verified computation over supplied data\n\nWork result SHA-256: 0xa02998a623b93a44830babea7e68abcbaf904a40fc43c124eefca45fb346aca2\n\n```json\n{\n  \"services\": 2,\n  \"knownRateOverbillingMicroUsd\": \"11000000\",\n  \"netKnownRateVarianceMicroUsd\": \"11000000\",\n  \"unknownRateServices\": [],\n  \"duplicateInvoiceReferences\": [\n    \"invoice-1-line-2\"\n  ]\n}\n```\n\nExact arithmetic over supplied records and rates. Missing usage, taxes, credits, contract terms and dishonest inputs can change the interpretation. Discrepancies are not confirmed receivables.\n\nComplete rows are exported as work-result.json and work-results.csv. Source authenticity still requires review.\n\n## Model-selected computed facts (priority is unverified)\n\n- Supplied invoices exceed usage priced at supplied rates by 11000000 micro-USD across positive-variance services. This is a discrepancy to investigate, not a confirmed refund or measured profit.\n- Service compute: quantity variance 2; billed 24000000 micro-USD; expected 20000000; monetary variance 4000000.\n- Service storage: quantity variance 5; billed 12000000 micro-USD; expected 5000000; monetary variance 7000000.\n- 1 repeated invoice references require review; their amounts are already included in totals.\n\n## Runtime authorization\n\nAcceptance authorizes only the exact action below. Model text and specialist responses cannot authorize additional actions.\n\nPlan digest: 0xc51c948230346e52fa8866c7e24da3e66e410dc50e0e515208d840b5aa180eac\n\nAuthenticated specialist receipts: 1\n\n### Specialist evidence\n\nSignatures authenticate the peer. Exact-quote validation checks citation presence, not truth or entailment. Review these results before acceptance.\n\nPeer: 0x1cb499e8d9d4c8da5757f2b653c47754647ac66b · Capability: evidence-analysis\n\n```json\n{\n  \"inputDigest\": \"0xa5d1dc1260be0a6caef02aa44395579f266b15f25e9cd8a283a19d06cfccd46a\",\n  \"analysis\": {\n    \"kind\": \"deterministic-evidence-analysis\",\n    \"missionDigest\": \"0xa5d1dc1260be0a6caef02aa44395579f266b15f25e9cd8a283a19d06cfccd46a\",\n    \"unit\": \"USD; no benefit forecast\",\n    \"recommendation\": \"verified-analysis\",\n    \"rankings\": [\n      {\n        \"id\": \"verified-analysis\",\n        \"title\": \"Compute and independently review the analytical result\",\n        \"benefit\": 0,\n        \"cost\": 0,\n        \"probability\": 1,\n        \"downside\": 0,\n        \"sourceIds\": [\n          \"work-input\"\n        ],\n        \"rationale\": \"Zero-dollar screening values grant analytical admission only. Actual provider/review costs require owner reservations and measurement; this analysis claims no financial benefit.\",\n        \"expectedNet\": 0,\n        \"stressedNet\": 0,\n        \"admitted\": true\n      }\n    ],\n    \"work\": {\n      \"schema\": 1,\n      \"kind\": \"invoice-reconciliation\",\n      \"inputDigest\": \"0xd66439d8c44a93e416cf9a16123a7b7bd2a1c290ddf8a9a07157924c1951e34d\",\n      \"summary\": {\n        \"services\": 2,\n        \"knownRateOverbillingMicroUsd\": \"11000000\",\n        \"netKnownRateVarianceMicroUsd\": \"11000000\",\n        \"unknownRateServices\": [],\n        \"duplicateInvoiceReferences\": [\n          \"invoice-1-line-2\"\n        ]\n      },\n      \"rows\": [\n        {\n          \"serviceId\": \"compute\",\n          \"usageUnits\": \"10\",\n          \"billedUnits\": \"12\",\n          \"quantityVarianceUnits\": \"2\",\n          \"expectedMicroUsd\": \"20000000\",\n          \"billedMicroUsd\": \"24000000\",\n          \"varianceMicroUsd\": \"4000000\",\n          \"priceMismatchLineIds\": [],\n          \"usageIds\": [\n            \"u1\"\n          ],\n          \"invoiceIds\": [\n            \"i1\"\n          ]\n        },\n        {\n          \"serviceId\": \"storage\",\n          \"usageUnits\": \"5\",\n          \"billedUnits\": \"10\",\n          \"quantityVarianceUnits\": \"5\",\n          \"expectedMicroUsd\": \"5000000\",\n          \"billedMicroUsd\": \"12000000\",\n          \"varianceMicroUsd\": \"7000000\",\n          \"priceMismatchLineIds\": [\n            \"i2\",\n            \"i3\"\n          ],\n          \"usageIds\": [\n            \"u2\"\n          ],\n          \"invoiceIds\": [\n            \"i2\",\n            \"i3\"\n          ]\n        }\n      ],\n      \"facts\": [\n        {\n          \"id\": \"total\",\n          \"text\": \"Supplied invoices exceed usage priced at supplied rates by 11000000 micro-USD across positive-variance services. This is a discrepancy to investigate, not a confirmed refund or measured profit.\"\n        },\n        {\n          \"id\": \"service-0\",\n          \"text\": \"Service compute: quantity variance 2; billed 24000000 micro-USD; expected 20000000; monetary variance 4000000.\"\n        },\n        {\n          \"id\": \"service-1\",\n          \"text\": \"Service storage: quantity variance 5; billed 12000000 micro-USD; expected 5000000; monetary variance 7000000.\"\n        },\n        {\n          \"id\": \"duplicates\",\n          \"text\": \"1 repeated invoice references require review; their amounts are already included in totals.\"\n        }\n      ],\n      \"limitation\": \"Exact arithmetic over supplied records and rates. Missing usage, taxes, credits, contract terms and dishonest inputs can change the interpretation. Discrepancies are not confirmed receivables.\"\n    },\n    \"sources\": [\n      {\n        \"id\": \"work-input\",\n        \"title\": \"Authorized work observation\",\n        \"digest\": \"0x5fea146e494608e8c2d149b0450ea80a782ade42455289bc18fc94492688922e\",\n        \"url\": null\n      },\n      {\n        \"id\": \"input-observation\",\n        \"title\": \"Observation envelope\",\n        \"digest\": \"0x4b7d9cef6d5b656627190412ff598ed9da0756591e7c657ae0ec69790d6d68fd\",\n        \"url\": null\n      },\n      {\n        \"id\": \"adaptive-model\",\n        \"title\": \"Owner-bounded outcome model\",\n        \"digest\": \"0x8376e006fa12b8eecb1fb71b19f17aff6c03532e0d8c3d3fc85e79faa8fc000d\",\n        \"url\": null\n      }\n    ],\n    \"limitations\": [\n      \"Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.\",\n      \"Source hashes establish integrity, not truth. Independent review is required.\",\n      \"No trades, external actions, token earnings or AGI capability are implied by this report.\"\n    ]\n  }\n}\n```\n\nNo external action is proposed.\n\n## Limits\n\n- Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.\n- Source hashes establish integrity, not truth. Independent review is required.\n- No trades, external actions, token earnings or AGI capability are implied by this report.\n",
+    "status": "awaiting-review",
+    "reward": "unfunded-unverified",
+    "runtimeContext": {
+      "schema": 2,
+      "planDigest": "0xc51c948230346e52fa8866c7e24da3e66e410dc50e0e515208d840b5aa180eac",
+      "action": null,
+      "specialists": [
+        {
+          "domain": "agialpha:specialist:v1",
+          "kind": "result",
+          "sender": "0x1cb499e8d9d4c8da5757f2b653c47754647ac66b",
+          "recipient": "0x41ae61a2af0a7d95aa8eedf41bdabb7ebc8edbc2",
+          "issuedAt": 1790269047479,
+          "expiresAt": 1790269107479,
+          "payload": {
+            "requestId": "0x9b08f8639a3a2c892f5968f1bdeb88da72d58fd5d54913821dfa20f116e0bfcc",
+            "capability": "evidence-analysis",
+            "priceMicroUsd": 1,
+            "inputDigest": "0xa5d1dc1260be0a6caef02aa44395579f266b15f25e9cd8a283a19d06cfccd46a",
+            "result": {
+              "inputDigest": "0xa5d1dc1260be0a6caef02aa44395579f266b15f25e9cd8a283a19d06cfccd46a",
+              "analysis": {
+                "kind": "deterministic-evidence-analysis",
+                "missionDigest": "0xa5d1dc1260be0a6caef02aa44395579f266b15f25e9cd8a283a19d06cfccd46a",
+                "unit": "USD; no benefit forecast",
+                "recommendation": "verified-analysis",
+                "rankings": [
+                  {
+                    "id": "verified-analysis",
+                    "title": "Compute and independently review the analytical result",
+                    "benefit": 0,
+                    "cost": 0,
+                    "probability": 1,
+                    "downside": 0,
+                    "sourceIds": [
+                      "work-input"
+                    ],
+                    "rationale": "Zero-dollar screening values grant analytical admission only. Actual provider/review costs require owner reservations and measurement; this analysis claims no financial benefit.",
+                    "expectedNet": 0,
+                    "stressedNet": 0,
+                    "admitted": true
+                  }
+                ],
+                "work": {
+                  "schema": 1,
+                  "kind": "invoice-reconciliation",
+                  "inputDigest": "0xd66439d8c44a93e416cf9a16123a7b7bd2a1c290ddf8a9a07157924c1951e34d",
+                  "summary": {
+                    "services": 2,
+                    "knownRateOverbillingMicroUsd": "11000000",
+                    "netKnownRateVarianceMicroUsd": "11000000",
+                    "unknownRateServices": [],
+                    "duplicateInvoiceReferences": [
+                      "invoice-1-line-2"
+                    ]
+                  },
+                  "rows": [
+                    {
+                      "serviceId": "compute",
+                      "usageUnits": "10",
+                      "billedUnits": "12",
+                      "quantityVarianceUnits": "2",
+                      "expectedMicroUsd": "20000000",
+                      "billedMicroUsd": "24000000",
+                      "varianceMicroUsd": "4000000",
+                      "priceMismatchLineIds": [],
+                      "usageIds": [
+                        "u1"
+                      ],
+                      "invoiceIds": [
+                        "i1"
+                      ]
+                    },
+                    {
+                      "serviceId": "storage",
+                      "usageUnits": "5",
+                      "billedUnits": "10",
+                      "quantityVarianceUnits": "5",
+                      "expectedMicroUsd": "5000000",
+                      "billedMicroUsd": "12000000",
+                      "varianceMicroUsd": "7000000",
+                      "priceMismatchLineIds": [
+                        "i2",
+                        "i3"
+                      ],
+                      "usageIds": [
+                        "u2"
+                      ],
+                      "invoiceIds": [
+                        "i2",
+                        "i3"
+                      ]
+                    }
+                  ],
+                  "facts": [
+                    {
+                      "id": "total",
+                      "text": "Supplied invoices exceed usage priced at supplied rates by 11000000 micro-USD across positive-variance services. This is a discrepancy to investigate, not a confirmed refund or measured profit."
+                    },
+                    {
+                      "id": "service-0",
+                      "text": "Service compute: quantity variance 2; billed 24000000 micro-USD; expected 20000000; monetary variance 4000000."
+                    },
+                    {
+                      "id": "service-1",
+                      "text": "Service storage: quantity variance 5; billed 12000000 micro-USD; expected 5000000; monetary variance 7000000."
+                    },
+                    {
+                      "id": "duplicates",
+                      "text": "1 repeated invoice references require review; their amounts are already included in totals."
+                    }
+                  ],
+                  "limitation": "Exact arithmetic over supplied records and rates. Missing usage, taxes, credits, contract terms and dishonest inputs can change the interpretation. Discrepancies are not confirmed receivables."
+                },
+                "sources": [
+                  {
+                    "id": "work-input",
+                    "title": "Authorized work observation",
+                    "digest": "0x5fea146e494608e8c2d149b0450ea80a782ade42455289bc18fc94492688922e",
+                    "url": null
+                  },
+                  {
+                    "id": "input-observation",
+                    "title": "Observation envelope",
+                    "digest": "0x4b7d9cef6d5b656627190412ff598ed9da0756591e7c657ae0ec69790d6d68fd",
+                    "url": null
+                  },
+                  {
+                    "id": "adaptive-model",
+                    "title": "Owner-bounded outcome model",
+                    "digest": "0x8376e006fa12b8eecb1fb71b19f17aff6c03532e0d8c3d3fc85e79faa8fc000d",
+                    "url": null
+                  }
+                ],
+                "limitations": [
+                  "Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.",
+                  "Source hashes establish integrity, not truth. Independent review is required.",
+                  "No trades, external actions, token earnings or AGI capability are implied by this report."
+                ]
+              }
+            }
+          },
+          "hash": "0xbf9dc59076daf64c21ccbc338ccaf39cdaa9eefe7735dc6e6eda0a1de7650f1f",
+          "signature": "0xd891a117d675dab41bdfe10b704e170f1df18b276f96b53772f7bb2d95cdf7474cf37998e6b5b290c7b7e6423a7b76f84d14b002fea563642bfb9a4bc58794501b"
+        }
+      ]
+    },
+    "previous": "0x8f18e165b8cfd03b2c6447c1faff796411ef26248c76f3e06b4f53608b447d78",
+    "at": "2026-09-24T16:57:33.294Z",
+    "hash": "0x774492554dcddde89bde8ab374d7686ac01702dab9a5aed6d14b122aca4b9f21",
+    "signature": "0xb802138a1f6f1ed40f79e29bba20838af9a6424c7e549fe4a1edbd4ae06f57eb6caa7df588cd6981c0a57b20f501f411b684529bef2c39b7add3e32a42bf13fe1b",
+    "review": {
+      "type": "review-attestation-v3",
+      "node": "0x41ae61a2af0a7d95aa8eedf41bdabb7ebc8edbc2",
+      "ensName": "work.alpha.node.agi.eth",
+      "missionId": "runtime-81f5ad427c76216f70d4937059e9a31509e7cfef",
+      "runHash": "0x774492554dcddde89bde8ab374d7686ac01702dab9a5aed6d14b122aca4b9f21",
+      "decision": "accepted",
+      "notes": "Controlled demonstration role: recomputed structured work, checked supplied inputs and exported artifacts. Not independent human acceptance.",
+      "at": "2026-09-24T16:57:33.415Z",
+      "hash": "0xbe6b8560fa0f396acb1bf7c961e8a7cadfc2a873deff5a7532955e700af6836c",
+      "signature": "0x6d454f75a6f2fff8a4bf73a40719d0358ffd3b5078f650053836139775d5ede04820da48854eb14d6ee4c98208e7fb40e4efe184512507a9390194d763b5f2d01c",
+      "envelopeHash": "0x09e1d3f4c4cd7cefa1638d5629e14340b85fcfb8dbaff9f08e36d3f218ed6737"
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "observedAt": "2026-09-24T16:57:33.562Z",
+  "work": {
+    "kind": "resource-allocation",
+    "capacity": {
+      "capitalMicroUsd": "120000000",
+      "computeUnits": 10,
+      "reviewMinutes": 20
+    },
+    "candidates": [
+      {
+        "id": "a",
+        "benefitMicroUsd": "150000000",
+        "costMicroUsd": "80000000",
+        "riskReserveMicroUsd": "10000000",
+        "computeUnits": 8,
+        "reviewMinutes": 18
+      },
+      {
+        "id": "b",
+        "benefitMicroUsd": "90000000",
+        "costMicroUsd": "40000000",
+        "riskReserveMicroUsd": "10000000",
+        "computeUnits": 4,
+        "reviewMinutes": 8
+      },
+      {
+        "id": "c",
+        "benefitMicroUsd": "90000000",
+        "costMicroUsd": "40000000",
+        "riskReserveMicroUsd": "10000000",
+        "computeUnits": 4,
+        "reviewMinutes": 8
+      }
+    ]
+  }
+}

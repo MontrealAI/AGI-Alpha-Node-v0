@@ -22,7 +22,7 @@ export function learnModel(node, recommendation, policy = {}, mission = null) {
   const eligible = [...node.runs.values()]
     .filter(
       (r) =>
-        r.review?.decision === 'accepted' &&
+        !!r.review &&
         r.outcome &&
         r.analysis.recommendation === recommendation &&
         comparableOutcome(r, mission),
@@ -111,7 +111,7 @@ export function planMission(input, node, policy = {}) {
       ...o,
       probability: Math.min(o.probability, p.maxProbability, posterior),
       benefit: o.benefit * Math.min(p.maxBenefitMultiplier, m.meanBenefitRatio),
-      rationale: `${o.rationale} Adaptive evidence: ${m.samples} accepted measured outcomes; conservative probability and benefit caps applied.`,
+      rationale: `${o.rationale} Adaptive evidence: ${m.samples} reviewed measured outcomes; conservative probability and benefit caps applied.`,
     };
   });
   const adjusted = { ...original, opportunities };

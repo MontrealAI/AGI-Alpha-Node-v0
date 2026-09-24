@@ -10,6 +10,7 @@ import {
 import { operate } from './runtime/engine.js';
 import { cycle, operationStatus } from './operations.js';
 import { qualifyNode } from './qualification.js';
+import { workCsv } from './work.js';
 
 export async function operatorServer(dir, { port = 0 } = {}) {
   const token = randomBytes(32).toString('hex');
@@ -76,17 +77,16 @@ export async function operatorServer(dir, { port = 0 } = {}) {
               transactionHash: e.data.transactionHash ?? e.data.hash ?? null,
               purpose: e.data.purpose ?? null,
             })),
-          missions: [...n.runs.values()]
-            .reverse()
-            .map((r) => ({
-              id: r.mission.id,
-              title: r.mission.title,
-              decision: r.review?.decision ?? 'awaiting-review',
-              recommendation: r.analysis.recommendation,
-              hash: r.hash,
-              report: r.report,
-              reward: r.reward,
-            })),
+          missions: [...n.runs.values()].reverse().map((r) => ({
+            id: r.mission.id,
+            title: r.mission.title,
+            decision: r.review?.decision ?? 'awaiting-review',
+            recommendation: r.analysis.recommendation,
+            hash: r.hash,
+            report: r.report,
+            reward: r.reward,
+            workKind: r.analysis.work?.kind ?? null,
+          })),
         });
       }
       if (req.method === 'GET' && path === '/api/evidence') {
@@ -102,6 +102,18 @@ export async function operatorServer(dir, { port = 0 } = {}) {
             reviewer: n.config.reviewer,
           },
           run,
+        });
+      }
+      if (req.method === 'GET' && path === '/api/work') {
+        const n = await loadNode(dir),
+          run = n.runs.get(new URL(req.url, origin).searchParams.get('id'));
+        if (!run?.analysis.work)
+          return send(404, {
+            error: 'No structured work result for this mission',
+          });
+        return send(200, {
+          result: run.analysis.work,
+          csv: workCsv(run.analysis.work),
         });
       }
       if (req.method === 'GET' && path === '/api/qualification')

@@ -118,6 +118,9 @@ export function comparableOutcome(run, mission) {
     run.mission.measurement &&
     run.outcome?.type === 'outcome-attestation-v2' &&
     run.outcome.measurement.evidenceClass === 'observed' &&
+    Date.parse(run.outcome.measurement.candidate?.startedAt) >=
+      Date.parse(run.at) &&
+    Date.parse(run.outcome.observedAt) <= Date.now() &&
     fingerprint(mission.measurement) === fingerprint(run.mission.measurement)
   );
 }

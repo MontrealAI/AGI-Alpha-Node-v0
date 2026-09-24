@@ -2,6 +2,7 @@ import { open, unlink, stat } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { z } from 'zod';
 import { missionSchema, digest } from './mission.js';
+import { workSourceSchema, makeWorkMission } from './work.js';
 import {
   readJson,
   loadNode,
@@ -16,9 +17,13 @@ export const pipelineSchema = z
   .object({
     schema: z.literal(1),
     source: z.string().min(1),
-    sourceKind: z.enum(['usage', 'mission']).default('usage'),
+    sourceKind: z.enum(['usage', 'mission', 'work']).default('usage'),
     maxAgeSeconds: z.number().int().min(60).max(604800),
     maxPendingReviews: z.number().int().min(1).max(100),
+    reviewMinutesPerMission: z.number().int().min(1).max(1440).default(15),
+    maxPendingReviewMinutes: z.number().int().min(1).max(100000).default(60),
+    maxDailyReviewMinutes: z.number().int().min(1).max(100000).default(120),
+    maxReviewAgeHours: z.number().int().min(1).max(720).default(72),
     maxDailyRuns: z.number().int().min(1).max(1000),
     maxDailyReservedMicroUsd: z.number().int().min(0).max(1e12),
     reserveMicroUsdPerRun: z.number().int().min(0).max(1e12),
@@ -181,7 +186,40 @@ export function operationStatus(node, now = Date.now()) {
         expenseHash: node.expenses?.get(e.cycle)?.hash ?? null,
       })),
     pendingReviews: [...node.runs.values()].filter((r) => !r.review).length,
+    dailyReservedReviewMinutes: daily.reduce(
+      (s, e) => s + (e.reservedReviewMinutes ?? 15),
+      0,
+    ),
+    pendingReviewMinutes: [...node.runs.values()]
+      .filter((r) => !r.review)
+      .reduce(
+        (s, r) =>
+          s +
+          (reservations.find((e) => e.missionId === r.mission?.id)
+            ?.reservedReviewMinutes ?? 15),
+        0,
+      ),
   };
+}
+export function reviewAdmission(node, pipeline, now = Date.now()) {
+  const p = pipelineSchema.parse(pipeline),
+    status = operationStatus(node, now);
+  const overdue = [...node.runs.values()].filter(
+    (r) => !r.review && now - Date.parse(r.at) > p.maxReviewAgeHours * 3600000,
+  );
+  if (overdue.length) throw new Error('Overdue review blocks new work');
+  if (
+    status.pendingReviews >= p.maxPendingReviews ||
+    status.pendingReviewMinutes + p.reviewMinutesPerMission >
+      p.maxPendingReviewMinutes
+  )
+    throw new Error('Pending review capacity reached');
+  if (
+    status.dailyReservedReviewMinutes + p.reviewMinutesPerMission >
+    p.maxDailyReviewMinutes
+  )
+    throw new Error('Daily reviewer-time budget exhausted');
+  return status;
 }
 export async function cycle(
   dir,
@@ -206,12 +244,21 @@ export async function cycle(
       throw new Error('Evidence source must be a regular file');
     const input = await readJson(
       source,
-      p.sourceKind === 'mission' ? 1000000 : 100000,
+      p.sourceKind !== 'usage' ? 1000000 : 100000,
     );
     let mission =
-      p.sourceKind === 'mission'
-        ? discoverMission(input, p)
-        : discoverUsage(input, p);
+      p.sourceKind === 'work'
+        ? discoverMission(
+            {
+              schema: 1,
+              observedAt: workSourceSchema.parse(input).observedAt,
+              mission: makeWorkMission(input),
+            },
+            p,
+          )
+        : p.sourceKind === 'mission'
+          ? discoverMission(input, p)
+          : discoverUsage(input, p);
     const loaded = await loadNode(dir);
     if (loaded.paused) throw new Error('Node paused');
     if (!mission)
@@ -270,9 +317,10 @@ export async function cycle(
         cycle: cycleId,
         missionId: mission.id,
         reservedMicroUsd: p.reserveMicroUsdPerRun,
+        reservedReviewMinutes: p.reviewMinutesPerMission,
       },
       (node) => {
-        const status = operationStatus(node);
+        const status = reviewAdmission(node, p);
         if (node.paused) throw new Error('Node paused');
         if (!node.config.reviewer)
           throw new Error(

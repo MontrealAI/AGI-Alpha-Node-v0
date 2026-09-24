@@ -20,6 +20,7 @@ import { actionSchema, describeAction, executeAction } from './actions.js';
 import { coordinateSpecialist, peerUrl } from './specialists.js';
 import { transactionPolicySchema, settleAndReinvest } from './transactions.js';
 import { qualifyNode } from '../qualification.js';
+import { workSourceSchema } from '../work.js';
 export const engineSchema = z
   .object({
     schema: z.literal(1),
@@ -69,12 +70,16 @@ async function collect(dir, config, pipeline) {
   let size = 0;
   for await (const chunk of response.body) {
     size += chunk.length;
-    if (size > (pipeline.sourceKind === 'mission' ? 1000000 : 100000))
+    if (size > (pipeline.sourceKind !== 'usage' ? 1000000 : 100000))
       throw new Error('Collector response exceeds limit');
     chunks.push(chunk);
   }
   const usage = (
-    pipeline.sourceKind === 'mission' ? missionSourceSchema : usageSchema
+    pipeline.sourceKind === 'work'
+      ? workSourceSchema
+      : pipeline.sourceKind === 'mission'
+        ? missionSourceSchema
+        : usageSchema
   ).parse(JSON.parse(Buffer.concat(chunks).toString('utf8')));
   const age = Date.now() - Date.parse(usage.observedAt);
   if (age < -60000 || age > pipeline.maxAgeSeconds * 1000)

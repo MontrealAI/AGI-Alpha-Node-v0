@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "observedAt": "2026-09-24T00:00:00.000Z",
+  "work": {
+    "kind": "invoice-reconciliation",
+    "period": "Synthetic example; replace with authorized observations",
+    "rates": [
+      {
+        "id": "compute",
+        "unitPriceMicroUsd": "2000000"
+      },
+      {
+        "id": "storage",
+        "unitPriceMicroUsd": "1000000"
+      }
+    ],
+    "usage": [
+      {
+        "id": "u1",
+        "serviceId": "compute",
+        "units": "10"
+      },
+      {
+        "id": "u2",
+        "serviceId": "storage",
+        "units": "5"
+      }
+    ],
+    "invoices": [
+      {
+        "id": "i1",
+        "reference": "invoice-1-line-1",
+        "serviceId": "compute",
+        "units": "12",
+        "amountMicroUsd": "24000000"
+      },
+      {
+        "id": "i2",
+        "reference": "invoice-1-line-2",
+        "serviceId": "storage",
+        "units": "5",
+        "amountMicroUsd": "6000000"
+      },
+      {
+        "id": "i3",
+        "reference": "invoice-1-line-2",
+        "serviceId": "storage",
+        "units": "5",
+        "amountMicroUsd": "6000000"
+      }
+    ]
+  }
+}

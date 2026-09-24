@@ -1,0 +1,414 @@
+{
+  "schema": 2,
+  "ledgerHead": "0xfc0bd25e12276cbc1642b7a08bd5cae4ced5f0778c86e977742cf5ccc06f5661",
+  "identity": {
+    "ensName": "work.alpha.node.agi.eth",
+    "address": "0x41ae61a2af0a7D95Aa8eeDF41bdaBb7ebc8EdBC2",
+    "reviewer": "0x60dbAC95a9d4A16Be4c0dAa0B1f7B6ddEC7f895f"
+  },
+  "run": {
+    "type": "run",
+    "workId": "0xe08813673e748feb0e770be8d33cecc7e79c59315f53489b42c5b04bcf300d6e",
+    "reviewer": "0x60dbAC95a9d4A16Be4c0dAa0B1f7B6ddEC7f895f",
+    "mission": {
+      "id": "runtime-5ad87dde3358b529b4b7c796e2a720f4b5715a40",
+      "title": "Verified data-quality work",
+      "objective": "Produce a reproducible analytical deliverable over the supplied records. Independently recompute the results before acceptance. No external change, refund or profit is authorized or established.",
+      "work": {
+        "kind": "data-quality",
+        "rows": [
+          {
+            "id": "r1",
+            "values": {
+              "account": "acct-a",
+              "quantity": 10,
+              "status": "active"
+            }
+          },
+          {
+            "id": "r2",
+            "values": {
+              "account": "acct-a",
+              "quantity": -1,
+              "status": "unknown"
+            }
+          },
+          {
+            "id": "r3",
+            "values": {
+              "account": "",
+              "quantity": 3,
+              "status": "active"
+            }
+          }
+        ],
+        "rules": [
+          {
+            "id": "account-required",
+            "kind": "required",
+            "field": "account"
+          },
+          {
+            "id": "account-unique",
+            "kind": "unique",
+            "field": "account"
+          },
+          {
+            "id": "quantity-range",
+            "kind": "range",
+            "field": "quantity",
+            "min": 0,
+            "max": 1000
+          },
+          {
+            "id": "status-known",
+            "kind": "one-of",
+            "field": "status",
+            "values": [
+              "active",
+              "inactive"
+            ]
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "work-input",
+          "title": "Authorized work observation",
+          "text": "{\"observedAt\":\"2026-09-24T16:57:38.670Z\",\"inputDigest\":\"0x509c2652219e1bff17988139d651757bfddc4defabe5e5300a71837b20163ba2\",\"kind\":\"data-quality\"}"
+        },
+        {
+          "id": "input-observation",
+          "title": "Observation envelope",
+          "text": "{\"observedAt\":\"2026-09-24T16:57:38.670Z\",\"inputDigest\":\"0x969046c85dcf640a8ba96bf6ae380385514a194517c9d2517a6733aba4dac8f2\"}"
+        },
+        {
+          "id": "adaptive-model",
+          "title": "Owner-bounded outcome model",
+          "text": "{\"modelsDigest\":\"0x485265cac5f1c5bc3bffe3851d186e9329e6661f56c361277769423d45440ceb\",\"models\":[{\"recommendation\":\"verified-analysis\",\"samples\":0,\"successes\":0,\"losses\":0,\"meanBenefitRatio\":1}],\"reason\":\"Owner risk policy passed\"}"
+        }
+      ],
+      "opportunities": [
+        {
+          "id": "verified-analysis",
+          "title": "Compute and independently review the analytical result",
+          "benefit": 0,
+          "cost": 0,
+          "probability": 1,
+          "downside": 0,
+          "sourceIds": [
+            "work-input"
+          ],
+          "rationale": "Zero-dollar screening values grant analytical admission only. Actual provider/review costs require owner reservations and measurement; this analysis claims no financial benefit."
+        }
+      ],
+      "policy": {
+        "maxCost": 0,
+        "maxDownside": 0,
+        "minExpectedNet": 0,
+        "stressBenefitBps": 7000
+      },
+      "unit": "USD; no benefit forecast"
+    },
+    "identity": {
+      "verified": false,
+      "mode": "local",
+      "ensName": "work.alpha.node.agi.eth",
+      "address": "0x41ae61a2af0a7D95Aa8eeDF41bdaBb7ebc8EdBC2"
+    },
+    "analysis": {
+      "kind": "deterministic-evidence-analysis",
+      "missionDigest": "0xd896215b4882f4c121e38c37ab37ce996a816ff50573f4e1d921eb2ef9c0ceb9",
+      "unit": "USD; no benefit forecast",
+      "recommendation": "verified-analysis",
+      "rankings": [
+        {
+          "id": "verified-analysis",
+          "title": "Compute and independently review the analytical result",
+          "benefit": 0,
+          "cost": 0,
+          "probability": 1,
+          "downside": 0,
+          "sourceIds": [
+            "work-input"
+          ],
+          "rationale": "Zero-dollar screening values grant analytical admission only. Actual provider/review costs require owner reservations and measurement; this analysis claims no financial benefit.",
+          "expectedNet": 0,
+          "stressedNet": 0,
+          "admitted": true
+        }
+      ],
+      "work": {
+        "schema": 1,
+        "kind": "data-quality",
+        "inputDigest": "0x509c2652219e1bff17988139d651757bfddc4defabe5e5300a71837b20163ba2",
+        "summary": {
+          "inputRows": 3,
+          "rules": 4,
+          "violations": 4,
+          "affectedRows": 2,
+          "passingRows": 1
+        },
+        "rows": [
+          {
+            "rowId": "r3",
+            "ruleId": "account-required",
+            "field": "account",
+            "issue": "missing",
+            "actual": ""
+          },
+          {
+            "rowId": "r2",
+            "ruleId": "account-unique",
+            "field": "account",
+            "issue": "duplicate-of:r1",
+            "actual": "acct-a"
+          },
+          {
+            "rowId": "r2",
+            "ruleId": "quantity-range",
+            "field": "quantity",
+            "issue": "outside-range-or-not-number",
+            "actual": -1
+          },
+          {
+            "rowId": "r2",
+            "ruleId": "status-known",
+            "field": "status",
+            "issue": "not-allowed",
+            "actual": "unknown"
+          }
+        ],
+        "facts": [
+          {
+            "id": "quality",
+            "text": "4 rule violations affect 2 of 3 supplied rows under 4 explicit rules. Passing these rules does not establish overall data truth or completeness."
+          },
+          {
+            "id": "rule-0",
+            "text": "Rule account-required (required, field account) found 1 violations."
+          },
+          {
+            "id": "rule-1",
+            "text": "Rule account-unique (unique, field account) found 1 violations."
+          },
+          {
+            "id": "rule-2",
+            "text": "Rule quantity-range (range, field quantity) found 1 violations."
+          },
+          {
+            "id": "rule-3",
+            "text": "Rule status-known (one-of, field status) found 1 violations."
+          }
+        ],
+        "limitation": "Evaluates only supplied rows and explicit rules. Uniqueness is type-sensitive and marks subsequent occurrences; missing values require a required rule. No external source authenticity or regulatory compliance is certified."
+      },
+      "sources": [
+        {
+          "id": "work-input",
+          "title": "Authorized work observation",
+          "digest": "0x67470796c9f08d90f1fe474be6a4bcb5ab68829ec8946354a3d2ce2ccc84c911",
+          "url": null
+        },
+        {
+          "id": "input-observation",
+          "title": "Observation envelope",
+          "digest": "0xc8269c6af8a578fbbe0cf6759dbc2a8b9ef7ed58bd7390214f39915805ef448e",
+          "url": null
+        },
+        {
+          "id": "adaptive-model",
+          "title": "Owner-bounded outcome model",
+          "digest": "0x8376e006fa12b8eecb1fb71b19f17aff6c03532e0d8c3d3fc85e79faa8fc000d",
+          "url": null
+        }
+      ],
+      "limitations": [
+        "Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.",
+        "Source hashes establish integrity, not truth. Independent review is required.",
+        "No trades, external actions, token earnings or AGI capability are implied by this report."
+      ]
+    },
+    "provider": {
+      "text": "- 4 rule violations affect 2 of 3 supplied rows under 4 explicit rules. Passing these rules does not establish overall data truth or completeness.\n- Rule account-required (required, field account) found 1 violations.\n- Rule account-unique (unique, field account) found 1 violations.\n- Rule quantity-range (range, field quantity) found 1 violations.\n- Rule status-known (one-of, field status) found 1 violations.",
+      "model": "/tmp/alpha-model/Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+      "usage": {
+        "completion_tokens": 23,
+        "prompt_tokens": 209,
+        "total_tokens": 232,
+        "prompt_tokens_details": {
+          "cached_tokens": 68
+        }
+      },
+      "endpointOrigin": "http://127.0.0.1:18081",
+      "kind": "verified-work-brief",
+      "factIds": [
+        "quality",
+        "rule-0",
+        "rule-1",
+        "rule-2",
+        "rule-3"
+      ],
+      "factsDigest": "0xba3caf619928d2f26aa8dcde0223fbe675152ac4d70a30804c7000ad0deea1be"
+    },
+    "report": "# Verified data-quality work\n\n<!-- markdownlint-disable MD013 -->\n\nProduce a reproducible analytical deliverable over the supplied records. Independently recompute the results before acceptance. No external change, refund or profit is authorized or established.\n\nAnalysis: deterministic-evidence-analysis\nInput digest: 0xd896215b4882f4c121e38c37ab37ce996a816ff50573f4e1d921eb2ef9c0ceb9\nUnits: USD; no benefit forecast\nRecommendation: verified-analysis\n\n| Opportunity | Expected net | Stressed net | Admitted | Evidence |\n| --- | ---: | ---: | --- | --- |\n| Compute and independently review the analytical result | 0.00 | 0.00 | Yes | work-input |\n\n## Evidence and assumptions\n\n- verified-analysis: Zero-dollar screening values grant analytical admission only. Actual provider/review costs require owner reservations and measurement; this analysis claims no financial benefit.\n\n- work-input — Authorized work observation — SHA-256 0x67470796c9f08d90f1fe474be6a4bcb5ab68829ec8946354a3d2ce2ccc84c911\n- input-observation — Observation envelope — SHA-256 0xc8269c6af8a578fbbe0cf6759dbc2a8b9ef7ed58bd7390214f39915805ef448e\n- adaptive-model — Owner-bounded outcome model — SHA-256 0x8376e006fa12b8eecb1fb71b19f17aff6c03532e0d8c3d3fc85e79faa8fc000d\n\n## Verified computation over supplied data\n\nWork result SHA-256: 0xd0136a3978f502d17ed5c34215a8085bc5c31c7d8e7f9d0dc2fc5397e4081084\n\n```json\n{\n  \"inputRows\": 3,\n  \"rules\": 4,\n  \"violations\": 4,\n  \"affectedRows\": 2,\n  \"passingRows\": 1\n}\n```\n\nEvaluates only supplied rows and explicit rules. Uniqueness is type-sensitive and marks subsequent occurrences; missing values require a required rule. No external source authenticity or regulatory compliance is certified.\n\nComplete rows are exported as work-result.json and work-results.csv. Source authenticity still requires review.\n\n## Model-selected computed facts (priority is unverified)\n\n- 4 rule violations affect 2 of 3 supplied rows under 4 explicit rules. Passing these rules does not establish overall data truth or completeness.\n- Rule account-required (required, field account) found 1 violations.\n- Rule account-unique (unique, field account) found 1 violations.\n- Rule quantity-range (range, field quantity) found 1 violations.\n- Rule status-known (one-of, field status) found 1 violations.\n\n## Runtime authorization\n\nAcceptance authorizes only the exact action below. Model text and specialist responses cannot authorize additional actions.\n\nPlan digest: 0x5f25d68ec2ec2a574b65770f6526aeb38bf732072ea4c22beb96f41d9998505c\n\nAuthenticated specialist receipts: 1\n\n### Specialist evidence\n\nSignatures authenticate the peer. Exact-quote validation checks citation presence, not truth or entailment. Review these results before acceptance.\n\nPeer: 0x1cb499e8d9d4c8da5757f2b653c47754647ac66b · Capability: evidence-analysis\n\n```json\n{\n  \"inputDigest\": \"0xd896215b4882f4c121e38c37ab37ce996a816ff50573f4e1d921eb2ef9c0ceb9\",\n  \"analysis\": {\n    \"kind\": \"deterministic-evidence-analysis\",\n    \"missionDigest\": \"0xd896215b4882f4c121e38c37ab37ce996a816ff50573f4e1d921eb2ef9c0ceb9\",\n    \"unit\": \"USD; no benefit forecast\",\n    \"recommendation\": \"verified-analysis\",\n    \"rankings\": [\n      {\n        \"id\": \"verified-analysis\",\n        \"title\": \"Compute and independently review the analytical result\",\n        \"benefit\": 0,\n        \"cost\": 0,\n        \"probability\": 1,\n        \"downside\": 0,\n        \"sourceIds\": [\n          \"work-input\"\n        ],\n        \"rationale\": \"Zero-dollar screening values grant analytical admission only. Actual provider/review costs require owner reservations and measurement; this analysis claims no financial benefit.\",\n        \"expectedNet\": 0,\n        \"stressedNet\": 0,\n        \"admitted\": true\n      }\n    ],\n    \"work\": {\n      \"schema\": 1,\n      \"kind\": \"data-quality\",\n      \"inputDigest\": \"0x509c2652219e1bff17988139d651757bfddc4defabe5e5300a71837b20163ba2\",\n      \"summary\": {\n        \"inputRows\": 3,\n        \"rules\": 4,\n        \"violations\": 4,\n        \"affectedRows\": 2,\n        \"passingRows\": 1\n      },\n      \"rows\": [\n        {\n          \"rowId\": \"r3\",\n          \"ruleId\": \"account-required\",\n          \"field\": \"account\",\n          \"issue\": \"missing\",\n          \"actual\": \"\"\n        },\n        {\n          \"rowId\": \"r2\",\n          \"ruleId\": \"account-unique\",\n          \"field\": \"account\",\n          \"issue\": \"duplicate-of:r1\",\n          \"actual\": \"acct-a\"\n        },\n        {\n          \"rowId\": \"r2\",\n          \"ruleId\": \"quantity-range\",\n          \"field\": \"quantity\",\n          \"issue\": \"outside-range-or-not-number\",\n          \"actual\": -1\n        },\n        {\n          \"rowId\": \"r2\",\n          \"ruleId\": \"status-known\",\n          \"field\": \"status\",\n          \"issue\": \"not-allowed\",\n          \"actual\": \"unknown\"\n        }\n      ],\n      \"facts\": [\n        {\n          \"id\": \"quality\",\n          \"text\": \"4 rule violations affect 2 of 3 supplied rows under 4 explicit rules. Passing these rules does not establish overall data truth or completeness.\"\n        },\n        {\n          \"id\": \"rule-0\",\n          \"text\": \"Rule account-required (required, field account) found 1 violations.\"\n        },\n        {\n          \"id\": \"rule-1\",\n          \"text\": \"Rule account-unique (unique, field account) found 1 violations.\"\n        },\n        {\n          \"id\": \"rule-2\",\n          \"text\": \"Rule quantity-range (range, field quantity) found 1 violations.\"\n        },\n        {\n          \"id\": \"rule-3\",\n          \"text\": \"Rule status-known (one-of, field status) found 1 violations.\"\n        }\n      ],\n      \"limitation\": \"Evaluates only supplied rows and explicit rules. Uniqueness is type-sensitive and marks subsequent occurrences; missing values require a required rule. No external source authenticity or regulatory compliance is certified.\"\n    },\n    \"sources\": [\n      {\n        \"id\": \"work-input\",\n        \"title\": \"Authorized work observation\",\n        \"digest\": \"0x67470796c9f08d90f1fe474be6a4bcb5ab68829ec8946354a3d2ce2ccc84c911\",\n        \"url\": null\n      },\n      {\n        \"id\": \"input-observation\",\n        \"title\": \"Observation envelope\",\n        \"digest\": \"0xc8269c6af8a578fbbe0cf6759dbc2a8b9ef7ed58bd7390214f39915805ef448e\",\n        \"url\": null\n      },\n      {\n        \"id\": \"adaptive-model\",\n        \"title\": \"Owner-bounded outcome model\",\n        \"digest\": \"0x8376e006fa12b8eecb1fb71b19f17aff6c03532e0d8c3d3fc85e79faa8fc000d\",\n        \"url\": null\n      }\n    ],\n    \"limitations\": [\n      \"Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.\",\n      \"Source hashes establish integrity, not truth. Independent review is required.\",\n      \"No trades, external actions, token earnings or AGI capability are implied by this report.\"\n    ]\n  }\n}\n```\n\nNo external action is proposed.\n\n## Limits\n\n- Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.\n- Source hashes establish integrity, not truth. Independent review is required.\n- No trades, external actions, token earnings or AGI capability are implied by this report.\n",
+    "status": "awaiting-review",
+    "reward": "unfunded-unverified",
+    "runtimeContext": {
+      "schema": 2,
+      "planDigest": "0x5f25d68ec2ec2a574b65770f6526aeb38bf732072ea4c22beb96f41d9998505c",
+      "action": null,
+      "specialists": [
+        {
+          "domain": "agialpha:specialist:v1",
+          "kind": "result",
+          "sender": "0x1cb499e8d9d4c8da5757f2b653c47754647ac66b",
+          "recipient": "0x41ae61a2af0a7d95aa8eedf41bdabb7ebc8edbc2",
+          "issuedAt": 1790269059053,
+          "expiresAt": 1790269119053,
+          "payload": {
+            "requestId": "0x3471f7978cdf9ffedbb8321cafa30eed7d4ea59d2b1b4e13cc5b7741c755a3c5",
+            "capability": "evidence-analysis",
+            "priceMicroUsd": 1,
+            "inputDigest": "0xd896215b4882f4c121e38c37ab37ce996a816ff50573f4e1d921eb2ef9c0ceb9",
+            "result": {
+              "inputDigest": "0xd896215b4882f4c121e38c37ab37ce996a816ff50573f4e1d921eb2ef9c0ceb9",
+              "analysis": {
+                "kind": "deterministic-evidence-analysis",
+                "missionDigest": "0xd896215b4882f4c121e38c37ab37ce996a816ff50573f4e1d921eb2ef9c0ceb9",
+                "unit": "USD; no benefit forecast",
+                "recommendation": "verified-analysis",
+                "rankings": [
+                  {
+                    "id": "verified-analysis",
+                    "title": "Compute and independently review the analytical result",
+                    "benefit": 0,
+                    "cost": 0,
+                    "probability": 1,
+                    "downside": 0,
+                    "sourceIds": [
+                      "work-input"
+                    ],
+                    "rationale": "Zero-dollar screening values grant analytical admission only. Actual provider/review costs require owner reservations and measurement; this analysis claims no financial benefit.",
+                    "expectedNet": 0,
+                    "stressedNet": 0,
+                    "admitted": true
+                  }
+                ],
+                "work": {
+                  "schema": 1,
+                  "kind": "data-quality",
+                  "inputDigest": "0x509c2652219e1bff17988139d651757bfddc4defabe5e5300a71837b20163ba2",
+                  "summary": {
+                    "inputRows": 3,
+                    "rules": 4,
+                    "violations": 4,
+                    "affectedRows": 2,
+                    "passingRows": 1
+                  },
+                  "rows": [
+                    {
+                      "rowId": "r3",
+                      "ruleId": "account-required",
+                      "field": "account",
+                      "issue": "missing",
+                      "actual": ""
+                    },
+                    {
+                      "rowId": "r2",
+                      "ruleId": "account-unique",
+                      "field": "account",
+                      "issue": "duplicate-of:r1",
+                      "actual": "acct-a"
+                    },
+                    {
+                      "rowId": "r2",
+                      "ruleId": "quantity-range",
+                      "field": "quantity",
+                      "issue": "outside-range-or-not-number",
+                      "actual": -1
+                    },
+                    {
+                      "rowId": "r2",
+                      "ruleId": "status-known",
+                      "field": "status",
+                      "issue": "not-allowed",
+                      "actual": "unknown"
+                    }
+                  ],
+                  "facts": [
+                    {
+                      "id": "quality",
+                      "text": "4 rule violations affect 2 of 3 supplied rows under 4 explicit rules. Passing these rules does not establish overall data truth or completeness."
+                    },
+                    {
+                      "id": "rule-0",
+                      "text": "Rule account-required (required, field account) found 1 violations."
+                    },
+                    {
+                      "id": "rule-1",
+                      "text": "Rule account-unique (unique, field account) found 1 violations."
+                    },
+                    {
+                      "id": "rule-2",
+                      "text": "Rule quantity-range (range, field quantity) found 1 violations."
+                    },
+                    {
+                      "id": "rule-3",
+                      "text": "Rule status-known (one-of, field status) found 1 violations."
+                    }
+                  ],
+                  "limitation": "Evaluates only supplied rows and explicit rules. Uniqueness is type-sensitive and marks subsequent occurrences; missing values require a required rule. No external source authenticity or regulatory compliance is certified."
+                },
+                "sources": [
+                  {
+                    "id": "work-input",
+                    "title": "Authorized work observation",
+                    "digest": "0x67470796c9f08d90f1fe474be6a4bcb5ab68829ec8946354a3d2ce2ccc84c911",
+                    "url": null
+                  },
+                  {
+                    "id": "input-observation",
+                    "title": "Observation envelope",
+                    "digest": "0xc8269c6af8a578fbbe0cf6759dbc2a8b9ef7ed58bd7390214f39915805ef448e",
+                    "url": null
+                  },
+                  {
+                    "id": "adaptive-model",
+                    "title": "Owner-bounded outcome model",
+                    "digest": "0x8376e006fa12b8eecb1fb71b19f17aff6c03532e0d8c3d3fc85e79faa8fc000d",
+                    "url": null
+                  }
+                ],
+                "limitations": [
+                  "Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.",
+                  "Source hashes establish integrity, not truth. Independent review is required.",
+                  "No trades, external actions, token earnings or AGI capability are implied by this report."
+                ]
+              }
+            }
+          },
+          "hash": "0x9a3ce0ab06b6aa6953b3dfa15c6f8c403db4fe436dbf0329ffb1796e89682d94",
+          "signature": "0x54fe6a0b6f33c6a85ed913720d26dfb26c89f6b9ade074f7eaa0aa182348283137d351312be0d8bd4169ca54a92296b37aa375d2f3cc0f87a9b3a9ba4b9ee6381c"
+        }
+      ]
+    },
+    "previous": "0xe636e1facde2fbc7431d78c4b4b91ef01266e026e5374abe34baafcc920c7f9e",
+    "at": "2026-09-24T16:57:43.968Z",
+    "hash": "0x625c2302677e822e8d3d9115764b8329ffdea9f1321159ddbe12bf9467ea34dd",
+    "signature": "0x4cb0438bc9ce3f3bc64ea42e4d25c071add32f0f595fe91143f6d25e6b5e8a73031de5aaeef92024dd275a2cafec0413da6a8b92293f00ec9e68f26d2ad249b11b",
+    "review": {
+      "type": "review-attestation-v3",
+      "node": "0x41ae61a2af0a7d95aa8eedf41bdabb7ebc8edbc2",
+      "ensName": "work.alpha.node.agi.eth",
+      "missionId": "runtime-5ad87dde3358b529b4b7c796e2a720f4b5715a40",
+      "runHash": "0x625c2302677e822e8d3d9115764b8329ffdea9f1321159ddbe12bf9467ea34dd",
+      "decision": "accepted",
+      "notes": "Controlled demonstration role: recomputed structured work, checked supplied inputs and exported artifacts. Not independent human acceptance.",
+      "at": "2026-09-24T16:57:44.288Z",
+      "hash": "0xc3175476f7d8d0f7605a728d8d6979d619ea42ac7214e7e5b9a3bbbc07fb923f",
+      "signature": "0x53e1c655c0fb773829aa5565ae333398d1ef0ec987bf1ecf2f451c93c96d29901a544527782f6bed72b0ddb319d83d60ff062b4e88ad65dc6d0017053906e5401b",
+      "envelopeHash": "0xfc0bd25e12276cbc1642b7a08bd5cae4ced5f0778c86e977742cf5ccc06f5661"
+    }
+  }
+}

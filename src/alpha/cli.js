@@ -42,12 +42,18 @@ import {
 import { verifyMeasurementArtifacts } from './measurement.js';
 import { importExpense } from './node.js';
 import { signExpense } from './expenses.js';
+import {
+  workSourceSchema,
+  executeWork,
+  workDigest,
+  verifyWorkFiles,
+} from './work.js';
 import { observeSettlement } from './settlement.js';
 import { operatorServer } from './operator.js';
 const cli = new Command()
   .name('alpha-node')
   .description('$AGIALPHA standalone opportunity and evidence node')
-  .version('3.1.0');
+  .version('3.2.0');
 cli.option('--home <directory>', 'Private node data directory', '.alpha-node');
 const home = () => resolve(cli.opts().home);
 const print = (x) => console.log(JSON.stringify(x, null, 2));
@@ -386,14 +392,20 @@ cli
   .requiredOption('--reviewer <address>', 'Separate reviewer address')
   .option('--usage <file>', 'Authorized structured usage file')
   .option('--mission <file>', 'Fresh general mission envelope')
+  .option('--work <file>', 'Fresh structured work envelope')
   .option('--live', 'Verify the supplied owner signer against mainnet ENS')
   .action(async (o) => {
-    if (!!o.usage === !!o.mission)
-      throw new Error('Supply exactly one of --usage or --mission');
-    (o.mission ? missionSourceSchema : usageSchema).parse(
+    if ([o.usage, o.mission, o.work].filter(Boolean).length !== 1)
+      throw new Error('Supply exactly one of --usage, --mission or --work');
+    (o.work
+      ? workSourceSchema
+      : o.mission
+        ? missionSourceSchema
+        : usageSchema
+    ).parse(
       await readJson(
-        resolve(o.usage ?? o.mission),
-        o.mission ? 1000000 : 100000,
+        resolve(o.usage ?? o.mission ?? o.work),
+        o.usage ? 100000 : 1000000,
       ),
     );
     const initialized = await initializeNode(home(), {
@@ -406,8 +418,9 @@ cli
     const pipeline = await readJson(
       new URL('../../examples/alpha/pipeline.json', import.meta.url),
     );
-    pipeline.source = resolve(o.usage ?? o.mission);
-    pipeline.sourceKind = o.mission ? 'mission' : 'usage';
+    pipeline.source = resolve(o.usage ?? o.mission ?? o.work);
+    pipeline.sourceKind = o.work ? 'work' : o.mission ? 'mission' : 'usage';
+    if (o.work) pipeline.policy.minExpectedNet = 0;
     await atomicJson(join(home(), 'pipeline.json'), pipeline);
     await atomicJson(
       join(home(), 'engine.json'),
@@ -420,15 +433,13 @@ cli
       next: 'Review pipeline assumptions, then use operate or serve. Add explicit owner-authorized actions and peers to engine.json.',
     });
   });
-cli
-  .command('operate')
-  .action(async () =>
-    print(
-      await operate(home(), {
-        rpcUrls: [process.env.ALPHA_RPC_URL, process.env.ALPHA_SECOND_RPC_URL],
-      }),
-    ),
-  );
+cli.command('operate').action(async () =>
+  print(
+    await operate(home(), {
+      rpcUrls: [process.env.ALPHA_RPC_URL, process.env.ALPHA_SECOND_RPC_URL],
+    }),
+  ),
+);
 cli
   .command('specialist')
   .option('--port <port>', 'Loopback listener port', '0')
@@ -511,6 +522,10 @@ cli
   });
 cli
   .command('verify-bundle <file>')
+  .option(
+    '--work-dir <directory>',
+    'Verify structured JSON and CSV deliverables against the signed result',
+  )
   .option('--expected-node <address>', 'Node address verified out of band')
   .option(
     '--expected-reviewer <address>',
@@ -523,6 +538,11 @@ cli
   .action(async (file, o) => {
     const bundle = await readJson(resolve(file)),
       report = verifyEvidenceBundle(bundle, o);
+    if (o.workDir)
+      report.work = await verifyWorkFiles(
+        resolve(o.workDir),
+        bundle.run.analysis.work,
+      );
     if (o.artifacts)
       report.artifacts = await verifyMeasurementArtifacts(
         bundle.run.outcome?.measurement,
@@ -533,6 +553,26 @@ cli
 cli
   .command('fingerprint')
   .action(async () => print(await softwareFingerprint()));
+cli
+  .command('verify-work <source> <result>')
+  .description(
+    'Independently recompute structured work from its supplied source',
+  )
+  .action(async (source, result) => {
+    const input = workSourceSchema.parse(
+      await readJson(resolve(source), 1000000),
+    );
+    const expected = executeWork(input.work),
+      supplied = await readJson(resolve(result), 4000000);
+    if (workDigest(expected) !== workDigest(supplied))
+      throw new Error('Work result differs from independent recomputation');
+    print({
+      verified: true,
+      kind: expected.kind,
+      resultDigest: workDigest(expected),
+      limitation: expected.limitation,
+    });
+  });
 cli
   .command('qualify')
   .option('--out <file>', 'Save a new qualification report')

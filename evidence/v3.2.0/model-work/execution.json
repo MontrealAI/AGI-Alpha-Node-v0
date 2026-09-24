@@ -1,0 +1,307 @@
+{
+  "schema": 1,
+  "actualExecution": true,
+  "actualInference": true,
+  "modelCalls": 3,
+  "elapsedMs": 17999,
+  "separateSpecialistProcesses": 1,
+  "specialistRequests": 3,
+  "records": [
+    {
+      "kind": "invoice-reconciliation",
+      "missionId": "runtime-81f5ad427c76216f70d4937059e9a31509e7cfef",
+      "runHash": "0x774492554dcddde89bde8ab374d7686ac01702dab9a5aed6d14b122aca4b9f21",
+      "resultDigest": "0xa02998a623b93a44830babea7e68abcbaf904a40fc43c124eefca45fb346aca2",
+      "summary": {
+        "services": 2,
+        "knownRateOverbillingMicroUsd": "11000000",
+        "netKnownRateVarianceMicroUsd": "11000000",
+        "unknownRateServices": [],
+        "duplicateInvoiceReferences": [
+          "invoice-1-line-2"
+        ]
+      },
+      "provider": {
+        "text": "- Supplied invoices exceed usage priced at supplied rates by 11000000 micro-USD across positive-variance services. This is a discrepancy to investigate, not a confirmed refund or measured profit.\n- Service compute: quantity variance 2; billed 24000000 micro-USD; expected 20000000; monetary variance 4000000.\n- Service storage: quantity variance 5; billed 12000000 micro-USD; expected 5000000; monetary variance 7000000.\n- 1 repeated invoice references require review; their amounts are already included in totals.",
+        "model": "/tmp/alpha-model/Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+        "usage": {
+          "completion_tokens": 18,
+          "prompt_tokens": 258,
+          "total_tokens": 276,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "endpointOrigin": "http://127.0.0.1:18081",
+        "kind": "verified-work-brief",
+        "factIds": [
+          "total",
+          "service-0",
+          "service-1",
+          "duplicates"
+        ],
+        "factsDigest": "0xf4cd468c8daaf41211814401c55094510272a1f8037bf65d3d48395cd4ae7278"
+      },
+      "verification": {
+        "verified": true,
+        "missionId": "runtime-81f5ad427c76216f70d4937059e9a31509e7cfef",
+        "runHash": "0x774492554dcddde89bde8ab374d7686ac01702dab9a5aed6d14b122aca4b9f21",
+        "node": "0x41ae61a2af0a7D95Aa8eeDF41bdaBb7ebc8EdBC2",
+        "reviewer": "0x60dbAC95a9d4A16Be4c0dAa0B1f7B6ddEC7f895f",
+        "reviewVerified": true,
+        "outcomeVerified": false,
+        "reviewerBinding": "signed-node-choice",
+        "specialistReceipts": 1,
+        "limitation": "Checks signatures, arithmetic, report integrity and v2 specialist receipts. Does not prove the complete ledger, ENS ownership, source truth or reviewer independence."
+      },
+      "artifacts": {
+        "verified": true,
+        "resultDigest": "0xa02998a623b93a44830babea7e68abcbaf904a40fc43c124eefca45fb346aca2",
+        "csvDigest": "0xe92133a20fbf31a9bac84e8453e7033d1d5e4617a7a1d9027bc29237b184c19a"
+      },
+      "replay": "replayed"
+    },
+    {
+      "kind": "resource-allocation",
+      "missionId": "runtime-52fd7f992722a8e0b1ecd1a55f2c438945229935",
+      "runHash": "0xaa4e2a874768b69ae30fc4f4f7f97f772a6b65db3922f362b1372dc4211feed9",
+      "resultDigest": "0x86c998ba7ca39055ff2207e010fc465736692e3b2f1bf5c902608245c2d623df",
+      "summary": {
+        "selectedIds": [
+          "b",
+          "c"
+        ],
+        "declaredNetMicroUsd": "80000000",
+        "capitalMicroUsd": "100000000",
+        "computeUnits": 8,
+        "reviewMinutes": 16,
+        "optimalWithinSuppliedCandidates": true,
+        "examinedSubsets": 8
+      },
+      "provider": {
+        "text": "- Selected feasible subset: b, c, with declared net 80000000 micro-USD. These benefits are supplied estimates, not realized returns.\n- Selected capacity: 100000000 micro-USD capital, 8 compute units, 16 review minutes.\n- All 8 subsets of the 3 supplied candidates were evaluated. Optimality applies only to this finite candidate set and its declared objective and constraints.",
+        "model": "/tmp/alpha-model/Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+        "usage": {
+          "completion_tokens": 11,
+          "prompt_tokens": 193,
+          "total_tokens": 204,
+          "prompt_tokens_details": {
+            "cached_tokens": 68
+          }
+        },
+        "endpointOrigin": "http://127.0.0.1:18081",
+        "kind": "verified-work-brief",
+        "factIds": [
+          "selection",
+          "capacity",
+          "search"
+        ],
+        "factsDigest": "0x84fd8a843894d0c4dc8d55f3cb08d44da8d8926a9b06d023ff45bba2dc102a61"
+      },
+      "verification": {
+        "verified": true,
+        "missionId": "runtime-52fd7f992722a8e0b1ecd1a55f2c438945229935",
+        "runHash": "0xaa4e2a874768b69ae30fc4f4f7f97f772a6b65db3922f362b1372dc4211feed9",
+        "node": "0x41ae61a2af0a7D95Aa8eeDF41bdaBb7ebc8EdBC2",
+        "reviewer": "0x60dbAC95a9d4A16Be4c0dAa0B1f7B6ddEC7f895f",
+        "reviewVerified": true,
+        "outcomeVerified": false,
+        "reviewerBinding": "signed-node-choice",
+        "specialistReceipts": 1,
+        "limitation": "Checks signatures, arithmetic, report integrity and v2 specialist receipts. Does not prove the complete ledger, ENS ownership, source truth or reviewer independence."
+      },
+      "artifacts": {
+        "verified": true,
+        "resultDigest": "0x86c998ba7ca39055ff2207e010fc465736692e3b2f1bf5c902608245c2d623df",
+        "csvDigest": "0x68e077df5dd94bf18b78ceaf9fcf0b455b35051a3be8f97024531cea157b65ea"
+      },
+      "replay": "replayed"
+    },
+    {
+      "kind": "data-quality",
+      "missionId": "runtime-5ad87dde3358b529b4b7c796e2a720f4b5715a40",
+      "runHash": "0x625c2302677e822e8d3d9115764b8329ffdea9f1321159ddbe12bf9467ea34dd",
+      "resultDigest": "0xd0136a3978f502d17ed5c34215a8085bc5c31c7d8e7f9d0dc2fc5397e4081084",
+      "summary": {
+        "inputRows": 3,
+        "rules": 4,
+        "violations": 4,
+        "affectedRows": 2,
+        "passingRows": 1
+      },
+      "provider": {
+        "text": "- 4 rule violations affect 2 of 3 supplied rows under 4 explicit rules. Passing these rules does not establish overall data truth or completeness.\n- Rule account-required (required, field account) found 1 violations.\n- Rule account-unique (unique, field account) found 1 violations.\n- Rule quantity-range (range, field quantity) found 1 violations.\n- Rule status-known (one-of, field status) found 1 violations.",
+        "model": "/tmp/alpha-model/Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+        "usage": {
+          "completion_tokens": 23,
+          "prompt_tokens": 209,
+          "total_tokens": 232,
+          "prompt_tokens_details": {
+            "cached_tokens": 68
+          }
+        },
+        "endpointOrigin": "http://127.0.0.1:18081",
+        "kind": "verified-work-brief",
+        "factIds": [
+          "quality",
+          "rule-0",
+          "rule-1",
+          "rule-2",
+          "rule-3"
+        ],
+        "factsDigest": "0xba3caf619928d2f26aa8dcde0223fbe675152ac4d70a30804c7000ad0deea1be"
+      },
+      "verification": {
+        "verified": true,
+        "missionId": "runtime-5ad87dde3358b529b4b7c796e2a720f4b5715a40",
+        "runHash": "0x625c2302677e822e8d3d9115764b8329ffdea9f1321159ddbe12bf9467ea34dd",
+        "node": "0x41ae61a2af0a7D95Aa8eeDF41bdaBb7ebc8EdBC2",
+        "reviewer": "0x60dbAC95a9d4A16Be4c0dAa0B1f7B6ddEC7f895f",
+        "reviewVerified": true,
+        "outcomeVerified": false,
+        "reviewerBinding": "signed-node-choice",
+        "specialistReceipts": 1,
+        "limitation": "Checks signatures, arithmetic, report integrity and v2 specialist receipts. Does not prove the complete ledger, ENS ownership, source truth or reviewer independence."
+      },
+      "artifacts": {
+        "verified": true,
+        "resultDigest": "0xd0136a3978f502d17ed5c34215a8085bc5c31c7d8e7f9d0dc2fc5397e4081084",
+        "csvDigest": "0xf77268bd0809eb49fa6588f4224cc0e0c199dad1ee0307c386412a3553331df3"
+      },
+      "replay": "replayed"
+    }
+  ],
+  "recovery": {
+    "ledgerHeadMatched": true,
+    "restoredPaused": true
+  },
+  "softwareFingerprint": {
+    "digest": "0x5809297a92d52f6c6b9088e0a5894d122c4450d18aec2a78fa52cd4df6e72087",
+    "files": 153
+  },
+  "qualification": {
+    "schema": 1,
+    "scope": "live-owner-policy-evidence",
+    "gatePassed": false,
+    "observedAt": "2026-09-24T16:57:45.369Z",
+    "ledgerHead": "0xfc0bd25e12276cbc1642b7a08bd5cae4ced5f0778c86e977742cf5ccc06f5661",
+    "softwareDigest": "0x5809297a92d52f6c6b9088e0a5894d122c4450d18aec2a78fa52cd4df6e72087",
+    "configurationDigest": "0x711e7de0695b40f5010bcd22c6f452d06c15981f889315f4f7f59bc7d64591c4",
+    "policy": {
+      "schema": 1,
+      "lookbackDays": 30,
+      "minMeasuredMissions": 5,
+      "minNetUsd": 0,
+      "maxLossFraction": 0.2,
+      "maxHumanMinutesPerUsefulResult": 15,
+      "maxReviewAgeHours": 72,
+      "requireLiveIdentity": true,
+      "minConfirmedClaims": 1,
+      "assessors": {}
+    },
+    "checks": [
+      {
+        "id": "live-identity",
+        "passed": false,
+        "detail": "Live identity not freshly verified"
+      },
+      {
+        "id": "measured-work",
+        "passed": false,
+        "detail": "0/5 comparable post-admission measurements"
+      },
+      {
+        "id": "cost-coverage",
+        "passed": false,
+        "detail": "3 runs without eligible observed measurements; 0 failed attempts without expenses; 0 unresolved attempts"
+      },
+      {
+        "id": "net-value",
+        "passed": false,
+        "detail": "0 USD reviewer-attested net, including declared overhead and failed-attempt expenses; complete coverage: false"
+      },
+      {
+        "id": "loss-rate",
+        "passed": false,
+        "detail": "0/0 loss, quality-failure or failed attempts"
+      },
+      {
+        "id": "human-effort",
+        "passed": false,
+        "detail": "No useful measured result"
+      },
+      {
+        "id": "review-capacity",
+        "passed": true,
+        "detail": "0 reviews exceed the owner deadline"
+      },
+      {
+        "id": "recovery",
+        "passed": true,
+        "detail": "0 interrupted operations; 0 unresolved transactions"
+      },
+      {
+        "id": "settlement",
+        "passed": false,
+        "detail": "0/1 freshly audited finalized claims for useful measured work"
+      },
+      {
+        "id": "assurance-security",
+        "passed": false,
+        "detail": "Current owner-allowlisted security assessment bound to this software and configuration"
+      },
+      {
+        "id": "assurance-recovery",
+        "passed": false,
+        "detail": "Current owner-allowlisted recovery assessment bound to this software and configuration"
+      },
+      {
+        "id": "assurance-operations",
+        "passed": false,
+        "detail": "Current owner-allowlisted operations assessment bound to this software and configuration"
+      },
+      {
+        "id": "assurance-reviewer-independence",
+        "passed": false,
+        "detail": "Current owner-allowlisted reviewer-independence assessment bound to this software and configuration"
+      }
+    ],
+    "verifiedAssurances": [],
+    "rejectedAssurances": [],
+    "paidClaims": [],
+    "metrics": {
+      "measuredMissions": 0,
+      "excludedMeasurements": 0,
+      "usefulResults": 0,
+      "losses": 0,
+      "failedAttempts": 0,
+      "failedAttemptCostUsd": 0,
+      "costCoverageComplete": false,
+      "uncoveredRuns": 3,
+      "uncoveredFailedAttempts": 0,
+      "netUsd": 0,
+      "humanMinutes": 0,
+      "humanMinutesPerUsefulResult": null,
+      "confirmedClaims": 0
+    },
+    "evidence": [],
+    "expenseEvidence": [],
+    "limitations": [
+      "This is a configurable evidence admission gate, not certification of general intelligence, profitability or complete project fulfillment.",
+      "Assessor signatures identify authorized keys. Their assertions, organizational independence and artifact contents require external verification.",
+      "Cost completeness and measurement truth remain reviewer attestations. Matched windows do not prove causality.",
+      "Legacy, pre-admission, future, duplicate and overlapping measurements do not count. RPC agreement does not establish independent provider operators."
+    ]
+  },
+  "limitations": [
+    "Inputs, estimates and reviewer roles are controlled examples, not buyer invoices or independent people.",
+    "Model prioritization selects existing computed facts; this is not a general reasoning benchmark.",
+    "No model training, live token payments, mainnet commissioning or measured economic profit."
+  ],
+  "provenance": {
+    "revision": "a06e946bb6b655725eafa393f4a9745d460374c9",
+    "sha256": "3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597",
+    "bytes": 2497281120,
+    "runtime": "llama.cpp b11146"
+  }
+}

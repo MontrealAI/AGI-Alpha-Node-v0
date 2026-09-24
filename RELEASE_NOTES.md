@@ -1,32 +1,32 @@
-# AGI Alpha Node v3.1.0 — Measured Work and Assurance Edition
+# AGI Alpha Node v3.2.0 — Verified Work Edition
 
 <!-- markdownlint-disable MD013 -->
 
-This release extends the standalone **$AGIALPHA** node beyond the caching demonstration and makes its evidence of useful operation more demanding. It remains separate from AGI Jobs.
+v3.2 gives the standalone **$AGIALPHA** node independently recomputable analytical deliverables, alongside the existing reviewed execution and funded settlement lifecycle. This project remains separate from AGI Jobs.
 
 ## Delivered
 
-- General evidence-backed missions with content-derived identities and owner policy intersection, alongside the existing usage adapter.
-- Two actual model specialist roles: research synthesis and adversarial analysis. Signed receipts expose findings, exact source quotations, counterarguments and experiments in the reviewed report. Model text has no execution or payment authority.
-- Persistent model spending reservations, replay, process locks and fail-closed handling of interrupted requests. Live identity is checked before specialist spending.
-- Paired measurement contracts with workload/acceptance hashes, equal observation windows, accepted-output counts, six overhead categories, human effort and artifact references. Learning admits only comparable observed economics and excludes modeled, legacy, duplicate and overlapping records.
-- Complete declared cost coverage in operational qualification: missing measurements block the gate; failed attempts require reviewer-signed expenses; rejected work cannot claim accepted outputs or positive qualification credit.
-- Expiring, owner-allowlisted security, recovery, operations and reviewer-independence assessments bound to software and configuration. A configurable admission gate checks measured work, total net value, loss rate, human effort, review capacity, recovery, fresh ENS identity and finalized canonical-token claim evidence.
-- Independent bundle verification, byte-level measurement artifact checks, signed reviewer binding, qualification controls in the operator interface, and installation/recovery/commissioning instructions.
-- An actual reviewed algorithm-switch demonstration with equal output checks and measured CPU usage. Its dollar conversion is explicitly modeled and cannot satisfy observed-economics qualification.
+- Invoice reconciliation with exact integer amounts, usage/billing discrepancies, missing-rate handling and repeated-reference detection.
+- Exhaustive resource allocation over up to 16 supplied candidates, constrained by capital, compute and reviewer minutes, with deterministic tie-breaking and a declared optimum confined to the supplied model.
+- Explicit data-quality audits with row-level evidence for required fields, uniqueness, numeric ranges and allowed values.
+- Optional model briefs that select only existing computed facts. The verifier renders their text; unsupported model-authored prose cannot enter this brief.
+- Signed work results, complete JSON/CSV exports, independent recomputation, authenticated operator downloads and artifact integrity checks.
+- Reviewer-time reservations before autonomous inference, daily/pending time budgets and overdue-review admission blocks.
+- Learning fixes: rejected measured work counts as a loss; pre-admission and future observations are excluded.
+- Three-family demonstrations with a separate specialist process, controlled review, replay and encrypted recovery; real local-model briefs; and structured work exercised through local EVM settlement and capped reinvestment.
 
-## Evidence and release gates
+## Validation and packaging
 
-See [validation evidence](evidence/v3.1.0/validation.md) and the GitHub Actions run on the tagged commit. Publication requires Linux tests, unchanged coverage thresholds, documentation and security checks, Solidity compilation, subgraph build, Docker execution and macOS clean-install qualification. The source ZIP includes a per-file SHA-256 manifest; model weights are downloaded separately.
+[Release evidence](evidence/v3.2.0/validation.md) records executed checks, source fingerprints, exact limitations and reproducible commands. Publication requires Linux tests and coverage, documentation/security checks, Solidity/subgraph builds, macOS clean installation, Docker demonstrations and full combined verification. The ZIP includes a per-file manifest and checksum. Model weights remain a separate pinned download.
 
-Real local inference used pinned Qwen3 model bytes and llama.cpp b11146, two separately keyed specialist processes, signed exports, replay without additional calls and encrypted recovery. Both the smaller rejected model draft and the larger model's remaining semantic errors are preserved. Correct quotations and signatures do not establish correct conclusions; model outputs require review.
+The model run prioritizes computed facts and therefore does not measure general reasoning or unrestricted hallucination rates. Example invoices, benefits, reviewer roles and local EVM balances are explicitly controlled fixtures. No buyer payment or real economic gain is asserted.
 
-## Upgrade
+## Install and upgrade
 
-Use Node.js 22.14+ and the committed lockfile. Stop workers, retain an encrypted backup and an external ledger-head checkpoint, then follow [recovery and migration](docs/alpha-recovery.md). Prior schema-2 history remains readable. New v2 outcomes, expense events and runtime reports require v3.1; rollback needs the corresponding pre-upgrade state and reconciliation of later external work.
+Use Node.js 22.14+, `npm ci`, then `npm run demo:work`. Read [verified work](docs/alpha-verified-work.md) for source formats, outputs, verification, model configuration and reviewer budgets.
 
-Legacy outcomes remain visible but no longer qualify as comparable learning samples. Existing runs without measurement contracts cannot acquire them retroactively. Preserve the configured reviewer identity; new run signatures bind it. New model roles require explicit providers and spending reservations. Qualification is opt-in through `requireQualifiedAdmission`; the default pilot configuration does not assert readiness. Contracts are unchanged from v3.0.
+Before upgrading, stop workers and retain an encrypted backup plus an external ledger-head checkpoint. Existing history remains readable, but new work fields and briefs require v3.2. Rollback needs the corresponding pre-upgrade state and external-action reconciliation. Review the new reviewer-time limits; legacy/manual pending records use a 15-minute estimate. Rejections now affect learning. Contracts are unchanged from v3.0/v3.1; installation does not deploy or upgrade them.
 
-## Remaining project outcomes
+## Remaining scope
 
-[Project status](docs/project-status.md) separates implemented software from the original vision's open outcomes. This release process did not perform owner mainnet deployment/funding, live token payments, independent human assessments, sustained production operation or verified economic profit. It does not establish general intelligence, a global specialist payment marketplace or an objective “10/10.” The software exposes and enforces these missing evidence requirements instead of presenting simulations as completion.
+The [project status](docs/project-status.md) identifies unfinished original outcomes. Work correctness is conditional on supplied data, rules and estimates. General model research remains unverified. Live ENS commissioning, funded mainnet operation, independent security/recovery assessments, sustained profitable workloads and broader autonomous intelligence were not established by this release process. They remain required evidence for the full original vision; the release does not claim an objective “10/10.”

@@ -356,194 +356,219 @@ describe('signed transactions over RPC into actual local EVM bytecode', () => {
     await step();
     expect(sent).toHaveLength(5);
   }, 15000);
-  it('closes the integrated discovery-to-action-to-payment-to-learning loop', async () => {
-    const health = createServer((req, res) =>
-      res.end(JSON.stringify({ healthy: true })),
-    );
-    await new Promise((r) => health.listen(0, '127.0.0.1', r));
-    const peerDir = join(dir, 'peer');
-    const peerConfig = await initializeNode(peerDir, {
-      ensName: 'specialist.alpha.node.agi.eth',
-    });
-    const peer = await specialistServer(peerDir, {
-      allowedCallers: [nodeWallet.address],
-      capabilities: ['risk-review'],
-      priceMicroUsd: 10,
-      maxDailyRequests: 3,
-    });
-    try {
-      await writeFile(
-        join(dir, 'service.json'),
-        JSON.stringify({ cacheEnabled: false }),
+  it.each(['usage', 'work'])(
+    'closes the integrated %s-to-action-to-payment-to-outcome loop',
+    async (sourceKind) => {
+      const health = createServer((req, res) =>
+        res.end(JSON.stringify({ healthy: true })),
       );
-      await writeFile(
-        join(dir, 'pipeline.json'),
-        await readFile('examples/alpha/pipeline.json'),
-      );
-      await writeFile(
-        join(dir, 'usage.json'),
-        JSON.stringify({
-          schema: 1,
-          observedAt: new Date().toISOString(),
-          period: 'Synthetic end-to-end qualification',
-          services: [
-            {
-              id: 'inference',
-              name: 'Qualification service',
-              requests: 1000,
-              repeatedRequests: 600,
-              costUsd: 500,
-            },
-          ],
-        }),
-      );
-      await writeFile(
-        join(dir, 'engine.json'),
-        JSON.stringify({
-          schema: 1,
-          adaptive: { enabled: true },
-          peers: [{ address: peerConfig.address, url: peer.url }],
-          specialistCapabilities: ['risk-review'],
-          maxSpecialistPriceMicroUsd: 10,
-          maxDailyActions: 2,
-          actions: {
-            'cache-inference': {
-              kind: 'json-set',
-              root: dir,
-              file: 'service.json',
-              pointer: ['cacheEnabled'],
-              value: true,
-              healthUrl: `http://127.0.0.1:${health.address().port}/health`,
-              healthField: 'healthy',
-              healthValue: true,
-              timeoutMs: 1000,
-            },
-          },
-          transactions: policy,
-        }),
-      );
-      const dependencies = {
-        identityProvider: provider,
-        transactionDependencies: { rpc, identityProvider: provider },
-      };
-      const first = await operate(dir, dependencies);
-      const missionId = first.discovery.missionId;
-      const run = (await loadNode(dir)).runs.get(missionId);
-      expect(run.runtimeContext.specialists).toHaveLength(1);
-      await call(escrow, owner.address, 'fund', [
-        run.workId,
-        nodeWallet.address,
-        reviewer.address,
-        100,
-        now + 3600n,
-      ]);
-      let exported = await exportMission(
-        dir,
-        missionId,
-        join(dir, 'integrated-output'),
-      );
-      let bundle = JSON.parse(await readFile(exported.evidence));
-      await importDetachedReview(
-        dir,
-        await signDetachedReview(
-          bundle,
-          'accepted',
-          'Reviewed exact action and specialist report in the synthetic qualification',
-          reviewer.privateKey,
-          { escrow: escrow.address, expiresAt: Number(now) + 3600 },
-        ),
-      );
-      const progress = [];
-      for (let i = 0; i < 11; i++)
-        progress.push(await operate(dir, dependencies));
-      expect(
-        JSON.parse(await readFile(join(dir, 'service.json'))).cacheEnabled,
-      ).toBe(true);
-      expect(
-        (
-          await call(manager, owner.address, 'stakedBalance', [
-            nodeWallet.address,
-          ])
-        )[0],
-      ).toBe(40n);
-      expect(
-        (
-          await call(token, owner.address, 'balanceOf', [nodeWallet.address])
-        )[0],
-      ).toBe(60n);
-      exported = await exportMission(
-        dir,
-        missionId,
-        join(dir, 'integrated-output'),
-      );
-      bundle = JSON.parse(await readFile(exported.evidence));
-      await importOutcome(
-        dir,
-        await signOutcome(
-          bundle,
-          {
-            measuredBenefitUsd: 100,
-            measuredCostUsd: 30,
-            observedAt: new Date().toISOString(),
-            evidence:
-              'Synthetic economic measurements for the integrated local VM qualification; file execution and token state transitions were real local computations.',
-          },
-          reviewer.privateKey,
-        ),
-      );
-      const final = await loadNode(dir);
-      expect(outcomeSummary(final).reviewerReportedNetUsd).toBe(70);
-      expect(
-        [...final.runtime.values()].filter(
-          (e) =>
-            e.topic === 'transaction-result' && e.data.status === 'confirmed',
-        ),
-      ).toHaveLength(5);
-      expect(sent).toHaveLength(5);
-      if (process.env.ALPHA_QUALIFICATION_OUTPUT) {
-        const output = process.env.ALPHA_QUALIFICATION_OUTPUT;
-        await exportMission(dir, missionId, output);
+      await new Promise((r) => health.listen(0, '127.0.0.1', r));
+      const peerDir = join(dir, 'peer');
+      const peerConfig = await initializeNode(peerDir, {
+        ensName: 'specialist.alpha.node.agi.eth',
+      });
+      const peer = await specialistServer(peerDir, {
+        allowedCallers: [nodeWallet.address],
+        capabilities: ['risk-review'],
+        priceMicroUsd: 10,
+        maxDailyRequests: 3,
+      });
+      try {
         await writeFile(
-          join(output, 'closed-loop.json'),
-          JSON.stringify(
-            {
-              fixture: true,
-              actualLocalOperations: [
-                'HTTP specialist exchange',
-                'signed review',
-                'file change and health check',
-                'signed raw transactions',
-                'EVM escrow/token/stake execution',
-                'signed outcome',
-              ],
-              notLive: [
-                'ENS provider',
-                'RPC consensus providers',
-                'token balances',
-                'economic outcome measurements',
-                'reviewer human independence',
-              ],
-              first,
-              progress,
-              outcomes: outcomeSummary(final),
-              transactionHashes: sent.map((t) => t.hash),
-              stakedBaseUnits: '40',
-              liquidBaseUnits: '60',
-            },
-            null,
-            2,
-          ) + '\n',
+          join(dir, 'service.json'),
+          JSON.stringify({ cacheEnabled: false }),
         );
+        await writeFile(
+          join(dir, 'pipeline.json'),
+          await readFile('examples/alpha/pipeline.json'),
+        );
+        await writeFile(
+          join(dir, 'usage.json'),
+          JSON.stringify({
+            schema: 1,
+            observedAt: new Date().toISOString(),
+            period: 'Synthetic end-to-end qualification',
+            services: [
+              {
+                id: 'inference',
+                name: 'Qualification service',
+                requests: 1000,
+                repeatedRequests: 600,
+                costUsd: 500,
+              },
+            ],
+          }),
+        );
+        if (sourceKind === 'work') {
+          const p = JSON.parse(await readFile('examples/alpha/pipeline.json'));
+          p.sourceKind = 'work';
+          p.source = 'work-source.json';
+          p.policy.minExpectedNet = 0;
+          await writeFile(join(dir, 'pipeline.json'), JSON.stringify(p));
+          const source = JSON.parse(
+            await readFile('examples/alpha/work-quality.json'),
+          );
+          source.observedAt = new Date().toISOString();
+          await writeFile(
+            join(dir, 'work-source.json'),
+            JSON.stringify(source),
+          );
+        }
+        await writeFile(
+          join(dir, 'engine.json'),
+          JSON.stringify({
+            schema: 1,
+            adaptive: { enabled: true },
+            peers: [{ address: peerConfig.address, url: peer.url }],
+            specialistCapabilities: ['risk-review'],
+            maxSpecialistPriceMicroUsd: 10,
+            maxDailyActions: 2,
+            actions: {
+              [sourceKind === 'work' ? 'verified-analysis' : 'cache-inference']:
+                {
+                  kind: 'json-set',
+                  root: dir,
+                  file: 'service.json',
+                  pointer: ['cacheEnabled'],
+                  value: true,
+                  healthUrl: `http://127.0.0.1:${health.address().port}/health`,
+                  healthField: 'healthy',
+                  healthValue: true,
+                  timeoutMs: 1000,
+                },
+            },
+            transactions: policy,
+          }),
+        );
+        const dependencies = {
+          identityProvider: provider,
+          transactionDependencies: { rpc, identityProvider: provider },
+        };
+        const first = await operate(dir, dependencies);
+        const missionId = first.discovery.missionId;
+        const run = (await loadNode(dir)).runs.get(missionId);
+        expect(run.runtimeContext.specialists).toHaveLength(1);
+        await call(escrow, owner.address, 'fund', [
+          run.workId,
+          nodeWallet.address,
+          reviewer.address,
+          100,
+          now + 3600n,
+        ]);
+        let exported = await exportMission(
+          dir,
+          missionId,
+          join(dir, 'integrated-output'),
+        );
+        let bundle = JSON.parse(await readFile(exported.evidence));
+        await importDetachedReview(
+          dir,
+          await signDetachedReview(
+            bundle,
+            'accepted',
+            'Reviewed exact action and specialist report in the synthetic qualification',
+            reviewer.privateKey,
+            { escrow: escrow.address, expiresAt: Number(now) + 3600 },
+          ),
+        );
+        const progress = [];
+        for (let i = 0; i < 11; i++)
+          progress.push(await operate(dir, dependencies));
+        expect(
+          JSON.parse(await readFile(join(dir, 'service.json'))).cacheEnabled,
+        ).toBe(true);
+        expect(
+          (
+            await call(manager, owner.address, 'stakedBalance', [
+              nodeWallet.address,
+            ])
+          )[0],
+        ).toBe(40n);
+        expect(
+          (
+            await call(token, owner.address, 'balanceOf', [nodeWallet.address])
+          )[0],
+        ).toBe(60n);
+        exported = await exportMission(
+          dir,
+          missionId,
+          join(dir, 'integrated-output'),
+        );
+        bundle = JSON.parse(await readFile(exported.evidence));
+        await importOutcome(
+          dir,
+          await signOutcome(
+            bundle,
+            {
+              measuredBenefitUsd: 100,
+              measuredCostUsd: 30,
+              observedAt: new Date().toISOString(),
+              evidence:
+                'Synthetic economic measurements for the integrated local VM qualification; file execution and token state transitions were real local computations.',
+            },
+            reviewer.privateKey,
+          ),
+        );
+        const final = await loadNode(dir);
+        expect(outcomeSummary(final).reviewerReportedNetUsd).toBe(70);
+        expect(
+          [...final.runtime.values()].filter(
+            (e) =>
+              e.topic === 'transaction-result' && e.data.status === 'confirmed',
+          ),
+        ).toHaveLength(5);
+        expect(sent).toHaveLength(5);
+        if (process.env.ALPHA_QUALIFICATION_OUTPUT) {
+          const output = join(
+            process.env.ALPHA_QUALIFICATION_OUTPUT,
+            sourceKind,
+          );
+          await exportMission(dir, missionId, output);
+          await writeFile(
+            join(output, 'closed-loop.json'),
+            JSON.stringify(
+              {
+                fixture: true,
+                sourceKind,
+                workResult: final.runs.get(missionId).analysis.work ?? null,
+                actualLocalOperations: [
+                  'HTTP specialist exchange',
+                  'signed review',
+                  'file change and health check',
+                  'signed raw transactions',
+                  'EVM escrow/token/stake execution',
+                  'signed outcome',
+                ],
+                notLive: [
+                  'ENS provider',
+                  'RPC consensus providers',
+                  'token balances',
+                  'economic outcome measurements',
+                  'reviewer human independence',
+                ],
+                first,
+                progress,
+                outcomes: outcomeSummary(final),
+                transactionHashes: sent.map((t) => t.hash),
+                stakedBaseUnits: '40',
+                liquidBaseUnits: '60',
+              },
+              null,
+              2,
+            ) + '\n',
+          );
+        }
+      } finally {
+        health.closeAllConnections();
+        peer.server.closeAllConnections();
+        await Promise.all([
+          new Promise((r) => health.close(r)),
+          new Promise((r) => peer.server.close(r)),
+        ]);
       }
-    } finally {
-      health.closeAllConnections();
-      peer.server.closeAllConnections();
-      await Promise.all([
-        new Promise((r) => health.close(r)),
-        new Promise((r) => peer.server.close(r)),
-      ]);
-    }
-  }, 30000);
+    },
+    30000,
+  );
   it('retains a prepared transaction across a lost broadcast response and reconciles without duplicate sends', async () => {
     const original = rpc.one;
     let lose = true;

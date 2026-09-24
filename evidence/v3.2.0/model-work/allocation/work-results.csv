@@ -1,0 +1,4 @@
+"id","benefitMicroUsd","costMicroUsd","riskReserveMicroUsd","computeUnits","reviewMinutes","selected","declaredNetMicroUsd"
+"a","150000000","80000000","10000000","8","18","false","60000000"
+"b","90000000","40000000","10000000","4","8","true","40000000"
+"c","90000000","40000000","10000000","4","8","true","40000000"

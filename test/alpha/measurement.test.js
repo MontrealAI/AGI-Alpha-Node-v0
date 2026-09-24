@@ -1,4 +1,4 @@
-import { it, expect, beforeEach, afterEach } from 'vitest';
+import { it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   mkdtemp,
   readFile,
@@ -44,7 +44,10 @@ beforeEach(async () => {
     ensName: 'measured.alpha.node.agi.eth',
     reviewer: reviewer.address,
   });
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(Date.now() - 200000);
   await runMission(dir, fixture);
+  vi.useRealTimers();
   await reviewMission(
     dir,
     fixture.id,
@@ -332,4 +335,38 @@ it('allows cost accounting for rejected work but forbids claiming accepted outpu
     (await loadNode(dir)).runs.get(rejected.id).outcome.assessment
       .qualityPassed,
   ).toBe(false);
+});
+it('learns from rejected measured work and excludes pre-admission or future observations', async () => {
+  const rejected = { ...fixture, id: 'rejected-learning' };
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(Date.now() - 200000);
+  await runMission(dir, rejected);
+  vi.useRealTimers();
+  await reviewMission(
+    dir,
+    rejected.id,
+    'rejected',
+    'Unusable output; retain this failure for learning.',
+    reviewer.privateKey,
+  );
+  const b = await readJson(
+      (await exportMission(dir, rejected.id, join(dir, 'rejected-learning')))
+        .evidence,
+    ),
+    m = measurementFixture();
+  m.candidate.acceptedUnits = 0;
+  await importOutcome(dir, await signOutcome(b, m, reviewer.privateKey));
+  const n = await loadNode(dir),
+    model = () =>
+      planMission(fixture, n, { enabled: true }).models.find(
+        (m) => m.recommendation === 'cache',
+      );
+  expect(model().losses).toBe(1);
+  expect(model().consecutiveLosses).toBe(1);
+  const r = n.runs.get(rejected.id);
+  r.at = new Date().toISOString();
+  expect(model().samples).toBe(0);
+  r.at = new Date(Date.now() - 200000).toISOString();
+  r.outcome.observedAt = new Date(Date.now() + 60000).toISOString();
+  expect(model().samples).toBe(0);
 });

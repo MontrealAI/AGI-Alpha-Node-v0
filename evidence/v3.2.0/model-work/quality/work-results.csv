@@ -1,0 +1,5 @@
+"rowId","ruleId","field","issue","actual"
+"r3","account-required","account","missing",""
+"r2","account-unique","account","duplicate-of:r1","acct-a"
+"r2","quantity-range","quantity","outside-range-or-not-number","TEXT: -1"
+"r2","status-known","status","not-allowed","unknown"

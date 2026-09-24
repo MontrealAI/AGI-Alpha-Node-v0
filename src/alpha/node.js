@@ -24,6 +24,8 @@ import {
 import { assessMeasurement } from './measurement.js';
 import { validateSpecialistReceipt } from './runtime/specialist-protocol.js';
 import { verifyExpense } from './expenses.js';
+import { workCsv } from './work.js';
+import { validateWorkBrief } from './work-brief.js';
 
 const MAX_STATE = 32 * 1024 * 1024;
 const address = (x) => getAddress(x).toLowerCase();
@@ -257,6 +259,8 @@ export function verifyState(config, state) {
           'Mission was closed with an expense; create a new mission for another attempt',
         );
       const recomputed = analyzeMission(payload.mission);
+      if (payload.mission.work && payload.provider)
+        validateWorkBrief(payload.provider, recomputed.work);
       if (
         canonicalJson(recomputed) !== canonicalJson(payload.analysis) ||
         payload.report !==
@@ -346,6 +350,14 @@ export function verifyState(config, state) {
         typeof payload.missionId !== 'string'
       )
         throw new Error('Invalid operation metadata');
+      if (
+        payload.reservedReviewMinutes !== undefined &&
+        (payload.phase !== 'reserved' ||
+          !Number.isInteger(payload.reservedReviewMinutes) ||
+          payload.reservedReviewMinutes < 1 ||
+          payload.reservedReviewMinutes > 1440)
+      )
+        throw new Error('Invalid reviewer-time reservation');
       const prior = operations.get(payload.cycle);
       if (payload.phase === 'reserved') {
         if (prior) throw new Error('Duplicate cycle reservation');
@@ -525,9 +537,23 @@ export async function exportMission(dir, missionId, outDir) {
     },
     run,
   });
+  if (run.analysis.work) {
+    await atomicJson(join(outDir, 'work-result.json'), run.analysis.work);
+    await writeFile(
+      join(outDir, 'work-results.csv'),
+      workCsv(run.analysis.work),
+      { mode: 0o600 },
+    );
+  }
   return {
     report: join(outDir, 'report.md'),
     evidence: join(outDir, 'evidence.json'),
+    ...(run.analysis.work
+      ? {
+          workResult: join(outDir, 'work-result.json'),
+          workCsv: join(outDir, 'work-results.csv'),
+        }
+      : {}),
   };
 }
 export function settlementPlan(config, run, treasuryAddress) {
@@ -924,6 +950,11 @@ export function verifyEvidenceBundle(
   if (bundle.schema !== 2 || !bundle.identity || !bundle.run)
     throw new Error('Invalid evidence bundle');
   const config = bundle.identity;
+  if (bundle.run.mission?.work && bundle.run.provider)
+    validateWorkBrief(
+      bundle.run.provider,
+      analyzeMission(bundle.run.mission).work,
+    );
   if (
     (expectedNode && address(config.address) !== address(expectedNode)) ||
     (expectedReviewer && address(config.reviewer) !== address(expectedReviewer))

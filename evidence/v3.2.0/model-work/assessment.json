@@ -1,0 +1,55 @@
+{
+  "scope": "Builder assessment of restricted computed-fact briefs",
+  "actualInference": true,
+  "modelCalls": 3,
+  "elapsedMs": 17999,
+  "softwareFingerprint": {
+    "digest": "0x5809297a92d52f6c6b9088e0a5894d122c4450d18aec2a78fa52cd4df6e72087",
+    "files": 153
+  },
+  "cases": [
+    {
+      "kind": "invoice-reconciliation",
+      "factIds": [
+        "total",
+        "service-0",
+        "service-1",
+        "duplicates"
+      ],
+      "artifactsVerified": true,
+      "reviewVerified": true,
+      "allTextRenderedFromComputedFacts": true
+    },
+    {
+      "kind": "resource-allocation",
+      "factIds": [
+        "selection",
+        "capacity",
+        "search"
+      ],
+      "artifactsVerified": true,
+      "reviewVerified": true,
+      "allTextRenderedFromComputedFacts": true
+    },
+    {
+      "kind": "data-quality",
+      "factIds": [
+        "quality",
+        "rule-0",
+        "rule-1",
+        "rule-2",
+        "rule-3"
+      ],
+      "artifactsVerified": true,
+      "reviewVerified": true,
+      "allTextRenderedFromComputedFacts": true
+    }
+  ],
+  "acceptance": "Accept for the documented restricted brief protocol; source records and the complete result still require review.",
+  "limitations": [
+    "This assessment is by the release builder, not an independent evaluator.",
+    "Three controlled examples do not establish general reasoning, prioritization quality or production utility.",
+    "No free-form model prose is admitted by this brief protocol; separate research roles retain their documented semantic limitations.",
+    "No owner live qualification, measured production economics or general intelligence is established."
+  ]
+}

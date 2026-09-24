@@ -2,7 +2,7 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Version 3.1.0 · Measured Work and Assurance Edition
+Version 3.2.0 · Verified Work Edition
 
 An owner-controlled economic intelligence node: collect authorized observations, plan and stress-test opportunities, coordinate authenticated specialists, obtain signed review, execute an exact authorized change, settle funded $AGIALPHA work, and reinvest verified receipts within owner limits.
 
@@ -14,10 +14,12 @@ Install Node.js 22.14+ and npm 10+, extract the release ZIP and run:
 
 ```bash
 npm ci
-npm run demo:measured
+npm run demo:work
 ```
 
-Open `alpha-measured-output/report.md` and `measurement.json`. The demonstration measures a real local workload, obtains signed review from a controlled demonstration role, applies an authorized algorithm change, verifies exact output equality, records a paired outcome and verifies its artifact bytes. CPU times are measured; dollar equivalents use an illustrative rate and cannot qualify as observed economic value. No funds are spent. Run `npm run demo:runtime` for the separately keyed HTTP specialist demonstration.
+Open `alpha-work-output/invoices/report.md`, `allocation/report.md` and `quality/report.md`. The node reconciles invoice/usage records, solves a resource allocation and audits data quality, then exports signed evidence and complete JSON/CSV results. The demonstration uses supplied examples, a separately keyed specialist process, controlled reviewer signatures, replay and encrypted recovery. No funds are spent. Optional model briefs prioritize computed facts without adding free-form claims. See [verified work](docs/alpha-verified-work.md).
+
+Run `npm run demo:measured` for the actual local CPU comparison with explicitly modeled dollar values, or `npm run demo:runtime` for the earlier runtime demonstration.
 
 For your own node, follow [START HERE](START_HERE.md) and the [integrated runtime guide](docs/alpha-runtime.md).
 
@@ -36,11 +38,11 @@ For your own node, follow [START HERE](START_HERE.md) and the [integrated runtim
 
 Each capability has explicit limits. Specialists offer three deterministic analytical capabilities plus schema-constrained research synthesis and adversarial review; their quote is not an automatic peer payment. The adaptive model learns only from observed, comparable, reviewer-signed paired measurements and can only tighten supplied estimates. Modeled economics, fixtures, overlapping windows and duplicate artifact sets are excluded. Execution is an owner-selected configuration change with health checks. These concrete implementations do not establish general intelligence, guaranteed financial alpha, a permissionless global marketplace or unlimited scale.
 
-## New in v3.1
+## New in v3.2
 
-General mission envelopes support objectives beyond caching. Model specialist findings, exact source quotes, counterarguments and experiments are included in the signed report. Review signing recomputes the evidence before acceptance. A configurable qualification gate checks measured work, review effort, fresh payment receipts and signed external assessments bound to the software and configuration.
+Three structured work families produce independently recomputable results: invoice reconciliation, constrained resource allocation and data-quality audits. Work briefs use model-selected facts rendered by the verifier, with no model-authored factual prose. Exported JSON/CSV is bound to the signed mission. Autonomous inference reserves reviewer minutes and stops on overdue reviews. Rejected measured work now informs learning; pre-admission and future observations are excluded.
 
-See [mission intelligence](docs/alpha-intelligence.md), [measurement and qualification](docs/alpha-qualification.md), and [project status](docs/project-status.md).
+See [verified work](docs/alpha-verified-work.md), [measurement and qualification](docs/alpha-qualification.md), and [project status](docs/project-status.md).
 
 ## Run and control
 
@@ -64,7 +66,7 @@ npm run dashboard:build
 npm run demo:runtime
 ```
 
-See [qualification evidence](evidence/v3.1.0/validation.md), [recovered vision and assessment](docs/alpha-assessment.md), [release notes](RELEASE_NOTES.md) and [backup/recovery](docs/alpha-recovery.md). The package contains real local-model inference evidence, real HTTP/file execution evidence, and local EVM execution of the token lifecycle. Mainnet deployment, ENS commissioning, independent human review and sustained production economics remain operator-specific commissioning work.
+See [qualification evidence](evidence/v3.2.0/validation.md), [recovered vision and assessment](docs/alpha-assessment.md), [release notes](RELEASE_NOTES.md) and [backup/recovery](docs/alpha-recovery.md). The package contains real local-model inference evidence, real HTTP/file execution evidence, and local EVM execution of the token lifecycle. Mainnet deployment, ENS commissioning, independent human review and sustained production economics remain operator-specific commissioning work.
 
 ## Repository atlas
 
