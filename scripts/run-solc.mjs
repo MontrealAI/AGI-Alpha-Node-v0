@@ -27,7 +27,9 @@ async function run() {
     '--abi',
     '--output-dir',
     outputDir,
-    'contracts/AlphaNodeManager.sol'
+    'contracts/AlphaNodeManager.sol',
+    'contracts/AlphaMissionEscrow.sol',
+    'contracts/TreasuryExecutor.sol'
   ];
 
   await new Promise((resolvePromise, rejectPromise) => {

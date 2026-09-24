@@ -1,0 +1,96 @@
+
+> agi-alpha-node-v0@2.0.0 ci:ts
+> node scripts/render-subgraph-manifest.mjs && npm --prefix subgraph ci --no-audit --no-fund && npm --prefix subgraph run codegen:ci && npm --prefix subgraph run build:ci
+
+Rendered subgraph manifest to /workspace/scratch/dd2df2e5ed3a/AGI-Alpha-Node-v0/subgraph/subgraph.ci.yaml
+  address:    0x0000000000000000000000000000000000000000
+  startBlock: 0
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+npm warn deprecated rimraf@2.7.1: Rimraf versions prior to v4 are no longer supported
+
+added 474 packages in 9s
+
+> agi-alpha-node-subgraph@0.1.0 codegen:ci
+> graph codegen subgraph.ci.yaml
+
+- Apply migrations
+  [90mSkip migration: Bump mapping apiVersion from 0.0.1 to 0.0.2[39m
+- Apply migrations
+  [90mSkip migration: Bump mapping apiVersion from 0.0.2 to 0.0.3[39m
+- Apply migrations
+  [90mSkip migration: Bump mapping apiVersion from 0.0.3 to 0.0.4[39m
+- Apply migrations
+  [90mSkip migration: Bump mapping apiVersion from 0.0.4 to 0.0.5[39m
+- Apply migrations
+  [90mSkip migration: Bump mapping apiVersion from 0.0.5 to 0.0.6[39m
+- Apply migrations
+  [90mSkip migration: Bump manifest specVersion from 0.0.1 to 0.0.2[39m
+- Apply migrations
+  [90mSkip migration: Bump manifest specVersion from 0.0.2 to 0.0.4[39m
+- Apply migrations
+✔ Apply migrations
+- Load subgraph from subgraph.ci.yaml
+✔ Load subgraph from subgraph.ci.yaml
+- Load contract ABIs
+  [90mLoad contract ABI from abis/AlphaNodeManager.json[39m
+- Load contract ABIs
+✔ Load contract ABIs
+- Generate types for contract ABIs
+  [90mGenerate types for contract ABI: AlphaNodeManager (abis/AlphaNodeManager.json)[39m
+- Generate types for contract ABIs
+  [90mWrite types to generated/AlphaNodeManager/AlphaNodeManager.ts[39m
+- Generate types for contract ABIs
+✔ Generate types for contract ABIs
+- Generate types for data source templates
+✔ Generate types for data source templates
+- Load data source template ABIs
+✔ Load data source template ABIs
+- Generate types for data source template ABIs
+✔ Generate types for data source template ABIs
+- Load GraphQL schema from schema.graphql
+✔ Load GraphQL schema from schema.graphql
+- Generate types for GraphQL schema
+  [90mWrite types to generated/schema.ts[39m
+- Generate types for GraphQL schema
+✔ Generate types for GraphQL schema
+[32m[39m
+[32mTypes generated successfully[39m
+[32m[39m
+
+> agi-alpha-node-subgraph@0.1.0 build:ci
+> graph build subgraph.ci.yaml
+
+- Apply migrations
+  [90mSkip migration: Bump mapping apiVersion from 0.0.1 to 0.0.2[39m
+- Apply migrations
+  [90mSkip migration: Bump mapping apiVersion from 0.0.2 to 0.0.3[39m
+- Apply migrations
+  [90mSkip migration: Bump mapping apiVersion from 0.0.3 to 0.0.4[39m
+- Apply migrations
+  [90mSkip migration: Bump mapping apiVersion from 0.0.4 to 0.0.5[39m
+- Apply migrations
+  [90mSkip migration: Bump mapping apiVersion from 0.0.5 to 0.0.6[39m
+- Apply migrations
+  [90mSkip migration: Bump manifest specVersion from 0.0.1 to 0.0.2[39m
+- Apply migrations
+  [90mSkip migration: Bump manifest specVersion from 0.0.2 to 0.0.4[39m
+- Apply migrations
+✔ Apply migrations
+- Load subgraph from subgraph.ci.yaml
+✔ Load subgraph from subgraph.ci.yaml
+- Compile subgraph
+  [90mCompile data source: AlphaNodeManager => build/AlphaNodeManager/AlphaNodeManager.wasm[39m
+- Compile subgraph
+✔ Compile subgraph
+- Write compiled subgraph to build/
+  [90mCopy schema file build/schema.graphql[39m
+- Write compiled subgraph to build/
+  [90mWrite subgraph file build/AlphaNodeManager/AlphaNodeManager.json[39m
+- Write compiled subgraph to build/
+  [90mWrite subgraph manifest build/subgraph.yaml[39m
+- Write compiled subgraph to build/
+✔ Write compiled subgraph to build/
+
+[32mBuild completed: [34mbuild/subgraph.yaml[32m[39m
+

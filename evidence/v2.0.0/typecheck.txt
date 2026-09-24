@@ -1,0 +1,4 @@
+
+> agi-alpha-node-v0@2.0.0 typecheck
+> tsc --noEmit -p tsconfig.typecheck.json
+

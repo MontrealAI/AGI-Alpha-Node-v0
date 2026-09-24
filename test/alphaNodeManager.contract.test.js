@@ -36,6 +36,7 @@ async function compileContract() {
   const input = {
     language: 'Solidity',
     sources: {
+      'contracts/access/Ownable.sol': { content: readFileSync(join(process.cwd(), 'contracts/access/Ownable.sol'), 'utf8') },
       'contracts/AlphaNodeManager.sol': {
         content: readFileSync(managerPath, 'utf8')
       },
@@ -103,7 +104,7 @@ describeIf('AlphaNodeManager contract', () => {
   it('deploys with canonical $AGIALPHA token configured', async () => {
     const manager = await deployManager();
     const stakingToken = await manager.stakingToken();
-    expect(stakingToken).toBe('0xa61A3B3A130A9C20768eEBf97E21515A6046a1FA');
+    expect(stakingToken.toLowerCase()).toBe('0xa61a3b3a130a9c20768eebf97e21515a6046a1fa');
   });
 
   it('enforces owner-only pause controls', async () => {
@@ -218,6 +219,8 @@ describeIf('AlphaNodeManager contract', () => {
     await expect(manager.connect(agent).applySlash('0x' + 'dd'.repeat(32), validatorAddress, 10n)).rejects.toThrow(/CallerNotOwner/);
     await expect(manager.connect(owner).applySlash('0x' + 'dd'.repeat(32), validatorAddress, 0n)).rejects.toThrow(/InvalidAmount/);
 
+    await setValidatorStake(manager, validatorAddress, 20n);
+    await provider.send('anvil_setStorageAt', [await manager.getAddress(), toBeHex(5, 32), toBeHex(20, 32)]);
     const slashId = '0x' + 'dd'.repeat(32);
     const slashTx = await manager.connect(owner).applySlash(slashId, validatorAddress, 10n);
     const slashReceipt = await slashTx.wait();

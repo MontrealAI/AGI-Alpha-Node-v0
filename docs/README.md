@@ -1,5 +1,10 @@
 # AGI Alpha Node v0 · Operator Command Codex (Hypermodern Edition)
 
+> Historical infrastructure/vision document. For current $AGIALPHA behavior
+> and tested limitations, start with
+> [the v2.0.0 assessment](alpha-assessment.md) and
+> [START HERE](../START_HERE.md).
+
 <!-- markdownlint-disable MD013 MD033 -->
 <p align="center">
   <img src="../1.alpha.node.agi.eth.svg" alt="AGI Alpha Node Crest" width="220" />

@@ -1,0 +1,86 @@
+{
+  "version": "2.0.0",
+  "baselineCommit": "d5daf8f7c9a78d9eb8f2b41d49d03fbaf8426911",
+  "qualification": "Standalone analytical node validated locally; live commissioning not performed",
+  "environment": {
+    "os": "Linux x64",
+    "node": "22.14.0",
+    "npm": "10.9.2"
+  },
+  "baseline": {
+    "passed": 436,
+    "failed": 1,
+    "skipped": 11,
+    "note": "Original source with updated SQLite dependency; telemetry test inherited 1% sampling"
+  },
+  "tests": {
+    "passed": 464,
+    "skipped": 11
+  },
+  "testCountingNote": "Count assertionResults statuses; Vitest 1.6 JSON aggregate incorrectly counts skipped cases as passed.",
+  "newAlphaTests": 27,
+  "checks": {
+    "backend": "passed",
+    "frontend": "passed (1 test)",
+    "contracts": "compiled; bytecode executed in mandatory local VM tests",
+    "typecheck": "passed",
+    "dashboardBuild": "passed",
+    "subgraphBuild": "passed",
+    "coverage": {
+      "scope": "Existing network and telemetry modules",
+      "lines": {
+        "total": 6794,
+        "covered": 5935,
+        "skipped": 0,
+        "pct": 87.35
+      },
+      "statements": {
+        "total": 6794,
+        "covered": 5935,
+        "skipped": 0,
+        "pct": 87.35
+      },
+      "functions": {
+        "total": 265,
+        "covered": 240,
+        "skipped": 0,
+        "pct": 90.56
+      },
+      "branches": {
+        "total": 1838,
+        "covered": 1212,
+        "skipped": 0,
+        "pct": 65.94
+      },
+      "branchesTrue": {
+        "total": 0,
+        "covered": 0,
+        "skipped": 0,
+        "pct": 100
+      }
+    },
+    "productionAudit": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "demonstration": "signed deliverable, replay, pause/resume, detached test-role review, export and reload verified",
+    "ciVerify": "passed: lint, backend, frontend, coverage, Solidity lint/compile, subgraph build, production audit, health policy and local branch check",
+    "localBranchCheck": "No branch environment supplied; repository branch-protection settings remain unverified",
+    "newAlphaTests": "27 passed after final ledger-capacity guard"
+  },
+  "notPerformed": [
+    "mainnet deployment or paid settlement",
+    "paid live-model inference",
+    "external independent human review",
+    "Apple Silicon commissioning",
+    "live distributed P2P fleet",
+    "local Docker build (Docker executable unavailable)",
+    "branch-protection read (GitHub integration returned 403)"
+  ],
+  "operatorGuide": "START_HERE.md",
+  "recoveryGuide": "docs/alpha-recovery.md"
+}

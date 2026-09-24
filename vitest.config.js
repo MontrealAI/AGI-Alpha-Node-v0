@@ -14,6 +14,8 @@ export default defineConfig({
     ],
     // Forked pool keeps native modules like better-sqlite3 stable during ESM transforms
     pool: 'forks',
+    maxWorkers: 2,
+    minWorkers: 1,
     deps: {
       optimizer: {
         ssr: {

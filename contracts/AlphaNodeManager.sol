@@ -57,6 +57,8 @@ contract AlphaNodeManager is Ownable, IAlphaWorkUnitEvents {
     mapping(address => bool) public validators;
     mapping(address => uint256) public stakedBalance;
 
+    uint256 public totalStaked;
+
     constructor(address tokenAddress) {
         if (tokenAddress == address(0)) {
             stakingToken = IERC20(CANONICAL_AGIALPHA);
@@ -113,6 +115,8 @@ contract AlphaNodeManager is Ownable, IAlphaWorkUnitEvents {
             emit IdentityStatusChanged(ensNode, existingController, false);
         }
 
+        bytes32 previousNode = identities[controller].ensNode;
+        if (previousNode != bytes32(0) && previousNode != ensNode) delete controllers[previousNode];
         controllers[ensNode] = controller;
         identities[controller] = IdentityRecord({ensNode: ensNode, active: true});
         emit IdentityRegistered(ensNode, controller);
@@ -130,6 +134,8 @@ contract AlphaNodeManager is Ownable, IAlphaWorkUnitEvents {
             revert IdentityMissing();
         }
 
+        bytes32 priorNode = identities[newController].ensNode;
+        if (priorNode != bytes32(0) && priorNode != ensNode) delete controllers[priorNode];
         identities[previousController] = IdentityRecord({ensNode: bytes32(0), active: false});
         controllers[ensNode] = newController;
         identities[newController] = IdentityRecord({ensNode: ensNode, active: true});
@@ -183,20 +189,35 @@ contract AlphaNodeManager is Ownable, IAlphaWorkUnitEvents {
             revert InvalidAmount();
         }
         stakedBalance[msg.sender] += amount;
+        totalStaked += amount;
         emit StakeDeposited(msg.sender, amount);
     }
 
+    /// @notice Return stake to its recorded depositor. Owner remains the withdrawal authority.
     function withdrawStake(address recipient, uint256 amount) external onlyOwner {
-        if (recipient == address(0)) {
-            revert InvalidAddress();
-        }
-        if (amount == 0) {
-            revert InvalidAmount();
-        }
-        if (!stakingToken.transfer(recipient, amount)) {
-            revert InvalidAmount();
-        }
+        _withdrawStake(recipient, recipient, amount);
+    }
+
+    /// @notice Owner-directed custody transfer with an explicit account debit.
+    function withdrawStakeFor(address account, address recipient, uint256 amount) external onlyOwner {
+        _withdrawStake(account, recipient, amount);
+    }
+
+    function _withdrawStake(address account, address recipient, uint256 amount) internal {
+        if (recipient == address(0)) revert InvalidAddress();
+        if (amount == 0) revert InvalidAmount();
+        if (amount > stakedBalance[account]) revert InsufficientStake();
+        stakedBalance[account] -= amount;
+        totalStaked -= amount;
+        if (!stakingToken.transfer(recipient, amount)) revert InvalidAmount();
         emit StakeWithdrawn(recipient, amount);
+    }
+
+    /// @notice Only unassigned tokens, including slashed stake, may be swept.
+    function sweepSurplus(address recipient, uint256 amount) external onlyOwner {
+        if (recipient == address(0)) revert InvalidAddress();
+        if (amount > stakingToken.balanceOf(address(this)) - totalStaked) revert InsufficientStake();
+        if (!stakingToken.transfer(recipient, amount)) revert InvalidAmount();
     }
 
     function recordAlphaWUMint(bytes32 id, address agent, address node) external whenNotPaused {
@@ -253,6 +274,9 @@ contract AlphaNodeManager is Ownable, IAlphaWorkUnitEvents {
         if (amount == 0) {
             revert InvalidAmount();
         }
+        if (amount > stakedBalance[validator]) revert InsufficientStake();
+        stakedBalance[validator] -= amount;
+        totalStaked -= amount;
         emit SlashApplied(id, validator, amount, block.timestamp);
     }
 

@@ -1,5 +1,10 @@
 # Operator Runbook · Verification & Deployment Rituals
 
+> Historical infrastructure/vision document. For current $AGIALPHA behavior
+> and tested limitations, start with
+> [the v2.0.0 assessment](alpha-assessment.md) and
+> [START HERE](../START_HERE.md).
+
 This field guide captures the minimum viable checks that on-call operators and
 reviewers must perform before merging or deploying the AGI Alpha Node runtime.
 

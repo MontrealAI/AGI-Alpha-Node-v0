@@ -1,5 +1,10 @@
 # Node Identity Authority
 
+> Historical infrastructure/vision document. For current $AGIALPHA behavior
+> and tested limitations, start with
+> [the v2.0.0 assessment](alpha-assessment.md) and
+> [START HERE](../START_HERE.md).
+
 <!-- markdownlint-disable MD013 MD033 -->
 
 > The identity lattice is how the Alpha Node stays anchored to the $AGIALPHA grid. Every resolver call, key validation, and multiaddr hints that the operator is still in full command.

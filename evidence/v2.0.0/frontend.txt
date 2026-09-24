@@ -1,0 +1,14 @@
+
+> agi-alpha-node-v0@2.0.0 test:frontend
+> node scripts/vitest-runner.mjs run --config dashboard/vitest.config.js --passWithNoTests=false --maxWorkers 2 --minWorkers 1
+
+
+ RUN  v1.6.1 /workspace/scratch/dd2df2e5ed3a/AGI-Alpha-Node-v0/dashboard
+
+ ✓ src/App.test.jsx  (1 test) 155ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  13:29:37
+   Duration  932ms (transform 138ms, setup 49ms, collect 249ms, tests 155ms, environment 318ms, prepare 56ms)
+

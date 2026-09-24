@@ -1,0 +1,174 @@
+{
+  "schema": 2,
+  "ledgerHead": "0x905ef935b78557ae7acd2ec6258fe65376944c42fa07718f551a5e8a1d21bd5e",
+  "identity": {
+    "ensName": "demo.alpha.node.agi.eth",
+    "address": "0x490C17e78b0d8d8f4B3c96D59e2a81Cb4e231f19",
+    "reviewer": "0xA61793362490db59F832dDD266819297F55ab18F"
+  },
+  "run": {
+    "type": "run",
+    "workId": "0xaca9645b7ebe6174dfaa5cef59d53277f2e456afb1e54fddab2f3bb06960c08e",
+    "mission": {
+      "id": "alpha-opportunity-001",
+      "title": "$AGIALPHA — infrastructure efficiency opportunity scan",
+      "objective": "Compare three proposed node infrastructure improvements and identify the strongest bounded experiment. All inputs in this example are synthetic assumptions.",
+      "sources": [
+        {
+          "id": "S1",
+          "title": "Illustrative compute invoice",
+          "text": "Synthetic example: monthly compute spend is $2000. An operator proposes caching repeated analytical requests."
+        },
+        {
+          "id": "S2",
+          "title": "Illustrative operator interview",
+          "text": "Synthetic example: a batch scheduling change may reduce idle capacity. The estimates have not been independently measured."
+        }
+      ],
+      "opportunities": [
+        {
+          "id": "cache",
+          "title": "Cache repeated analysis",
+          "benefit": 1000,
+          "cost": 150,
+          "probability": 0.8,
+          "downside": 100,
+          "sourceIds": [
+            "S1"
+          ],
+          "rationale": "Assumed savings require a seven-day cache hit-rate experiment."
+        },
+        {
+          "id": "batch",
+          "title": "Batch low-urgency requests",
+          "benefit": 700,
+          "cost": 100,
+          "probability": 0.7,
+          "downside": 120,
+          "sourceIds": [
+            "S2"
+          ],
+          "rationale": "Assumed savings depend on acceptable latency and measured idle time."
+        },
+        {
+          "id": "expand",
+          "title": "Expand speculative capacity",
+          "benefit": 9000,
+          "cost": 3000,
+          "probability": 0.3,
+          "downside": 4000,
+          "sourceIds": [
+            "S1",
+            "S2"
+          ],
+          "rationale": "Large assumed upside is offset by capital exposure and uncertain demand."
+        }
+      ],
+      "policy": {
+        "maxCost": 500,
+        "maxDownside": 250,
+        "minExpectedNet": 0,
+        "stressBenefitBps": 7000
+      },
+      "unit": "USD per month (assumed)"
+    },
+    "identity": {
+      "verified": false,
+      "mode": "local",
+      "ensName": "demo.alpha.node.agi.eth",
+      "address": "0x490C17e78b0d8d8f4B3c96D59e2a81Cb4e231f19"
+    },
+    "analysis": {
+      "kind": "deterministic-evidence-analysis",
+      "missionDigest": "0x2f62ca652360f2c5460156df6211cbbcabdeb0e42f6a9bf63b070e1cc538c153",
+      "unit": "USD per month (assumed)",
+      "recommendation": "cache",
+      "rankings": [
+        {
+          "id": "cache",
+          "title": "Cache repeated analysis",
+          "benefit": 1000,
+          "cost": 150,
+          "probability": 0.8,
+          "downside": 100,
+          "sourceIds": [
+            "S1"
+          ],
+          "rationale": "Assumed savings require a seven-day cache hit-rate experiment.",
+          "expectedNet": 630,
+          "stressedNet": 390,
+          "admitted": true
+        },
+        {
+          "id": "batch",
+          "title": "Batch low-urgency requests",
+          "benefit": 700,
+          "cost": 100,
+          "probability": 0.7,
+          "downside": 120,
+          "sourceIds": [
+            "S2"
+          ],
+          "rationale": "Assumed savings depend on acceptable latency and measured idle time.",
+          "expectedNet": 353.99999999999994,
+          "stressedNet": 206.99999999999994,
+          "admitted": true
+        },
+        {
+          "id": "expand",
+          "title": "Expand speculative capacity",
+          "benefit": 9000,
+          "cost": 3000,
+          "probability": 0.3,
+          "downside": 4000,
+          "sourceIds": [
+            "S1",
+            "S2"
+          ],
+          "rationale": "Large assumed upside is offset by capital exposure and uncertain demand.",
+          "expectedNet": -3100,
+          "stressedNet": -3910,
+          "admitted": false
+        }
+      ],
+      "sources": [
+        {
+          "id": "S1",
+          "title": "Illustrative compute invoice",
+          "digest": "0x01b61f496dd36246a01592d37c78c80dc36f4c700fa7192d1152259b688baf7b",
+          "url": null
+        },
+        {
+          "id": "S2",
+          "title": "Illustrative operator interview",
+          "digest": "0xb6bbf3448363e40fee1537c9c5e9130c9520530ae53b350d73c2fa9665b46b75",
+          "url": null
+        }
+      ],
+      "limitations": [
+        "Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.",
+        "Source hashes establish integrity, not truth. Independent review is required.",
+        "No trades, external actions, token earnings or AGI capability are implied by this report."
+      ]
+    },
+    "provider": null,
+    "report": "# $AGIALPHA — infrastructure efficiency opportunity scan\n\n<!-- markdownlint-disable MD013 -->\n\nCompare three proposed node infrastructure improvements and identify the strongest bounded experiment. All inputs in this example are synthetic assumptions.\n\nAnalysis: deterministic-evidence-analysis\nInput digest: 0x2f62ca652360f2c5460156df6211cbbcabdeb0e42f6a9bf63b070e1cc538c153\nUnits: USD per month (assumed)\nRecommendation: cache\n\n| Opportunity | Expected net | Stressed net | Admitted | Evidence |\n| --- | ---: | ---: | --- | --- |\n| Cache repeated analysis | 630.00 | 390.00 | Yes | S1 |\n| Batch low-urgency requests | 354.00 | 207.00 | Yes | S2 |\n| Expand speculative capacity | -3100.00 | -3910.00 | No | S1, S2 |\n\n## Evidence and assumptions\n\n- cache: Assumed savings require a seven-day cache hit-rate experiment.\n- batch: Assumed savings depend on acceptable latency and measured idle time.\n- expand: Large assumed upside is offset by capital exposure and uncertain demand.\n\n- S1 — Illustrative compute invoice — SHA-256 0x01b61f496dd36246a01592d37c78c80dc36f4c700fa7192d1152259b688baf7b\n- S2 — Illustrative operator interview — SHA-256 0xb6bbf3448363e40fee1537c9c5e9130c9520530ae53b350d73c2fa9665b46b75\n\n## Limits\n\n- Benefits, costs and probabilities are supplied assumptions, not forecasts established by this computation.\n- Source hashes establish integrity, not truth. Independent review is required.\n- No trades, external actions, token earnings or AGI capability are implied by this report.\n",
+    "status": "awaiting-review",
+    "reward": "unfunded-unverified",
+    "previous": null,
+    "at": "2026-09-24T11:33:35.535Z",
+    "hash": "0x16a912f4483f2b4d1dfff6a825715ea1fe28d6915d533bf66b640161c0e8c0d8",
+    "signature": "0x7aea6976b6d631959b0cfbea59205ffd61112274303dcd44ab42e218dc2ecfab7ec74abd9696c0b5e3e7ec707142b959d974a3f09a87d49fbc32d3ff172413e21c",
+    "review": {
+      "type": "review",
+      "missionId": "alpha-opportunity-001",
+      "runHash": "0x16a912f4483f2b4d1dfff6a825715ea1fe28d6915d533bf66b640161c0e8c0d8",
+      "decision": "accepted",
+      "notes": "DEMONSTRATION ONLY: separate test key, synthetic evidence. Arithmetic and policy checked; no external human review or payment.",
+      "previous": "0x16a912f4483f2b4d1dfff6a825715ea1fe28d6915d533bf66b640161c0e8c0d8",
+      "at": "2026-09-24T11:33:35.553Z",
+      "hash": "0x905ef935b78557ae7acd2ec6258fe65376944c42fa07718f551a5e8a1d21bd5e",
+      "signature": "0xad307e8b8981e8d16d83a952bd741e7f845c5aa92d8f79db96501625b9107bbf5dc3cb3cc038a43e3c47259870dadfd158360725950d841f1130f6fe4e91bb4b1b"
+    }
+  }
+}

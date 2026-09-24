@@ -1,0 +1,16 @@
+{
+  "id": "alpha-opportunity-001",
+  "title": "$AGIALPHA — infrastructure efficiency opportunity scan",
+  "objective": "Compare three proposed node infrastructure improvements and identify the strongest bounded experiment. All inputs in this example are synthetic assumptions.",
+  "unit": "USD per month (assumed)",
+  "sources": [
+    {"id":"S1","title":"Illustrative compute invoice","text":"Synthetic example: monthly compute spend is $2000. An operator proposes caching repeated analytical requests."},
+    {"id":"S2","title":"Illustrative operator interview","text":"Synthetic example: a batch scheduling change may reduce idle capacity. The estimates have not been independently measured."}
+  ],
+  "opportunities": [
+    {"id":"cache","title":"Cache repeated analysis","benefit":1000,"cost":150,"probability":0.8,"downside":100,"sourceIds":["S1"],"rationale":"Assumed savings require a seven-day cache hit-rate experiment."},
+    {"id":"batch","title":"Batch low-urgency requests","benefit":700,"cost":100,"probability":0.7,"downside":120,"sourceIds":["S2"],"rationale":"Assumed savings depend on acceptable latency and measured idle time."},
+    {"id":"expand","title":"Expand speculative capacity","benefit":9000,"cost":3000,"probability":0.3,"downside":4000,"sourceIds":["S1","S2"],"rationale":"Large assumed upside is offset by capital exposure and uncertain demand."}
+  ],
+  "policy":{"maxCost":500,"maxDownside":250,"minExpectedNet":0,"stressBenefitBps":7000}
+}

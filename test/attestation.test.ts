@@ -1,5 +1,5 @@
 import { EventEmitter } from 'node:events';
-import { InMemorySpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { AlwaysOnSampler, InMemorySpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import * as ed from '@noble/ed25519';
 import { SigningKey, Wallet } from 'ethers';
@@ -161,6 +161,7 @@ describe('health check service', () => {
     vi.useFakeTimers();
     const exporter = new InMemorySpanExporter();
     const provider = new NodeTracerProvider({
+      sampler: new AlwaysOnSampler(),
       spanProcessors: [new SimpleSpanProcessor(exporter)]
     });
     provider.register();

@@ -1,12 +1,13 @@
 {
   "name": "agi-alpha-node-v0",
-  "version": "1.1.0",
-  "description": "Production-grade AGI Alpha Node runtime toolkit with ENS verification, staking orchestration, and observability.",
+  "version": "2.0.0",
+  "description": "Owner-controlled $AGIALPHA mission analysis, signed evidence, independent review and funded settlement toolkit",
   "license": "MIT",
   "private": true,
   "type": "module",
   "bin": {
-    "agi-alpha-node": "./src/index.js"
+    "agi-alpha-node": "./src/index.js",
+    "alpha-node": "./src/alpha/cli.js"
   },
   "scripts": {
     "start": "node src/index.js",
@@ -49,21 +50,25 @@
     "treasury:sign": "tsx scripts/treasury/sign-intent.ts",
     "treasury:keygen": "tsx scripts/treasury/keygen.ts",
     "observability:dcutr-harness": "tsx scripts/dcutr-harness.ts",
-    "prepare": "node -e \"const { existsSync } = require('node:fs'); const { join } = require('node:path'); const script = join(process.cwd(), 'scripts/prepare-husky.cjs'); if (!existsSync(script)) { console.log('husky prepare script missing; skipping'); process.exit(0); } require(script);\""
+    "prepare": "node -e \"const { existsSync } = require('node:fs'); const { join } = require('node:path'); const script = join(process.cwd(), 'scripts/prepare-husky.cjs'); if (!existsSync(script)) { console.log('husky prepare script missing; skipping'); process.exit(0); } require(script);\"",
+    "alpha": "node src/alpha/cli.js",
+    "test:alpha": "vitest run test/alpha/ --pool forks --maxWorkers 2 --minWorkers 1",
+    "release:package": "python3 scripts/package-alpha-release.py",
+    "demo:alpha": "node scripts/demo-alpha.mjs"
   },
   "engines": {
-    "node": ">=20.18.1",
+    "node": ">=22.14.0",
     "npm": ">=10"
   },
   "dependencies": {
     "@noble/ed25519": "^2.3.0",
     "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/exporter-trace-otlp-http": "^0.208.0",
-    "@opentelemetry/resources": "^2.2.0",
-    "@opentelemetry/sdk-trace-base": "^2.2.0",
-    "@opentelemetry/sdk-trace-node": "^2.2.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.222.0",
+    "@opentelemetry/resources": "^2.11.0",
+    "@opentelemetry/sdk-trace-base": "^2.11.0",
+    "@opentelemetry/sdk-trace-node": "^2.11.0",
     "ajv": "^8.17.1",
-    "better-sqlite3": "^9.4.5",
+    "better-sqlite3": "^12.4.1",
     "cborg": "^4.3.0",
     "chalk": "^5.3.0",
     "commander": "^11.1.0",
@@ -85,6 +90,7 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/node": "^20.14.10",
     "@vitejs/plugin-react": "^5.1.1",
+    "@vitest/coverage-v8": "^1.6.0",
     "c8": "^9.1.0",
     "chart.js": "^4.5.1",
     "cross-env": "^7.0.3",
@@ -102,7 +108,6 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4",
     "vite": "^5.4.7",
-    "vitest": "^1.6.0",
-    "@vitest/coverage-v8": "^1.6.0"
+    "vitest": "^1.6.0"
   }
 }

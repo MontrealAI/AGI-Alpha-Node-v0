@@ -1,0 +1,15 @@
+
+> agi-alpha-node-v0@2.0.0 test:alpha
+> vitest run test/alpha/ --pool forks --maxWorkers 2 --minWorkers 1
+
+
+ RUN  v1.6.1 /workspace/scratch/dd2df2e5ed3a/AGI-Alpha-Node-v0
+
+ ✓ test/alpha/mission.test.js  (15 tests) 461ms
+ ✓ test/alpha/contracts.test.js  (12 tests) 1423ms
+
+ Test Files  2 passed (2)
+      Tests  27 passed (27)
+   Start at  13:35:59
+   Duration  2.36s (transform 85ms, setup 0ms, collect 919ms, tests 1.88s, environment 0ms, prepare 152ms)
+

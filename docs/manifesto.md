@@ -1,5 +1,10 @@
 # AGI ALPHA Node – Technical Manifesto & Architecture Overview
 
+> Historical infrastructure/vision document. For current $AGIALPHA behavior
+> and tested limitations, start with
+> [the v2.0.0 assessment](alpha-assessment.md) and
+> [START HERE](../START_HERE.md).
+
 <!-- markdownlint-disable MD013 -->
 
 > “We are not just building technology; we are forging a new digital era—an era where intelligence, adaptability, and foresight are woven into the very fabric of the blockchain.” — **AGI King**

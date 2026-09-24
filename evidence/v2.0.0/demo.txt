@@ -1,0 +1,16 @@
+
+> agi-alpha-node-v0@2.0.0 demo:alpha
+> node scripts/demo-alpha.mjs evidence/v2.0.0/sample-output
+
+{
+  "demonstration": true,
+  "syntheticInputs": true,
+  "liveProvider": false,
+  "externalReviewer": false,
+  "paidSettlement": false,
+  "replayVerified": true,
+  "pauseResumeVerified": true,
+  "ledgerVerified": true,
+  "evidenceHash": "0x16a912f4483f2b4d1dfff6a825715ea1fe28d6915d533bf66b640161c0e8c0d8",
+  "output": "/workspace/scratch/dd2df2e5ed3a/AGI-Alpha-Node-v0/evidence/v2.0.0/sample-output"
+}
