@@ -13,7 +13,7 @@ This major release completes the concrete standalone node workflow for **$AGIALP
 - EIP-712 reviewer acceptance relay in the escrow, verified payment receipts, exact allowances and capped staking with a liquid reserve.
 - Guided setup, integrated autopilot/operator controls, runtime activity, encrypted backup/restore and Linux/macOS service configuration.
 - Actual local-model inference evidence, a separate-process runtime demonstration and an integrated discovery/action/payment/outcome test that executes Solidity bytecode.
-- Updated development toolchain and lockfile, removal of unused Grafana toolkit dependencies, and a full root runtime/development dependency security gate. Also fixes a legacy monitor shutdown race and bounds verifier request bodies.
+- Updated development toolchain and lockfile, removal of unused Grafana toolkit dependencies, and a runtime/development dependency security gate covering both root and subgraph lockfiles. Also fixes a legacy monitor shutdown race and bounds verifier request bodies.
 
 ## Qualification
 

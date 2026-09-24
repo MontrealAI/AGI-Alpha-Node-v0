@@ -145,7 +145,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Audit runtime and development dependencies
+      - name: Audit both lockfiles (runtime and development)
         env:
           CI: true
         run: npm run ci:security

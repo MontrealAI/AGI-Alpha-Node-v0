@@ -13,5 +13,18 @@
   },
   "devDependencies": {
     "@graphprotocol/graph-cli": "^0.98.1"
+  },
+  "overrides": {
+    "@graphprotocol/graph-cli": {
+      "decompress": "npm:@xhmikosr/decompress@11.1.4",
+      "gluegun": "5.2.2",
+      "glob": "11.1.0",
+      "jayson": "5.0.0",
+      "js-yaml": "4.3.2",
+      "undici": "7.29.0",
+      "yaml": "2.8.3",
+      "immutable": "5.1.8"
+    },
+    "brace-expansion@2": "2.1.4"
   }
 }

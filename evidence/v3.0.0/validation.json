@@ -50,7 +50,8 @@
         "pct": 100
       }
     },
-    "rootDependencyAdvisories": 0
+    "rootDependencyAdvisories": 0,
+    "subgraphDependencyAdvisories": 0
   },
   "passedCommands": [
     "npm ci",
@@ -61,7 +62,9 @@
     "npm run dashboard:build",
     "npm run demo:runtime",
     "ALPHA_QUALIFICATION_OUTPUT=evidence/v3.0.0/closed-loop npx vitest run test/alpha/transactions.test.js",
-    "node scripts/qualify-local-model.mjs (pinned inputs documented in docs/alpha-runtime.md)"
+    "node scripts/qualify-local-model.mjs (pinned inputs documented in docs/alpha-runtime.md)",
+    "node scripts/check-subgraph-toolchain.mjs",
+    "npm --prefix subgraph audit --package-lock-only --audit-level=high"
   ],
   "sourceSha256": {
     "contracts/AlphaMissionEscrow.sol": "1882f79fa175427bcac7356cc66ce398624b3467d4f7403f867973b8cc2eae21",
@@ -100,7 +103,8 @@
     "src/alpha/runtime/specialists.js": "96b8cf95612899efcafc6df75de8f8d245890459dbd0f4e508725e29b836dd56",
     "src/alpha/runtime/transactions.js": "39d5616cfff93df2b1fc643927fd9e74ee1fab4fdb38d216856f2cba75dc979b",
     "src/alpha/settlement.js": "06e6fa5add055cb2462b49f00f32592f24263c9bb32abcd21209ac16d9e70411",
-    "src/alpha/web/operator-ui.js": "64067e373d9c94d6ce73e0cbe981dee4d67842466f6ecaa9bcccc09d88309a16"
+    "src/alpha/web/operator-ui.js": "64067e373d9c94d6ce73e0cbe981dee4d67842466f6ecaa9bcccc09d88309a16",
+    "scripts/check-subgraph-toolchain.mjs": "8b732adc7a497f518202c1cbe0d250b7d6c93acdec55a3750857d0c8747d613f"
   },
   "releaseGates": "GitHub Actions workflow on the exact release commit includes macOS, Docker and Linux; the release job depends on full verification. Consult that workflow for remote results.",
   "limitations": [
@@ -111,5 +115,18 @@
     "11 inherited environment-dependent skips; mandatory standalone token tests execute in a local EVM",
     "Coverage scope is alpha (excluding CLI/web), network and telemetry; other surfaces have regression tests",
     "Branch protection settings and independent source/contract security audit are not established"
-  ]
+  ],
+  "preReleasePlatformQualification": {
+    "commit": "334e570f9aef749ed8f82dfb5c7e4bd10a5de4c1",
+    "run": "https://github.com/MontrealAI/AGI-Alpha-Node-v0/actions/runs/36015028471",
+    "result": "success",
+    "macos": {
+      "platform": "darwin",
+      "arch": "arm64",
+      "node": "22.23.2",
+      "standalonePassed": 81
+    },
+    "docker": "Non-root image and all three demonstrations passed",
+    "note": "Precedes the separate subgraph lockfile security remediation; exact release commit must pass the same gates again."
+  }
 }

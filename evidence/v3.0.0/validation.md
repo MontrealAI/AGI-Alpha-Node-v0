@@ -14,7 +14,7 @@ Qualification date: 2026-09-24. Local platform: Linux x64, Node.js 22.14.0. Rele
 | Coverage | V8 statement/line/function/branch thresholds remain 85/85/85/60 percent; see `coverage-summary.json` for measured values and included files |
 | Solidity | Lint and compilation; mandatory escrow/manager bytecode execution in an in-process Ethereum VM |
 | Subgraph and dashboard | Code generation/build, TypeScript check and Vite dashboard build |
-| Security | Root runtime and development dependency audit: zero known advisories at qualification time; machine-readable `dependency-audit.json` |
+| Security | Root and subgraph runtime/development audits: zero known advisories at qualification time; machine-readable `dependency-audit.json` and `subgraph-dependency-audit.json` |
 | Documentation and policy | Markdown/link checks, Grafana JSON validation, health and branch policy checks |
 | Recovery | Encrypted backup restoration to a new paused directory, wrong password/tamper rejection, interrupted file-write reconciliation and lost-broadcast recovery |
 
@@ -32,7 +32,7 @@ The 11 skips are inherited: ten Anvil-dependent legacy cases and one environment
 
 Tests cover altered signatures and input/evidence bindings; wrong signer/domain/work/expiry and malleable EIP-712 signatures; replay; stale/oversized collector data; unauthorized specialist callers; capacity and quote limits; unsafe file targets; changed owner authorization; external file edits; health-triggered rollback; pause; private intent redaction; wrong backup passwords; pending nonce interference; gas caps; lost broadcast responses; receipt disagreement/substitution; noncanonical blocks; missing token-transfer receipts; liquid reserve and unexpected allowance rejection.
 
-The stricter coverage calculation exposed missing negative paths and a monitor shutdown race. Additional checks qualified those paths without reducing release thresholds. Dependency remediation removed unused Grafana tooling, upgraded Vitest/Vite/Markdown tooling, and pins `solc`'s transitive `tmp` to patched 0.2.7 via a scoped override. The root audit includes development dependencies; it is a point-in-time advisory check, not an independent security audit of source code or contracts.
+The stricter coverage calculation exposed missing negative paths and a monitor shutdown race. Additional checks qualified those paths without reducing release thresholds. Dependency remediation removed unused Grafana tooling, upgraded Vitest/Vite/Markdown tooling, and pins `solc`'s transitive `tmp` to patched 0.2.7 via a scoped override. The security gate audits both committed lockfiles, including development dependencies; it is a point-in-time advisory check, not an independent security audit of source code or contracts.
 
 ## Commissioning status
 
@@ -61,3 +61,9 @@ ALPHA_QUALIFICATION_OUTPUT=/absolute/path/closed-loop npx vitest run test/alpha/
 ```
 
 Follow the [runtime guide](../../docs/alpha-runtime.md#real-model-qualification) to download the separately licensed pinned model/runtime and reproduce real inference. Run `npm run release:package` from the exact release commit to create the deterministic source ZIP and SHA-256 file. `RELEASE_MANIFEST.json` identifies that commit and hashes each included file. No private node directory, runtime key or model binary belongs in the release archive.
+
+## Subgraph toolchain remediation
+
+A separate audit of the legacy subgraph lockfile found 27 advisories, including one critical archive-extraction issue. Lockfile refresh and scoped graph-cli dependency overrides remove the affected versions. Compatibility-sensitive changes are qualified by `scripts/check-subgraph-toolchain.mjs` before every subgraph build: normal archive extraction, path/symlink/hardlink escape rejection and an actual HTTP JSON-RPC call through graph-cli's helper. Code generation and AssemblyScript compilation also pass with those overrides.
+
+The maintained [`@xhmikosr/decompress` fork](https://github.com/XhmikosR/decompress/security/advisories/GHSA-mp2f-45pm-3cg9) replaces the unmaintained vulnerable archive dependency. [Jayson 5](https://github.com/tedeh/jayson#changelog-only-notable-milestoneschanges) removes vulnerable UUID/stream parser dependencies; graph-cli uses its HTTP client, whose behavior is tested. TCP/TLS streaming delimiter semantics changed upstream and are not used by this integration. Gluegun receives its maintained patch release; other overrides retain their existing major versions. These overrides should be removed when upstream graph-cli adopts patched dependencies.
