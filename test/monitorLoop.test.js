@@ -2,6 +2,9 @@ import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { startMonitorLoop } from '../src/orchestrator/monitorLoop.js';
 import { runNodeDiagnostics, launchMonitoring } from '../src/orchestrator/nodeRuntime.js';
 import { startSegment, stopSegment, resetMetering } from '../src/services/metering.js';
+import { startHealthServer } from '../src/telemetry/health.js';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 
 const mockDiagnostics = {
   verification: { nodeName: '1.alpha.node.agi.eth' },
@@ -113,6 +116,11 @@ vi.mock('../src/services/offlineSnapshot.js', () => ({
   loadOfflineSnapshot: vi.fn(() => ({ snapshot: true }))
 }));
 
+vi.mock('../src/telemetry/health.js', async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...actual, startHealthServer: vi.fn(actual.startHealthServer) };
+});
+
 describe('monitorLoop', () => {
   const config = {
     RPC_URL: 'https://rpc.example',
@@ -134,6 +142,7 @@ describe('monitorLoop', () => {
     resetMetering();
     runNodeDiagnostics.mockClear();
     launchMonitoring.mockClear();
+    startHealthServer.mockClear();
     telemetryMock.server.close.mockClear();
     telemetryMock.stakeGauge.set.mockClear();
     telemetryMock.heartbeatGauge.set.mockClear();
@@ -236,9 +245,9 @@ describe('monitorLoop', () => {
     expect(callback).toHaveBeenCalledWith(mockDiagnostics);
   });
 
-  it('skips telemetry startup when disabled', async () => {
+  it('keeps real container health probes working without telemetry and closes on shutdown', async () => {
     const monitor = await startMonitorLoop({
-      config: { ...config, TELEMETRY_ENABLED: false },
+      config: { ...config, TELEMETRY_ENABLED: false, METRICS_PORT: 0 },
       intervalSeconds: 60,
       projectedRewards: null,
       offlineSnapshotPath: null,
@@ -246,9 +255,41 @@ describe('monitorLoop', () => {
       maxIterations: 1
     });
 
-    await monitor.loopPromise;
+    const server = await startHealthServer.mock.results[0].value;
+    try {
+      await monitor.loopPromise;
+      expect(launchMonitoring).not.toHaveBeenCalled();
+      expect(monitor.getTelemetry()).toBeNull();
+      const port = server.address().port;
+      const baseUrl = `http://127.0.0.1:${port}`;
+      const metrics = await fetch(`${baseUrl}/metrics`);
+      expect(metrics.status).toBe(200);
+      expect(await metrics.text()).toBe('');
+      const health = await fetch(`${baseUrl}/healthz`);
+      expect(health.status).toBe(200);
+      expect(await health.json()).toEqual({ status: 'ok' });
+      expect((await fetch(`${baseUrl}/unknown`)).status).toBe(404);
+      await expect(promisify(execFile)(process.execPath, ['src/healthcheck.js'], {
+        env: { ...process.env, TELEMETRY_ENABLED: 'false', METRICS_PORT: String(port) },
+        timeout: 10_000
+      })).resolves.toMatchObject({ stderr: '' });
+    } finally {
+      await monitor.stop();
+    }
+    expect(server.listening).toBe(false);
+  });
 
-    expect(launchMonitoring).not.toHaveBeenCalled();
-    expect(monitor.getTelemetry()).toBeNull();
+  it('reports a health-listener bind failure instead of starting an unhealthy monitor', async () => {
+    const server = await startHealthServer({ port: 0, logger });
+    try {
+      await expect(startMonitorLoop({
+        config: { ...config, TELEMETRY_ENABLED: false, METRICS_PORT: server.address().port },
+        logger,
+        maxIterations: 1
+      })).rejects.toMatchObject({ code: 'EADDRINUSE' });
+      expect(runNodeDiagnostics).not.toHaveBeenCalled();
+    } finally {
+      await new Promise((resolve) => server.close(resolve));
+    }
   });
 });

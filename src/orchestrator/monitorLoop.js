@@ -4,6 +4,7 @@ import { formatTokenAmount } from '../utils/formatters.js';
 import { loadOfflineSnapshot } from '../services/offlineSnapshot.js';
 import { applyAlphaWorkUnitMetricsToTelemetry } from '../telemetry/alphaMetrics.js';
 import { updateAlphaWorkUnitEpochMetrics } from '../telemetry/monitoring.js';
+import { startHealthServer } from '../telemetry/health.js';
 import { getRecentEpochSummaries } from '../services/metering.js';
 import { buildGossipsubRoutingConfig } from '../network/pubsubConfig.js';
 import { buildDialerPolicyConfig } from '../network/dialerPolicy.js';
@@ -185,9 +186,9 @@ export async function startMonitorLoop({
     : null;
   const alphaWuHistory = [];
 
-  if (!telemetryEnabled) {
-    logger?.info?.('Telemetry disabled; skipping monitoring endpoint startup');
-  }
+  const healthServer = telemetryEnabled
+    ? null
+    : await startHealthServer({ port: config.METRICS_PORT, logger });
 
   const refreshAlphaWuHistory = () => {
     const summaries = getRecentEpochSummaries({ limit: 24 });
@@ -237,6 +238,9 @@ export async function startMonitorLoop({
       await new Promise((resolve) => {
         telemetryServer.server.close(() => resolve());
       });
+    }
+    if (healthServer) {
+      await new Promise((resolve) => healthServer.close(resolve));
     }
   };
 

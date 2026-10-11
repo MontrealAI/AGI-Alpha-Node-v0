@@ -10,7 +10,7 @@ Start at the new **[guided welcome page](https://montrealai.github.io/AGI-Alpha-
 - Beginner instructions in English and French, a current documentation index, troubleshooting, and a separate advanced Ethereum operator guide. Historical flowcharts remain available in the legacy codex.
 - Pinned Hardhat 3.19.0 / solc 0.8.37 builds, optimized Paris-target artifacts, local deployment/ownership/pause rehearsal, Standard JSON verification exports, read-only mainnet planning, bounded transaction signing with a private pre-broadcast journal, and two-provider finalized verification.
 - Security dependency repairs in both lockfiles. Markdown lint retains its rules through the direct maintained engine; the subgraph glob override receives compatibility checks.
-- PR #497's telemetry-disable fix, retaining the later shutdown-race repair.
+- PR #497's telemetry-disable fix, retaining the later shutdown-race repair. When telemetry is disabled, a lightweight local endpoint keeps legacy Docker and Helm liveness checks working without collecting or exporting metrics. Application readiness remains a separate API health check.
 
 ## Install or upgrade
 

@@ -9,35 +9,35 @@
   "checks": {
     "ciVerify": {
       "exitCode": 0,
-      "latestBackendTests": 612,
+      "latestBackendTests": 613,
       "backendSkipped": 11,
       "backendPassedFiles": 119,
       "backendSkippedFiles": 2,
       "frontendTests": 1,
       "coverage": {
         "lines": {
-          "total": 4664,
-          "covered": 4112,
+          "total": 4680,
+          "covered": 4128,
           "skipped": 0,
-          "pct": 88.16
+          "pct": 88.2
         },
         "statements": {
-          "total": 4992,
-          "covered": 4328,
+          "total": 5008,
+          "covered": 4344,
           "skipped": 0,
-          "pct": 86.69
+          "pct": 86.74
         },
         "functions": {
-          "total": 868,
-          "covered": 804,
+          "total": 872,
+          "covered": 808,
           "skipped": 0,
-          "pct": 92.62
+          "pct": 92.66
         },
         "branches": {
-          "total": 4694,
-          "covered": 3627,
+          "total": 4698,
+          "covered": 3631,
           "skipped": 0,
-          "pct": 77.26
+          "pct": 77.28
         },
         "branchesTrue": {
           "total": 0,
@@ -89,6 +89,15 @@
       "reported": "3.3.0",
       "source": "package.json",
       "cliOnboardingDeploymentTestsPassed": 39
+    },
+    "telemetryDisabledHealth": {
+      "focusedTestsPassed": 19,
+      "backendCoverageRechecked": true,
+      "containerHealthcheckExecuted": true,
+      "emptyMetrics": true,
+      "shutdownVerified": true,
+      "occupiedPortRejected": true,
+      "reviewThread": "PRRT_kwDOQSS90s6rQE5f"
     }
   },
   "existingSkips": {
