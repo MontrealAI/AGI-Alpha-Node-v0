@@ -1,32 +1,25 @@
-# AGI Alpha Node v3.2.0 — Verified Work Edition
+# AGI Alpha Node v3.3.0 — Guided Start & Deployment Edition
 
 <!-- markdownlint-disable MD013 -->
 
-v3.2 gives the standalone **$AGIALPHA** node independently recomputable analytical deliverables, alongside the existing reviewed execution and funded settlement lifecycle. This project remains separate from AGI Jobs.
+Start at the new **[guided welcome page](https://montrealai.github.io/AGI-Alpha-Node-v0/)**. Explore an illustrative invoice check, choose English or French, enlarge the text, and get a short setup path for your goal and computer. Browsing requires no account, wallet or installation.
 
-## Delivered
+## What changed
 
-- Invoice reconciliation with exact integer amounts, usage/billing discrepancies, missing-rate handling and repeated-reference detection.
-- Exhaustive resource allocation over up to 16 supplied candidates, constrained by capital, compute and reviewer minutes, with deterministic tie-breaking and a declared optimum confined to the supplied model.
-- Explicit data-quality audits with row-level evidence for required fields, uniqueness, numeric ranges and allowed values.
-- Optional model briefs that select only existing computed facts. The verifier renders their text; unsupported model-authored prose cannot enter this brief.
-- Signed work results, complete JSON/CSV exports, independent recomputation, authenticated operator downloads and artifact integrity checks.
-- Reviewer-time reservations before autonomous inference, daily/pending time budgets and overdue-review admission blocks.
-- Learning fixes: rejected measured work counts as a loss; pre-admission and future observations are excluded.
-- Three-family demonstrations with a separate specialist process, controlled review, replay and encrypted recovery; real local-model briefs; and structured work exercised through local EVM settlement and capped reinvestment.
+- A lightweight public website with responsive layouts, keyboard navigation, a no-JavaScript guide, help and clearly labeled example data. GitHub Pages publication follows successful CI.
+- Beginner instructions in English and French, a current documentation index, troubleshooting, and a separate advanced Ethereum operator guide. Historical flowcharts remain available in the legacy codex.
+- Pinned Hardhat 3.19.0 / solc 0.8.37 builds, optimized Paris-target artifacts, local deployment/ownership/pause rehearsal, Standard JSON verification exports, read-only mainnet planning, bounded transaction signing with a private pre-broadcast journal, and two-provider finalized verification.
+- Security dependency repairs in both lockfiles. Markdown lint retains its rules through the direct maintained engine; the subgraph glob override receives compatibility checks.
+- PR #497's telemetry-disable fix, retaining the later shutdown-race repair. When telemetry is disabled, a lightweight local endpoint keeps legacy Docker and Helm liveness checks working without collecting or exporting metrics. Application readiness remains a separate API health check.
 
-## Validation and packaging
+## Install or upgrade
 
-[Release evidence](evidence/v3.2.0/validation.md) records executed checks, source fingerprints, exact limitations and reproducible commands. Publication requires Linux tests and coverage, documentation/security checks, Solidity/subgraph builds, macOS clean installation, Docker demonstrations and full combined verification. The ZIP includes a per-file manifest and checksum. Model weights remain a separate pinned download.
+Download `AGI_Alpha_Node_v3.3.0.zip` and `SHA256SUMS.txt`, verify the ZIP, then follow [the beginner guide](docs/getting-started.md) or [le guide en français](docs/getting-started.fr.md). Use Node.js 22.14+ in a supported LTS line and npm 10+.
 
-The model run prioritizes computed facts and therefore does not measure general reasoning or unrestricted hallucination rates. Example invoices, benefits, reviewer roles and local EVM balances are explicitly controlled fixtures. No buyer payment or real economic gain is asserted.
+For an existing node, stop workers and follow [backup/recovery](docs/alpha-recovery.md). This release does not change the ledger schema or Solidity sources. The newly specified optimized Hardhat build has its own bytecode identity; software installation does not alter a deployed contract. Do not replace live bytecode pins without independent verification of the actual deployment.
 
-## Install and upgrade
+## Validation and scope
 
-Use Node.js 22.14+, `npm ci`, then `npm run demo:work`. Read [verified work](docs/alpha-verified-work.md) for source formats, outputs, verification, model configuration and reviewer budgets.
+Publication requires the full CI verification, including Linux tests/coverage, both dependency audits, subgraph build, Solidity checks, onboarding/deployment rehearsal, non-root Docker demonstrations and macOS clean-install workflows. See [release evidence](evidence/v3.3.0/validation.md) and the successful Actions run for this exact release commit.
 
-Before upgrading, stop workers and retain an encrypted backup plus an external ledger-head checkpoint. Existing history remains readable, but new work fields and briefs require v3.2. Rollback needs the corresponding pre-upgrade state and external-action reconciliation. Review the new reviewer-time limits; legacy/manual pending records use a 15-minute estimate. Rejections now affect learning. Contracts are unchanged from v3.0/v3.1; installation does not deploy or upgrade them.
-
-## Remaining scope
-
-The [project status](docs/project-status.md) identifies unfinished original outcomes. Work correctness is conditional on supplied data, rules and estimates. General model research remains unverified. Live ENS commissioning, funded mainnet operation, independent security/recovery assessments, sustained profitable workloads and broader autonomous intelligence were not established by this release process. They remain required evidence for the full original vision; the release does not claim an objective “10/10.”
+The welcome page guides users into local software. It is not a managed cloud account and does not establish billion-user service capacity, general intelligence or earnings. Mainnet deployment, explorer verification, owner control, independent review and real funded commissioning remain operator-specific evidence. The deployment tooling defaults to local rehearsal or an explicit read-only plan; broadcasting requires an exact approved plan and a dedicated encrypted signer.

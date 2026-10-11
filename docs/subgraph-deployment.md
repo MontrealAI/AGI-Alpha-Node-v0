@@ -106,3 +106,12 @@ expected KPI windows.
   introduced.
 - Adjust the simulation parameters (scores, slash amounts, validation counts)
   to cover more edge cases or stress-test indexing performance.
+
+## v3.3.0 dependency compatibility
+
+The locked graph CLI toolchain passes generation/build, archive traversal
+defenses, HTTP JSON-RPC and regular/nested/hidden file enumeration checks. The
+`it-glob` v2 override removes the vulnerable braces dependency; it does not
+provide v3's symlink-following option semantics. Use regular files in the
+subgraph source tree. Symlink-based IPFS upload workflows are not qualified by
+this release.

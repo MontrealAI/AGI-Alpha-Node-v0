@@ -1,6 +1,6 @@
 {
   "name": "agi-alpha-node-v0",
-  "version": "3.2.0",
+  "version": "3.3.0",
   "description": "Owner-controlled $AGIALPHA node with adaptive planning, authenticated specialists, reviewed execution and bounded settlement/reinvestment",
   "license": "MIT",
   "private": true,
@@ -16,8 +16,8 @@
     "build:subgraph": "node scripts/render-subgraph-manifest.mjs && npm --prefix subgraph ci --no-audit --no-fund && node scripts/check-subgraph-toolchain.mjs && npm --prefix subgraph run codegen:ci && npm --prefix subgraph run build:ci",
     "demo:local": "node scripts/local_cluster.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
-    "lint:md": "cross-env MARKDOWNLINTCLI2_FORMATTER=markdownlint-cli2-formatter-pretty markdownlint-cli2 \"**/*.md\" \"!**/node_modules/**\"",
-    "lint:links": "markdown-link-check -c .markdown-link-check.json README.md docs/README.md docs/manifesto.md docs/economics.md docs/identity.md --quiet",
+    "lint:md": "node scripts/lint-markdown.mjs",
+    "lint:links": "node scripts/check-links.mjs",
     "lint:grafana": "node scripts/lint-grafana-dashboard.mjs observability/grafana/dcutr_dashboard.json observability/grafana/libp2p_unified_dashboard.json",
     "lint": "npm run lint:md && npm run lint:links && npm run lint:grafana",
     "test": "node scripts/vitest-runner.mjs run --passWithNoTests=false",
@@ -60,7 +60,15 @@
     "legacy": "node src/index.js",
     "demo:runtime": "node scripts/demo-runtime.mjs",
     "demo:measured": "node scripts/demo-measured-work.mjs",
-    "demo:work": "node scripts/demo-verified-work.mjs"
+    "demo:work": "node scripts/demo-verified-work.mjs",
+    "contracts:build": "hardhat build",
+    "deploy:rehearse": "hardhat run scripts/deploy/rehearse.mjs --network simulated",
+    "deploy:plan": "npm run contracts:build && node scripts/deploy/plan.mjs",
+    "deploy:send": "npm run contracts:build && node scripts/deploy/send.mjs",
+    "deploy:verify": "node scripts/deploy/verify.mjs",
+    "deploy:export": "npm run contracts:build && node scripts/deploy/export.mjs",
+    "test:onboarding": "vitest run test/site/ test/deploy/ --pool forks --maxWorkers 2",
+    "site:check": "node scripts/check-site.mjs"
   },
   "engines": {
     "node": ">=22.14.0",
@@ -99,25 +107,28 @@
     "c8": "^9.1.0",
     "chart.js": "^4.5.1",
     "cross-env": "^7.0.3",
+    "hardhat": "3.19.0",
     "husky": "^9.1.6",
     "jsdom": "^24.1.0",
     "markdown-link-check": "^3.10.3",
-    "markdownlint-cli2": "^0.23.3",
-    "markdownlint-cli2-formatter-pretty": "^0.0.9",
     "prettier": "^3.3.3",
     "react": "^18.3.1",
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^18.3.1",
-    "solc": "^0.8.26",
+    "solc": "0.8.37",
     "solhint": "^5.0.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4",
     "vite": "^8.3.1",
-    "vitest": "^5.0.1"
+    "vitest": "^5.0.1",
+    "markdownlint": "0.41.0"
   },
   "overrides": {
     "solc": {
       "tmp": "0.2.7"
-    }
+    },
+    "basic-ftp": "6.2.3",
+    "http-cache-semantics": "4.3.0",
+    "katex": "0.18.2"
   }
 }

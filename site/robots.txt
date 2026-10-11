@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://montrealai.github.io/AGI-Alpha-Node-v0/sitemap.xml

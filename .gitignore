@@ -153,3 +153,9 @@ alpha-runtime-output/
 alpha-measured-output/
 
 alpha-work-output/
+
+# Contract build inputs and private deployment journals
+build/hardhat/
+build/deployment/
+*.keystore.json
+.mainnet/

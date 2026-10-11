@@ -1,0 +1,118 @@
+{
+  "release": "3.3.0",
+  "baseCommit": "1be6800e633e925241155b8b31f599314861a149",
+  "integratedPullRequest": 497,
+  "localEnvironment": {
+    "platform": "linux",
+    "node": "v24.19.0"
+  },
+  "checks": {
+    "ciVerify": {
+      "exitCode": 0,
+      "latestBackendTests": 613,
+      "backendSkipped": 11,
+      "backendPassedFiles": 119,
+      "backendSkippedFiles": 2,
+      "frontendTests": 1,
+      "coverage": {
+        "lines": {
+          "total": 4680,
+          "covered": 4128,
+          "skipped": 0,
+          "pct": 88.2
+        },
+        "statements": {
+          "total": 5008,
+          "covered": 4344,
+          "skipped": 0,
+          "pct": 86.74
+        },
+        "functions": {
+          "total": 872,
+          "covered": 808,
+          "skipped": 0,
+          "pct": 92.66
+        },
+        "branches": {
+          "total": 4698,
+          "covered": 3631,
+          "skipped": 0,
+          "pct": 77.28
+        },
+        "branchesTrue": {
+          "total": 0,
+          "covered": 0,
+          "skipped": 0,
+          "pct": 100
+        }
+      }
+    },
+    "onboardingAndDeploymentPolicy": {
+      "passed": 36,
+      "failed": 0
+    },
+    "hardhatRehearsal": {
+      "chainId": 31337,
+      "passed": true,
+      "mainnet": false
+    },
+    "typecheck": true,
+    "dashboardBuild": true,
+    "subgraphBuild": true,
+    "subgraphCompatibility": "regular, nested and hidden files; archive traversal rejection; JSON-RPC",
+    "npmAudits": {
+      "root": 0,
+      "subgraph": 0
+    },
+    "browser": {
+      "desktopWidth": 1440,
+      "mobileWidths": [
+        320,
+        390
+      ],
+      "french": true,
+      "largeText": true,
+      "horizontalOverflow": false,
+      "pageErrors": 0
+    },
+    "staticSite": {
+      "sourceBytes": 66255,
+      "maxBytes": 150000
+    },
+    "finalizationReviewFix": {
+      "signedTransactionRegressionTests": 16,
+      "backendAndFrontendRechecked": true,
+      "hardhatRehearsalRechecked": true,
+      "reviewThread": "PRRT_kwDOQSS90s6rPjlS"
+    },
+    "cliReleaseVersion": {
+      "reported": "3.3.0",
+      "source": "package.json",
+      "cliOnboardingDeploymentTestsPassed": 39
+    },
+    "telemetryDisabledHealth": {
+      "focusedTestsPassed": 19,
+      "backendCoverageRechecked": true,
+      "containerHealthcheckExecuted": true,
+      "emptyMetrics": true,
+      "shutdownVerified": true,
+      "occupiedPortRejected": true,
+      "reviewThread": "PRRT_kwDOQSS90s6rQE5f"
+    }
+  },
+  "existingSkips": {
+    "reason": "Optional Anvil-based manager/governance suites; Anvil unavailable locally. Mandatory Alpha in-process EVM settlement tests and new Hardhat deployment rehearsal run.",
+    "files": [
+      "test/alphaNodeManager.contract.test.js",
+      "test/governance.integration.test.js"
+    ]
+  },
+  "notPerformed": [
+    "mainnet broadcasts",
+    "funded commissioning",
+    "external independent reviewer qualification",
+    "billion-user load test",
+    "complete accessibility certification"
+  ],
+  "publicationGate": "Successful GitHub Actions on exact released commit, including Linux, Docker and macOS."
+}

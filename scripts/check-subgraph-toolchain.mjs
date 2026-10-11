@@ -1,12 +1,13 @@
 // Qualify the two compatibility-sensitive security overrides used by graph-cli.
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, stat, mkdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { createServer } from 'node:http';
 import { createJsonRpcClient } from '../subgraph/node_modules/@graphprotocol/graph-cli/dist/command-helpers/jsonrpc.js';
+import { globSource } from '../subgraph/node_modules/kubo-rpc-client/dist/src/lib/glob-source.js';
 const require = createRequire(new URL('../subgraph/node_modules/@graphprotocol/graph-cli/package.json', import.meta.url));
 const { default: decompress } = await import(pathToFileURL(require.resolve('decompress')));
 
@@ -23,6 +24,14 @@ function tar(name, type = '0', target = '') {
 const directory = await mkdtemp(join(tmpdir(), 'alpha-subgraph-toolchain-'));
 let server;
 try {
+  const inputs=join(directory,'glob-inputs');await mkdir(join(inputs,'nested'),{recursive:true});
+  await writeFile(join(inputs,'plain.txt'),'plain');await writeFile(join(inputs,'nested','child.txt'),'child');await writeFile(join(inputs,'.hidden.txt'),'hidden');
+  const collect=async hidden=>{const records=[];for await(const item of globSource(inputs,'**/*',{hidden,followSymlinks:false})){let text='';if(item.content)for await(const chunk of item.content)text+=Buffer.from(chunk).toString();records.push({path:item.path.replaceAll('\\','/'),text});}return records;};
+  const regular=await collect(false),hidden=await collect(true);
+  assert.ok(regular.some(x=>x.path==='/plain.txt'&&x.text==='plain'));
+  assert.ok(regular.some(x=>x.path==='/nested/child.txt'&&x.text==='child'));
+  assert.ok(!regular.some(x=>x.path.includes('.hidden')));
+  assert.ok(hidden.some(x=>x.path==='/.hidden.txt'&&x.text==='hidden'));
   await decompress(tar('safe.txt'), join(directory, 'safe'));
   assert.equal(await readFile(join(directory, 'safe', 'safe.txt'), 'utf8'), 'ok');
   for (const [name, type, target] of [['../escaped', '0', ''], ['link', '2', '../escaped'], ['link', '1', '../escaped']]) {
@@ -39,7 +48,7 @@ try {
   const client = createJsonRpcClient(new URL(`http://127.0.0.1:${server.address().port}/`));
   const result = await new Promise((resolve, reject) => client.request('subgraph_status', [], (error, response) => error ? reject(error) : resolve(response)));
   assert.deepEqual(result.result, { healthy: true });
-  console.log('Subgraph toolchain: normal extraction, three traversal/link rejections, and graph-cli HTTP JSON-RPC compatibility passed.');
+  console.log('Subgraph toolchain: regular/nested/hidden glob inputs, normal extraction, three traversal/link rejections, and graph-cli HTTP JSON-RPC compatibility passed.');
 } finally {
   if (server) { server.closeAllConnections(); await new Promise(r => server.close(r)); }
   await rm(directory, { recursive: true, force: true });

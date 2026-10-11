@@ -69,7 +69,8 @@ it('operates through the real CLI and stops the HTTP service cleanly on SIGTERM'
   const cli = (...args) =>
     execute(process.execPath, ['src/alpha/cli.js', '--home', dir, ...args]);
   try {
-    expect((await cli('--version')).stdout.trim()).toBe('3.2.0');
+    const { version } = JSON.parse(await readFile('package.json', 'utf8'));
+    expect((await cli('--version')).stdout.trim()).toBe(version);
     await cli(
       'init',
       '--ens',

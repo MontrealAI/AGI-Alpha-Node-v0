@@ -1,0 +1,35 @@
+{
+  "chainId": 31337,
+  "localOnly": true,
+  "sourceDigest": "e142df128ed4087f6ec574be6b9e7e9447ed2493de605e7515afd6e77d15afb5",
+  "contracts": [
+    {
+      "name": "AlphaMissionEscrow",
+      "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+      "constructorArguments": [],
+      "runtimeCodeHash": "0x357084cb4a5a07d4b9e2cc793fa50d50274226038048264bdbe5e6ac51b3c7a3",
+      "owner": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "paused": true
+    },
+    {
+      "name": "AlphaNodeManager",
+      "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+      "constructorArguments": [
+        "0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA"
+      ],
+      "runtimeCodeHash": "0xba3bf3a1ed38fae63ac8f8d11453d9d7a932daa21098c9df3d1a6895966f64eb",
+      "owner": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "paused": true
+    }
+  ],
+  "checks": [
+    "optimized deployment",
+    "runtime bytecode comparison",
+    "canonical token",
+    "unauthorized pause rejected",
+    "owner handover",
+    "old owner rejected",
+    "new owner pause control"
+  ],
+  "mainnetCommissioned": false
+}

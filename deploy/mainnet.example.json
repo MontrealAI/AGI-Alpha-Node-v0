@@ -1,0 +1,11 @@
+{
+  "chainId": 1,
+  "deployer": "REPLACE_WITH_DEDICATED_DEPLOYER_ADDRESS",
+  "owner": "REPLACE_WITH_VERIFIED_OWNER_OR_MULTISIG_ADDRESS",
+  "tokenCodeHash": "REPLACE_WITH_INDEPENDENTLY_VERIFIED_AGIALPHA_RUNTIME_CODE_HASH",
+  "nonce": 0,
+  "maxFeeGwei": "20",
+  "maxPriorityFeeGwei": "1",
+  "maxTotalCostEth": "0.25",
+  "validUntil": "REPLACE_WITH_ISO_UTC_TIME_WITHIN_24_HOURS"
+}

@@ -1,0 +1,75 @@
+name: Publish welcome website
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_run:
+    workflows: [Continuous Integration]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'production' }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      publish: ${{ steps.gate.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - name: Check exact source is eligible for publication
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          SHA=$(git rev-parse HEAD)
+          if [ "$EVENT" = pull_request ]; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          MAIN=$(gh api "repos/$GITHUB_REPOSITORY/branches/main" --jq .commit.sha)
+          test "$SHA" = "$MAIN"
+          PASSED=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$SHA&branch=main&event=push&status=success" --jq '.workflow_runs | length')
+          test "$PASSED" -gt 0
+          echo "publish=true" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run site:check
+      - run: npm run test:onboarding
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    if: needs.build.outputs.publish == 'true'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@v5
+      - uses: actions/deploy-pages@v4
+        id: deployment

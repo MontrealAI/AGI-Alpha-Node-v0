@@ -247,11 +247,38 @@ jobs:
           npm run demo:measured
           npm run demo:work
 
+  onboarding-deployment:
+    name: Onboarding & Deployment Rehearsal
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run site:check
+      - run: npm run test:onboarding
+      - run: npm run deploy:rehearse
+      - run: npm run typecheck
+      - run: npm run dashboard:build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: contract-build-and-rehearsal
+          path: |
+            build/hardhat/artifacts/build-info/
+            build/deployment/local-rehearsal.json
+          if-no-files-found: error
+          retention-days: 30
+
   verify:
     name: Full CI Verification
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs:
+      - onboarding-deployment
       - macos-standalone
       - lint
       - test
@@ -261,6 +288,21 @@ jobs:
       - docker-smoke
       - security
     steps:
+      - name: Require every prerequisite to succeed
+        env:
+          PREREQUISITE_RESULTS: ${{ toJSON(needs) }}
+        run: |
+          node --input-type=module <<'NODE'
+          const results = JSON.parse(process.env.PREREQUISITE_RESULTS);
+          const blocked = Object.entries(results)
+            .filter(([, job]) => job.result !== 'success')
+            .map(([name, job]) => `${name}: ${job.result}`);
+          if (Object.keys(results).length !== 9 || blocked.length) {
+            console.error('All nine prerequisite jobs must succeed.', blocked.join(', '));
+            process.exit(1);
+          }
+          NODE
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -392,5 +434,5 @@ jobs:
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Release $TAG already exists; leaving it unchanged."
           else
-            gh release create "$TAG" "dist/AGI_Alpha_Node_v${VERSION}.zip" dist/SHA256SUMS.txt --target "$GITHUB_SHA" --title "AGI Alpha Node $TAG — Verified Work Edition" --notes-file RELEASE_NOTES.md
+            gh release create "$TAG" "dist/AGI_Alpha_Node_v${VERSION}.zip" dist/SHA256SUMS.txt --target "$GITHUB_SHA" --title "AGI Alpha Node $TAG — Guided Start & Deployment Edition" --notes-file RELEASE_NOTES.md
           fi

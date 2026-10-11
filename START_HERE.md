@@ -1,6 +1,10 @@
-# Start here — AGI Alpha Node v3.2.0
+# Start here — AGI Alpha Node v3.3.0
 
 <!-- markdownlint-disable MD013 -->
+
+**New to this project? [Use the guided welcome page](https://montrealai.github.io/AGI-Alpha-Node-v0/) or the [beginner guide](docs/getting-started.md). [Instructions en français](docs/getting-started.fr.md).**
+
+Contract operators: use the [Ethereum deployment guide](docs/ethereum-deployment.md). Installing this software never deploys contracts.
 
 ## 1. Install and see the whole local workflow
 
