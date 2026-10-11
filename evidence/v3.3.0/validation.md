@@ -14,6 +14,8 @@ This release adds public onboarding, documentation, reproducible deployment tool
 
 The full gate includes Markdown/link/Grafana lint, backend/frontend tests, coverage thresholds, Solidity lint and compilation, subgraph toolchain compatibility and build, both dependency audits, health/branch policy checks, the onboarding/deployment job, non-root Docker smoke checks and macOS standalone clean installation. No security threshold is reduced. Final observed results are recorded in `results.json` alongside this document; GitHub Actions verifies the published commit again.
 
+The final CI job explicitly requires all nine prerequisite jobs to report success, including onboarding/deployment rehearsal. Failure, cancellation, skipped and missing results fail that gate. This matters for branch protection because a skipped GitHub job alone can otherwise be accepted as a completed required check.
+
 The root and subgraph audits report zero vulnerabilities after repair. Markdown lint still uses the maintained engine and default/inline rules; a bounded file walker replaces vulnerable glob dependencies. The subgraph's `it-glob` override uses the supported v2 iterator API and is exercised by a compatibility check as well as the graph build.
 
 ## Explicit limits

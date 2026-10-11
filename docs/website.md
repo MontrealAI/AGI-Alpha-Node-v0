@@ -12,7 +12,7 @@ Automated checks cover navigation choices, language changes, blocked storage and
 
 ## Publish and verify
 
-The main CI workflow validates site structure and the onboarding/deployment tests. A separate Pages workflow builds the static artifact on PRs and publishes successful CI commits on `main`. The GitHub repository's Pages source must be **GitHub Actions**. `workflow_dispatch` may publish only the current `main` after checking that commit's successful CI run. Release publication itself requires the full CI gate.
+The main CI workflow validates site structure and the onboarding/deployment tests. A separate Pages workflow builds the static artifact on PRs and publishes successful CI commits on `main`. The GitHub repository's Pages source must be **GitHub Actions**. `workflow_dispatch` may publish only the current `main` after checking that commit's successful CI run. Release publication itself requires the full CI gate. The final verification job runs even when a prerequisite fails and explicitly rejects failed, skipped, cancelled or missing prerequisite results; a skipped dependency cannot satisfy the final merge gate.
 
 Repository link validation maps the canonical welcome URL to the checked-out `site/index.html`, so a first publication can be validated before it exists online. Other links retain their normal checks.
 
