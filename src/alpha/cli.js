@@ -2,7 +2,7 @@
 import { Command } from 'commander';
 import { fileURLToPath } from 'node:url';
 import { resolve, join } from 'node:path';
-import { readdir, writeFile, mkdir } from 'node:fs/promises';
+import { readdir, readFile, writeFile, mkdir } from 'node:fs/promises';
 import {
   signOutcome,
   importOutcome,
@@ -50,10 +50,13 @@ import {
 } from './work.js';
 import { observeSettlement } from './settlement.js';
 import { operatorServer } from './operator.js';
+const { version } = JSON.parse(
+  await readFile(new URL('../../package.json', import.meta.url), 'utf8'),
+);
 const cli = new Command()
   .name('alpha-node')
   .description('$AGIALPHA standalone opportunity and evidence node')
-  .version('3.2.0');
+  .version(version);
 cli.option('--home <directory>', 'Private node data directory', '.alpha-node');
 const home = () => resolve(cli.opts().home);
 const print = (x) => console.log(JSON.stringify(x, null, 2));

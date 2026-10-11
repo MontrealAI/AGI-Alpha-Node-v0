@@ -84,6 +84,11 @@
       "backendAndFrontendRechecked": true,
       "hardhatRehearsalRechecked": true,
       "reviewThread": "PRRT_kwDOQSS90s6rPjlS"
+    },
+    "cliReleaseVersion": {
+      "reported": "3.3.0",
+      "source": "package.json",
+      "cliOnboardingDeploymentTestsPassed": 39
     }
   },
   "existingSkips": {
