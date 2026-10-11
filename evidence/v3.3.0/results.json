@@ -9,9 +9,9 @@
   "checks": {
     "ciVerify": {
       "exitCode": 0,
-      "latestBackendTests": 596,
+      "latestBackendTests": 612,
       "backendSkipped": 11,
-      "backendPassedFiles": 118,
+      "backendPassedFiles": 119,
       "backendSkippedFiles": 2,
       "frontendTests": 1,
       "coverage": {
@@ -48,7 +48,7 @@
       }
     },
     "onboardingAndDeploymentPolicy": {
-      "passed": 20,
+      "passed": 36,
       "failed": 0
     },
     "hardhatRehearsal": {
@@ -78,6 +78,12 @@
     "staticSite": {
       "sourceBytes": 66255,
       "maxBytes": 150000
+    },
+    "finalizationReviewFix": {
+      "signedTransactionRegressionTests": 16,
+      "backendAndFrontendRechecked": true,
+      "hardhatRehearsalRechecked": true,
+      "reviewThread": "PRRT_kwDOQSS90s6rPjlS"
     }
   },
   "existingSkips": {

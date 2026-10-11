@@ -8,6 +8,7 @@ import {
   createPlan,
   digest,
   requireThat,
+  verifyPlannedTransaction,
 } from "./lib.mjs";
 
 try {
@@ -60,16 +61,7 @@ try {
         );
         const tx = await provider.getTransaction(hash),
           expected = plan.transactions[i];
-        requireThat(
-          tx &&
-            tx.chainId === 1n &&
-            tx.from.toLowerCase() === plan.config.deployer.toLowerCase() &&
-            (tx.to ?? "").toLowerCase() === (expected.to ?? "").toLowerCase() &&
-            tx.data === expected.data &&
-            tx.nonce === expected.nonce &&
-            tx.value === 0n,
-          "On-chain transaction differs from reviewed plan",
-        );
+        verifyPlannedTransaction(tx, expected, plan.config.deployer);
       }
       receipts.push({
         hash,

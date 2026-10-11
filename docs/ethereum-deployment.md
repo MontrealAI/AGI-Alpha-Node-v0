@@ -88,7 +88,7 @@ Wait until all transactions are finalized, then run:
 npm run deploy:verify -- /private/new-deployment-journal /private/finalized-verification.json
 ```
 
-This checks canonical finalized receipts, exact transaction intent, deployed runtime bytecode, paused state, token binding and owner at a shared finalized block through both providers. A pending or non-finalized transaction fails. The output intentionally leaves explorer verification, owner-control proof and funded lifecycle qualification false; those require separate evidence.
+This checks canonical finalized receipts, exact transaction intent, deployed runtime bytecode, paused state, token binding and owner at a shared finalized block through both providers. Transaction type, chain, sender, recipient, calldata, nonce, value, gas limit and both EIP-1559 fee limits must match the approved plan exactly. An added access list is rejected. A replacement transaction with different fee or gas limits fails verification even if its contract effects match. A pending or non-finalized transaction fails. The output intentionally leaves explorer verification, owner-control proof and funded lifecycle qualification false; those require separate evidence.
 
 ## 5. Commission before enabling live node transactions
 

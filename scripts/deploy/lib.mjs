@@ -21,6 +21,23 @@ export const requireThat = (condition, message) => {
 };
 export const digest = (value) =>
   createHash("sha256").update(JSON.stringify(value)).digest("hex");
+export function verifyPlannedTransaction(tx, expected, deployer) {
+  requireThat(
+    tx &&
+      tx.type === expected.type &&
+      tx.chainId === BigInt(expected.chainId) &&
+      tx.from.toLowerCase() === deployer.toLowerCase() &&
+      (tx.to ?? "").toLowerCase() === (expected.to ?? "").toLowerCase() &&
+      tx.data === expected.data &&
+      tx.nonce === expected.nonce &&
+      tx.value === BigInt(expected.value) &&
+      tx.gasLimit === BigInt(expected.gasLimit) &&
+      tx.maxFeePerGas === BigInt(expected.maxFeePerGas) &&
+      tx.maxPriorityFeePerGas === BigInt(expected.maxPriorityFeePerGas) &&
+      (tx.accessList == null || tx.accessList.length === 0),
+    "On-chain transaction differs from reviewed plan",
+  );
+}
 export async function sourcesDigest() {
   const files = [];
   async function walk(dir) {
