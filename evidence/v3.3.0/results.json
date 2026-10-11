@@ -1,0 +1,98 @@
+{
+  "release": "3.3.0",
+  "baseCommit": "1be6800e633e925241155b8b31f599314861a149",
+  "integratedPullRequest": 497,
+  "localEnvironment": {
+    "platform": "linux",
+    "node": "v24.19.0"
+  },
+  "checks": {
+    "ciVerify": {
+      "exitCode": 0,
+      "latestBackendTests": 596,
+      "backendSkipped": 11,
+      "backendPassedFiles": 118,
+      "backendSkippedFiles": 2,
+      "frontendTests": 1,
+      "coverage": {
+        "lines": {
+          "total": 4664,
+          "covered": 4112,
+          "skipped": 0,
+          "pct": 88.16
+        },
+        "statements": {
+          "total": 4992,
+          "covered": 4328,
+          "skipped": 0,
+          "pct": 86.69
+        },
+        "functions": {
+          "total": 868,
+          "covered": 804,
+          "skipped": 0,
+          "pct": 92.62
+        },
+        "branches": {
+          "total": 4694,
+          "covered": 3627,
+          "skipped": 0,
+          "pct": 77.26
+        },
+        "branchesTrue": {
+          "total": 0,
+          "covered": 0,
+          "skipped": 0,
+          "pct": 100
+        }
+      }
+    },
+    "onboardingAndDeploymentPolicy": {
+      "passed": 20,
+      "failed": 0
+    },
+    "hardhatRehearsal": {
+      "chainId": 31337,
+      "passed": true,
+      "mainnet": false
+    },
+    "typecheck": true,
+    "dashboardBuild": true,
+    "subgraphBuild": true,
+    "subgraphCompatibility": "regular, nested and hidden files; archive traversal rejection; JSON-RPC",
+    "npmAudits": {
+      "root": 0,
+      "subgraph": 0
+    },
+    "browser": {
+      "desktopWidth": 1440,
+      "mobileWidths": [
+        320,
+        390
+      ],
+      "french": true,
+      "largeText": true,
+      "horizontalOverflow": false,
+      "pageErrors": 0
+    },
+    "staticSite": {
+      "sourceBytes": 66255,
+      "maxBytes": 150000
+    }
+  },
+  "existingSkips": {
+    "reason": "Optional Anvil-based manager/governance suites; Anvil unavailable locally. Mandatory Alpha in-process EVM settlement tests and new Hardhat deployment rehearsal run.",
+    "files": [
+      "test/alphaNodeManager.contract.test.js",
+      "test/governance.integration.test.js"
+    ]
+  },
+  "notPerformed": [
+    "mainnet broadcasts",
+    "funded commissioning",
+    "external independent reviewer qualification",
+    "billion-user load test",
+    "complete accessibility certification"
+  ],
+  "publicationGate": "Successful GitHub Actions on exact released commit, including Linux, Docker and macOS."
+}

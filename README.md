@@ -2,13 +2,21 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Version 3.2.0 · Verified Work Edition
+Version 3.3.0 · Guided Start & Deployment Edition
 
 An owner-controlled economic intelligence node: collect authorized observations, plan and stress-test opportunities, coordinate authenticated specialists, obtain signed review, execute an exact authorized change, settle funded $AGIALPHA work, and reinvest verified receipts within owner limits.
 
 This is the **$AGIALPHA project**. The default runtime requires no AGI Jobs registry, USDC or OpenClaw. Older infrastructure adapters remain separately accessible through `npm run legacy -- --help`.
 
-## Start in five minutes
+## A welcoming first step
+
+**[Open the guided welcome page →](https://montrealai.github.io/AGI-Alpha-Node-v0/)**
+
+Explore a small example without installing anything. Choose English or French, enlarge the text, and find the next steps for your computer. No account or wallet is needed to explore.
+
+[Beginner guide](docs/getting-started.md) · [Guide en français](docs/getting-started.fr.md) · [Latest download](https://github.com/MontrealAI/AGI-Alpha-Node-v0/releases/latest) · [Ethereum deployment](docs/ethereum-deployment.md)
+
+## First local example
 
 Install Node.js 22.14+ and npm 10+, extract the release ZIP and run:
 
@@ -38,7 +46,11 @@ For your own node, follow [START HERE](START_HERE.md) and the [integrated runtim
 
 Each capability has explicit limits. Specialists offer three deterministic analytical capabilities plus schema-constrained research synthesis and adversarial review; their quote is not an automatic peer payment. The adaptive model learns only from observed, comparable, reviewer-signed paired measurements and can only tighten supplied estimates. Modeled economics, fixtures, overlapping windows and duplicate artifact sets are excluded. Execution is an owner-selected configuration change with health checks. These concrete implementations do not establish general intelligence, guaranteed financial alpha, a permissionless global marketplace or unlimited scale.
 
-## New in v3.2
+## New in v3.3
+
+A bilingual, accessible public onboarding page, beginner guides, reproducible Hardhat builds and a local ownership/pause rehearsal. Mainnet tooling generates an exact read-only plan, checks two RPC providers, bounds fees, journals signed transactions before broadcast, and verifies finalized deployments. The dependency security gate remains enforced. See [release notes](RELEASE_NOTES.md).
+
+## Verified work introduced in v3.2
 
 Three structured work families produce independently recomputable results: invoice reconciliation, constrained resource allocation and data-quality audits. Work briefs use model-selected facts rendered by the verifier, with no model-authored factual prose. Exported JSON/CSV is bound to the signed mission. Autonomous inference reserves reviewer minutes and stops on overdue reviews. Rejected measured work now informs learning; pre-admission and future observations are excluded.
 
@@ -66,7 +78,7 @@ npm run dashboard:build
 npm run demo:runtime
 ```
 
-See [qualification evidence](evidence/v3.2.0/validation.md), [recovered vision and assessment](docs/alpha-assessment.md), [release notes](RELEASE_NOTES.md) and [backup/recovery](docs/alpha-recovery.md). The package contains real local-model inference evidence, real HTTP/file execution evidence, and local EVM execution of the token lifecycle. Mainnet deployment, ENS commissioning, independent human review and sustained production economics remain operator-specific commissioning work.
+See [qualification evidence](evidence/v3.3.0/validation.md), [recovered vision and assessment](docs/alpha-assessment.md), [release notes](RELEASE_NOTES.md) and [backup/recovery](docs/alpha-recovery.md). The package contains real local-model inference evidence, real HTTP/file execution evidence, and local EVM execution of the token lifecycle. Mainnet deployment, ENS commissioning, independent human review and sustained production economics remain operator-specific commissioning work.
 
 ## Repository atlas
 
